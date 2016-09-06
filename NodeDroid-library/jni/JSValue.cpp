@@ -362,4 +362,7 @@ NATIVE(JSValue,void,setException) (PARAMS, jlong valueRef, jlong exceptionRefRef
 {
     JSValue<Value> **exception = (JSValue<Value> **)exceptionRefRef;
     *exception = reinterpret_cast<JSValue<Value> *>(valueRef);
+    if (*exception) {
+        (*exception)->retain();
+    }
 }

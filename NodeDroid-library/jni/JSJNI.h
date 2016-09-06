@@ -71,7 +71,11 @@ public:
     virtual void release() {
         char buf[128];
         sprintf(buf, "count = %d", m_count-1);
-        __android_log_write(ANDROID_LOG_DEBUG, "Retainer", buf);
+        if (m_count > 0) {
+            __android_log_write(ANDROID_LOG_DEBUG, "Retainer", buf);
+        } else {
+            __android_log_write(ANDROID_LOG_ERROR, "Retainer", buf);
+        }
         if (--m_count == 0)
             delete this;
     }

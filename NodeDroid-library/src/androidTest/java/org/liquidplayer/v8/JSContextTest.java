@@ -42,6 +42,7 @@ public class JSContextTest {
 
         JSContext context1 = new JSContextClass();
         JSValue ret = context1.evaluateScript("func1()");
+
         assertTrue(ret.toNumber().equals(55.0));
 
         JSContextGroup contextGroup = new JSContextGroup();
@@ -140,9 +141,6 @@ public class JSContextTest {
         context.property("localv",69);
         JSValue val = context.evaluateScript("this.localv");
         assertTrue(val.toNumber().equals(69.0));
-
-        val = context.evaluateScript("this.localv");
-        assertTrue(val.toNumber().equals(69.0));
     }
 
     Exception thrownInMainThread = null;
@@ -159,6 +157,7 @@ public class JSContextTest {
                     test.testJSContextConstructor();
                     test.testJSContextEvaluateScript();
                     test.testJSContextExceptionHandler();
+                    test.testDeadReferences();
                 } catch (Exception e) {
                     thrownInMainThread = e;
                 } finally {

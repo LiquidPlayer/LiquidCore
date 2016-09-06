@@ -482,7 +482,6 @@ public class JSFunction extends JSObject {
      * @return A JSValue referencing the prototype object, or null if none
      * @since 3.0
      */
-    @SuppressWarnings("deprecation")
     public JSValue prototype() {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
@@ -492,7 +491,7 @@ public class JSFunction extends JSObject {
             }
         };
         context.sync(runnable);
-        if (runnable.jni.reference==0) return null;
+        //if (runnable.jni.reference==0) return null;
         return new JSValue(runnable.jni.reference,context);
     }
     /**
@@ -500,7 +499,6 @@ public class JSFunction extends JSObject {
      * @param proto The object defining the function prototypes
      * @since 3.0
      */
-    @SuppressWarnings("deprecation")
     public void prototype(final JSValue proto) {
         context.sync(new Runnable() {
             @Override
@@ -576,20 +574,19 @@ public class JSFunction extends JSObject {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                JSObject proto = context.getObjectFromRef(getPrototype(context.ctxRef(),valueRef()));
+                JSValue proto = prototype();
                 try {
                     Constructor<?> defaultConstructor = subclass.getConstructor();
                     JSObject thiz = (JSObject) defaultConstructor.newInstance();
                     thiz.context = context;
                     thiz.valueRef = thisObj;
-                    thiz.isInstanceOf = JSFunction.this;
                     thiz.property("constructor",JSFunction.this,JSObject.JSPropertyAttributeDontEnum);
                     function(thiz,args);
                     context.persistObject(thiz);
                     context.zombies.add(thiz);
-                    if (proto != null) {
-                        for (String prop : proto.propertyNames()) {
-                            thiz.property(prop, proto.property(prop));
+                    if (proto != null && proto.isObject()) {
+                        for (String prop : proto.toObject().propertyNames()) {
+                            thiz.property(prop, proto.toObject().property(prop));
                         }
                     }
                 } catch (NoSuchMethodException e) {
@@ -627,17 +624,8 @@ public class JSFunction extends JSObject {
             setException(e.getError().valueRef(), exceptionRefRef);
         }
     }
-    @SuppressWarnings("unused") // This is called directly from native code
-    private boolean hasInstanceCallback(long ctxRef, long constructorRef,
-                                        long possibleInstanceRef, long exceptionRefRef) {
-        setException(0L, exceptionRefRef);
-
-        JSValue instance = new JSValue(possibleInstanceRef, context);
-        return (instance.isObject() && ((instance.toObject()).isInstanceOf == this));
-    }
 
     private Class<? extends JSObject> subclass = null;
-
 
     /**
      * Called only by convenience subclasses.  If you use

@@ -216,7 +216,6 @@ public class JSObject extends JSValue {
             public void run() {
                 long ref = (value instanceof JSValue) ?
                         ((JSValue) value).valueRef() : new JSValue(context, value).valueRef();
-                protect(context.ctxRef(), ref);
                 jni = setProperty(
                         context.ctxRef(),
                         valueRef,
@@ -391,7 +390,6 @@ public class JSObject extends JSValue {
         return new JSValue(context);
     }
 
-    protected JSFunction isInstanceOf = null;
     private JSObject thiz = null;
 
     /* Native Methods */

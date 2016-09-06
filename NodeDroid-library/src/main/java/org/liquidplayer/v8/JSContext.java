@@ -326,15 +326,16 @@ public class JSContext extends JSObject {
      * @return The JSObject representing the reference
      */
     protected synchronized JSObject getObjectFromRef(long objRef,boolean create) {
-        if (objRef == valueRef()) return this;
+        if (objRef == valueRef()) {
+            unprotect(context.ctxRef(),objRef);
+            return this;
+        }
         WeakReference<JSObject> wr = objects.get(objRef);
         JSObject obj = null;
         if (wr != null) {
             obj = wr.get();
-            /*
             if (obj != null)
                 obj.unprotect(ctxRef(),obj.valueRef());
-            */
         }
         if (obj==null && create) {
             obj = new JSObject(objRef,this);
