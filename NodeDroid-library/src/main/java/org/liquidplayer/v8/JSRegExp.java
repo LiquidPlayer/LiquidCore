@@ -74,6 +74,7 @@ public class JSRegExp extends JSObject {
     public class ExecResult extends JSArray<String> {
         protected ExecResult(JSObject result) {
             super(result.valueRef(),result.getContext(),String.class);
+            protect(context.ctxRef(), valueRef);
         }
 
         /**

@@ -1,21 +1,14 @@
 package org.liquidplayer.v8;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class JSDataViewTest {
 
-    private JSContext context;
-
-    @Before
-    public void setUp() throws Exception {
-        context = new JSContext();
-    }
-
     @Test
     public void testConstructorsAndProperties() throws Exception {
+        JSContext context = new JSContext();
         JSArrayBuffer buffer = new JSArrayBuffer(context,8);
         JSDataView view = new JSDataView(buffer);
         assertEquals(buffer.byteLength(),view.buffer().byteLength());
@@ -38,6 +31,7 @@ public class JSDataViewTest {
 
     @Test
     public void testFloat32() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,12));
         view.setFloat32(0,5.56f);
         view.setFloat32(4,6.87f,true);
@@ -52,6 +46,7 @@ public class JSDataViewTest {
 
     @Test
     public void testFloat64() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,24));
         view.setFloat64(0,5.5678);
         view.setFloat64(8,6.8765,true);
@@ -66,6 +61,7 @@ public class JSDataViewTest {
 
     @Test
     public void testInt32() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,12));
         view.setInt32(0,5);
         view.setInt32(4,6,true);
@@ -80,6 +76,7 @@ public class JSDataViewTest {
 
     @Test
     public void testInt16() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,6));
         view.setInt16(0,(short)5);
         view.setInt16(2,(short)-6,true);
@@ -94,6 +91,7 @@ public class JSDataViewTest {
 
     @Test
     public void testInt8() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,2));
         view.setInt8(0,(byte)5);
         view.setInt8(1,(byte)-6);
@@ -104,6 +102,7 @@ public class JSDataViewTest {
 
     @Test
     public void testUint32() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,12));
         view.setUint32(0,0xffffffffL);
         view.setUint32(4,6L,true);
@@ -119,6 +118,7 @@ public class JSDataViewTest {
 
     @Test
     public void testUint16() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,6));
         view.setUint16(0,(short)0xfffe);
         view.setUint16(2,(short)6,true);
@@ -133,6 +133,7 @@ public class JSDataViewTest {
 
     @Test
     public void testUint8() throws Exception {
+        JSContext context = new JSContext();
         JSDataView view = new JSDataView(new JSArrayBuffer(context,2));
         view.setUint8(0,(byte)0xfd);
         view.setUint8(1,(byte)6);
@@ -141,8 +142,4 @@ public class JSDataViewTest {
         assertTrue(view.getUint8(1).equals((byte)6));
     }
 
-    @org.junit.After
-    public void shutDown() {
-        Runtime.getRuntime().gc();
-    }
 }

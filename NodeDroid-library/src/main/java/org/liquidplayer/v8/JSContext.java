@@ -36,9 +36,7 @@ import android.support.annotation.NonNull;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
@@ -47,15 +45,6 @@ import java.util.concurrent.Semaphore;
  */
 @SuppressWarnings("JniMissingFunction")
 public class JSContext extends JSObject {
-
-    private final Runnable mMonitorRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (deadReferences.size() > 100) {
-                cleanDeadReferences();
-            }
-        }
-    };
 
     protected void sync(final Runnable runnable) {
         if (android.os.Process.myTid() == mContextThreadTid) {
@@ -82,25 +71,6 @@ public class JSContext extends JSObject {
     private void inContextCallback(Runnable runnable) {
         mContextThreadTid = android.os.Process.myTid();
         runnable.run();
-        mMonitorRunnable.run();
-    }
-
-    public final Object mMutex = new Object();
-
-    private final List<Long> deadReferences = new ArrayList<>();
-
-    protected void markForUnprotection(Long valueR) {
-        synchronized (mMutex) {
-            deadReferences.add(valueR);
-        }
-    }
-    private void cleanDeadReferences() {
-        synchronized (mMutex) {
-            for (Long reference : deadReferences) {
-                //unprotect(ctxRef(), reference);
-            }
-            deadReferences.clear();
-        }
     }
 
     /**
@@ -191,9 +161,7 @@ public class JSContext extends JSObject {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        cleanDeadReferences();
         isDefunct = true;
-        android.util.Log.d("JSContext::finalize", "Done with JSContext");
         release(ctx);
     }
 
@@ -339,12 +307,15 @@ public class JSContext extends JSObject {
         }
         if (obj==null && create) {
             obj = new JSObject(objRef,this);
-            if (isArray(ctxRef(),objRef))
-                obj = new JSArray(objRef,this);
-            else if (JSTypedArray.isTypedArray(obj))
+            if (isArray(ctxRef(),objRef)) {
+                obj = new JSArray(objRef, this);
+                protect(ctxRef(), objRef);
+            } else if (JSTypedArray.isTypedArray(obj)) {
                 obj = JSTypedArray.from(obj);
-            else if (isFunction(ctxRef(),objRef))
-                obj = new JSFunction(objRef,this);
+            } else if (isFunction(ctxRef(),objRef)) {
+                obj = new JSFunction(objRef, this);
+                protect(ctxRef(), objRef);
+            }
         }
         return obj;
     }

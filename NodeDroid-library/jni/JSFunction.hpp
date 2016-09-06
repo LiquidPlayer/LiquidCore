@@ -147,12 +147,10 @@ class JSFunction : public JSValue<T> {
                 }
             }
 
-            //jsThis->release();
-            //jsThis = nullptr;
-
             if (exception) {
-                __android_log_write(ANDROID_LOG_DEBUG, "FunctionCallback", "Yeah there was an exception");
-                isolate->ThrowException(exception->Value());
+                Local<Value> excp = exception->Value();
+                exception->release();
+                isolate->ThrowException(excp);
             }
 
             delete args;

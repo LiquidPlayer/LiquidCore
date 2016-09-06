@@ -56,12 +56,8 @@ public:
     Retainer() {
         m_count = 1;
         m_debug_mutex.lock();
-        bool found = (std::find(m_debug.begin(), m_debug.end(), this) != m_debug.end());
         m_debug.push_front(this);
         m_debug_mutex.unlock();
-        if (found) {
-            __android_log_write(ANDROID_LOG_DEBUG, "Retainer", "HOLY SHIT! IT'S ALREADY HERE!");
-        }
     }
 
     virtual void retain() {
@@ -69,13 +65,6 @@ public:
     }
 
     virtual void release() {
-        char buf[128];
-        sprintf(buf, "count = %d", m_count-1);
-        if (m_count > 0) {
-            __android_log_write(ANDROID_LOG_DEBUG, "Retainer", buf);
-        } else {
-            __android_log_write(ANDROID_LOG_ERROR, "Retainer", buf);
-        }
         if (--m_count == 0)
             delete this;
     }
@@ -84,10 +73,7 @@ protected:
     virtual ~Retainer() {
         m_debug_mutex.lock();
         m_debug.remove(this);
-        char buf[128];
-        sprintf(buf, "hanging chads = %d", m_debug.size());
         m_debug_mutex.unlock();
-        __android_log_write(ANDROID_LOG_DEBUG, "Retainer", buf);
     }
 
 protected:

@@ -64,6 +64,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
         context = superList.context;
         valueRef = superList.valueRef();
         mSuperList = superList;
+        protect(context.ctxRef(), valueRef);
     }
     protected JSBaseArray(JSContext ctx, Class<T> cls) {
         context = ctx;

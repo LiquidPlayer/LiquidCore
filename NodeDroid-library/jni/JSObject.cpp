@@ -488,7 +488,6 @@ NATIVE(JSObject,jobject,callAsConstructor) (PARAMS, jlong ctx, jlong object,
 
     MaybeLocal<Value> value = o->CallAsConstructor(context, len, elements);
     if (value.IsEmpty()) {
-        __android_log_write(ANDROID_LOG_DEBUG,"callAsConstructor", "Ok yeah we had an exception here");
         exception = JSValue<Value>::New(context_, trycatch.Exception());
     }
 

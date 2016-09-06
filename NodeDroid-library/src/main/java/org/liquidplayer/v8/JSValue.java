@@ -171,7 +171,6 @@ public class JSValue {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        android.util.Log.d("finalize()", "Finalizing " + getClass().getName());
         unprotect();
     }
 
@@ -461,15 +460,12 @@ public class JSValue {
      * @since 3.0
      */
     public JSFunction toFunction() {
-        if (isObject() && toObject() instanceof JSFunction) {
-            return (JSFunction)toObject();
-        } else if (!isObject()) {
-            toObject();
-            return null;
-        } else {
-            context.throwJSException(new JSException(context, "JSObject not a function"));
-            return null;
+        if (isObject()) {
+            JSObject obj = toObject();
+            if (obj instanceof JSFunction) return (JSFunction)obj;
         }
+        context.throwJSException(new JSException(context, "JSObject not a function"));
+        return null;
     }
 
     /**
@@ -478,15 +474,12 @@ public class JSValue {
      * @since 3.0
      */
     public JSBaseArray toJSArray() {
-        if (isObject() && toObject() instanceof JSBaseArray) {
-            return (JSBaseArray)toObject();
-        } else if (!isObject()) {
-            toObject();
-            return null;
-        } else {
-            context.throwJSException(new JSException(context, "JSObject not an array"));
-            return null;
+        if (isObject()) {
+            JSObject obj = toObject();
+            if (obj instanceof JSBaseArray) return (JSBaseArray) obj;
         }
+        context.throwJSException(new JSException(context, "JSObject not an array"));
+        return null;
     }
 
     /**

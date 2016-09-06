@@ -43,9 +43,6 @@ std::mutex Retainer::m_debug_mutex;
 
 template <typename T>
 JSValue<T> * JSValue<T>::New(JSContext* context, Local<T> val) {
-    if (val->IsUndefined() || val->IsNull()) {
-        return new JSValue<T>(context,val);
-    }
     if (val->IsObject()) {
         Local<Object> obj = val->ToObject(context->Value()).ToLocalChecked();
         Local<v8::Value> identifier =
@@ -87,26 +84,19 @@ JSValue<T>::JSValue(JSContext* context, Local<T> val) {
 }
 template <typename T>
 JSValue<T>::~JSValue<T>() {
-    __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "Isolate");
     V8_ISOLATE(isolate());
 
-    __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "Checking for undefined/null");
     if (!m_isUndefined && !m_isNull) {
-        __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "Testing for object");
         if (Value()->IsObject()) {
             Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
-            __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "Clearing hidden value");
             // Clear wrapper pointer if it exists, in case this object is still held by JS
             obj->SetHiddenValue(String::NewFromUtf8(isolate(), "__JSValue_ptr"),
                 Local<v8::Value>::New(isolate(),Undefined(isolate())));
         }
-        __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "Resetting");
         m_value.Reset();
     }
 
-    __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "Releasing the isolate");
     m_context->release();
-    __android_log_write(ANDROID_LOG_DEBUG, "~JSValue<T>", "fin");
 }
 template <typename T>
 Local<T> JSValue<T>::Value() {
@@ -139,7 +129,6 @@ JSContext::JSContext(ContextGroup* isolate, Local<Context> val) {
     m_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate->isolate(), val);
 }
 JSContext::~JSContext() {
-    __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "Destructing the context");
     m_context.Reset();
     m_isolate->release();
 };
@@ -194,9 +183,7 @@ ContextGroup::ContextGroup() {
     m_isolate = Isolate::New(m_create_params);
 }
 ContextGroup::~ContextGroup() {
-    __android_log_write(ANDROID_LOG_DEBUG, "ContextGroup", "Destructing the Isolate");
     m_isolate->Dispose();
-    __android_log_write(ANDROID_LOG_DEBUG, "ContextGroup", "Disposing of v8");
 
     dispose_v8();
 }

@@ -343,19 +343,15 @@ NATIVE(JSValue,void,protect) (PARAMS, jlong ctxRef, jlong valueRef)
 
 NATIVE(JSValue,void,unprotect) (PARAMS, jlong ctxRef, jlong valueRef)
 {
-    __android_log_write(ANDROID_LOG_DEBUG, "unprotect", "Getting JSValue<Value>");
     JSValue<Value> *value = reinterpret_cast<JSValue<Value>*>(valueRef);
-    char buf[128];
-    sprintf(buf, "releasing value = %p", value);
+#ifdef DEBUG_RETAINER
     Retainer::m_debug_mutex.lock();
-    bool found = (std::find(Retainer::m_debug.begin(), Retainer::m_debug.end(), value) != Retainer::m_debug.end());
+    bool found = (std::find(Retainer::m_debug.begin(),
+        Retainer::m_debug.end(), value) != Retainer::m_debug.end());
     Retainer::m_debug_mutex.unlock();
-    if (!found) {
-        __android_log_write(ANDROID_LOG_ERROR, "unprotect", "Attempting to unprotect a dead reference!");
-    }
-    __android_log_write(ANDROID_LOG_DEBUG, "unprotect", buf);
+    __android_log_assert(!found, "unprotect", "Attempting to unprotect a dead reference!");
+#endif
     value->release();
-    __android_log_write(ANDROID_LOG_DEBUG, "unprotect", "returning");
 }
 
 NATIVE(JSValue,void,setException) (PARAMS, jlong valueRef, jlong exceptionRefRef)
