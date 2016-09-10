@@ -84,10 +84,13 @@ class JSFunction : public JSValue<T> {
         }
 
         void FunctionCallback(const FunctionCallbackInfo< Value > &info) {
-            Isolate *isolate = JSValue<T>::isolate();
-            V8_ISOLATE(isolate);
-            Local<Context> context = JSValue<T>::m_context->Value();
-            Context::Scope context_scope_(context);
+            jlong objThis;
+            jlongArray argsArr;
+            jlong *args;
+            jmethodID mid;
+            JSValue<Value> *exception = nullptr;
+            jlong exceptionRefRef = reinterpret_cast<jlong>(&exception);
+            jlong objret = 0;
 
             JNIEnv *env;
             int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
@@ -95,62 +98,76 @@ class JSFunction : public JSValue<T> {
                 m_jvm->AttachCurrentThread(&env, NULL);
             }
 
-            jclass cls = env->GetObjectClass(m_JavaThis);
-            jmethodID mid;
-            do {
-                if (info.IsConstructCall()) {
-                    mid = env->GetMethodID(cls,"constructorCallback","(J[JJ)V");
-                } else {
-                    mid = env->GetMethodID(cls,"functionCallback","(J[JJ)J");
-                }
-                if (!env->ExceptionCheck()) break;
-                env->ExceptionClear();
-                jclass super = env->GetSuperclass(cls);
-                env->DeleteLocalRef(cls);
-                if (super == NULL || env->ExceptionCheck()) {
-                    if (super != NULL) env->DeleteLocalRef(super);
-                    if (getEnvStat == JNI_EDETACHED) {
-                        m_jvm->DetachCurrentThread();
+            {
+                Isolate *isolate = JSValue<T>::isolate();
+                V8_ISOLATE(isolate);
+                Local<Context> context = JSValue<T>::m_context->Value();
+                Context::Scope context_scope_(context);
+
+                jclass cls = env->GetObjectClass(m_JavaThis);
+                do {
+                    if (info.IsConstructCall()) {
+                        mid = env->GetMethodID(cls,"constructorCallback","(J[JJ)V");
+                    } else {
+                        mid = env->GetMethodID(cls,"functionCallback","(J[JJ)J");
                     }
-                    return;
+                    if (!env->ExceptionCheck()) break;
+                    env->ExceptionClear();
+                    jclass super = env->GetSuperclass(cls);
+                    env->DeleteLocalRef(cls);
+                    if (super == NULL || env->ExceptionCheck()) {
+                        if (super != NULL) env->DeleteLocalRef(super);
+                        if (getEnvStat == JNI_EDETACHED) {
+                            m_jvm->DetachCurrentThread();
+                        }
+                        return;
+                    }
+                    cls = super;
+                } while (true);
+                env->DeleteLocalRef(cls);
+
+                objThis = reinterpret_cast<jlong>
+                    (JSValue<Value>::New(JSValue<T>::m_context, info.This()));
+
+                int argumentCount = info.Length();
+
+                argsArr = env->NewLongArray(argumentCount);
+                args = new jlong[argumentCount];
+                for (size_t i=0; i<argumentCount; i++) {
+                    args[i] = reinterpret_cast<long>(JSValue<Value>::New(
+                        JSValue<T>::m_context, info[i]));
                 }
-                cls = super;
-            } while (true);
-            env->DeleteLocalRef(cls);
-
-            JSValue<Value> * jsThis = JSValue<Value>::New(JSValue<T>::m_context, info.This());
-
-            int argumentCount = info.Length();
-
-            jlongArray argsArr = env->NewLongArray(argumentCount);
-            jlong *args = new jlong[argumentCount];
-            for (size_t i=0; i<argumentCount; i++) {
-                args[i] = reinterpret_cast<long>(JSValue<Value>::New(
-                    JSValue<T>::m_context, info[i]));
+                env->SetLongArrayRegion(argsArr,0,argumentCount,args);
             }
-            env->SetLongArrayRegion(argsArr,0,argumentCount,args);
-
-            JSValue<Value> *exception = nullptr;
-            jlong exceptionRefRef = reinterpret_cast<long>(&exception);
-            jlong objThis = reinterpret_cast<long>(jsThis);
 
             if (info.IsConstructCall()) {
                 env->CallVoidMethod(m_JavaThis, mid, objThis, argsArr, exceptionRefRef);
-                info.GetReturnValue().Set(info.This());
             } else {
-                jlong objret =
+                objret =
                     env->CallLongMethod(m_JavaThis, mid, objThis, argsArr, exceptionRefRef);
-                if (objret) {
-                    info.GetReturnValue().Set(reinterpret_cast<JSValue<Value>*>(objret)->Value());
-                } else {
-                    info.GetReturnValue().SetUndefined();
-                }
             }
 
-            if (exception) {
-                Local<Value> excp = exception->Value();
-                exception->release();
-                isolate->ThrowException(excp);
+            {
+                Isolate *isolate = JSValue<T>::isolate();
+                V8_ISOLATE(isolate);
+                Local<Context> context = JSValue<T>::m_context->Value();
+                Context::Scope context_scope_(context);
+
+                if (info.IsConstructCall()) {
+                    info.GetReturnValue().Set(info.This());
+                } else {
+                    if (objret) {
+                        info.GetReturnValue().Set(reinterpret_cast<JSValue<Value>*>(objret)->Value());
+                    } else {
+                        info.GetReturnValue().SetUndefined();
+                    }
+                }
+
+                if (exception) {
+                    Local<Value> excp = exception->Value();
+                    exception->release();
+                    isolate->ThrowException(excp);
+                }
             }
 
             delete args;

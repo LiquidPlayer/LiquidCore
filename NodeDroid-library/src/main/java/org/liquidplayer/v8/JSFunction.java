@@ -34,8 +34,6 @@ package org.liquidplayer.v8;
 
 import android.support.annotation.NonNull;
 
-import org.liquidplayer.nodedroid.BuildConfig;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -518,6 +516,8 @@ public class JSFunction extends JSObject {
                 if (obj!=null) args[i] = obj;
                 else args[i] = new JSValue(argumentsValueRef[i],context);
             }
+            JSValue foo = new JSValue(thisObjectRef, context);
+
             JSObject thiz = context.getObjectFromRef(thisObjectRef);
             JSValue value = function(thiz,args,invokeObject);
             setException(0L, exceptionRefRef);

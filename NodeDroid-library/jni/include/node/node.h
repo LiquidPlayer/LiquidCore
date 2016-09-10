@@ -11,8 +11,6 @@
 # define NODE_EXTERN /* nothing */
 #endif
 
-#include <functional>
-
 #ifdef BUILDING_NODE_EXTENSION
 # undef BUILDING_V8_SHARED
 # undef BUILDING_UV_SHARED
@@ -191,9 +189,6 @@ NODE_EXTERN void Init(int* argc,
                       const char** argv,
                       int* exec_argc,
                       const char*** exec_argv);
-
-NODE_EXTERN int StartGetContext(int argc, char *argv[],
- std::function<void(v8::Persistent<v8::Context,v8::CopyablePersistentTraits<v8::Context>>)> *onV8ContextCallback);
 
 class Environment;
 

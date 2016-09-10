@@ -63,7 +63,7 @@ public class JSContext extends JSObject {
         }
     }
     protected void async(final Runnable runnable) {
-        runInContext(runnable);
+        runInContext(ctxRef(),runnable);
     }
 
     private int mContextThreadTid = 0;
@@ -88,6 +88,12 @@ public class JSContext extends JSObject {
 
     protected Long ctx;
     private IJSExceptionHandler exceptionHandler;
+
+    protected JSContext(long ctxHandle) {
+        context = this;
+        ctx = ctxHandle;
+        valueRef = getGlobalObject(ctx);
+    }
 
     /**
      * Creates a new JavaScript context
@@ -158,11 +164,14 @@ public class JSContext extends JSObject {
             }
         });
     }
+
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        isDefunct = true;
-        release(ctx);
+        android.util.Log.d("JSContext", "In " + getClass().getName() + " finalizer");
+        if (!isDefunct) {
+            release(ctx);
+        }
     }
 
     /**
@@ -323,12 +332,7 @@ public class JSContext extends JSObject {
         return getObjectFromRef(objRef,true);
     }
 
-    static {
-        System.loadLibrary("node");
-        System.loadLibrary("nodedroid");
-    }
-
-    protected native void runInContext(Runnable runnable);
+    protected native void runInContext(long ctx, Runnable runnable);
     protected native long create();
     protected native long createInGroup(long group);
     protected native long retain(long ctx);

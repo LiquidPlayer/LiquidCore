@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.liquidplayer.nodedroid">
+    package="org.liquidplayer.node">
 
     <application
         android:allowBackup="true"

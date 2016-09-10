@@ -168,10 +168,13 @@ public class JSValue {
             });
         }
     }
+
     @Override
     protected void finalize() throws Throwable {
+        if (!context.isDefunct) {
+            unprotect();
+        }
         super.finalize();
-        unprotect();
     }
 
     /* Testers */
@@ -579,9 +582,15 @@ public class JSValue {
 
     protected void unprotect() {
         if (isProtected && !context.isDefunct) {
-            unprotect(context.ctxRef(), valueRef);
+            android.util.Log.d("unprotect", "enter");
+            context.sync(new Runnable() {
+                @Override
+                public void run() {
+                    unprotect(context.ctxRef(), valueRef);
+                }
+            });
+            android.util.Log.d("unprotect", "exit");
         }
-            //context.markForUnprotection(valueRef());
         isProtected = false;
     }
     private boolean isProtected = true;

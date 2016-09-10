@@ -38,8 +38,18 @@
 #include <android/log.h>
 #include <exception>
 
+/**
+ * class Retainer
+ **/
+
+#ifdef DEBUG_RETAINER
 std::list<Retainer*> Retainer::m_debug;
 std::mutex Retainer::m_debug_mutex;
+#endif
+
+/**
+ * class JSValue<T>
+ **/
 
 template <typename T>
 JSValue<T> * JSValue<T>::New(JSContext* context, Local<T> val) {
@@ -80,8 +90,9 @@ JSValue<T>::JSValue(JSContext* context, Local<T> val) {
         m_isNull = false;
     }
     m_context = context;
-    m_context->retain();
+    m_context->retain(this);
 }
+
 template <typename T>
 JSValue<T>::~JSValue<T>() {
     V8_ISOLATE(isolate());
@@ -96,8 +107,9 @@ JSValue<T>::~JSValue<T>() {
         m_value.Reset();
     }
 
-    m_context->release();
+    m_context->release(this);
 }
+
 template <typename T>
 Local<T> JSValue<T>::Value() {
     if (m_isUndefined) {
@@ -123,15 +135,56 @@ ContextGroup* JSValue<T>::Group() {
     return m_context->Group();
 }
 
+/**
+ * class JSContext
+ **/
+
 JSContext::JSContext(ContextGroup* isolate, Local<Context> val) {
     m_isolate = isolate;
     m_isolate->retain();
     m_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate->isolate(), val);
+    m_isDefunct = false;
 }
+
 JSContext::~JSContext() {
+  __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "Reset context");
     m_context.Reset();
+  __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "Reset context done");
+
     m_isolate->release();
 };
+
+void JSContext::SetDefunct() {
+    m_isDefunct = true;
+    while (m_value_set.size() > 0) {
+        std::set<JSValue<v8::Value>*>::iterator it = m_value_set.begin();
+        (*it)->release();
+    }
+    while (m_object_set.size() > 0) {
+        std::set<JSValue<v8::Object>*>::iterator it = m_object_set.begin();
+        (*it)->release();
+    }
+}
+
+void JSContext::retain(JSValue<v8::Value>* value) {
+    Retainer::retain();
+    m_value_set.insert(value);
+}
+
+void JSContext::release(JSValue<v8::Value>* value) {
+    m_value_set.erase(value);
+    Retainer::release();
+}
+
+void JSContext::retain(JSValue<v8::Object>* value) {
+    Retainer::retain();
+    m_object_set.insert(value);
+}
+
+void JSContext::release(JSValue<v8::Object>* value) {
+    m_object_set.erase(value);
+    Retainer::release();
+}
 
 JSValue<Object>* JSContext::Global() {
     return JSValue<Object>::New(this, Value()->Global());
@@ -149,74 +202,137 @@ ContextGroup* JSContext::Group() {
     return m_isolate;
 }
 
+/**
+ * class ContextGroup
+ **/
+
 Platform *ContextGroup::s_platform = NULL;
 int ContextGroup::s_init_count = 0;
 std::mutex ContextGroup::s_mutex;
 
 void ContextGroup::init_v8() {
     s_mutex.lock();
-    if (s_init_count == 0) {
-        s_platform = platform::CreateDefaultPlatform();
+    if (s_init_count++ == 0) {
+        __android_log_write(ANDROID_LOG_DEBUG, "init_v8()", "initializing v8");
+        s_platform = platform::CreateDefaultPlatform(4);
         V8::InitializePlatform(s_platform);
         V8::Initialize();
-        s_init_count ++;
+        __android_log_write(ANDROID_LOG_DEBUG, "init_v8()", "v8 initialized");
     }
     s_mutex.unlock();
 }
 
 void ContextGroup::dispose_v8() {
-/*
     s_mutex.lock();
-    if (--s_init_count == 0) {
+    // FIXME: Once disposed, an attempt to re-init will crash
+    //--s_init_count;
+    if (s_init_count == 0) {
+        __android_log_write(ANDROID_LOG_DEBUG, "dispose_v8()", "disposing of v8");
         V8::Dispose();
         V8::ShutdownPlatform();
         delete s_platform;
-        s_platform = NULL;
+        s_platform = nullptr;
     }
     s_mutex.unlock();
-*/
 }
 
 ContextGroup::ContextGroup() {
     init_v8();
     m_create_params.array_buffer_allocator = &m_allocator;
     m_isolate = Isolate::New(m_create_params);
+    m_manage_isolate = true;
+    m_uv_loop = nullptr;
+    m_thread_id = std::this_thread::get_id();
 }
+
+ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
+    m_isolate = isolate;
+    m_manage_isolate = false;
+    m_uv_loop = uv_loop;
+    m_thread_id = std::this_thread::get_id();
+}
+
 ContextGroup::~ContextGroup() {
-    m_isolate->Dispose();
+    __android_log_write(ANDROID_LOG_DEBUG, "~ContextGroup()", "deleting ContextGroup");
+    if (m_manage_isolate) {
+        m_isolate->Dispose();
+
+    }
 
     dispose_v8();
 }
 
+/**
+ * JSContext JNI Wrappers
+ **/
+
 struct Runnable {
     jobject thiz;
     jobject runnable;
+    uv_loop_t *uv_loop;
+    JavaVM *jvm;
 };
 
-NATIVE(JSContext,void,runInContext) (PARAMS, jobject runnable) {
-/*
-    uv_work_t *req = new uv_work_t();
-    struct Runnable *r = new struct Runnable;
-    r->thiz = thiz;
-    r->runnable = runnable;
-    req->data = (void*) r;
+NATIVE(JSContext,void,runInContext) (PARAMS, jlong ctx, jobject runnable) {
+    JSContext *context = reinterpret_cast<JSContext*>(ctx);
 
-    int status = uv_queue_work(
-        uv_main_loop(),
-        req,
-        [](uv_work_t* req)->void{
-    },
-        [](uv_work_t* req, int status)->void{
+    if (context->Group()->Loop() && std::this_thread::get_id() != context->Group()->Thread()) {
+        uv_work_t *req = new uv_work_t();
+        struct Runnable *r = new struct Runnable;
+        r->thiz = env->NewGlobalRef(thiz);
+        r->runnable = env->NewGlobalRef(runnable);
+        r->uv_loop = context->Group()->Loop();
+        env->GetJavaVM(&r->jvm);
 
-        struct Runnable r = (struct runnable*) req->data;
+        req->data = (void*) r;
 
-        JNIEnv *env;
-        int getEnvStat = jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
-        if (getEnvStat == JNI_EDETACHED) {
-            jvm->AttachCurrentThread(&env, NULL);
-        }
+        int status = uv_queue_work(
+            context->Group()->Loop(),
+            req,
+            [](uv_work_t* req)->void{
+        },
+            [](uv_work_t* req, int status)->void{
 
-        jclass cls = env->GetObjectClass(r->thiz);
+            struct Runnable *r = (struct Runnable*) req->data;
+
+            JNIEnv *env;
+            int getEnvStat = r->jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
+            if (getEnvStat == JNI_EDETACHED) {
+                r->jvm->AttachCurrentThread(&env, NULL);
+            }
+
+            jclass cls = env->GetObjectClass(r->thiz);
+            jmethodID mid;
+            do {
+                mid = env->GetMethodID(cls,"inContextCallback","(Ljava/lang/Runnable;)V");
+                if (!env->ExceptionCheck()) break;
+                env->ExceptionClear();
+                jclass super = env->GetSuperclass(cls);
+                env->DeleteLocalRef(cls);
+                if (super == NULL || env->ExceptionCheck()) {
+                    if (super != NULL) env->DeleteLocalRef(super);
+                    if (getEnvStat == JNI_EDETACHED) {
+                        r->jvm->DetachCurrentThread();
+                    }
+                    // FIXME: We need some sort of assertion fail here
+                    break;
+                }
+                cls = super;
+            } while (true);
+            env->DeleteLocalRef(cls);
+
+            env->CallVoidMethod(r->thiz, mid, r->runnable);
+
+            env->DeleteGlobalRef(r->thiz);
+            env->DeleteGlobalRef(r->runnable);
+
+            if (getEnvStat == JNI_EDETACHED) {
+                r->jvm->DetachCurrentThread();
+            }
+            delete r;
+        });
+    } else {
+        jclass cls = env->GetObjectClass(thiz);
         jmethodID mid;
         do {
             mid = env->GetMethodID(cls,"inContextCallback","(Ljava/lang/Runnable;)V");
@@ -226,41 +342,14 @@ NATIVE(JSContext,void,runInContext) (PARAMS, jobject runnable) {
             env->DeleteLocalRef(cls);
             if (super == NULL || env->ExceptionCheck()) {
                 if (super != NULL) env->DeleteLocalRef(super);
-                if (getEnvStat == JNI_EDETACHED) {
-                    jvm->DetachCurrentThread();
-                }
-                delete r;
                 return;
             }
             cls = super;
         } while (true);
         env->DeleteLocalRef(cls);
 
-        env->CallVoidMethod(r->thiz, mid, r->runnable);
-
-        if (getEnvStat == JNI_EDETACHED) {
-            jvm->DetachCurrentThread();
-        }
-        delete r;
-    });
-*/
-    jclass cls = env->GetObjectClass(thiz);
-    jmethodID mid;
-    do {
-        mid = env->GetMethodID(cls,"inContextCallback","(Ljava/lang/Runnable;)V");
-        if (!env->ExceptionCheck()) break;
-        env->ExceptionClear();
-        jclass super = env->GetSuperclass(cls);
-        env->DeleteLocalRef(cls);
-        if (super == NULL || env->ExceptionCheck()) {
-            if (super != NULL) env->DeleteLocalRef(super);
-            return;
-        }
-        cls = super;
-    } while (true);
-    env->DeleteLocalRef(cls);
-
-    env->CallVoidMethod(thiz, mid, runnable);
+        env->CallVoidMethod(thiz, mid, runnable);
+    }
 }
 
 NATIVE(JSContextGroup,jlong,create) (PARAMS) {
@@ -275,6 +364,7 @@ NATIVE(JSContextGroup,jlong,retain) (PARAMS,jlong group) {
 }
 
 NATIVE(JSContextGroup,void,release) (PARAMS,jlong group) {
+    __android_log_write(ANDROID_LOG_DEBUG, "JSContextGroup", "are we here or some shit?");
     ContextGroup *isolate = (ContextGroup*) group;
     isolate->release();
 }
@@ -314,6 +404,7 @@ NATIVE(JSContext,jlong,retain) (PARAMS,jlong ctx) {
 }
 
 NATIVE(JSContext,void,release) (PARAMS,jlong ctx) {
+    __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "are we here or some shit?");
     JSContext *context = reinterpret_cast<JSContext*>(ctx);
     context->release();
 }

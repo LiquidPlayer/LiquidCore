@@ -40,6 +40,8 @@
 #include <mutex>
 #include <list>
 #include <algorithm>
+#include <set>
+#include <thread>
 
 #include "v8.h"
 #include "libplatform/libplatform.h"
@@ -55,9 +57,11 @@ class Retainer {
 public:
     Retainer() {
         m_count = 1;
+#ifdef DEBUG_RETAINER
         m_debug_mutex.lock();
         m_debug.push_front(this);
         m_debug_mutex.unlock();
+#endif
     }
 
     virtual void retain() {
@@ -71,17 +75,21 @@ public:
 
 protected:
     virtual ~Retainer() {
+#ifdef DEBUG_RETAINER
         m_debug_mutex.lock();
         m_debug.remove(this);
         m_debug_mutex.unlock();
+#endif
     }
 
 protected:
     int m_count;
 
 public:
+#ifdef DEBUG_RETAINER
     static std::list<Retainer*> m_debug;
     static std::mutex m_debug_mutex;
+#endif
 };
 
 class GenericAllocator : public ArrayBuffer::Allocator {
@@ -104,24 +112,37 @@ public:
 class ContextGroup : public Retainer {
 public:
     ContextGroup();
+    ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
     virtual Isolate* isolate() {
         return m_isolate;
     }
+    virtual uv_loop_t * Loop() {
+        return m_uv_loop;
+    }
+    virtual std::thread::id Thread() {
+        return m_thread_id;
+    }
+
+    static void init_v8();
+    static std::mutex *Mutex() { return &s_mutex; }
+    static v8::Platform * Platform() { return s_platform; }
 
 protected:
     virtual ~ContextGroup();
 
 private:
-    static void init_v8();
     static void dispose_v8();
 
-    static Platform *s_platform;
+    static v8::Platform *s_platform;
     static int s_init_count;
     static std::mutex s_mutex;
 
     Isolate *m_isolate;
     Isolate::CreateParams m_create_params;
     GenericAllocator m_allocator;
+    bool m_manage_isolate;
+    uv_loop_t *m_uv_loop;
+    std::thread::id m_thread_id;
 };
 
 class JSContext;
@@ -156,6 +177,15 @@ public:
     virtual Local<Context>    Value();
     virtual Isolate *         isolate();
     virtual ContextGroup *    Group();
+    virtual void SetDefunct();
+    virtual bool IsDefunct() { return m_isDefunct; }
+
+    virtual void retain(JSValue<v8::Value>* value);
+    virtual void release(JSValue<v8::Value>* value);
+    virtual void retain(JSValue<v8::Object>* value);
+    virtual void release(JSValue<v8::Object>* value);
+    virtual void retain() { Retainer::retain(); }
+    virtual void release() { Retainer::release(); }
 
 protected:
     virtual ~JSContext();
@@ -164,10 +194,13 @@ private:
     Persistent<Context, CopyablePersistentTraits<Context>> m_context;
     Persistent<Object, CopyablePersistentTraits<Object>> m_globalObject;
     ContextGroup *m_isolate;
+    bool m_isDefunct;
+    std::set<JSValue<v8::Value>*> m_value_set;
+    std::set<JSValue<v8::Object>*> m_object_set;
 };
 
+        //Locker locker(iso);
 #define V8_ISOLATE(iso) \
-        Locker locker(iso); \
         Isolate::Scope isolate_scope_(iso); \
         HandleScope handle_scope_(iso)
 

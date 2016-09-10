@@ -40,14 +40,16 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := nodedroid
-LOCAL_SRC_FILES := node.cpp \
-                   JSContext.cpp \
+LOCAL_SRC_FILES := JSContext.cpp \
                    JSValue.cpp \
-                   JSObject.cpp
+                   JSObject.cpp \
+                   NodeInstance.cpp
 
 LOCAL_SHARED_LIBRARIES := libnode
 
-LOCAL_CPPFLAGS  := -std=c++11 -fexceptions -I$(LOCAL_PATH)/include/node -I$(LOCAL_PATH)/include/v8 -I$(LOCAL_PATH)/include/v8/include -I$(LOCAL_PATH)/include/uv
+LOCAL_CPPFLAGS  := -std=c++11 -fexceptions -I$(LOCAL_PATH)/include/node \
+    -I$(LOCAL_PATH)/include/v8 -I$(LOCAL_PATH)/include/v8/include -I$(LOCAL_PATH)/include/uv \
+    -I$(LOCAL_PATH)/include/cares -I$(LOCAL_PATH)/include/openssl
 LOCAL_LDFLAGS := -llog
 
 include $(BUILD_SHARED_LIBRARY)

@@ -373,8 +373,8 @@ public class JSObject extends JSValue {
 
     @Override
     protected void finalize() throws Throwable {
-        super.finalize();
         context.finalizeObject(this);
+        super.finalize();
     }
 
     protected void setThis(JSObject thiz) {
