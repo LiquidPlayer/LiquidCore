@@ -1,15 +1,20 @@
 package org.liquidplayer.node;
 
 import org.liquidplayer.v8.JSContext;
+import org.liquidplayer.v8.JSContextGroup;
 
 import java.util.ArrayList;
 
 @SuppressWarnings("JniMissingFunction")
 public class Process {
 
+    static {
+        JSContext.dummy();
+    }
+
     private class ProcessContext extends JSContext {
-        public ProcessContext(long contextRef) {
-            super(contextRef);
+        public ProcessContext(long contextRef, JSContextGroup group) {
+            super(contextRef, group);
         }
 
         public void setDefunct() {
@@ -25,11 +30,6 @@ public class Process {
 
     public Process(EventListener listener, String [] fsDirWhitelist) {
         addEventListener(listener);
-        if (!libsLoaded) {
-            System.loadLibrary("node");
-            System.loadLibrary("nodedroid");
-            libsLoaded = true;
-        }
         processRef = start();
     }
     public Process(EventListener listener) {
@@ -76,8 +76,8 @@ public class Process {
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
     @SuppressWarnings("unused") // called from native code
-    private void onNodeStarted(long mainContext) {
-        context = new ProcessContext(mainContext);
+    private void onNodeStarted(long mainContext, long ctxGroupRef) {
+        context = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef));
         isActive = true;
         eventOnStart();
     }

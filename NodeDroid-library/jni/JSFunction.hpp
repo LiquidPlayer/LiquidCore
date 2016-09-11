@@ -67,6 +67,8 @@ class JSFunction : public JSValue<T> {
             JSValue<T>::m_context = context_;
             JSValue<T>::m_context->retain();
             Retainer::m_count = 1;
+
+            V8_UNLOCK();
         }
 
     protected:
@@ -99,8 +101,7 @@ class JSFunction : public JSValue<T> {
             }
 
             {
-                Isolate *isolate = JSValue<T>::isolate();
-                V8_ISOLATE(isolate);
+                V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
                 Local<Context> context = JSValue<T>::m_context->Value();
                 Context::Scope context_scope_(context);
 
@@ -120,6 +121,9 @@ class JSFunction : public JSValue<T> {
                         if (getEnvStat == JNI_EDETACHED) {
                             m_jvm->DetachCurrentThread();
                         }
+                        // FIXME: We should assert something here
+
+                        V8_UNLOCK();
                         return;
                     }
                     cls = super;
@@ -138,6 +142,7 @@ class JSFunction : public JSValue<T> {
                         JSValue<T>::m_context, info[i]));
                 }
                 env->SetLongArrayRegion(argsArr,0,argumentCount,args);
+                V8_UNLOCK();
             }
 
             if (info.IsConstructCall()) {
@@ -148,8 +153,7 @@ class JSFunction : public JSValue<T> {
             }
 
             {
-                Isolate *isolate = JSValue<T>::isolate();
-                V8_ISOLATE(isolate);
+                V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
                 Local<Context> context = JSValue<T>::m_context->Value();
                 Context::Scope context_scope_(context);
 
@@ -168,6 +172,7 @@ class JSFunction : public JSValue<T> {
                     exception->release();
                     isolate->ThrowException(excp);
                 }
+                V8_UNLOCK();
             }
 
             delete args;

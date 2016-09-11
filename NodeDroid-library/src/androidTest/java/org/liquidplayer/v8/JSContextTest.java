@@ -37,6 +37,7 @@ public class JSContextTest {
     @org.junit.Test
     public void testJSContextConstructor() throws Exception {
         JSContext context = new JSContext();
+
         context.property("test",10);
         assertTrue(context.property("test").toNumber().equals(10.0));
 

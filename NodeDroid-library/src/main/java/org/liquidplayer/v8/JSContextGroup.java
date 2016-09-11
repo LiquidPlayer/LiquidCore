@@ -40,6 +40,7 @@ package org.liquidplayer.v8;
  * threads, explicit synchronization is required.
  *
  */
+@SuppressWarnings("JniMissingFunction")
 public class JSContextGroup {
     private Long group;
 

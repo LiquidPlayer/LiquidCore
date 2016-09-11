@@ -90,6 +90,7 @@ NATIVE(JSObject,jobject,makeArray) (PARAMS, jlong ctx, jlongArray args) {
     fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -115,7 +116,10 @@ NATIVE(JSObject,jlong,makeDate) (PARAMS, jlong ctx, jlongArray args) {
 
     env->ReleaseLongArrayElements(args, values, 0);
 
-    return reinterpret_cast<long>(JSValue<Value>::New(context_, date));
+    jlong out = reinterpret_cast<long>(JSValue<Value>::New(context_, date));
+
+    V8_UNLOCK();
+    return out;
 }
 
 NATIVE(JSObject,jlong,makeError) (PARAMS, jlong ctx, jstring message) {
@@ -126,7 +130,10 @@ NATIVE(JSObject,jlong,makeError) (PARAMS, jlong ctx, jstring message) {
         String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
     env->ReleaseStringUTFChars(message, c_string);
 
-    return reinterpret_cast<long>(JSValue<Value>::New(context_, Exception::Error(str)));
+    jlong out = reinterpret_cast<long>(JSValue<Value>::New(context_, Exception::Error(str)));
+
+    V8_UNLOCK();
+    return out;
 }
 
 NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstring flags_) {
@@ -169,6 +176,7 @@ NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstrin
     fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -227,19 +235,25 @@ NATIVE(JSObject,jobject,makeFunction) (PARAMS, jlong ctx, jstring name_,
     jfieldID fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
 NATIVE(JSObject,jlong,getPrototype) (PARAMS, jlong ctx, jlong object) {
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
 
-    return reinterpret_cast<long>(JSValue<Value>::New(context_, o->GetPrototype()));
+    jlong out = reinterpret_cast<long>(JSValue<Value>::New(context_, o->GetPrototype()));
+
+    V8_UNLOCK();
+    return out;
 }
 
 NATIVE(JSObject,void,setPrototype) (PARAMS, jlong ctx, jlong object, jlong value) {
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
 
     o->SetPrototype(reinterpret_cast<JSValue<Value>*>(value)->Value());
+
+    V8_UNLOCK();
 }
 
 NATIVE(JSObject,jboolean,hasProperty) (PARAMS, jlong ctx, jlong object, jstring propertyName) {
@@ -249,7 +263,10 @@ NATIVE(JSObject,jboolean,hasProperty) (PARAMS, jlong ctx, jlong object, jstring 
     Maybe<bool> has = o->Has(context, String::NewFromUtf8(isolate, c_string));
     env->ReleaseStringUTFChars(propertyName, c_string);
 
-    return has.FromMaybe(false);
+    bool v = has.FromMaybe(false);
+
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSObject,jobject,getProperty) (PARAMS, jlong ctx, jlong object,
@@ -281,6 +298,7 @@ NATIVE(JSObject,jobject,getProperty) (PARAMS, jlong ctx, jlong object,
 
     env->ReleaseStringUTFChars(propertyName, c_string);
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -328,6 +346,7 @@ NATIVE(JSObject,jobject,setProperty) (PARAMS, jlong ctx, jlong object, jstring p
 
     env->ReleaseStringUTFChars(propertyName, c_string);
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -353,6 +372,7 @@ NATIVE(JSObject,jobject,deleteProperty) (PARAMS, jlong ctx, jlong object, jstrin
 
     env->ReleaseStringUTFChars(propertyName, c_string);
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -382,6 +402,7 @@ NATIVE(JSObject,jobject,getPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -408,12 +429,15 @@ NATIVE(JSObject,jobject,setPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jfieldID fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
 NATIVE(JSObject,jboolean,isFunction) (PARAMS, jlong ctx, jlong object) {
     VALUE_ISOLATE(ctx,object,isolate,context,value);
-    return value->IsFunction();
+    bool v = value->IsFunction();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSObject,jobject,callAsFunction) (PARAMS, jlong ctx, jlong object,
@@ -456,6 +480,8 @@ NATIVE(JSObject,jobject,callAsFunction) (PARAMS, jlong ctx, jlong object,
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
     delete [] elements;
+
+    V8_UNLOCK();
     return out;
 }
 
@@ -463,7 +489,9 @@ NATIVE(JSObject,jboolean,isConstructor) (PARAMS, jlong ctx, jlong object) {
     // All functions can be constructors, yeah?  This is left over legacy from
     // JavaScriptCore.
     VALUE_ISOLATE(ctx,object,isolate,context,value);
-    return value->IsFunction();
+    bool v = value->IsFunction();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSObject,jobject,callAsConstructor) (PARAMS, jlong ctx, jlong object,
@@ -501,6 +529,8 @@ NATIVE(JSObject,jobject,callAsConstructor) (PARAMS, jlong ctx, jlong object,
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
     delete [] elements;
+
+    V8_UNLOCK();
     return out;
 }
 
@@ -520,5 +550,6 @@ NATIVE(JSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong ctx, jlong object
         env->SetObjectArrayElement(ret, i, env->NewStringUTF(*str));
     }
 
+    V8_UNLOCK();
     return ret;
 }

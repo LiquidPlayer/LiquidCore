@@ -122,6 +122,9 @@ public:
     virtual std::thread::id Thread() {
         return m_thread_id;
     }
+    virtual std::recursive_mutex& Locker() {
+        return m_isolate_mutex;
+    }
 
     static void init_v8();
     static std::mutex *Mutex() { return &s_mutex; }
@@ -143,6 +146,7 @@ private:
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
+    std::recursive_mutex m_isolate_mutex;
 };
 
 class JSContext;
@@ -200,15 +204,21 @@ private:
 };
 
         //Locker locker(iso);
-#define V8_ISOLATE(iso) \
+#define V8_ISOLATE(group,iso) \
+        Isolate *iso = group->isolate(); \
+        ContextGroup* group_ = group; \
+        if (!group->Loop()) group->Locker().lock(); \
         Isolate::Scope isolate_scope_(iso); \
         HandleScope handle_scope_(iso)
 
 #define V8_ISOLATE_CTX(ctx,iso,Ctx) \
         JSContext *context_ = reinterpret_cast<JSContext*>(ctx); \
-        Isolate * iso = context_->isolate(); \
-        V8_ISOLATE(iso); \
+        V8_ISOLATE(context_->Group(),iso); \
         Local<Context> Ctx = context_->Value(); \
         Context::Scope context_scope_(Ctx)
+
+#define V8_UNLOCK() \
+        if (!group_->Loop()) group_->Locker().unlock()
+
 
 #endif

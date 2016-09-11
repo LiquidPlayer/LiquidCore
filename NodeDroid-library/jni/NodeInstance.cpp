@@ -244,7 +244,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
       jclass cls = jenv->GetObjectClass(m_JavaThis);
       jmethodID mid;
       do {
-        mid = jenv->GetMethodID(cls,"onNodeStarted","(J)V");
+        mid = jenv->GetMethodID(cls,"onNodeStarted","(JJ)V");
         if (!jenv->ExceptionCheck()) break;
         jenv->ExceptionClear();
         jclass super = jenv->GetSuperclass(cls);
@@ -260,7 +260,8 @@ int NodeInstance::StartNodeInstance(void* arg) {
       } while (true);
       jenv->DeleteLocalRef(cls);
 
-      jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context));
+      jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context),
+        reinterpret_cast<jlong>(group));
 
       if (getEnvStat == JNI_EDETACHED) {
           m_jvm->DetachCurrentThread();
@@ -324,7 +325,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
   isolate->Dispose();
   isolate = nullptr;
 
-  group->release();
+//  group->release();
 
   delete array_buffer_allocator;
 

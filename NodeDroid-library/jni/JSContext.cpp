@@ -95,19 +95,20 @@ JSValue<T>::JSValue(JSContext* context, Local<T> val) {
 
 template <typename T>
 JSValue<T>::~JSValue<T>() {
-    V8_ISOLATE(isolate());
+    V8_ISOLATE(m_context->Group(), isolate);
 
     if (!m_isUndefined && !m_isNull) {
         if (Value()->IsObject()) {
             Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
             // Clear wrapper pointer if it exists, in case this object is still held by JS
-            obj->SetHiddenValue(String::NewFromUtf8(isolate(), "__JSValue_ptr"),
-                Local<v8::Value>::New(isolate(),Undefined(isolate())));
+            obj->SetHiddenValue(String::NewFromUtf8(isolate, "__JSValue_ptr"),
+                Local<v8::Value>::New(isolate,Undefined(isolate)));
         }
         m_value.Reset();
     }
 
     m_context->release(this);
+    V8_UNLOCK();
 }
 
 template <typename T>
@@ -147,9 +148,7 @@ JSContext::JSContext(ContextGroup* isolate, Local<Context> val) {
 }
 
 JSContext::~JSContext() {
-  __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "Reset context");
     m_context.Reset();
-  __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "Reset context done");
 
     m_isolate->release();
 };
@@ -213,11 +212,9 @@ std::mutex ContextGroup::s_mutex;
 void ContextGroup::init_v8() {
     s_mutex.lock();
     if (s_init_count++ == 0) {
-        __android_log_write(ANDROID_LOG_DEBUG, "init_v8()", "initializing v8");
         s_platform = platform::CreateDefaultPlatform(4);
         V8::InitializePlatform(s_platform);
         V8::Initialize();
-        __android_log_write(ANDROID_LOG_DEBUG, "init_v8()", "v8 initialized");
     }
     s_mutex.unlock();
 }
@@ -225,9 +222,9 @@ void ContextGroup::init_v8() {
 void ContextGroup::dispose_v8() {
     s_mutex.lock();
     // FIXME: Once disposed, an attempt to re-init will crash
+    // For now, init once and never dispose
     //--s_init_count;
     if (s_init_count == 0) {
-        __android_log_write(ANDROID_LOG_DEBUG, "dispose_v8()", "disposing of v8");
         V8::Dispose();
         V8::ShutdownPlatform();
         delete s_platform;
@@ -253,7 +250,6 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
 }
 
 ContextGroup::~ContextGroup() {
-    __android_log_write(ANDROID_LOG_DEBUG, "~ContextGroup()", "deleting ContextGroup");
     if (m_manage_isolate) {
         m_isolate->Dispose();
 
@@ -273,21 +269,21 @@ struct Runnable {
     JavaVM *jvm;
 };
 
-NATIVE(JSContext,void,runInContext) (PARAMS, jlong ctx, jobject runnable) {
-    JSContext *context = reinterpret_cast<JSContext*>(ctx);
+NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnable) {
+    ContextGroup *group = reinterpret_cast<ContextGroup*>(ctxGroup);
 
-    if (context->Group()->Loop() && std::this_thread::get_id() != context->Group()->Thread()) {
+    if (group && group->Loop() && std::this_thread::get_id() != group->Thread()) {
         uv_work_t *req = new uv_work_t();
         struct Runnable *r = new struct Runnable;
         r->thiz = env->NewGlobalRef(thiz);
         r->runnable = env->NewGlobalRef(runnable);
-        r->uv_loop = context->Group()->Loop();
+        r->uv_loop = group->Loop();
         env->GetJavaVM(&r->jvm);
 
         req->data = (void*) r;
 
         int status = uv_queue_work(
-            context->Group()->Loop(),
+            group->Loop(),
             req,
             [](uv_work_t* req)->void{
         },
@@ -364,7 +360,6 @@ NATIVE(JSContextGroup,jlong,retain) (PARAMS,jlong group) {
 }
 
 NATIVE(JSContextGroup,void,release) (PARAMS,jlong group) {
-    __android_log_write(ANDROID_LOG_DEBUG, "JSContextGroup", "are we here or some shit?");
     ContextGroup *isolate = (ContextGroup*) group;
     isolate->release();
 }
@@ -373,10 +368,12 @@ NATIVE(JSContext,jlong,create) (PARAMS) {
     long out;
     ContextGroup *group = new ContextGroup();
     {
-        V8_ISOLATE(group->isolate());
+        V8_ISOLATE(group,isolate);
 
-        JSContext *ctx = new JSContext(group, Context::New(group->isolate()));
+        JSContext *ctx = new JSContext(group, Context::New(isolate));
         out = reinterpret_cast<long>(ctx);
+
+        V8_UNLOCK();
     }
 
     group->release();
@@ -388,10 +385,12 @@ NATIVE(JSContext,jlong,createInGroup) (PARAMS,jlong grp) {
     long out;
     ContextGroup *group = reinterpret_cast<ContextGroup*>(grp);
     {
-        V8_ISOLATE(group->isolate());
+        V8_ISOLATE(group,isolate);
 
-        JSContext *ctx = new JSContext(group, Context::New(group->isolate()));
+        JSContext *ctx = new JSContext(group, Context::New(isolate));
         out = reinterpret_cast<long>(ctx);
+
+        V8_UNLOCK();
     }
 
     return out;
@@ -411,7 +410,9 @@ NATIVE(JSContext,void,release) (PARAMS,jlong ctx) {
 
 NATIVE(JSContext,jlong,getGlobalObject) (PARAMS, jlong ctx) {
     V8_ISOLATE_CTX(ctx,isolate,Ctx);
-    return reinterpret_cast<long>(context_->Global());
+    jlong v = reinterpret_cast<long>(context_->Global());
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSContext,jlong,getGroup) (PARAMS, jlong ctx) {
@@ -434,8 +435,7 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
 
     {
         JSContext *context_ = reinterpret_cast<JSContext*>(ctx);
-        Isolate * isolate = context_->isolate();
-        V8_ISOLATE(isolate);
+        V8_ISOLATE(context_->Group(), isolate);
 
         TryCatch trycatch;
         Local<Context> context;
@@ -479,6 +479,8 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
 
         fid = env->GetFieldID(ret , "exception", "J");
         env->SetLongField(out, fid, reinterpret_cast<long>(exception));
+
+        V8_UNLOCK();
     }
 
     env->ReleaseStringUTFChars(script, _script);

@@ -40,49 +40,65 @@
 NATIVE(JSValue,jboolean,isUndefined) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsUndefined();
+    bool v = value->IsUndefined();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isNull) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsNull();
+    bool v = value->IsNull();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isBoolean) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsBoolean();
+    bool v = value->IsBoolean();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isNumber) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsNumber();
+    bool v = value->IsNumber();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isString) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsString();
+    bool v = value->IsString();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isObject) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsObject();
+    bool v = value->IsObject();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isArray) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsArray();
+    bool v = value->IsArray();
+    V8_UNLOCK();
+    return v;
 }
 
 NATIVE(JSValue,jboolean,isDate) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    return value->IsDate();
+    bool v = value->IsDate();
+    V8_UNLOCK();
+    return v;
 }
 
 /* Comparing values */
@@ -109,6 +125,7 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
         } else {
             result = is.FromMaybe(result);
         }
+        V8_UNLOCK();
     }
 
     env->SetBooleanField( out, fid, result);
@@ -123,7 +140,9 @@ NATIVE(JSValue,jboolean,isStrictEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
 {
     VALUE_ISOLATE(ctxRef,a,isolate,context,a_);
     Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
-    return a_->StrictEquals(b_);
+    bool v = a_->StrictEquals(b_);
+    V8_UNLOCK();
+    return v;
 }
 
 /* Creating values */
@@ -134,6 +153,8 @@ NATIVE(JSValue,jlong,makeUndefined) (PARAMS, jlong ctx)
 
     JSValue<Value> *value =
         JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
+
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -143,6 +164,8 @@ NATIVE(JSValue,jlong,makeNull) (PARAMS, jlong ctx)
 
     JSValue<Value> *value =
         JSValue<Value>::New(context_,Local<Value>::New(isolate,Null(isolate)));
+
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -153,6 +176,8 @@ NATIVE(JSValue,jlong,makeBoolean) (PARAMS, jlong ctx, jboolean boolean)
     JSValue<Value> *value =
         JSValue<Value>::New(context_,
             Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate)));
+
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -162,6 +187,8 @@ NATIVE(JSValue,jlong,makeNumber) (PARAMS, jlong ctx, jdouble number)
 
     JSValue<Value> *value =
         JSValue<Value>::New(context_,Number::New(isolate,number));
+
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -182,6 +209,8 @@ NATIVE(JSValue,jlong,makeString) (PARAMS, jlong ctx, jstring string)
     env->ReleaseStringUTFChars(string, c_string);
 
     JSValue<Value> *value = JSValue<Value>::New(context_,rval);
+
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -206,6 +235,7 @@ NATIVE(JSValue,jlong,makeFromJSONString) (PARAMS, jlong ctx, jstring string)
         value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
     }
 
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -231,6 +261,7 @@ NATIVE(JSValue,jobject,createJSONString) (PARAMS, jlong ctxRef, jlong valueRef, 
     fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField(out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -246,6 +277,7 @@ NATIVE(JSValue,jboolean,toBoolean) (PARAMS, jlong ctx, jlong valueRef)
         ret = boolean.ToLocalChecked()->Value();
     }
 
+    V8_UNLOCK();
     return ret;
 }
 
@@ -274,6 +306,7 @@ NATIVE(JSValue,jobject,toNumber) (PARAMS, jlong ctxRef, jlong valueRef)
     fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -304,6 +337,7 @@ NATIVE(JSValue,jobject,toStringCopy) (PARAMS, jlong ctxRef, jlong valueRef)
     fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -330,6 +364,7 @@ NATIVE(JSValue,jobject,toObject) (PARAMS, jlong ctxRef, jlong valueRef)
     jfieldID fid = env->GetFieldID(ret , "exception", "J");
     env->SetLongField( out, fid, (long) exception);
 
+    V8_UNLOCK();
     return out;
 }
 
@@ -344,6 +379,7 @@ NATIVE(JSValue,void,protect) (PARAMS, jlong ctxRef, jlong valueRef)
 NATIVE(JSValue,void,unprotect) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     JSValue<Value> *value = reinterpret_cast<JSValue<Value>*>(valueRef);
+        __android_log_write(ANDROID_LOG_DEBUG, "init_v8()", "initializing v8");
 #ifdef DEBUG_RETAINER
     Retainer::m_debug_mutex.lock();
     bool found = (std::find(Retainer::m_debug.begin(),

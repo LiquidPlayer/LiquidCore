@@ -46,6 +46,14 @@ import java.util.concurrent.Semaphore;
 @SuppressWarnings("JniMissingFunction")
 public class JSContext extends JSObject {
 
+    static {
+        System.loadLibrary("node");
+        System.loadLibrary("nodedroid");
+    }
+    public static void dummy() {
+        // Force libraries to load
+    }
+
     protected void sync(final Runnable runnable) {
         if (android.os.Process.myTid() == mContextThreadTid) {
             runnable.run();
@@ -63,7 +71,7 @@ public class JSContext extends JSObject {
         }
     }
     protected void async(final Runnable runnable) {
-        runInContext(ctxRef(),runnable);
+        runInContextGroup(contextGroup.groupRef(),runnable);
     }
 
     private int mContextThreadTid = 0;
@@ -72,6 +80,8 @@ public class JSContext extends JSObject {
         mContextThreadTid = android.os.Process.myTid();
         runnable.run();
     }
+
+    private JSContextGroup contextGroup = null;
 
     /**
      * Object interface for handling JSExceptions.
@@ -89,8 +99,9 @@ public class JSContext extends JSObject {
     protected Long ctx;
     private IJSExceptionHandler exceptionHandler;
 
-    protected JSContext(long ctxHandle) {
+    protected JSContext(long ctxHandle, JSContextGroup group) {
         context = this;
+        contextGroup = group;
         ctx = ctxHandle;
         valueRef = getGlobalObject(ctx);
     }
@@ -100,13 +111,7 @@ public class JSContext extends JSObject {
      * @since 1.0
      */
     public JSContext() {
-        context = this;
-        sync(new Runnable() {
-            @Override public void run() {
-                ctx = create();
-                valueRef = getGlobalObject(ctx);
-            }
-        });
+        this(new JSContextGroup());
     }
     /**
      * Creates a new JavaScript context in the context group 'inGroup'.
@@ -115,6 +120,8 @@ public class JSContext extends JSObject {
      */
     public JSContext(final JSContextGroup inGroup) {
         context = this;
+        contextGroup = inGroup;
+
         sync(new Runnable() {
             @Override public void run() {
                 ctx = createInGroup(inGroup.groupRef());
@@ -129,18 +136,7 @@ public class JSContext extends JSObject {
      * @since 1.0
      */
     public JSContext(final Class<?> iface) {
-        context = this;
-        sync(new Runnable() {
-            @Override public void run() {
-                ctx = create();
-                valueRef = getGlobalObject(ctx);
-                Method[] methods = iface.getDeclaredMethods();
-                for (Method m : methods) {
-                    JSObject f = new JSFunction(context, m, JSObject.class, context);
-                    property(m.getName(),f);
-                }
-            }
-        });
+        this(new JSContextGroup(), iface);
     }
     /**
      * Creates a JavaScript context in context group 'inGroup', and defines the global object
@@ -151,18 +147,12 @@ public class JSContext extends JSObject {
      * @since 1.0
      */
     public JSContext(final JSContextGroup inGroup, final Class<?> iface) {
-        context = this;
-        sync(new Runnable() {
-            @Override public void run() {
-                ctx = createInGroup(inGroup.groupRef());
-                valueRef = getGlobalObject(ctx);
-                Method[] methods = iface.getDeclaredMethods();
-                for (Method m : methods) {
-                    JSObject f = new JSFunction(context, m, JSObject.class, context);
-                    property(m.getName(),f);
-                }
-            }
-        });
+        this(inGroup);
+        Method[] methods = iface.getDeclaredMethods();
+        for (Method m : methods) {
+            JSObject f = new JSFunction(context, m, JSObject.class, context);
+            property(m.getName(),f);
+        }
     }
 
     @Override
@@ -332,7 +322,7 @@ public class JSContext extends JSObject {
         return getObjectFromRef(objRef,true);
     }
 
-    protected native void runInContext(long ctx, Runnable runnable);
+    protected native void runInContextGroup(long ctxGrp, Runnable runnable);
     protected native long create();
     protected native long createInGroup(long group);
     protected native long retain(long ctx);
