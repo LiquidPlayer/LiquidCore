@@ -203,7 +203,6 @@ private:
     std::set<JSValue<v8::Object>*> m_object_set;
 };
 
-        //Locker locker(iso);
 #define V8_ISOLATE(group,iso) \
         Isolate *iso = group->isolate(); \
         ContextGroup* group_ = group; \
