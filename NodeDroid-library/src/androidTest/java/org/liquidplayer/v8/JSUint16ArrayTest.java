@@ -21,6 +21,10 @@ public class JSUint16ArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSUint16Array() throws Exception {
         JSUint16Array array = new JSUint16Array(context,8);

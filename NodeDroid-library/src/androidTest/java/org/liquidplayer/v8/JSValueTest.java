@@ -13,7 +13,10 @@ public class JSValueTest {
     @org.junit.Test
     public void testJSValueConstructors() throws Exception {
         JSContext context = new JSContext();
+        testJSValueConstructors(context);
+    }
 
+    public void testJSValueConstructors(JSContext context) throws Exception {
         /**
          * new JSValue(context)
          */
@@ -90,6 +93,11 @@ public class JSValueTest {
 
     @org.junit.Test
     public void testJSValueTesters() throws Exception {
+        JSContext context = new JSContext();
+        testJSValueTesters(context);
+    }
+
+    public void testJSValueTesters(JSContext context) throws Exception {
         final String script =
                 "var undefined; \n" +
                         "var NULL = null; \n" +
@@ -100,7 +108,6 @@ public class JSValueTest {
                         "var array = []; \n" +
                         "var date = new Date(); \n" +
                         "";
-        JSContext context = new JSContext();
         context.evaluateScript(script);
         assertFalse(context.property("undefined").isNull());
         assertFalse(context.property("undefined").isBoolean());
@@ -184,6 +191,10 @@ public class JSValueTest {
     @org.junit.Test
     public void testJSValueComparators() throws Exception {
         JSContext context = new JSContext();
+        testJSValueComparators(context);
+    }
+
+    public void testJSValueComparators(JSContext context) throws Exception {
         context.property("number",42f);
         assertEquals(context.property("number").toNumber().longValue(),42L);
         assertNotEquals(context.property("number").toNumber().intValue(),43);
@@ -210,6 +221,11 @@ public class JSValueTest {
 
     @org.junit.Test
     public void testJSValueGetters() throws Exception {
+        JSContext context = new JSContext();
+        testJSValueGetters(context);
+    }
+
+    public void testJSValueGetters(JSContext context) throws Exception {
         final String script =
                 "var undefined; \n" +
                         "var NULL = null; \n" +
@@ -221,7 +237,6 @@ public class JSValueTest {
                         "var date = new Date(1970,10,30); \n" +
                         "var func = function(x) {return x+1;};" +
                         "";
-        JSContext context = new JSContext();
         context.evaluateScript(script);
         JSValue undefined = context.property("undefined");
         JSValue NULL = context.property("NULL");

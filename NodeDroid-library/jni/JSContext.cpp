@@ -240,6 +240,7 @@ ContextGroup::ContextGroup() {
     m_manage_isolate = true;
     m_uv_loop = nullptr;
     m_thread_id = std::this_thread::get_id();
+    m_async_handle = nullptr;
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
@@ -247,14 +248,75 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
     m_manage_isolate = false;
     m_uv_loop = uv_loop;
     m_thread_id = std::this_thread::get_id();
+    m_async_handle = nullptr;
+}
+
+void ContextGroup::callback(uv_async_t* handle) {
+    ContextGroup *group = reinterpret_cast<ContextGroup*>(handle->data);
+
+    group->m_async_mutex.lock();
+    struct Runnable *r = group->m_runnables.empty() ? nullptr : group->m_runnables.front();
+
+    while (r) {
+        group->m_async_mutex.unlock();
+
+        JNIEnv *env;
+        int getEnvStat = r->jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
+        if (getEnvStat == JNI_EDETACHED) {
+            r->jvm->AttachCurrentThread(&env, NULL);
+        }
+
+        jclass cls = env->GetObjectClass(r->thiz);
+        jmethodID mid;
+        do {
+            mid = env->GetMethodID(cls,"inContextCallback","(Ljava/lang/Runnable;)V");
+            if (!env->ExceptionCheck()) break;
+            env->ExceptionClear();
+            jclass super = env->GetSuperclass(cls);
+            env->DeleteLocalRef(cls);
+            if (super == NULL || env->ExceptionCheck()) {
+                if (super != NULL) env->DeleteLocalRef(super);
+                if (getEnvStat == JNI_EDETACHED) {
+                    r->jvm->DetachCurrentThread();
+                }
+                __android_log_assert("FAIL", "ContextGroup::callback",
+                    "Can't find the class to call back?");
+                break;
+            }
+            cls = super;
+        } while (true);
+        env->DeleteLocalRef(cls);
+
+        env->CallVoidMethod(r->thiz, mid, r->runnable);
+
+        env->DeleteGlobalRef(r->thiz);
+        env->DeleteGlobalRef(r->runnable);
+
+        if (getEnvStat == JNI_EDETACHED) {
+            r->jvm->DetachCurrentThread();
+        }
+
+        group->m_async_mutex.lock();
+
+        group->m_runnables.erase(group->m_runnables.begin());
+        delete r;
+
+        r = group->m_runnables.empty() ? nullptr : group->m_runnables.front();
+    }
+    // Close the handle.  We will create a new one if we
+    // need another.  This keeps the node process from staying alive
+    // indefinitely
+    uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
+        delete (uv_async_t*)h;
+    });
+    group->m_async_handle = nullptr;
+    group->m_async_mutex.unlock();
 }
 
 ContextGroup::~ContextGroup() {
     if (m_manage_isolate) {
         m_isolate->Dispose();
-
     }
-
     dispose_v8();
 }
 
@@ -262,71 +324,25 @@ ContextGroup::~ContextGroup() {
  * JSContext JNI Wrappers
  **/
 
-struct Runnable {
-    jobject thiz;
-    jobject runnable;
-    uv_loop_t *uv_loop;
-    JavaVM *jvm;
-};
-
 NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnable) {
     ContextGroup *group = reinterpret_cast<ContextGroup*>(ctxGroup);
 
     if (group && group->Loop() && std::this_thread::get_id() != group->Thread()) {
-        uv_work_t *req = new uv_work_t();
+        group->m_async_mutex.lock();
+
         struct Runnable *r = new struct Runnable;
         r->thiz = env->NewGlobalRef(thiz);
         r->runnable = env->NewGlobalRef(runnable);
-        r->uv_loop = group->Loop();
         env->GetJavaVM(&r->jvm);
+        group->m_runnables.push_back(r);
 
-        req->data = (void*) r;
-
-        int status = uv_queue_work(
-            group->Loop(),
-            req,
-            [](uv_work_t* req)->void{
-        },
-            [](uv_work_t* req, int status)->void{
-
-            struct Runnable *r = (struct Runnable*) req->data;
-
-            JNIEnv *env;
-            int getEnvStat = r->jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
-            if (getEnvStat == JNI_EDETACHED) {
-                r->jvm->AttachCurrentThread(&env, NULL);
-            }
-
-            jclass cls = env->GetObjectClass(r->thiz);
-            jmethodID mid;
-            do {
-                mid = env->GetMethodID(cls,"inContextCallback","(Ljava/lang/Runnable;)V");
-                if (!env->ExceptionCheck()) break;
-                env->ExceptionClear();
-                jclass super = env->GetSuperclass(cls);
-                env->DeleteLocalRef(cls);
-                if (super == NULL || env->ExceptionCheck()) {
-                    if (super != NULL) env->DeleteLocalRef(super);
-                    if (getEnvStat == JNI_EDETACHED) {
-                        r->jvm->DetachCurrentThread();
-                    }
-                    // FIXME: We need some sort of assertion fail here
-                    break;
-                }
-                cls = super;
-            } while (true);
-            env->DeleteLocalRef(cls);
-
-            env->CallVoidMethod(r->thiz, mid, r->runnable);
-
-            env->DeleteGlobalRef(r->thiz);
-            env->DeleteGlobalRef(r->runnable);
-
-            if (getEnvStat == JNI_EDETACHED) {
-                r->jvm->DetachCurrentThread();
-            }
-            delete r;
-        });
+        if (!group->m_async_handle) {
+            group->m_async_handle = new uv_async_t();
+            group->m_async_handle->data = group;
+            uv_async_init(group->Loop(), group->m_async_handle, ContextGroup::callback);
+            uv_async_send(group->m_async_handle);
+        }
+        group->m_async_mutex.unlock();
     } else {
         jclass cls = env->GetObjectClass(thiz);
         jmethodID mid;

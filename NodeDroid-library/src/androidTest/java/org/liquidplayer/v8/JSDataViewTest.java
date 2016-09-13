@@ -6,9 +6,7 @@ import static org.junit.Assert.*;
 
 public class JSDataViewTest {
 
-    @Test
-    public void testConstructorsAndProperties() throws Exception {
-        JSContext context = new JSContext();
+    public void testConstructorsAndProperties(JSContext context) throws Exception {
         JSArrayBuffer buffer = new JSArrayBuffer(context,8);
         JSDataView view = new JSDataView(buffer);
         assertEquals(buffer.byteLength(),view.buffer().byteLength());
@@ -29,9 +27,7 @@ public class JSDataViewTest {
         assertTrue(view4.isStrictEqual(view3));
     }
 
-    @Test
-    public void testFloat32() throws Exception {
-        JSContext context = new JSContext();
+    public void testFloat32(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,12));
         view.setFloat32(0,5.56f);
         view.setFloat32(4,6.87f,true);
@@ -44,9 +40,7 @@ public class JSDataViewTest {
         assertFalse(view.getFloat32(8,true).equals(6.87f));
     }
 
-    @Test
-    public void testFloat64() throws Exception {
-        JSContext context = new JSContext();
+    public void testFloat64(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,24));
         view.setFloat64(0,5.5678);
         view.setFloat64(8,6.8765,true);
@@ -59,9 +53,7 @@ public class JSDataViewTest {
         assertFalse(view.getFloat64(16,true).equals(6.8765));
     }
 
-    @Test
-    public void testInt32() throws Exception {
-        JSContext context = new JSContext();
+    public void testInt32(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,12));
         view.setInt32(0,5);
         view.setInt32(4,6,true);
@@ -74,9 +66,7 @@ public class JSDataViewTest {
         assertFalse(view.getInt32(8,true).equals(6));
     }
 
-    @Test
-    public void testInt16() throws Exception {
-        JSContext context = new JSContext();
+    public void testInt16(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,6));
         view.setInt16(0,(short)5);
         view.setInt16(2,(short)-6,true);
@@ -89,9 +79,7 @@ public class JSDataViewTest {
         assertFalse(view.getInt16(4,true).equals((short)-6));
     }
 
-    @Test
-    public void testInt8() throws Exception {
-        JSContext context = new JSContext();
+    public void testInt8(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,2));
         view.setInt8(0,(byte)5);
         view.setInt8(1,(byte)-6);
@@ -100,9 +88,7 @@ public class JSDataViewTest {
         assertTrue(view.getInt8(1).equals((byte)-6));
     }
 
-    @Test
-    public void testUint32() throws Exception {
-        JSContext context = new JSContext();
+    public void testUint32(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,12));
         view.setUint32(0,0xffffffffL);
         view.setUint32(4,6L,true);
@@ -116,9 +102,7 @@ public class JSDataViewTest {
         assertFalse(view.getUint32(8,true).equals(6L));
     }
 
-    @Test
-    public void testUint16() throws Exception {
-        JSContext context = new JSContext();
+    public void testUint16(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,6));
         view.setUint16(0,(short)0xfffe);
         view.setUint16(2,(short)6,true);
@@ -131,9 +115,7 @@ public class JSDataViewTest {
         assertFalse(view.getUint16(4,true).equals((short)6));
     }
 
-    @Test
-    public void testUint8() throws Exception {
-        JSContext context = new JSContext();
+    public void testUint8(JSContext context) throws Exception {
         JSDataView view = new JSDataView(new JSArrayBuffer(context,2));
         view.setUint8(0,(byte)0xfd);
         view.setUint8(1,(byte)6);
@@ -142,4 +124,57 @@ public class JSDataViewTest {
         assertTrue(view.getUint8(1).equals((byte)6));
     }
 
+    @Test
+    public void testConstructorsAndProperties() throws Exception {
+        JSContext context = new JSContext();
+        testConstructorsAndProperties(context);
+    }
+
+    @Test
+    public void testFloat32() throws Exception {
+        JSContext context = new JSContext();
+        testFloat32(context);
+    }
+
+    @Test
+    public void testFloat64() throws Exception {
+        JSContext context = new JSContext();
+        testFloat64(context);
+    }
+
+    @Test
+    public void testInt32() throws Exception {
+        JSContext context = new JSContext();
+        testInt32(context);
+    }
+
+    @Test
+    public void testInt16() throws Exception {
+        JSContext context = new JSContext();
+        testInt16(context);
+    }
+
+    @Test
+    public void testInt8() throws Exception {
+        JSContext context = new JSContext();
+        testInt8(context);
+    }
+
+    @Test
+    public void testUint32() throws Exception {
+        JSContext context = new JSContext();
+        testUint32(context);
+    }
+
+    @Test
+    public void testUint16() throws Exception {
+        JSContext context = new JSContext();
+        testUint16(context);
+    }
+
+    @Test
+    public void testUint8() throws Exception {
+        JSContext context = new JSContext();
+        testUint8(context);
+    }
 }

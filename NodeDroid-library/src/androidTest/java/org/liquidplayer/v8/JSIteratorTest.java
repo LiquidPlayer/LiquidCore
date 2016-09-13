@@ -11,6 +11,10 @@ public class JSIteratorTest {
     @Test
     public void testJSIterator() throws Exception {
         JSContext context = new JSContext();
+        testJSIterator(context);
+    }
+
+    public void testJSIterator(JSContext context) throws Exception {
         JSArray<Integer> array = new JSArray<>(context, Arrays.asList(0,1,2,3,4), Integer.class);
         JSArray.KeysIterator iterator = array.keys();
 

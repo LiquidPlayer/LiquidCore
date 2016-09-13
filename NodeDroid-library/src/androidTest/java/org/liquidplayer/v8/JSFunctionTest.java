@@ -264,6 +264,10 @@ public class JSFunctionTest {
     @org.junit.Test
     public void testJSFunctionConstructors() throws Exception {
         JSContext context = new JSContext();
+        testJSFunctionConstructors(context);
+    }
+
+    public void testJSFunctionConstructors(JSContext context) throws Exception {
 
         final String script2 =
                 "var empty = {}; \n" +
@@ -373,6 +377,10 @@ public class JSFunctionTest {
     @org.junit.Test
     public void testJSFunctionCallback() throws Exception {
         JSContext context = new JSContext();
+        testJSFunctionCallback(context);
+    }
+
+    public void testJSFunctionCallback(JSContext context) throws Exception {
         context.evaluateScript(functionObjectScript);
         JSObject functionObject = new FunctionObject(context);
         JSObject functionObjectJS = context.property("functionObject").toObject();
@@ -432,10 +440,14 @@ public class JSFunctionTest {
         }
     }
 
+
     @org.junit.Test
     public void testExceptionCases() throws Exception {
         JSContext context = new JSContext();
+        testExceptionCases(context);
+    }
 
+    public void testExceptionCases(JSContext context) throws Exception {
         boolean exception = false;
         try {
             new TestFunction2(context,TestInstance2.class).newInstance(10);

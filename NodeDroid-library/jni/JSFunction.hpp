@@ -93,6 +93,7 @@ class JSFunction : public JSValue<T> {
             JSValue<Value> *exception = nullptr;
             jlong exceptionRefRef = reinterpret_cast<jlong>(&exception);
             jlong objret = 0;
+            bool isConstructCall = false;
 
             JNIEnv *env;
             int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
@@ -104,10 +105,11 @@ class JSFunction : public JSValue<T> {
                 V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
                 Local<Context> context = JSValue<T>::m_context->Value();
                 Context::Scope context_scope_(context);
+                isConstructCall = info.IsConstructCall();
 
                 jclass cls = env->GetObjectClass(m_JavaThis);
                 do {
-                    if (info.IsConstructCall()) {
+                    if (isConstructCall) {
                         mid = env->GetMethodID(cls,"constructorCallback","(J[JJ)V");
                     } else {
                         mid = env->GetMethodID(cls,"functionCallback","(J[JJ)J");
@@ -145,7 +147,7 @@ class JSFunction : public JSValue<T> {
                 V8_UNLOCK();
             }
 
-            if (info.IsConstructCall()) {
+            if (isConstructCall) {
                 env->CallVoidMethod(m_JavaThis, mid, objThis, argsArr, exceptionRefRef);
             } else {
                 objret =
@@ -157,7 +159,7 @@ class JSFunction : public JSValue<T> {
                 Local<Context> context = JSValue<T>::m_context->Value();
                 Context::Scope context_scope_(context);
 
-                if (info.IsConstructCall()) {
+                if (isConstructCall) {
                     info.GetReturnValue().Set(info.This());
                 } else {
                     if (objret) {

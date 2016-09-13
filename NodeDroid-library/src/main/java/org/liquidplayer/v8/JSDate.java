@@ -48,7 +48,12 @@ public class JSDate extends JSObject {
      */
     public JSDate(JSContext ctx) {
         context = ctx;
-        valueRef = makeDate(context.ctxRef(), new long[0]);
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = makeDate(context.ctxRef(), new long[0]);
+            }
+        });
         context.persistObject(this);
     }
     /**
@@ -59,8 +64,13 @@ public class JSDate extends JSObject {
      */
     public JSDate(JSContext ctx, Date date) {
         context = ctx;
-        long [] args = { date.getTime() };
-        valueRef = makeDate(context.ctxRef(), args);
+        final long [] args = { date.getTime() };
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = makeDate(context.ctxRef(), args);
+            }
+        });
         context.persistObject(this);
     }
     /**
@@ -71,8 +81,13 @@ public class JSDate extends JSObject {
      */
     public JSDate(JSContext ctx, Long epoch) {
         context = ctx;
-        long [] args = { epoch };
-        valueRef = makeDate(context.ctxRef(), args);
+        final long [] args = { epoch };
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = makeDate(context.ctxRef(), args);
+            }
+        });
         context.persistObject(this);
     }
 
@@ -84,7 +99,7 @@ public class JSDate extends JSObject {
      */
     public JSDate(JSContext ctx, Integer ... params) {
         context = ctx;
-        Calendar calendar = Calendar.getInstance();
+        final Calendar calendar = Calendar.getInstance();
         final int fields[] = {
               Calendar.YEAR,
               Calendar.MONTH,
@@ -98,8 +113,12 @@ public class JSDate extends JSObject {
             if (i<params.length) calendar.set(fields[i],params[i]);
             else calendar.set(fields[i],0);
         }
-
-        valueRef = makeDate(context.ctxRef(), new long[] { calendar.getTime().getTime() });
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = makeDate(context.ctxRef(), new long[] { calendar.getTime().getTime() });
+            }
+        });
         context.persistObject(this);
     }
 

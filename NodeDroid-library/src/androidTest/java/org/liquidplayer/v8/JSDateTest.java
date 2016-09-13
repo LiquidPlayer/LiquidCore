@@ -15,7 +15,11 @@ public class JSDateTest {
 
     @Before
     public void setUp() throws Exception {
-        context = new JSContext();
+        setUp(new JSContext());
+    }
+
+    public void setUp(JSContext context) throws Exception {
+        this.context = context;
         ym = new JSDate(context,2016,7);
         ymd = new JSDate(context,2016,7,2);
         ymdh = new JSDate(context,2016,7,2,1);

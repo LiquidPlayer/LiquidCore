@@ -21,6 +21,10 @@ public class JSUint32ArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSUint32Array() throws Exception {
         JSUint32Array array = new JSUint32Array(context,8);

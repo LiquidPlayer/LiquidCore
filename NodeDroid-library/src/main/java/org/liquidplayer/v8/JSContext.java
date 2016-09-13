@@ -66,7 +66,7 @@ public class JSContext extends JSObject {
                     sempahore.release();
                 }
             };
-            async(syncRunner);
+            runInContextGroup(contextGroup.groupRef(),syncRunner);
             sempahore.acquireUninterruptibly();
         }
     }
@@ -158,7 +158,6 @@ public class JSContext extends JSObject {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        android.util.Log.d("JSContext", "In " + getClass().getName() + " finalizer");
         if (!isDefunct) {
             release(ctx);
         }
@@ -292,7 +291,7 @@ public class JSContext extends JSObject {
      * @since 1.0
      * @return The JSObject representing the reference
      */
-    protected synchronized JSObject getObjectFromRef(long objRef,boolean create) {
+    protected synchronized JSObject getObjectFromRef(final long objRef,boolean create) {
         if (objRef == valueRef()) {
             unprotect(context.ctxRef(),objRef);
             return this;
@@ -301,8 +300,9 @@ public class JSContext extends JSObject {
         JSObject obj = null;
         if (wr != null) {
             obj = wr.get();
-            if (obj != null)
-                obj.unprotect(ctxRef(),obj.valueRef());
+            if (obj != null) {
+                obj.unprotect(ctxRef(), objRef);
+            }
         }
         if (obj==null && create) {
             obj = new JSObject(objRef,this);

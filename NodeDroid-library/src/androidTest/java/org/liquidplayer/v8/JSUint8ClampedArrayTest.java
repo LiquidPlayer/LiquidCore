@@ -22,6 +22,10 @@ public class JSUint8ClampedArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSUint8ClampedArray() throws Exception {
         JSUint8ClampedArray array = new JSUint8ClampedArray(context,8);

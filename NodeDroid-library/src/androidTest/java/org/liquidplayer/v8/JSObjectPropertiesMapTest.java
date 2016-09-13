@@ -12,10 +12,14 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 public class JSObjectPropertiesMapTest {
+
     @Test
     public void testJSMapConstructors() throws Exception {
         JSContext context = new JSContext();
+        testJSMapConstructors(context);
+    }
 
+    public void testJSMapConstructors(JSContext context) throws Exception {
         /**
          * new JSObjectPropertiesMap(object,cls)
          */
@@ -46,7 +50,10 @@ public class JSObjectPropertiesMapTest {
     @Test
     public void testJSMapMethods() throws Exception {
         JSContext context = new JSContext();
+        testJSMapMethods(context);
+    }
 
+    public void testJSMapMethods(JSContext context) throws Exception {
         Map<String,Object> map = new JSObjectPropertiesMap<>(context,Object.class);
 
         /**

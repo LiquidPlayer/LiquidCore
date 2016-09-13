@@ -21,6 +21,10 @@ public class JSInt32ArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSInt32Array() throws Exception {
         JSInt32Array array = new JSInt32Array(context,8);

@@ -22,6 +22,10 @@ public class JSUint8ArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSUint8Array() throws Exception {
         JSUint8Array array = new JSUint8Array(context,8);

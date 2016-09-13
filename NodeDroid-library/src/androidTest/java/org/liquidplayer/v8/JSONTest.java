@@ -18,6 +18,10 @@ public class JSONTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext ctx) throws Exception {
+        context = ctx;
+    }
+
     @Test
     public void testStringify() throws Exception {
         context.evaluateScript("var s1 = JSON.stringify(1);");

@@ -33,6 +33,11 @@ package org.liquidplayer.v8;
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +81,8 @@ public class JSValue {
     protected JSContext context = null;
     protected Boolean isDefunct = false;
 
+//    private StringWriter createdWhere = new StringWriter();
+
     /* Constructors */
     /**
      * Creates an empty JSValue.  This can only be used by subclasses, and those
@@ -90,6 +97,8 @@ public class JSValue {
      * @since 1.0
      */
     public JSValue(final JSContext ctx) {
+//        new Exception().printStackTrace(new PrintWriter(createdWhere));
+
         context = ctx;
         context.sync(new Runnable() {
             @Override
@@ -108,6 +117,7 @@ public class JSValue {
      */
     @SuppressWarnings("unchecked")
     public JSValue(JSContext ctx, final Object val) {
+//        new Exception().printStackTrace(new PrintWriter(createdWhere));
         context = ctx;
         context.sync(new Runnable() {
             @Override
@@ -156,6 +166,7 @@ public class JSValue {
      * @since 1.0
      */
     protected JSValue(final long valueRef, JSContext ctx) {
+//        new Exception().printStackTrace(new PrintWriter(createdWhere));
         context = ctx;
         if (valueRef != 0) {
             this.valueRef = valueRef;
@@ -443,6 +454,8 @@ public class JSValue {
      * @since 1.0
      */
     public JSObject toObject() {
+        if (this instanceof JSObject) return (JSObject)this;
+
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
@@ -581,15 +594,28 @@ public class JSValue {
     }
 
     protected void unprotect() {
+        /*
+        final StringWriter errors = new StringWriter();
+        new Exception().printStackTrace(new PrintWriter(errors));
+        */
         if (isProtected && !context.isDefunct) {
-            android.util.Log.d("unprotect", "enter");
-            context.sync(new Runnable() {
+            context.async(new Runnable() {
                 @Override
                 public void run() {
-                    unprotect(context.ctxRef(), valueRef);
+                    // Test once again that the context hasn't gone defunct.  There is possibly a
+                    // race condition that could render this defunct before this asynchronous method
+                    // gets called
+                    if (!context.isDefunct) {
+                        /*
+                        android.util.Log.d("unprotect", "class = " + getClass().getName());
+                        android.util.Log.d("unprotect", "created stack = " + createdWhere.toString());
+                        android.util.Log.d("unprotect", "unprotect stack = " + errors.toString());
+                        android.util.Log.d("unprotect", "valueRef = 0x" + Long.toHexString(valueRef));
+                        */
+                        unprotect(context.ctxRef(), valueRef);
+                    }
                 }
             });
-            android.util.Log.d("unprotect", "exit");
         }
         isProtected = false;
     }

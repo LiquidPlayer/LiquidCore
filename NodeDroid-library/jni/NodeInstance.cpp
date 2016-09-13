@@ -30,6 +30,8 @@ void NodeInstance::spawnedThread()
 
     int ret = Start(argc, argv);
 
+    __android_log_write(ANDROID_LOG_DEBUG,"spawnedThread", "Need to call back now");
+
     JNIEnv *env;
     int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED) {
@@ -210,8 +212,6 @@ int NodeInstance::StartNodeInstance(void* arg) {
         LoadEnvironment(env);
       }
 
-      env->set_trace_sync_io(trace_sync_io);
-
       // Enable debugger
       /*
       if (instance_data->use_debug_agent())
@@ -288,17 +288,16 @@ int NodeInstance::StartNodeInstance(void* arg) {
     {
       ContextGroup::Mutex()->lock();
 
+      env->set_trace_sync_io(false);
+
+      exit_code = EmitExit(env);
+      RunAtExit(env);
+
       java_node_context->SetDefunct();
 
       java_node_context->release();
       // FIXME: Why do I have to release this twice?
       java_node_context->release();
-
-      env->set_trace_sync_io(false);
-
-      exit_code = EmitExit(env);
-
-      RunAtExit(env);
 
       WaitForInspectorDisconnect(env);
 #if defined(LEAK_SANITIZER)
@@ -306,6 +305,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
 #endif
 
       array_buffer_allocator->set_env(nullptr);
+
       // FIXME! This crashes, but is a memory leak if we don't call it
       //env->Dispose();
       env = nullptr;

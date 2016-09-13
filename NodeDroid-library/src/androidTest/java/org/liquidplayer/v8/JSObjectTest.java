@@ -127,6 +127,10 @@ public class JSObjectTest {
     @org.junit.Test
     public void testJSObjectConstructors() throws Exception {
         JSContext context = new JSContext();
+        testJSObjectConstructors(context);
+    }
+
+    public void testJSObjectConstructors(JSContext context) throws Exception {
         context.evaluateScript(functionObjectScript);
 
         /**
@@ -162,7 +166,10 @@ public class JSObjectTest {
     @org.junit.Test
     public void testJSObjectProperties() throws Exception {
         JSContext context = new JSContext();
+        testJSObjectProperties(context);
+    }
 
+    public void testJSObjectProperties(JSContext context) throws Exception {
         Map<String,Object> map = new HashMap<>();
         map.put("one",1);
         map.put("two",2.0);
@@ -258,6 +265,10 @@ public class JSObjectTest {
     @org.junit.Test
     public void testJSObjectTesters() throws Exception {
         JSContext context = new JSContext();
+        testJSObjectTesters(context);
+    }
+
+    public void testJSObjectTesters(JSContext context) throws Exception {
         final String script = "var func = function() {}; var nofunc = {}; var constr = function(x) {this.x = x;};";
         context.evaluateScript(script);
         JSFunction func = new JSFunction(context);

@@ -22,7 +22,6 @@ public class ProcessTest {
         Process.EventListener listener = new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
-                android.util.Log.d("ProcessTest", "" + process + " started");
                 assertNotNull(process.context);
                 assertTrue(process.isActive());
                 JSFunction function = new JSFunction(context,"testme") {
@@ -36,12 +35,10 @@ public class ProcessTest {
                     mycount = count++;
                 }
                 int incd = function.call(null,mycount).toNumber().intValue();
-                android.util.Log.d("ProcessTest", "" + process + ": " + incd);
             }
 
             @Override
             public void onProcessExit(final Process process, int exitCode) {
-                android.util.Log.d("ProcessTest", "" + process + " exited");
                 assertNull(process.context);
                 assertFalse(process.isActive());
                 semaphore.release();
@@ -70,21 +67,14 @@ public class ProcessTest {
         new Process(new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
-                android.util.Log.d("multiThreadTest", "" + process + " started");
 
                 // First don't let the process die -- give us a second
-                context.property( "f_done", new JSFunction(context, "done") {
-                    @SuppressWarnings("unused")
-                    public void done() {
-                        android.util.Log.d("multiThreadTest", "setTimeout callback");
-                    }
-                });
+                context.property("f_done", new JSFunction(context));
                 context.evaluateScript("setTimeout(f_done,1000);");
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         context.property("foo", "bar");
-                        android.util.Log.d("multiThreadTest", "calling from new thread!");
                         JSValue value = context.evaluateScript("5 + 10");
                         assertEquals(value.toNumber().intValue(), 15);
                         assertEquals(context.property("foo").toString(), "bar");
@@ -94,7 +84,6 @@ public class ProcessTest {
 
             @Override
             public void onProcessExit(Process process, int exitCode) {
-                android.util.Log.d("multiThreadTest", "" + process + " exit: " + exitCode);
                 semaphore.release();
             }
 

@@ -9,6 +9,10 @@ public class JSTypedArrayTest {
     @Test
     public void testJSTypedArray() throws Exception {
         JSContext context = new JSContext();
+        testJSTypedArray(context);
+    }
+
+    public void testJSTypedArray(JSContext context) throws Exception {
         boolean exception = false;
         try {
             JSTypedArray.from(new JSObject(context));

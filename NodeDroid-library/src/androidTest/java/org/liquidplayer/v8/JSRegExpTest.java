@@ -8,7 +8,10 @@ public class JSRegExpTest {
     @Test
     public void testJSRegExp() throws Exception {
         JSContext context = new JSContext();
+        testJSRegExp(context);
+    }
 
+    public void testJSRegExp(JSContext context) throws Exception {
         JSRegExp regExp = new JSRegExp(context,"quick\\s(brown).+?(jumps)","ig");
         JSRegExp.ExecResult result = regExp.exec("The Quick Brown Fox Jumps Over The Lazy Dog");
         assertEquals(result.get(0),"Quick Brown Fox Jumps");

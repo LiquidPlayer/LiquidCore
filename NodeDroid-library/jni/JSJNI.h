@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <set>
 #include <thread>
+#include <list>
 
 #include "v8.h"
 #include "libplatform/libplatform.h"
@@ -52,6 +53,8 @@ using namespace v8;
 #define NATIVE(package,rt,f) extern "C" JNIEXPORT \
     rt JNICALL Java_org_liquidplayer_v8_##package##_##f
 #define PARAMS JNIEnv* env, jobject thiz
+
+//#define DEBUG_RETAINER 1
 
 class Retainer {
 public:
@@ -109,6 +112,12 @@ public:
     }
 };
 
+struct Runnable {
+    jobject thiz;
+    jobject runnable;
+    JavaVM *jvm;
+};
+
 class ContextGroup : public Retainer {
 public:
     ContextGroup();
@@ -129,6 +138,7 @@ public:
     static void init_v8();
     static std::mutex *Mutex() { return &s_mutex; }
     static v8::Platform * Platform() { return s_platform; }
+    static void callback(uv_async_t* handle);
 
 protected:
     virtual ~ContextGroup();
@@ -147,6 +157,11 @@ private:
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
     std::recursive_mutex m_isolate_mutex;
+
+public:
+    uv_async_t *m_async_handle;
+    std::list<struct Runnable *> m_runnables;
+    std::mutex m_async_mutex;
 };
 
 class JSContext;

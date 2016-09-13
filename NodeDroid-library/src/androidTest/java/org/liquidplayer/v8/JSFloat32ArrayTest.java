@@ -22,19 +22,26 @@ public class JSFloat32ArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSFloat32Array() throws Exception {
         JSFloat32Array array = new JSFloat32Array(context,8);
+
         assertThat(array.byteLength(),is(8*4));
         assertThat(array.byteOffset(),is(0));
         assertTrue(JSTypedArray.isTypedArray(array));
         assertEquals(array.property("BYTES_PER_ELEMENT").toNumber().intValue(),4);
+        android.util.Log.d("Test", "a");
 
         JSInt8Array i8 = new JSInt8Array(context,8);
         for (byte i=0; i<8; i++) i8.set(i,i);
         JSFloat32Array array2 = new JSFloat32Array(i8);
         for (int i=0; i<8; i++)
             assertEquals(array2.get(i),Float.valueOf(i));
+        android.util.Log.d("Test", "b");
 
         List<Integer> ai = Arrays.asList(0,1,2,3,4,5,6,7);
         JSFloat32Array array3 = new JSFloat32Array(context,ai);
@@ -45,6 +52,7 @@ public class JSFloat32ArrayTest {
         assertThat(array3.size(),is(8));
         assertThat(array3.get(0),is(0f));
         assertThat(array3.get(1),is(1f));
+        android.util.Log.d("Test", "c");
 
         JSFloat32Array ab = new JSFloat32Array(context,8);
         for (int i=0; i<8; i++) ab.set(i,(float)i);
@@ -54,6 +62,7 @@ public class JSFloat32ArrayTest {
         assertThat(array4.size(),is(2));
         assertThat(array4.get(0),is(4f));
         assertThat(array4.get(1),is(5f));
+        android.util.Log.d("Test", "d");
 
         @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
         JSFloat32Array array5 = new JSFloat32Array(ab.buffer(),24);
@@ -67,6 +76,7 @@ public class JSFloat32ArrayTest {
         assertThat(array6.get(0),is(0f));
         assertThat(array6.get(1),is(1f));
         assertThat(ab.buffer().byteLength(),is(array6.byteLength()));
+        android.util.Log.d("Test", "e");
 
         JSFloat32Array array7 = new JSFloat32Array(context,Arrays.asList(5,4,3,2,1));
         JSFloat32Array array8 = array7.subarray(0,2);
@@ -79,6 +89,8 @@ public class JSFloat32ArrayTest {
         assertThat(array9.get(0),is(3f));
         assertThat(array9.get(1),is(2f));
         assertThat(array9.get(2),is(1f));
+
+        android.util.Log.d("Test", "f");
 
         context.evaluateScript("var float32a = new Float32Array(10);");
         assertEquals(context.property("float32a").toObject().getClass(),JSFloat32Array.class);
@@ -117,14 +129,19 @@ public class JSFloat32ArrayTest {
 
         int i = 0;
         for (Iterator<Float> it = list.iterator(); it.hasNext(); i++) {
+            android.util.Log.d("Test", "i = " + i);
             Float next = it.next();
             assertTrue(list.contains(next));
         }
         assertThat(i,is(list.size()));
 
+        android.util.Log.d("Test", "Calling new Float");
         Float[] arr1 = new Float[5];
+        android.util.Log.d("Test", "Calling toArray");
         Float[] arr2 = list.toArray(arr1);
+        android.util.Log.d("Test", "testing for equality");
         assertArrayEquals(arr2,new Float[] {1f,2f,3f,4f,5f});
+        android.util.Log.d("Test", "got thru all of that");
 
         exception = false;
         try {
@@ -278,5 +295,7 @@ public class JSFloat32ArrayTest {
         } finally {
             assertThat(exception,is(true));
         }
+
+        android.util.Log.d("Test", "all done");
     }
 }

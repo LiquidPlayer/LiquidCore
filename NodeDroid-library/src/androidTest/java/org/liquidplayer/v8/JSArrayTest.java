@@ -14,10 +14,7 @@ import static org.hamcrest.Matchers.*;
 
 public class JSArrayTest {
 
-    @org.junit.Test
-    public void testJSArrayConstructors() throws Exception {
-        JSContext context = new JSContext();
-
+    public void testJSArrayConstructors(JSContext context) throws Exception {
         /**
          * new JSArray(context, JSValue[], cls)
          */
@@ -58,10 +55,7 @@ public class JSArrayTest {
         assertThat(array4.get(1),is("second"));
     }
 
-    @org.junit.Test
-    public void testJSArrayListMethods() throws Exception {
-        final JSContext context = new JSContext();
-
+    public void testJSArrayListMethods(JSContext context) throws Exception {
         List<Object> list = new JSArray<>(context, Object.class);
         /**
          * JSArray.add(value)
@@ -306,10 +300,7 @@ public class JSArrayTest {
         assertEquals(list,arrayList2);
     }
 
-    @org.junit.Test
-    public void testJSArrayJSMethods() throws Exception {
-        final JSContext context = new JSContext();
-
+    public void testJSArrayJSMethods(final JSContext context) throws Exception {
         // Array.from()
         @SuppressWarnings("unchecked")
         JSArray<JSValue> from = JSArray.from(context,"foo");
@@ -371,6 +362,7 @@ public class JSArrayTest {
         // Array.prototype.copyWithin()
         JSArray copyWithin = JSArray.of(context,1,2,3,4,5);
         JSArray copyWithin2 = copyWithin.copyWithin(-2);
+
         Integer [] copyWithin3 = new Integer [] { 1,2,3,1,2 };
         assertEquals(copyWithin,Arrays.asList(copyWithin3));
         assertEquals(copyWithin2,Arrays.asList(copyWithin3));
@@ -734,4 +726,21 @@ public class JSArrayTest {
         assertEquals(locale.toLocaleString(),"1337," + dateLocale + ",foo");
     }
 
+    @org.junit.Test
+    public void testJSArrayConstructors() throws Exception {
+        JSContext context = new JSContext();
+        testJSArrayConstructors(context);
+    }
+
+    @org.junit.Test
+    public void testJSArrayListMethods() throws Exception {
+        final JSContext context = new JSContext();
+        testJSArrayListMethods(context);
+    }
+
+    @org.junit.Test
+    public void testJSArrayJSMethods() throws Exception {
+        final JSContext context = new JSContext();
+        testJSArrayJSMethods(context);
+    }
 }

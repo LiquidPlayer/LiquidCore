@@ -10,6 +10,10 @@ public class JSErrorTest {
     @Test
     public void TestJSErrorAndJSException() throws Exception {
         JSContext context = new JSContext();
+        TestJSErrorAndJSException(context);
+    }
+
+    public void TestJSErrorAndJSException(JSContext context) throws Exception {
 
         JSError error = new JSError(context, "This is an error message");
         assertThat(error.message(),is("This is an error message"));

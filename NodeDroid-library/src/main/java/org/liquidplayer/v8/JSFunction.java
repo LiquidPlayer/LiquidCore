@@ -516,8 +516,6 @@ public class JSFunction extends JSObject {
                 if (obj!=null) args[i] = obj;
                 else args[i] = new JSValue(argumentsValueRef[i],context);
             }
-            JSValue foo = new JSValue(thisObjectRef, context);
-
             JSObject thiz = context.getObjectFromRef(thisObjectRef);
             JSValue value = function(thiz,args,invokeObject);
             setException(0L, exceptionRefRef);

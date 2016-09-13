@@ -22,6 +22,10 @@ public class JSFloat64ArrayTest {
         context = new JSContext();
     }
 
+    public void setUp(JSContext context) {
+        this.context = context;
+    }
+
     @Test
     public void testJSFloat64Array() throws Exception {
         JSFloat64Array array = new JSFloat64Array(context,8);
