@@ -67,13 +67,14 @@ public:
 #endif
     }
 
-    virtual void retain() {
-        m_count++;
+    virtual int retain() {
+        return ++m_count;
     }
 
-    virtual void release() {
+    virtual int release() {
         if (--m_count == 0)
             delete this;
+        return m_count;
     }
 
 protected:
@@ -85,7 +86,7 @@ protected:
 #endif
     }
 
-protected:
+public:
     int m_count;
 
 public:
@@ -203,8 +204,8 @@ public:
     virtual void release(JSValue<v8::Value>* value);
     virtual void retain(JSValue<v8::Object>* value);
     virtual void release(JSValue<v8::Object>* value);
-    virtual void retain() { Retainer::retain(); }
-    virtual void release() { Retainer::release(); }
+    virtual int retain() { return Retainer::retain(); }
+    virtual int release() { return Retainer::release(); }
 
 protected:
     virtual ~JSContext();

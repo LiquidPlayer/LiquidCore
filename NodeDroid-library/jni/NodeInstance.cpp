@@ -294,10 +294,11 @@ int NodeInstance::StartNodeInstance(void* arg) {
       RunAtExit(env);
 
       java_node_context->SetDefunct();
-
-      java_node_context->release();
-      // FIXME: Why do I have to release this twice?
-      java_node_context->release();
+      int count = java_node_context->release();
+      if (count != 0) {
+        __android_log_assert("FAIL", "StartNodeInstance",
+            "JSContext count not zero (%d)", count);
+      }
 
       WaitForInspectorDisconnect(env);
 #if defined(LEAK_SANITIZER)

@@ -159,6 +159,7 @@ void JSContext::SetDefunct() {
         std::set<JSValue<v8::Value>*>::iterator it = m_value_set.begin();
         (*it)->release();
     }
+
     while (m_object_set.size() > 0) {
         std::set<JSValue<v8::Object>*>::iterator it = m_object_set.begin();
         (*it)->release();
@@ -419,7 +420,6 @@ NATIVE(JSContext,jlong,retain) (PARAMS,jlong ctx) {
 }
 
 NATIVE(JSContext,void,release) (PARAMS,jlong ctx) {
-    __android_log_write(ANDROID_LOG_DEBUG, "JSContext", "are we here or some shit?");
     JSContext *context = reinterpret_cast<JSContext*>(ctx);
     context->release();
 }

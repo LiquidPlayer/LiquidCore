@@ -65,7 +65,7 @@ class JSFunction : public JSValue<T> {
             JSValue<T>::m_isUndefined = false;
             JSValue<T>::m_value = Persistent<T,CopyablePersistentTraits<T>>(isolate, function);
             JSValue<T>::m_context = context_;
-            JSValue<T>::m_context->retain();
+            JSValue<T>::m_context->retain(this);
             Retainer::m_count = 1;
 
             V8_UNLOCK();
