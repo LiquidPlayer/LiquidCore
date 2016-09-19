@@ -73,7 +73,7 @@ NATIVE(JSObject,jobject,makeArray) (PARAMS, jlong ctx, jlongArray args) {
 
     Local<Array> array = Array::New(isolate, len);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
 
     int i;
     for (i=0; !exception && i<len; i++) {
@@ -161,7 +161,7 @@ NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstrin
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, flags);
@@ -201,7 +201,7 @@ NATIVE(JSObject,jobject,makeFunction) (PARAMS, jlong ctx, jstring name_,
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     const char *sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
@@ -253,7 +253,7 @@ NATIVE(JSObject,jlong,getPrototype) (PARAMS, jlong ctx, jlong object) {
 NATIVE(JSObject,void,setPrototype) (PARAMS, jlong ctx, jlong object, jlong value) {
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
 
-    o->SetPrototype(reinterpret_cast<JSValue<Value>*>(value)->Value());
+    o->SetPrototype(context, reinterpret_cast<JSValue<Value>*>(value)->Value());
 
     V8_UNLOCK();
 }
@@ -281,7 +281,7 @@ NATIVE(JSObject,jobject,getProperty) (PARAMS, jlong ctx, jlong object,
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<Value> value = o->Get(context, String::NewFromUtf8(isolate, c_string));
@@ -326,7 +326,7 @@ NATIVE(JSObject,jobject,setProperty) (PARAMS, jlong ctx, jlong object, jstring p
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     Maybe<bool> defined = (attributes!=0) ?
@@ -361,7 +361,7 @@ NATIVE(JSObject,jobject,deleteProperty) (PARAMS, jlong ctx, jlong object, jstrin
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     Maybe<bool> deleted = o->Delete(context, String::NewFromUtf8(isolate, c_string));
@@ -387,7 +387,7 @@ NATIVE(JSObject,jobject,getPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<Value> value = o->Get(context, propertyIndex);
@@ -417,7 +417,7 @@ NATIVE(JSObject,jobject,setPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     Maybe<bool> defined =
@@ -464,7 +464,7 @@ NATIVE(JSObject,jobject,callAsFunction) (PARAMS, jlong ctx, jlong object,
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<Value> value = o->CallAsFunction(context, this_, len, elements);
@@ -513,7 +513,7 @@ NATIVE(JSObject,jobject,callAsConstructor) (PARAMS, jlong ctx, jlong object,
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<Value> value = o->CallAsConstructor(context, len, elements);

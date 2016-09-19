@@ -58,7 +58,9 @@ class JSFunction : public JSValue<T> {
             Local<Function> function = ctor->GetFunction();
             function->SetName(name);
 
-            function->SetHiddenValue(String::NewFromUtf8(isolate, "__JSValue_ptr"),
+            Local<Private> privateKey = v8::Private::ForApi(isolate,
+                String::NewFromUtf8(isolate, "__JSValue_ptr"));
+            function->SetPrivate(context, privateKey,
                 Number::New(isolate,(double)reinterpret_cast<long>(this)));
 
             JSValue<T>::m_isNull = false;
@@ -81,7 +83,7 @@ class JSFunction : public JSValue<T> {
             HandleScope handle_scope_(info.GetIsolate());
 
             JSFunction<T> *this_ = reinterpret_cast<JSFunction*>(
-                (long)(info.Data()->ToNumber()->Value()));
+                (long)(info.Data()->ToNumber(info.GetIsolate())->Value()));
             this_->FunctionCallback(info);
         }
 

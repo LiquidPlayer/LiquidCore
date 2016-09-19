@@ -54,10 +54,16 @@ std::mutex Retainer::m_debug_mutex;
 template <typename T>
 JSValue<T> * JSValue<T>::New(JSContext* context, Local<T> val) {
     if (val->IsObject()) {
+        Local<Private> privateKey = v8::Private::ForApi(context->isolate(),
+            String::NewFromUtf8(context->isolate(), "__JSValue_ptr"));
         Local<Object> obj = val->ToObject(context->Value()).ToLocalChecked();
-        Local<v8::Value> identifier =
-            obj->GetHiddenValue(String::NewFromUtf8(context->isolate(), "__JSValue_ptr"));
-        if (!identifier.IsEmpty() && identifier->IsNumber()) {
+        Local<v8::Value> identifier;
+        Maybe<bool> result = obj->HasPrivate(context->Value(), privateKey);
+        bool hasPrivate = false;
+        if (result.IsJust() && result.FromJust()) {
+            hasPrivate = obj->GetPrivate(context->Value(), privateKey).ToLocal(&identifier);
+        }
+        if (hasPrivate && identifier->IsNumber()) {
             // This object is already wrapped, let's re-use it
             JSValue<T> *value =
                 reinterpret_cast<JSValue<T>*>(
@@ -67,7 +73,7 @@ JSValue<T> * JSValue<T>::New(JSContext* context, Local<T> val) {
         } else {
             // First time wrap.  Create it new and mark it
             JSValue<T> *value = new JSValue<T>(context,val);
-            obj->SetHiddenValue(String::NewFromUtf8(context->isolate(), "__JSValue_ptr"),
+            obj->SetPrivate(context->Value(), privateKey,
                 Number::New(context->isolate(),(double)reinterpret_cast<long>(value)));
             return value;
         }
@@ -101,7 +107,9 @@ JSValue<T>::~JSValue<T>() {
         if (Value()->IsObject()) {
             Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
             // Clear wrapper pointer if it exists, in case this object is still held by JS
-            obj->SetHiddenValue(String::NewFromUtf8(isolate, "__JSValue_ptr"),
+            Local<Private> privateKey = v8::Private::ForApi(isolate,
+                String::NewFromUtf8(isolate, "__JSValue_ptr"));
+            obj->SetPrivate(m_context->Value(), privateKey,
                 Local<v8::Value>::New(isolate,Undefined(isolate)));
         }
         m_value.Reset();
@@ -316,6 +324,11 @@ void ContextGroup::callback(uv_async_t* handle) {
 
 ContextGroup::~ContextGroup() {
     if (m_manage_isolate) {
+        //FIXME: This sometimes fails with:
+        //FIXME:#
+        //FIXME:# Fatal error in v8::Isolate::Dispose()
+        //FIXME:# Disposing the isolate that is entered by a thread.
+        //FIXME:#
         m_isolate->Dispose();
     }
     dispose_v8();
@@ -453,7 +466,7 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
         JSContext *context_ = reinterpret_cast<JSContext*>(ctx);
         V8_ISOLATE(context_->Group(), isolate);
 
-        TryCatch trycatch;
+        TryCatch trycatch(isolate);
         Local<Context> context;
 
         context = context_->Value();

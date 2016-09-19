@@ -48,7 +48,12 @@ public class JSError extends JSObject {
      */
     public JSError(JSContext ctx, @NonNull final String message) {
         context = ctx;
-        valueRef = makeError(context.ctxRef(), message);
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = makeError(context.ctxRef(), message);
+            }
+        });
     }
     /**
      * Generates a JavaScript throwable exception object

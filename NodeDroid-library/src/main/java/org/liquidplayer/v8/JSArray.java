@@ -85,11 +85,16 @@ public class JSArray<T> extends JSBaseArray<T> {
     @SuppressWarnings("unused")
     public JSArray(JSContext ctx, JSValue [] array, Class<T> cls) {
         super(ctx,cls);
-        long [] valueRefs = new long[array.length];
+        final long [] valueRefs = new long[array.length];
         for (int i=0; i<array.length; i++) {
             valueRefs[i] = array[i].valueRef();
         }
-        valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+            }
+        });
         context.persistObject(this);
     }
 
@@ -101,8 +106,13 @@ public class JSArray<T> extends JSBaseArray<T> {
      */
     public JSArray(JSContext ctx, Class<T> cls) {
         super(ctx,cls);
-        long [] valueRefs = new long[0];
-        valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+        final long [] valueRefs = new long[0];
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+            }
+        });
         context.persistObject(this);
     }
 
@@ -116,12 +126,17 @@ public class JSArray<T> extends JSBaseArray<T> {
      */
     public JSArray(JSContext ctx, Object [] array, Class<T> cls) {
         super(ctx,cls);
-        long [] valueRefs = new long[array.length];
+        final long [] valueRefs = new long[array.length];
         for (int i=0; i<array.length; i++) {
             JSValue v = new JSValue(context,array[i]);
             valueRefs[i] = v.valueRef();
         }
-        valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+            }
+        });
         context.persistObject(this);
     }
 

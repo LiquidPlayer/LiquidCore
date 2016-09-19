@@ -117,7 +117,7 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
         VALUE_ISOLATE(ctxRef,a,isolate,context,a_);
         Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
 
-        TryCatch trycatch;
+        TryCatch trycatch(isolate);
 
         Maybe<bool> is = a_->Equals(context,b_);
         if (is.IsNothing()) {
@@ -289,7 +289,7 @@ NATIVE(JSValue,jobject,toNumber) (PARAMS, jlong ctxRef, jlong valueRef)
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<Number> number = value->ToNumber(context);
@@ -318,7 +318,7 @@ NATIVE(JSValue,jobject,toStringCopy) (PARAMS, jlong ctxRef, jlong valueRef)
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
     jstring retStr;
 
@@ -349,7 +349,7 @@ NATIVE(JSValue,jobject,toObject) (PARAMS, jlong ctxRef, jlong valueRef)
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch;
+    TryCatch trycatch(isolate);
     JSValue<Value> *exception = nullptr;
 
     MaybeLocal<Object> obj = value->ToObject(context);
