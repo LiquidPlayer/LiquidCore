@@ -222,7 +222,7 @@ private:
 #define V8_ISOLATE(group,iso) \
         Isolate *iso = group->isolate(); \
         ContextGroup* group_ = group; \
-        if (!group->Loop()) group->Locker().lock(); \
+        /*if (!group->Loop())*/ group->Locker().lock(); \
         Isolate::Scope isolate_scope_(iso); \
         HandleScope handle_scope_(iso)
 
@@ -233,7 +233,7 @@ private:
         Context::Scope context_scope_(Ctx)
 
 #define V8_UNLOCK() \
-        if (!group_->Loop()) group_->Locker().unlock()
+        /*if (!group_->Loop())*/ group_->Locker().unlock()
 
 
 #endif

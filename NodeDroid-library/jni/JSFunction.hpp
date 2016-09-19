@@ -139,7 +139,7 @@ class JSFunction : public JSValue<T> {
 
                 argsArr = env->NewLongArray(argumentCount);
                 args = new jlong[argumentCount];
-                for (size_t i=0; i<argumentCount; i++) {
+                for (int i=0; i<argumentCount; i++) {
                     args[i] = reinterpret_cast<long>(JSValue<Value>::New(
                         JSValue<T>::m_context, info[i]));
                 }

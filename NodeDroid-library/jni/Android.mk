@@ -43,13 +43,48 @@ LOCAL_MODULE    := nodedroid
 LOCAL_SRC_FILES := JSContext.cpp \
                    JSValue.cpp \
                    JSObject.cpp \
-                   NodeInstance.cpp
+                   NodeInstance.cpp \
+                   nodedroid_file.cc
 
 LOCAL_SHARED_LIBRARIES := libnode
 
-LOCAL_CPPFLAGS  := -std=c++11 -fexceptions -I$(LOCAL_PATH)/include/node \
+DEFS_Release := \
+	-DNODE_ARCH="arm" \
+	-DNODE_PLATFORM="android" \
+	-DNODE_WANT_INTERNALS=1 \
+	-DV8_DEPRECATION_WARNINGS=1 \
+	-DNODE_SHARED_MODE \
+	-DNODE_USE_V8_PLATFORM=1 \
+	-DHAVE_INSPECTOR=1 \
+	-DV8_INSPECTOR_USE_STL=1 \
+	-DV8_INSPECTOR_USE_OLD_STL=1 \
+	-DHAVE_OPENSSL=1 \
+	-D__POSIX__ \
+	-DHTTP_PARSER_STRICT=0 \
+	-D_LARGEFILE_SOURCE \
+	-D_FILE_OFFSET_BITS=64 \
+	-D_GLIBCXX_USE_C99_MATH
+
+CFLAGS_Release := \
+    -Wall \
+    -Wextra \
+    -Wno-unused-parameter \
+    -fPIC \
+    -O3 \
+    -fno-omit-frame-pointer \
+    -fPIE \
+    -Wno-strict-aliasing \
+    -Wno-unused-variable
+
+CFLAGS_CC_Release := \
+	-fno-rtti \
+	-fno-exceptions \
+	-std=gnu++0x
+
+LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/include/node \
     -I$(LOCAL_PATH)/include/v8 -I$(LOCAL_PATH)/include/v8/include -I$(LOCAL_PATH)/include/uv \
-    -I$(LOCAL_PATH)/include/cares -I$(LOCAL_PATH)/include/openssl
-LOCAL_LDFLAGS := -llog
+    -I$(LOCAL_PATH)/include/cares -I$(LOCAL_PATH)/include/openssl \
+    -I$(LOCAL_PATH)/include/http_parser $(DEFS_Release) $(CFLAGS_Release) $(CFLAGS_CC_Release)
+LOCAL_LDFLAGS := -llog -lm -ldl
 
 include $(BUILD_SHARED_LIBRARY)

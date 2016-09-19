@@ -1,10 +1,13 @@
 package org.liquidplayer.node;
 
 import org.junit.Test;
+import org.liquidplayer.v8.JSArray;
 import org.liquidplayer.v8.JSContext;
 import org.liquidplayer.v8.JSFunction;
 import org.liquidplayer.v8.JSValue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.*;
@@ -35,6 +38,7 @@ public class ProcessTest {
                     mycount = count++;
                 }
                 int incd = function.call(null,mycount).toNumber().intValue();
+                assertEquals(incd,mycount+1);
             }
 
             @Override
@@ -68,9 +72,9 @@ public class ProcessTest {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
 
-                // First don't let the process die -- give us a second
-                context.property("f_done", new JSFunction(context));
-                context.evaluateScript("setTimeout(f_done,1000);");
+                // Done let the process exit until our thread finishes
+                process.keepAlive();
+
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -78,6 +82,19 @@ public class ProcessTest {
                         JSValue value = context.evaluateScript("5 + 10");
                         assertEquals(value.toNumber().intValue(), 15);
                         assertEquals(context.property("foo").toString(), "bar");
+                        context.property("dir_contents", new JSFunction(context,"dir_contents") {
+                            @SuppressWarnings("unused")
+                            public void dir_contents(JSValue err, JSArray<String> files) {
+                                android.util.Log.d("dir_contents", files.toString());
+                            }
+                        });
+                        context.evaluateScript(
+                                "(function() {" +
+                                "  var fs = require('fs');" +
+                                "  fs.readdir('.',dir_contents);" +
+                                "})();");
+                        // ok, we're done here
+                        process.letDie();
                     }
                 }).start();
             }

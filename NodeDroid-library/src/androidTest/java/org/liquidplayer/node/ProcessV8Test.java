@@ -34,6 +34,7 @@ import static org.junit.Assert.*;
 public class ProcessV8Test {
 
     JSContext context = null;
+    Process process = null;
     Semaphore processCompleted;
 
     @Before
@@ -43,15 +44,11 @@ public class ProcessV8Test {
 
         new Process(new Process.EventListener() {
             @Override
-            public void onProcessStart(final Process process, final JSContext ctx) {
+            public void onProcessStart(final Process proc, final JSContext ctx) {
                 context = ctx;
+                process = proc;
                 // Don't let the process die before we run the test
-                final String waitForMe =
-                        "var exit_condition = false;" +
-                        "(function wait () {" +
-                        "   if (!exit_condition) setTimeout(wait, 500);" +
-                        "})();";
-                context.evaluateScript(waitForMe);
+                process.keepAlive();
                 processStarted.release();
             }
 
@@ -387,7 +384,7 @@ public class ProcessV8Test {
     @After
     public void shutDown() throws Exception {
         // Mark the process as done and wait until the process shuts down
-        context.property("exit_condition", true);
+        process.letDie();
         processCompleted.acquire();
     }
 }

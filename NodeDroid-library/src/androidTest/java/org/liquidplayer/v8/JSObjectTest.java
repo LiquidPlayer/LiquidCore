@@ -107,22 +107,22 @@ public class JSObjectTest {
 
     public final static String functionObjectScript =
             "var empty = {}; \n" +
-                    "var functionObject = {\n" +
-                    "   voidFunc:    function() {}, \n" +
-                    "   jsvalueFunc: function() { var undef; return undef; }, \n" +
-                    "   jsobjectFunc:function() { return {}; }, \n" +
-                    "   intFunc:     function() { return 5; }, \n" +
-                    "   intFunc2:    function() { return 9; }, \n" +
-                    "   longFunc:    function() { return 6; }, \n" +
-                    "   longFunc2:   function() { return 10; }, \n" +
-                    "   floatFunc:   function() { return 7.6; }, \n" +
-                    "   floatFunc2:  function() { return 17.6; }, \n" +
-                    "   doubleFunc:  function() { return 8.8; }, \n" +
-                    "   doubleFunc2: function() { return 18.8; }, \n" +
-                    "   stringFunc:  function() { return 'string'; }, \n" +
-                    "   arrayFunc:   function() { return [5,6,7,8]; }, \n" +
-                    "   booleanFunc: function() { return true; } \n" +
-                    "};";
+            "var functionObject = {\n" +
+            "   voidFunc:    function() {}, \n" +
+            "   jsvalueFunc: function() { var undef; return undef; }, \n" +
+            "   jsobjectFunc:function() { return {}; }, \n" +
+            "   intFunc:     function() { return 5; }, \n" +
+            "   intFunc2:    function() { return 9; }, \n" +
+            "   longFunc:    function() { return 6; }, \n" +
+            "   longFunc2:   function() { return 10; }, \n" +
+            "   floatFunc:   function() { return 7.6; }, \n" +
+            "   floatFunc2:  function() { return 17.6; }, \n" +
+            "   doubleFunc:  function() { return 8.8; }, \n" +
+            "   doubleFunc2: function() { return 18.8; }, \n" +
+            "   stringFunc:  function() { return 'string'; }, \n" +
+            "   arrayFunc:   function() { return [5,6,7,8]; }, \n" +
+            "   booleanFunc: function() { return true; } \n" +
+            "};";
 
     @org.junit.Test
     public void testJSObjectConstructors() throws Exception {

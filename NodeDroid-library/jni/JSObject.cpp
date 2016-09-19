@@ -47,6 +47,8 @@ NATIVE(JSObject,jlong,make) (PARAMS, jlong ctx) {
     V8_ISOLATE_CTX(ctx,isolate,context);
 
     JSValue<Value> *value = JSValue<Value>::New(context_, Object::New(isolate));
+
+    V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
 
@@ -146,7 +148,7 @@ NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstrin
 
     c_string = env->GetStringUTFChars(flags_, NULL);
     RegExp::Flags flags = RegExp::Flags::kNone;
-    for (int i=0; i<strlen(c_string); i++) {
+    for (size_t i=0; i<strlen(c_string); i++) {
         switch (c_string[i]) {
             case 'g': flags = (RegExp::Flags) (flags | RegExp::Flags::kGlobal);     break;
             case 'i': flags = (RegExp::Flags) (flags | RegExp::Flags::kIgnoreCase); break;
@@ -543,7 +545,7 @@ NATIVE(JSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong ctx, jlong object
         names->Length(),
         env->FindClass("java/lang/String"),
         env->NewStringUTF(""));
-    for (int i=0; i<names->Length(); i++) {
+    for (size_t i=0; i<names->Length(); i++) {
         Local<String> property =
             names->Get(context, i).ToLocalChecked()->ToString(context).ToLocalChecked();
         String::Utf8Value const str(property);

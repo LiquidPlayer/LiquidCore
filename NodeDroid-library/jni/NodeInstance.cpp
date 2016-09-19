@@ -3,6 +3,36 @@
 //
 #include "NodeInstance.h"
 
+#include "nodedroid_file.h"
+
+#if defined HAVE_PERFCTR
+#include "node_counters.h"
+#endif
+
+#if HAVE_OPENSSL
+#include "node_crypto.h"
+#endif
+
+#if defined(NODE_HAVE_I18N_SUPPORT)
+#include "node_i18n.h"
+#endif
+
+#if defined HAVE_DTRACE || defined HAVE_ETW
+#include "node_dtrace.h"
+#endif
+
+#if defined HAVE_LTTNG
+#include "node_lttng.h"
+#endif
+
+namespace node {
+void SetupProcessObject(Environment* env,
+                        int argc,
+                        const char* const* argv,
+                        int exec_argc,
+                        const char* const* exec_argv);
+}
+
 NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewGlobalRef(thiz);
@@ -10,12 +40,14 @@ NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
 }
 
 NodeInstance::~NodeInstance() {
+    node_main_thread->join();
+    delete node_main_thread;
 }
 
 void NodeInstance::spawnedThread()
 {
     enum { kMaxArgs = 64 };
-    char cmd[] = "node";
+    char cmd[] = "node -e global.__nodedroid_onLoad();";
 
     int argc = 0;
     char *argv[kMaxArgs];
@@ -29,8 +61,6 @@ void NodeInstance::spawnedThread()
     argv[argc] = 0;
 
     int ret = Start(argc, argv);
-
-    __android_log_write(ANDROID_LOG_DEBUG,"spawnedThread", "Need to call back now");
 
     JNIEnv *env;
     int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
@@ -66,7 +96,7 @@ void NodeInstance::spawnedThread()
     }
 
     // Commit suicide
-    delete this;
+    //delete this;
 }
 
 void NodeInstance::node_main_task(void *inst) {
@@ -175,6 +205,40 @@ int NodeInstance::StartNodeInstance(void* arg) {
   int exit_code = 1;
   ContextGroup *group = nullptr;
 
+  auto notify_start = [&] (JSContext *java_node_context) {
+      JNIEnv *jenv;
+      int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
+      if (getEnvStat == JNI_EDETACHED) {
+        m_jvm->AttachCurrentThread(&jenv, NULL);
+      }
+
+      jclass cls = jenv->GetObjectClass(m_JavaThis);
+      jmethodID mid;
+      do {
+        mid = jenv->GetMethodID(cls,"onNodeStarted","(JJ)V");
+        if (!jenv->ExceptionCheck()) break;
+        jenv->ExceptionClear();
+        jclass super = jenv->GetSuperclass(cls);
+        jenv->DeleteLocalRef(cls);
+        if (super == NULL || jenv->ExceptionCheck()) {
+          if (super != NULL) jenv->DeleteLocalRef(super);
+          if (getEnvStat == JNI_EDETACHED) {
+            m_jvm->DetachCurrentThread();
+          }
+          CHECK_EQ(0,1); // This is bad
+        }
+        cls = super;
+      } while (true);
+      jenv->DeleteLocalRef(cls);
+
+      jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context),
+        reinterpret_cast<jlong>(group));
+
+      if (getEnvStat == JNI_EDETACHED) {
+          m_jvm->DetachCurrentThread();
+      }
+  };
+
   {
     Mutex::ScopedLock scoped_lock(node_isolate_mutex);
     if (instance_data->is_main()) {
@@ -235,37 +299,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
         ContextGroup::Mutex()->unlock();
       }
 
-      JNIEnv *jenv;
-      int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
-      if (getEnvStat == JNI_EDETACHED) {
-        m_jvm->AttachCurrentThread(&jenv, NULL);
-      }
-
-      jclass cls = jenv->GetObjectClass(m_JavaThis);
-      jmethodID mid;
-      do {
-        mid = jenv->GetMethodID(cls,"onNodeStarted","(JJ)V");
-        if (!jenv->ExceptionCheck()) break;
-        jenv->ExceptionClear();
-        jclass super = jenv->GetSuperclass(cls);
-        jenv->DeleteLocalRef(cls);
-        if (super == NULL || jenv->ExceptionCheck()) {
-          if (super != NULL) jenv->DeleteLocalRef(super);
-          if (getEnvStat == JNI_EDETACHED) {
-            m_jvm->DetachCurrentThread();
-          }
-          CHECK_EQ(0,1); // This is bad
-        }
-        cls = super;
-      } while (true);
-      jenv->DeleteLocalRef(cls);
-
-      jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context),
-        reinterpret_cast<jlong>(group));
-
-      if (getEnvStat == JNI_EDETACHED) {
-          m_jvm->DetachCurrentThread();
-      }
+      notify_start(java_node_context);
 
       bool more;
       do {
@@ -307,8 +341,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
       array_buffer_allocator->set_env(nullptr);
 
-      // FIXME! This crashes, but is a memory leak if we don't call it
-      //env->Dispose();
+      env->Dispose();
       env = nullptr;
 
       ContextGroup::Mutex()->unlock();
@@ -362,7 +395,7 @@ int NodeInstance::Start(int argc, char *argv[]) {
   {
     uv_loop_t uv_loop;
     uv_loop_init(&uv_loop);
-    NodeInstanceData instance_data(NodeInstanceType::WORKER,
+    NodeInstanceData instance_data(NodeInstanceType::MAIN,
                                    &uv_loop,
                                    argc,
                                    const_cast<const char**>(argv),
@@ -383,44 +416,80 @@ int NodeInstance::Start(int argc, char *argv[]) {
 #define NATIVE(package,rt,f) extern "C" JNIEXPORT \
     rt JNICALL Java_org_liquidplayer_node_##package##_##f
 
-
-std::thread* stdout_thread = nullptr;
-
 static int pfd[2];
-static volatile bool stopit = false;
+static pthread_t thr;
+static const char *tag = nullptr;
 
-static void node_stdout_thread()
+static void *thread_func(void*)
 {
     ssize_t rdsz;
     char buf[128];
-    while(!stopit && (rdsz = read(pfd[0], buf, sizeof buf - 1)) > 0) {
-        if(buf[rdsz - 1] == '\n') --rdsz;
-        buf[rdsz - 1] = 0;  /* add null-terminator */
-        __android_log_write(ANDROID_LOG_DEBUG, "node", buf);
+    while((rdsz = read(pfd[0], buf, sizeof buf - 1)) > 0) {
+        if (rdsz > 0) {
+            buf[rdsz] = 0;  /* add null-terminator */
+            char *line = strtok(buf, "\n");
+            while (line != nullptr) {
+                __android_log_write(ANDROID_LOG_DEBUG, tag, line);
+                line = strtok(nullptr, "\n");
+            }
+        }
     }
+    return 0;
+}
+
+int start_logger(const char *app_name)
+{
+    tag = app_name;
+
+    /* make stdout line-buffered and stderr unbuffered */
+    setvbuf(stdout, 0, _IOLBF, 0);
+    setvbuf(stderr, 0, _IONBF, 0);
+
+    /* create the pipe and redirect stdout and stderr */
+    pipe(pfd);
+    dup2(pfd[1], 1);
+    dup2(pfd[1], 2);
+
+    /* spawn the logging thread */
+    if(pthread_create(&thr, 0, thread_func, 0) == -1)
+        return -1;
+    pthread_detach(thr);
+    return 0;
 }
 
 NATIVE(Process,jlong,start) (PARAMS)
 {
-    if (stdout_thread == nullptr) {
-        setvbuf(stdout, nullptr, _IONBF, 0);
-        setvbuf(stderr, nullptr, _IONBF, 0);
-
-        /* create the pipe and redirect stdout and stderr */
-        pipe(pfd);
-        dup2(pfd[1], 1);
-        dup2(pfd[1], 2);
-
-        /* spawn the logging thread */
-        stdout_thread = new std::thread(node_stdout_thread);
-        stdout_thread->detach();
+    // One time set up
+    if (tag == nullptr) {
+        start_logger("nodedroid");
     }
 
     NodeInstance *instance = new NodeInstance(env, thiz);
     return reinterpret_cast<jlong>(instance);
 }
 
-NATIVE(Process,void,exit) (PARAMS)
+NATIVE(Process,void,dispose) (PARAMS, jlong ref)
 {
-    // FIXME
+    delete reinterpret_cast<NodeInstance*>(ref);
+}
+
+NATIVE(Process,long,keepAlive) (PARAMS, jlong contextRef)
+{
+    auto done = [](uv_async_t* handle) {
+        uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
+            delete (uv_async_t*)h;
+        });
+    };
+
+    JSContext *context = reinterpret_cast<JSContext*>(contextRef);
+    ContextGroup *group = context->Group();
+    uv_async_t *async_handle = new uv_async_t();
+    uv_async_init(group->Loop(), async_handle, done);
+    return reinterpret_cast<jlong>(async_handle);
+}
+
+NATIVE(Process,void,letDie) (PARAMS, jlong ref)
+{
+    uv_async_t *async_handle = reinterpret_cast<uv_async_t*>(ref);
+    uv_async_send(async_handle);
 }

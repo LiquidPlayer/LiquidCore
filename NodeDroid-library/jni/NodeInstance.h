@@ -16,10 +16,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
-#define HAVE_OPENSSL 1
-#define NODE_WANT_INTERNALS 1
-#define NODE_USE_V8_PLATFORM 1
-
 #include "node.h"
 #include "uv.h"
 #include "node_mutex.h"
