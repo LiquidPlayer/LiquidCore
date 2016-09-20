@@ -33,6 +33,7 @@ public class Process {
         public void letDie() {
             if (handleRef != 0 && !isDefunct) {
                 Process.this.letDie(handleRef);
+                handleRef = 0L;
             }
         }
 

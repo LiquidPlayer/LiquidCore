@@ -324,11 +324,17 @@ void ContextGroup::callback(uv_async_t* handle) {
 
 ContextGroup::~ContextGroup() {
     if (m_manage_isolate) {
-        //FIXME: This sometimes fails with:
-        //FIXME:#
-        //FIXME:# Fatal error in v8::Isolate::Dispose()
-        //FIXME:# Disposing the isolate that is entered by a thread.
-        //FIXME:#
+        // Occasionally, the finalizer will run and attempt to dispose of an isolate
+        // before another thread has finished with it.  To avoid the message below,
+        // we dutifully wait for our turn to enter the isolate before disposing.
+        //#
+        //# Fatal error in v8::Isolate::Dispose()
+        //# Disposing the isolate that is entered by a thread.
+        //#
+        {
+            V8_ISOLATE(this,isolate);
+            V8_UNLOCK();
+        }
         m_isolate->Dispose();
     }
     dispose_v8();
