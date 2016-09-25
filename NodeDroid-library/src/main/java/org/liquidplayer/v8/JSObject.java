@@ -47,6 +47,9 @@ import java.util.Map;
 @SuppressWarnings("JniMissingFunction")
 public class JSObject extends JSValue {
 
+    public @interface jsexport {
+    }
+
     private abstract class JNIReturnClass implements Runnable {
         JNIReturnObject jni;
     }

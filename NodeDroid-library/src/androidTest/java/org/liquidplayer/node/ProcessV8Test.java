@@ -1,5 +1,7 @@
 package org.liquidplayer.node;
 
+import android.support.test.InstrumentationRegistry;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +44,7 @@ public class ProcessV8Test {
         final Semaphore processStarted = new Semaphore(0);
         processCompleted = new Semaphore(0);
 
-        new Process(new Process.EventListener() {
+        new Process(InstrumentationRegistry.getContext(),"_",new Process.EventListener() {
             @Override
             public void onProcessStart(final Process proc, final JSContext ctx) {
                 context = ctx;
@@ -56,6 +58,9 @@ public class ProcessV8Test {
             public void onProcessExit(Process process, int exitCode) {
                 processCompleted.release();
             }
+
+            @Override
+            public void onProcessAboutToExit(Process process, int exitCode) {}
 
             @Override
             public void onProcessFailed(Process process, Exception error) {
@@ -386,5 +391,6 @@ public class ProcessV8Test {
         // Mark the process as done and wait until the process shuts down
         process.letDie();
         processCompleted.acquire();
+        context = null;
     }
 }

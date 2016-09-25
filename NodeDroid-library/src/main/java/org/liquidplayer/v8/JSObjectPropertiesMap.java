@@ -48,7 +48,7 @@ import java.util.Set;
  * A JSObject shadow class which implements the Java Map interface.  Convenient
  * for setting/getting/iterating properties.
  */
-public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V> {
+class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V> {
     /**
      * Creates a new Map object which operates on object 'object' and assumes type 'cls'.
      * Example:
@@ -59,7 +59,7 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
      * @param cls    The class of the component Values; must match template
      * @since 3.0
      */
-    public JSObjectPropertiesMap(JSObject object, Class<V> cls) {
+    JSObjectPropertiesMap(JSObject object, Class<V> cls) {
         super(object);
         mType = cls;
     }
@@ -79,7 +79,7 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
      * @param cls      The class of the component Values; must match template
      * @since 3.0
      */
-    public JSObjectPropertiesMap(JSContext context, Map map, Class<V> cls) {
+    JSObjectPropertiesMap(JSContext context, Map map, Class<V> cls) {
         super(new JSObject(context,map));
         mType = cls;
     }
@@ -95,7 +95,7 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
      * @param cls      The class of the component Values; must match template
      * @since 3.0
      */
-    public JSObjectPropertiesMap(JSContext context, Class<V> cls) {
+    JSObjectPropertiesMap(JSContext context, Class<V> cls) {
         super(new JSObject(context));
         mType = cls;
     }
@@ -248,7 +248,7 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
         private String current = null;
         private String removal = null;
 
-        public SetIterator() {
+        SetIterator() {
             String [] properties = propertyNames();
             if (properties.length > 0)
                 current = properties[0];

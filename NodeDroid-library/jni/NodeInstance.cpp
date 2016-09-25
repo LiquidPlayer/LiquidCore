@@ -25,14 +25,6 @@
 #include "node_lttng.h"
 #endif
 
-namespace node {
-void SetupProcessObject(Environment* env,
-                        int argc,
-                        const char* const* argv,
-                        int exec_argc,
-                        const char* const* exec_argv);
-}
-
 NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewGlobalRef(thiz);
@@ -184,6 +176,44 @@ bool NodeInstance::ShouldAbortOnUncaughtException(Isolate* isolate) {
   return isEmittingTopLevelDomainError || !DomainsStackHasErrorHandler(env);
 }
 
+void NodeInstance::Chdir(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+
+  if (args.Length() != 1 || !args[0]->IsString()) {
+    return env->ThrowTypeError("Bad argument.");
+  }
+
+  BufferValue path(args.GetIsolate(), nodedroid::fs_(env, args[0], _FS_ACCESS_RD));
+
+  __android_log_print(ANDROID_LOG_DEBUG, "Chdir", "Changing dir to %s", *path);
+
+  int err = uv_chdir(*path);
+  if (err) {
+    return env->ThrowUVException(err, "uv_chdir");
+  }
+}
+
+
+void NodeInstance::Cwd(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+  char buf[PATH_MAX];
+
+  size_t cwd_len = sizeof(buf);
+  int err = uv_cwd(buf, &cwd_len);
+  if (err) {
+    return env->ThrowUVException(err, "uv_cwd");
+  }
+
+  Local<String> cwd = String::NewFromUtf8(env->isolate(),
+                                          buf,
+                                          String::kNormalString,
+                                          cwd_len);
+  Local<Value> aliased = nodedroid::alias_(env, cwd);
+  args.GetReturnValue().Set(aliased);
+}
+
+
+
 Environment* NodeInstance::CreateEnvironment(Isolate* isolate,
                                       Local<Context> context,
                                       NodeInstanceData* instance_data) {
@@ -257,6 +287,11 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
     {
       ContextGroup::Mutex()->lock();
+
+      // Override default chdir and cwd methods
+      Local<Object> process = env->process_object();
+      env->SetMethod(process, "chdir", Chdir);
+      env->SetMethod(process, "cwd", Cwd);
 
       isolate->SetAbortOnUncaughtExceptionCallback(
         ShouldAbortOnUncaughtException);
@@ -492,4 +527,19 @@ NATIVE(Process,void,letDie) (PARAMS, jlong ref)
 {
     uv_async_t *async_handle = reinterpret_cast<uv_async_t*>(ref);
     uv_async_send(async_handle);
+}
+
+NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
+{
+    V8_ISOLATE_CTX(contextRef,isolate,context);
+
+    Local<Object> globalObj = context->Global();
+    Local<Object> fsObj = reinterpret_cast<JSValue<Value>*>(fsObjectRef)
+        ->Value()->ToObject(context).ToLocalChecked();
+
+    Local<Private> privateKey = v8::Private::ForApi(isolate,
+        String::NewFromUtf8(isolate, "__fs"));
+    globalObj->SetPrivate(context, privateKey, fsObj);
+
+    V8_UNLOCK();
 }

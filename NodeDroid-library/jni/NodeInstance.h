@@ -54,6 +54,9 @@ private:
     static bool StartInspector(Environment *env, int port, bool wait);
     static void PumpMessageLoop(Isolate* isolate);
 
+    static void Chdir(const FunctionCallbackInfo<Value>& args);
+    static void Cwd(const FunctionCallbackInfo<Value>& args);
+
 private:
     Mutex node_isolate_mutex;
     v8::Isolate* node_isolate = nullptr;

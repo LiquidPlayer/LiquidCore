@@ -1,13 +1,13 @@
 package org.liquidplayer.node;
 
+import android.support.test.InstrumentationRegistry;
+
 import org.junit.Test;
 import org.liquidplayer.v8.JSArray;
 import org.liquidplayer.v8.JSContext;
 import org.liquidplayer.v8.JSFunction;
 import org.liquidplayer.v8.JSValue;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.*;
@@ -25,7 +25,6 @@ public class ProcessTest {
         Process.EventListener listener = new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
-                assertNotNull(process.context);
                 assertTrue(process.isActive());
                 JSFunction function = new JSFunction(context,"testme") {
                     @SuppressWarnings("unused")
@@ -43,19 +42,20 @@ public class ProcessTest {
 
             @Override
             public void onProcessExit(final Process process, int exitCode) {
-                assertNull(process.context);
                 assertFalse(process.isActive());
                 semaphore.release();
             }
 
             @Override
-            public void onProcessFailed(final Process process, Exception error) {
+            public void onProcessAboutToExit(Process process, int exitCode) {}
 
+            @Override
+            public void onProcessFailed(final Process process, Exception error) {
             }
         };
-        new Process(listener);
-        new Process(listener);
-        new Process(listener);
+        new Process(InstrumentationRegistry.getContext(),"_1",listener);
+        new Process(InstrumentationRegistry.getContext(),"_2",listener);
+        new Process(InstrumentationRegistry.getContext(),"_3",listener);
 
         // Hang out here until the processes all finish
         semaphore.acquire();
@@ -68,7 +68,7 @@ public class ProcessTest {
 
         final Semaphore semaphore = new Semaphore(0);
 
-        new Process(new Process.EventListener() {
+        new Process(InstrumentationRegistry.getContext(),"_",new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
 
@@ -91,7 +91,7 @@ public class ProcessTest {
                         context.evaluateScript(
                                 "(function() {" +
                                 "  var fs = require('fs');" +
-                                "  fs.readdir('.',dir_contents);" +
+                                "  fs.readdir('/home',dir_contents);" +
                                 "})();");
                         // ok, we're done here
                         process.letDie();
@@ -103,6 +103,9 @@ public class ProcessTest {
             public void onProcessExit(Process process, int exitCode) {
                 semaphore.release();
             }
+
+            @Override
+            public void onProcessAboutToExit(Process process, int exitCode) {}
 
             @Override
             public void onProcessFailed(Process process, Exception error) {

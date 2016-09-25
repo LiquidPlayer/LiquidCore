@@ -1,5 +1,5 @@
 #include "node.h"
-#include "node_file.h"
+#include "nodedroid_file.h"
 #include "node_buffer.h"
 #include "node_internals.h"
 #include "node_stat_watcher.h"
@@ -47,6 +47,8 @@ using v8::Number;
 using v8::Object;
 using v8::String;
 using v8::Value;
+using v8::Maybe;
+using v8::MaybeLocal;
 
 using node::ReqWrap;
 using node::Environment;
@@ -161,13 +163,9 @@ static void After(uv_fs_t *req) {
   CHECK_EQ(&req_wrap->req_, req);
   req_wrap->ReleaseEarly();  // Free memory that's no longer used now.
 
-__android_log_print(ANDROID_LOG_DEBUG,"After","1");
-
   Environment* env = req_wrap->env();
   HandleScope handle_scope(env->isolate());
   Context::Scope context_scope(env->context());
-
-__android_log_print(ANDROID_LOG_DEBUG,"After","2");
 
   // there is always at least one argument. "error"
   int argc = 1;
@@ -245,6 +243,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"After","2");
                                 req->path,
                                 req_wrap->data());
         } else {
+          link = alias_(env, link);
           argv[1] = link;
         }
         break;
@@ -261,6 +260,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"After","2");
                                 req->path,
                                 req_wrap->data());
         } else {
+          link = alias_(env, link);
           argv[1] = link;
         }
         break;
@@ -277,6 +277,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"After","2");
                                 req->path,
                                 req_wrap->data());
         } else {
+          link = alias_(env, link);
           argv[1] = link;
         }
         break;
@@ -284,7 +285,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"After","2");
       case UV_FS_READ:
         // Buffer interface
         argv[1] = Integer::New(env->isolate(), req->result);
-        __android_log_print(ANDROID_LOG_DEBUG,"After","UV_FS_READ result = %d", req->result);
         break;
 
       case UV_FS_SCANDIR:
@@ -343,10 +343,8 @@ __android_log_print(ANDROID_LOG_DEBUG,"After","2");
         CHECK(0 && "Unhandled eio response");
     }
   }
-__android_log_print(ANDROID_LOG_DEBUG,"After","3");
 
   req_wrap->MakeCallback(env->oncomplete_string(), argc, argv);
-__android_log_print(ANDROID_LOG_DEBUG,"After","4");
 
   uv_fs_req_cleanup(&req_wrap->req_);
   req_wrap->Dispose();
@@ -406,9 +404,90 @@ class fs_req_wrap {
 
 #define SYNC_RESULT err
 
+Local<Value> fs_(Environment *env, Local<Value> path, int req_access)
+{
+    HandleScope handle_scope(env->isolate());
+    Context::Scope context_scope(env->context());
+
+    BufferValue p(env->isolate(), path);
+
+    int access = 0;
+    Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
+        String::NewFromUtf8(env->isolate(), "__fs"));
+    Local<Object> globalObj = env->context()->Global();
+    Maybe<bool> result = globalObj->HasPrivate(env->context(), privateKey);
+    if (result.IsJust() && result.FromJust()) {
+      Local<Value> fsVal;
+      if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
+        Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
+        fs_req_wrap req_wrap;
+        env->PrintSyncTrace();
+        int err = uv_fs_realpath(env->event_loop(),
+                             &req_wrap.req, *p, nullptr);
+        const char* link_path;
+        if (err < 0) {
+            link_path = *p;
+        } else {
+            link_path = static_cast<const char*>(SYNC_REQ.ptr);
+        }
+
+        Local<Value> rc = StringBytes::Encode(env->isolate(),
+                                              link_path,
+                                              UTF8);
+        if (rc.IsEmpty()) {
+          env->ThrowUVException(UV_EINVAL,
+                                "realpath",
+                                "Invalid character encoding for path",
+                                *p);
+          return rc;
+        }
+
+        Local<Object> test = fsObj->Get(env->context(), String::NewFromUtf8(env->isolate(), "fs"))
+            .ToLocalChecked()->ToObject(env->context()).ToLocalChecked();
+        MaybeLocal<Value> tuple = test->CallAsFunction(env->context(), fsObj, 1, &rc);
+        access = (int) tuple.ToLocalChecked()->ToObject(env->context()).ToLocalChecked()
+            ->Get(env->context(), 0).ToLocalChecked()
+            ->ToNumber(env->context()).ToLocalChecked()->Value();
+        rc = tuple.ToLocalChecked()->ToObject(env->context()).ToLocalChecked()
+            ->Get(env->context(), 1).ToLocalChecked();
+
+        if ((req_access & access) != req_access) {
+            env->ThrowError("access denied (EACCES)");
+        }
+        return rc;
+      }
+    }
+    // FileSystem object not set up yet, so carry on as normal
+    return path;
+}
+
+Local<Value> alias_(Environment *env, Local<Value> path)
+{
+    HandleScope handle_scope(env->isolate());
+    Context::Scope context_scope(env->context());
+
+    Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
+        String::NewFromUtf8(env->isolate(), "__fs"));
+    Local<Object> globalObj = env->context()->Global();
+    Maybe<bool> result = globalObj->HasPrivate(env->context(), privateKey);
+    if (result.IsJust() && result.FromJust()) {
+      Local<Value> fsVal;
+      if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
+        Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
+
+        Local<Object> alias = fsObj->Get(env->context(),String::NewFromUtf8(env->isolate(),"alias"))
+            .ToLocalChecked()->ToObject(env->context()).ToLocalChecked();
+        MaybeLocal<Value> aliased = alias->CallAsFunction(env->context(), fsObj, 1, &path);
+
+        return aliased.ToLocalChecked();
+      }
+    }
+    // FileSystem object not set up yet, so carry on as normal
+    return path;
+}
+
 static void Access(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Access","env = %p",env);
   HandleScope scope(env->isolate());
 
   if (args.Length() < 2)
@@ -416,7 +495,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"Access","env = %p",env);
   if (!args[1]->IsInt32())
     return TYPE_ERROR("mode must be an integer");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
   ASSERT_PATH(path)
 
   int mode = static_cast<int>(args[1]->Int32Value());
@@ -431,7 +510,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Access","env = %p",env);
 
 static void Close(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Close","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("fd is required");
@@ -553,7 +631,6 @@ Local<Value> BuildStatsObject(Environment* env, const uv_stat_t* s) {
 // comes from not creating Error objects on failure.
 static void InternalModuleReadFile(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"InternalModuleReadFile","env = %p",env);
   uv_loop_t* loop = env->event_loop();
 
   CHECK(args[0]->IsString());
@@ -615,7 +692,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"InternalModuleReadFile","env = %p",env);
 // The speedup comes from not creating thousands of Stat and Error objects.
 static void InternalModuleStat(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"InternalModuleStat","env = %p",env);
 
   CHECK(args[0]->IsString());
   node::Utf8Value path(env->isolate(), args[0]);
@@ -633,12 +709,11 @@ __android_log_print(ANDROID_LOG_DEBUG,"InternalModuleStat","env = %p",env);
 
 static void Stat(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Stat","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
   ASSERT_PATH(path)
 
   if (args[1]->IsObject()) {
@@ -652,12 +727,11 @@ __android_log_print(ANDROID_LOG_DEBUG,"Stat","env = %p",env);
 
 static void LStat(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"LStat","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
   ASSERT_PATH(path)
 
   if (args[1]->IsObject()) {
@@ -671,7 +745,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"LStat","env = %p",env);
 
 static void FStat(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"FStat","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("fd is required");
@@ -691,7 +764,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"FStat","env = %p",env);
 
 static void Symlink(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Symlink","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -699,9 +771,9 @@ __android_log_print(ANDROID_LOG_DEBUG,"Symlink","env = %p",env);
   if (len < 2)
     return TYPE_ERROR("src path required");
 
-  BufferValue target(env->isolate(), args[0]);
+  BufferValue target(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(target)
-  BufferValue path(env->isolate(), args[1]);
+  BufferValue path(env->isolate(), fs_(env, args[1], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   int flags = 0;
@@ -726,7 +798,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Symlink","env = %p",env);
 
 static void Link(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Link","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -734,10 +805,10 @@ __android_log_print(ANDROID_LOG_DEBUG,"Link","env = %p",env);
   if (len < 2)
     return TYPE_ERROR("dest path required");
 
-  BufferValue src(env->isolate(), args[0]);
+  BufferValue src(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(src)
 
-  BufferValue dest(env->isolate(), args[1]);
+  BufferValue dest(env->isolate(), fs_(env, args[1], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(dest)
 
   if (args[2]->IsObject()) {
@@ -749,14 +820,13 @@ __android_log_print(ANDROID_LOG_DEBUG,"Link","env = %p",env);
 
 static void ReadLink(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"ReadLink","env = %p",env);
 
   const int argc = args.Length();
 
   if (argc < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
   ASSERT_PATH(path)
 
   const enum encoding encoding = ParseEncoding(env->isolate(), args[1], UTF8);
@@ -779,13 +849,13 @@ __android_log_print(ANDROID_LOG_DEBUG,"ReadLink","env = %p",env);
                                    "Invalid character encoding for link",
                                    *path);
     }
+    rc = alias_(env, rc);
     args.GetReturnValue().Set(rc);
   }
 }
 
 static void Rename(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Rename","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -793,9 +863,9 @@ __android_log_print(ANDROID_LOG_DEBUG,"Rename","env = %p",env);
   if (len < 2)
     return TYPE_ERROR("new path required");
 
-  BufferValue old_path(env->isolate(), args[0]);
+  BufferValue old_path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(old_path)
-  BufferValue new_path(env->isolate(), args[1]);
+  BufferValue new_path(env->isolate(), fs_(env, args[1], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(new_path)
 
   if (args[2]->IsObject()) {
@@ -807,7 +877,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Rename","env = %p",env);
 
 static void FTruncate(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"FTruncate","env = %p",env);
 
   if (args.Length() < 2)
     return TYPE_ERROR("fd and length are required");
@@ -837,7 +906,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"FTruncate","env = %p",env);
 
 static void Fdatasync(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Fdatasync","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("fd is required");
@@ -855,7 +923,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Fdatasync","env = %p",env);
 
 static void Fsync(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Fsync","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("fd is required");
@@ -873,12 +940,11 @@ __android_log_print(ANDROID_LOG_DEBUG,"Fsync","env = %p",env);
 
 static void Unlink(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Unlink","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   if (args[1]->IsObject()) {
@@ -890,12 +956,11 @@ __android_log_print(ANDROID_LOG_DEBUG,"Unlink","env = %p",env);
 
 static void RMDir(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"RMDir","env = %p",env);
 
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   if (args[1]->IsObject()) {
@@ -907,14 +972,13 @@ __android_log_print(ANDROID_LOG_DEBUG,"RMDir","env = %p",env);
 
 static void MKDir(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"MKDir","env = %p",env);
 
   if (args.Length() < 2)
     return TYPE_ERROR("path and mode are required");
   if (!args[1]->IsInt32())
     return TYPE_ERROR("mode must be an integer");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   int mode = static_cast<int>(args[1]->Int32Value());
@@ -928,14 +992,13 @@ __android_log_print(ANDROID_LOG_DEBUG,"MKDir","env = %p",env);
 
 static void RealPath(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"RealPath","env = %p",env);
 
   const int argc = args.Length();
 
   if (argc < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
   ASSERT_PATH(path)
 
   const enum encoding encoding = ParseEncoding(env->isolate(), args[1], UTF8);
@@ -958,20 +1021,20 @@ __android_log_print(ANDROID_LOG_DEBUG,"RealPath","env = %p",env);
                                    "Invalid character encoding for path",
                                    *path);
     }
+    rc = alias_(env, rc);
     args.GetReturnValue().Set(rc);
   }
 }
 
 static void ReadDir(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"ReadDir","env = %p",env);
 
   const int argc = args.Length();
 
   if (argc < 1)
     return TYPE_ERROR("path required");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
   ASSERT_PATH(path)
 
   const enum encoding encoding = ParseEncoding(env->isolate(), args[1], UTF8);
@@ -1030,7 +1093,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"ReadDir","env = %p",env);
 
 static void Open(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Open","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -1044,10 +1106,15 @@ __android_log_print(ANDROID_LOG_DEBUG,"Open","env = %p",env);
   if (!args[2]->IsInt32())
     return TYPE_ERROR("mode must be an int");
 
-  BufferValue path(env->isolate(), args[0]);
+  int flags = args[1]->Int32Value();
+
+  int req_access = (flags&O_ACCMODE) == O_RDWR   ? _FS_ACCESS_RD|_FS_ACCESS_WR :
+                   (flags&O_ACCMODE) == O_WRONLY ? _FS_ACCESS_WR :
+                   (flags&O_ACCMODE) == O_RDONLY ? _FS_ACCESS_RD : _FS_ACCESS_NONE;
+
+  BufferValue path(env->isolate(), fs_(env, args[0], req_access));
   ASSERT_PATH(path)
 
-  int flags = args[1]->Int32Value();
   int mode = static_cast<int>(args[2]->Int32Value());
 
   if (args[3]->IsObject()) {
@@ -1056,6 +1123,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"Open","env = %p",env);
     SYNC_CALL(open, *path, *path, flags, mode)
     args.GetReturnValue().Set(SYNC_RESULT);
   }
+
 }
 
 
@@ -1070,7 +1138,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Open","env = %p",env);
 //             if null, write from the current position
 static void WriteBuffer(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"WriteBuffer","env = %p",env);
 
   if (!args[0]->IsInt32())
     return env->ThrowTypeError("First argument must be file descriptor");
@@ -1118,7 +1185,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"WriteBuffer","env = %p",env);
 //             if null, write from the current position
 static void WriteBuffers(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"WriteBuffers","env = %p",env);
 
   CHECK(args[0]->IsInt32());
   CHECK(args[1]->IsArray());
@@ -1159,7 +1225,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"WriteBuffers","env = %p",env);
 // 3 enc       encoding of string
 static void WriteString(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"WriteString","env = %p",env);
 
   if (!args[0]->IsInt32())
     return env->ThrowTypeError("First argument must be file descriptor");
@@ -1238,7 +1303,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"WriteString","env = %p",env);
  */
 static void Read(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Read","env = %p",env);
 
   if (args.Length() < 2)
     return TYPE_ERROR("fd and buffer are required");
@@ -1248,7 +1312,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Read","env = %p",env);
     return TYPE_ERROR("Second argument needs to be a buffer");
 
   int fd = args[0]->Int32Value();
-__android_log_print(ANDROID_LOG_DEBUG,"Read","fd = %d",fd);
 
   Local<Value> req;
 
@@ -1260,13 +1323,11 @@ __android_log_print(ANDROID_LOG_DEBUG,"Read","fd = %d",fd);
   Local<Object> buffer_obj = args[1]->ToObject(env->isolate());
   char *buffer_data = node::Buffer::Data(buffer_obj);
   size_t buffer_length = node::Buffer::Length(buffer_obj);
-__android_log_print(ANDROID_LOG_DEBUG,"Read","1");
 
   size_t off = args[2]->Int32Value();
   if (off >= buffer_length) {
     return env->ThrowError("Offset is out of bounds");
   }
-__android_log_print(ANDROID_LOG_DEBUG,"Read","2");
 
   len = args[3]->Int32Value();
   if (!node::Buffer::IsWithinBounds(off, len, buffer_length))
@@ -1275,23 +1336,17 @@ __android_log_print(ANDROID_LOG_DEBUG,"Read","2");
   pos = GET_OFFSET(args[4]);
 
   buf = buffer_data + off;
-__android_log_print(ANDROID_LOG_DEBUG,"Read","3");
 
   uv_buf_t uvbuf = uv_buf_init(const_cast<char*>(buf), len);
 
   req = args[5];
-__android_log_print(ANDROID_LOG_DEBUG,"Read","4");
 
   if (req->IsObject()) {
-__android_log_print(ANDROID_LOG_DEBUG,"Read","5");
 
     ASYNC_CALL(read, req, UTF8, fd, &uvbuf, 1, pos);
-__android_log_print(ANDROID_LOG_DEBUG,"Read","6");
 
   } else {
-__android_log_print(ANDROID_LOG_DEBUG,"Read","7");
     SYNC_CALL(read, 0, fd, &uvbuf, 1, pos)
-__android_log_print(ANDROID_LOG_DEBUG,"Read","8");
     args.GetReturnValue().Set(SYNC_RESULT);
   }
 }
@@ -1302,14 +1357,13 @@ __android_log_print(ANDROID_LOG_DEBUG,"Read","8");
  */
 static void Chmod(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Chmod","env = %p",env);
 
   if (args.Length() < 2)
     return TYPE_ERROR("path and mode are required");
   if (!args[1]->IsInt32())
     return TYPE_ERROR("mode must be an integer");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   int mode = static_cast<int>(args[1]->Int32Value());
@@ -1327,7 +1381,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Chmod","env = %p",env);
  */
 static void FChmod(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"FChmod","env = %p",env);
 
   if (args.Length() < 2)
     return TYPE_ERROR("fd and mode are required");
@@ -1352,7 +1405,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"FChmod","env = %p",env);
  */
 static void Chown(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Chown","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -1366,7 +1418,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"Chown","env = %p",env);
   if (!args[2]->IsUint32())
     return TYPE_ERROR("gid must be an unsigned int");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   uv_uid_t uid = static_cast<uv_uid_t>(args[1]->Uint32Value());
@@ -1385,7 +1437,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"Chown","env = %p",env);
  */
 static void FChown(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"FChown","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -1415,7 +1466,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"FChown","env = %p",env);
 
 static void UTimes(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"UTimes","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -1429,7 +1479,7 @@ __android_log_print(ANDROID_LOG_DEBUG,"UTimes","env = %p",env);
   if (!args[2]->IsNumber())
     return TYPE_ERROR("mtime must be a number");
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   ASSERT_PATH(path)
 
   const double atime = static_cast<double>(args[1]->NumberValue());
@@ -1444,7 +1494,6 @@ __android_log_print(ANDROID_LOG_DEBUG,"UTimes","env = %p",env);
 
 static void FUTimes(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"FUTimes","env = %p",env);
 
   int len = args.Length();
   if (len < 1)
@@ -1473,11 +1522,10 @@ __android_log_print(ANDROID_LOG_DEBUG,"FUTimes","env = %p",env);
 
 static void Mkdtemp(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-__android_log_print(ANDROID_LOG_DEBUG,"Mkdtemp","env = %p",env);
 
   CHECK_GE(args.Length(), 2);
 
-  BufferValue tmpl(env->isolate(), args[0]);
+  BufferValue tmpl(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
   if (*tmpl == nullptr)
     return TYPE_ERROR("template must be a string or Buffer");
 
@@ -1495,23 +1543,18 @@ __android_log_print(ANDROID_LOG_DEBUG,"Mkdtemp","env = %p",env);
                                    "Invalid character encoding for filename",
                                    *tmpl);
     }
+    rc = alias_(env, rc);
     args.GetReturnValue().Set(rc);
   }
 }
 
 void FSInitialize(const FunctionCallbackInfo<Value>& args) {
-__android_log_write(ANDROID_LOG_DEBUG,"FSInitialize","1");
   Local<Function> stats_constructor = args[0].As<Function>();
-__android_log_write(ANDROID_LOG_DEBUG,"FSInitialize","2");
   CHECK(stats_constructor->IsFunction());
 
-__android_log_write(ANDROID_LOG_DEBUG,"FSInitialize","3");
   Environment* env = Environment::GetCurrent(args);
-__android_log_write(ANDROID_LOG_DEBUG,"FSInitialize","4");
-__android_log_print(ANDROID_LOG_DEBUG,"FSInitialize","env = %p",env);
 
   env->set_fs_stats_constructor_function(stats_constructor);
-__android_log_write(ANDROID_LOG_DEBUG,"FSInitialize","5");
 }
 
 void InitFs(Local<Object> target,
@@ -1519,14 +1562,10 @@ void InitFs(Local<Object> target,
             Local<Context> context,
             void* priv) {
   Environment* env = Environment::GetCurrent(context);
-__android_log_write(ANDROID_LOG_DEBUG,"InitFs","1");
-__android_log_print(ANDROID_LOG_DEBUG,"InitFs","env = %p",env);
 
   // Function which creates a new Stats object.
   target->Set(FIXED_ONE_BYTE_STRING(env->isolate(), "FSInitialize"),
               env->NewFunctionTemplate(FSInitialize)->GetFunction());
-
-__android_log_write(ANDROID_LOG_DEBUG,"InitFs","2");
 
   env->SetMethod(target, "access", Access);
   env->SetMethod(target, "close", Close);
@@ -1567,8 +1606,6 @@ __android_log_write(ANDROID_LOG_DEBUG,"InitFs","2");
   env->SetMethod(target, "mkdtemp", Mkdtemp);
 
   StatWatcher::Initialize(env, target);
-
-__android_log_write(ANDROID_LOG_DEBUG,"InitFs","3");
 
   // Create FunctionTemplate for FSReqWrap
   Local<FunctionTemplate> fst =

@@ -271,11 +271,8 @@ public class JSArray<T> extends JSBaseArray<T> {
     @SuppressWarnings("unchecked")
     public static JSArray<JSValue> from(JSContext ctx, Object arrayLike,
                                         final MapCallback<JSValue> mapFn) {
-        android.util.Log.d("from", "trying this");
         ctx.property("Array").toObject();
-        android.util.Log.d("from", "and this");
         JSFunction from = ctx.property("Array").toObject().property("from").toFunction();
-        android.util.Log.d("from", "got here");
         return (JSArray)  from.call(null,arrayLike,new JSFunction(ctx,"_callback") {
             @SuppressWarnings("unused")
             public JSValue _callback(JSValue currentValue, int index, JSArray array) {
