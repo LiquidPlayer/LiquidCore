@@ -65,10 +65,10 @@ public class FSTest {
         @jsexport(type = String.class)
         Property<String>  y;
 
-        @jsexport(type = String.class, attributes = JSPropertyAttributeReadOnly)
+        @jsexport(attributes = JSPropertyAttributeReadOnly)
         Property<String> read_only;
 
-        @jsexport
+        @jsexport(attributes = JSPropertyAttributeReadOnly | JSPropertyAttributeDontDelete)
         int incr(int x) {
             return x+1;
         }

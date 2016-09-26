@@ -183,7 +183,7 @@ public class JSObject extends JSValue {
                     m.setAccessible(true);
                     JSFunction f = new JSFunction(context, m,
                             JSObject.class, JSObject.this);
-                    property(m.getName(), f);
+                    property(m.getName(), f, m.getAnnotation(jsexport.class).attributes());
                 }
             }
         } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
