@@ -44,7 +44,8 @@ LOCAL_SRC_FILES := JSContext.cpp \
                    JSValue.cpp \
                    JSObject.cpp \
                    NodeInstance.cpp \
-                   nodedroid_file.cc
+                   nodedroid_file.cc \
+                   process_wrap.cc
 
 LOCAL_SHARED_LIBRARIES := libnode
 

@@ -185,8 +185,6 @@ void NodeInstance::Chdir(const FunctionCallbackInfo<Value>& args) {
 
   BufferValue path(args.GetIsolate(), nodedroid::fs_(env, args[0], _FS_ACCESS_RD));
 
-  __android_log_print(ANDROID_LOG_DEBUG, "Chdir", "Changing dir to %s", *path);
-
   int err = uv_chdir(*path);
   if (err) {
     return env->ThrowUVException(err, "uv_chdir");
@@ -292,6 +290,9 @@ int NodeInstance::StartNodeInstance(void* arg) {
       Local<Object> process = env->process_object();
       env->SetMethod(process, "chdir", Chdir);
       env->SetMethod(process, "cwd", Cwd);
+
+      // Remove process.dlopen().  Nothing good can come of it in this environment.
+      process->Delete(env->context(), String::NewFromUtf8(isolate, "dlopen"));
 
       isolate->SetAbortOnUncaughtExceptionCallback(
         ShouldAbortOnUncaughtException);

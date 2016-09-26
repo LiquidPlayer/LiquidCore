@@ -53,6 +53,7 @@ public class JSRegExp extends JSObject {
             @Override
             public void run() {
                 valueRef = makeRegExp(context.ctxRef(), pattern, flags).reference;
+                addJSExports();
             }
         });
     }

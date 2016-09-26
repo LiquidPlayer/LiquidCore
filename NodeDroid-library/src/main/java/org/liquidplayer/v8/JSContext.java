@@ -104,6 +104,7 @@ public class JSContext extends JSObject {
         contextGroup = group;
         ctx = ctxHandle;
         valueRef = getGlobalObject(ctx);
+        addJSExports();
     }
 
     /**
@@ -126,6 +127,7 @@ public class JSContext extends JSObject {
             @Override public void run() {
                 ctx = createInGroup(inGroup.groupRef());
                 valueRef = getGlobalObject(ctx);
+                addJSExports();
             }
         });
     }

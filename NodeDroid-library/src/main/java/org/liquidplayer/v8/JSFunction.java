@@ -87,6 +87,7 @@ public class JSFunction extends JSObject {
                         (sourceURL==null) ? "<anonymous>" : sourceURL,
                         startingLineNumber);
                 valueRef = testException(jni);
+                addJSExports();
             }
         });
         context.persistObject(this);
@@ -150,6 +151,7 @@ public class JSFunction extends JSObject {
             public void run() {
                 valueRef = makeFunctionWithCallback(context.ctxRef(), method.getName());
                 subclass = instanceClass;
+                addJSExports();
             }
         });
 
@@ -315,6 +317,7 @@ public class JSFunction extends JSObject {
             public void run() {
                 valueRef = makeFunctionWithCallback(context.ctxRef(), method.getName());
                 subclass = instanceClass;
+                addJSExports();
             }
         });
 

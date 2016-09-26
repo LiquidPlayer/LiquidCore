@@ -93,6 +93,7 @@ public class JSArray<T> extends JSBaseArray<T> {
             @Override
             public void run() {
                 valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+                addJSExports();
             }
         });
         context.persistObject(this);
@@ -111,6 +112,7 @@ public class JSArray<T> extends JSBaseArray<T> {
             @Override
             public void run() {
                 valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+                addJSExports();
             }
         });
         context.persistObject(this);
@@ -135,6 +137,7 @@ public class JSArray<T> extends JSBaseArray<T> {
             @Override
             public void run() {
                 valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+                addJSExports();
             }
         });
         context.persistObject(this);

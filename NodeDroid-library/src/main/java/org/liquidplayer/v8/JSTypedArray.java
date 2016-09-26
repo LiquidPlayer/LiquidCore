@@ -49,6 +49,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         JSValue newArray = constructor.call(null,length);
         valueRef = newArray.valueRef();
         protect(context.ctxRef(), valueRef);
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -60,6 +61,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         JSValue newArray = constructor.call(null,typedArray);
         valueRef = newArray.valueRef();
         protect(context.ctxRef(), valueRef);
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -72,6 +74,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         JSValue newArray = constructor.call(null,object);
         valueRef = newArray.valueRef();
         protect(context.ctxRef(), valueRef);
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -85,6 +88,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         JSValue newArray = constructor.call(null,buffer.getJSObject(),byteOffset,length);
         valueRef = newArray.valueRef();
         protect(context.ctxRef(), valueRef);
+        addJSExports();
         context.persistObject(this);
     }
     protected JSTypedArray(JSArrayBuffer buffer, int byteOffset, String jsConstructor,
@@ -97,6 +101,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         JSValue newArray = constructor.call(null,buffer.getJSObject(),byteOffset);
         valueRef = newArray.valueRef();
         protect(context.ctxRef(), valueRef);
+        addJSExports();
         context.persistObject(this);
     }
     protected JSTypedArray(JSArrayBuffer buffer, String jsConstructor, Class<T> cls) {
@@ -108,6 +113,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         JSValue newArray = constructor.call(null,buffer.getJSObject());
         valueRef = newArray.valueRef();
         protect(context.ctxRef(), valueRef);
+        addJSExports();
         context.persistObject(this);
     }
     protected JSTypedArray(long objRef, JSContext ctx, Class<T> cls) {

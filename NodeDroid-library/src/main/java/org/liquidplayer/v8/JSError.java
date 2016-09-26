@@ -52,6 +52,7 @@ public class JSError extends JSObject {
             @Override
             public void run() {
                 valueRef = makeError(context.ctxRef(), message);
+                addJSExports();
             }
         });
     }

@@ -34,7 +34,13 @@ package org.liquidplayer.v8;
 
 import android.support.annotation.NonNull;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +53,62 @@ import java.util.Map;
 @SuppressWarnings("JniMissingFunction")
 public class JSObject extends JSValue {
 
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface jsexport {
+        Class type() default Object.class;
+        int attributes() default JSPropertyAttributeNone;
+    }
+
+    public class Property<T>
+    {
+        private T temp = null;
+        private Class pT;
+        private Integer attributes=null;
+
+        private Property()
+        {
+        }
+
+        public void set(T v)
+        {
+            temp = v;
+            if (temp != null)
+                pT = temp.getClass();
+            if (name != null) {
+                if (attributes != null) {
+                    property(name, v, attributes);
+                    attributes = null;
+                } else {
+                    property(name, v);
+                }
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public T get()
+        {
+            if (temp == null && pT==Object.class) {
+                context.throwJSException(new JSException(context,"object has no defined type"));
+                return null;
+            }
+            if (name != null)
+                return (T) property(name).toJavaObject(pT);
+            else
+                return this.temp;
+        }
+
+        private String name=null;
+        private void setName(String n, Class cls, int attributes) {
+            name = n;
+            this.attributes = attributes;
+            if (temp != null) {
+                property(name, temp, this.attributes);
+                this.attributes = null;
+            } else {
+                pT = cls;
+                property(name, new JSValue(context));
+            }
+        }
     }
 
     private abstract class JNIReturnClass implements Runnable {
@@ -57,20 +118,20 @@ public class JSObject extends JSValue {
     /**
      * Specifies that a property has no special attributes.
      */
-    public static int JSPropertyAttributeNone = 0;
+    public static final int JSPropertyAttributeNone = 0;
     /**
      * Specifies that a property is read-only.
      */
-    public static int JSPropertyAttributeReadOnly = 1 << 1;
+    public static final int JSPropertyAttributeReadOnly = 1 << 1;
     /**
      * Specifies that a property should not be enumerated by
      * JSPropertyEnumerators and JavaScript for...in loops.
      */
-    public static int JSPropertyAttributeDontEnum = 1 << 2;
+    public static final int JSPropertyAttributeDontEnum = 1 << 2;
     /**
      * Specifies that the delete operation should fail on a property.
      */
-    public static int JSPropertyAttributeDontDelete = 1 << 3;
+    public static final int JSPropertyAttributeDontDelete = 1 << 3;
 
     /**
      * Creates a new, empty JavaScript object.  In JS:
@@ -90,9 +151,44 @@ public class JSObject extends JSValue {
             @Override
             public void run() {
                 valueRef = make(context.ctxRef());
+                addJSExports();
             }
         });
         context.persistObject(this);
+    }
+
+    protected void addJSExports() {
+        try {
+            for (Field f : getClass().getDeclaredFields()) {
+                if (f.isAnnotationPresent(jsexport.class)) {
+                    f.setAccessible(true);
+                    if (Property.class.isAssignableFrom(f.getType())) {
+                        Property prop = (Property) f.get(this);
+                        if (prop == null) {
+                            Constructor ctor =
+                                    f.getType().getDeclaredConstructor(JSObject.class);
+                            ctor.setAccessible(true);
+                            prop = (Property) ctor.newInstance(this);
+                            f.set(this, prop);
+                        }
+                        prop.setName(f.getName(),
+                                f.getAnnotation(jsexport.class).type(),
+                                f.getAnnotation(jsexport.class).attributes());
+                    }
+                }
+            }
+            Method[] methods = getClass().getDeclaredMethods();
+            for (Method m : methods) {
+                if (m.isAnnotationPresent(jsexport.class)) {
+                    m.setAccessible(true);
+                    JSFunction f = new JSFunction(context, m,
+                            JSObject.class, JSObject.this);
+                    property(m.getName(), f);
+                }
+            }
+        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+            context.throwJSException(new JSException(context,e.toString()));
+        }
     }
 
     /**
@@ -140,6 +236,7 @@ public class JSObject extends JSValue {
             @Override
             public void run() {
                 valueRef = make(context.ctxRef());
+                addJSExports();
                 Method[] methods = iface.getDeclaredMethods();
                 for (Method m : methods) {
                     JSFunction f = new JSFunction(context, m,
@@ -161,6 +258,7 @@ public class JSObject extends JSValue {
     public JSObject(JSContext ctx, final Map map) {
         this(ctx);
         new JSObjectPropertiesMap<>(this,Object.class).putAll(map);
+        addJSExports();
     }
 
     /**

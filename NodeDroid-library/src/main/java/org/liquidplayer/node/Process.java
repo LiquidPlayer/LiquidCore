@@ -33,8 +33,8 @@ class Process {
          * here is executed synchronously.
          *
          * In the event that an EventListener is added by Process.addEventListener() after a
-         * process has already started, this method will be called immediately if the process is
-         * still active.  Otherwise, onProcessExit() will be called.
+         * process has already started, this method will be called immediately (in the process
+         * thread) if the process is still active.  Otherwise, onProcessExit() will be called.
          *
          * The caller must hold a reference to 'context' until it is done with the process.  This
          * is a safeguard to protect against misbehavior, intended or not, where a caller starts

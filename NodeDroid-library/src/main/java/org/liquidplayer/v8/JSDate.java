@@ -52,6 +52,7 @@ public class JSDate extends JSObject {
             @Override
             public void run() {
                 valueRef = makeDate(context.ctxRef(), new long[0]);
+                addJSExports();
             }
         });
         context.persistObject(this);
@@ -69,6 +70,7 @@ public class JSDate extends JSObject {
             @Override
             public void run() {
                 valueRef = makeDate(context.ctxRef(), args);
+                addJSExports();
             }
         });
         context.persistObject(this);
@@ -86,6 +88,7 @@ public class JSDate extends JSObject {
             @Override
             public void run() {
                 valueRef = makeDate(context.ctxRef(), args);
+                addJSExports();
             }
         });
         context.persistObject(this);
