@@ -82,10 +82,14 @@ CFLAGS_CC_Release := \
 	-fno-exceptions \
 	-std=gnu++0x
 
-LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/include/node \
-    -I$(LOCAL_PATH)/include/v8 -I$(LOCAL_PATH)/include/v8/include -I$(LOCAL_PATH)/include/uv \
-    -I$(LOCAL_PATH)/include/cares -I$(LOCAL_PATH)/include/openssl \
-    -I$(LOCAL_PATH)/include/http_parser $(DEFS_Release) $(CFLAGS_Release) $(CFLAGS_CC_Release)
+LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
+    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/v8 \
+    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/v8/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/uv/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/cares/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/openssl/openssl/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/http_parser \
+    $(DEFS_Release) $(CFLAGS_Release) $(CFLAGS_CC_Release)
 LOCAL_LDFLAGS := -llog -lm -ldl
 
 include $(BUILD_SHARED_LIBRARY)
