@@ -136,10 +136,16 @@ public class FSTest {
         new Script(script, new OnDone() {
             @Override
             public void onDone(JSContext ctx) {
+                android.util.Log.d("testLetsBeNaughty", ctx.property("a").toString());
                 assertTrue(ctx.property("a").toString().contains("EACCES"));
-                assertTrue(ctx.property("b").toString().contains("EACCES"));
+                android.util.Log.d("testLetsBeNaughty", ctx.property("b").toString());
+                assertTrue(ctx.property("b").toString().contains("EACCES") ||
+                        ctx.property("b").toString().contains("ENOENT"));
+                android.util.Log.d("testLetsBeNaughty", ctx.property("c").toString());
                 assertTrue(ctx.property("c").toString().contains("EACCES"));
+                android.util.Log.d("testLetsBeNaughty", ctx.property("d").toString());
                 assertTrue(ctx.property("d").toString().contains("EACCES"));
+                android.util.Log.d("testLetsBeNaughty", ctx.property("e").toString());
                 assertTrue(ctx.property("e").toString().contains("EACCES"));
             }
         }).processCompleted.acquire();

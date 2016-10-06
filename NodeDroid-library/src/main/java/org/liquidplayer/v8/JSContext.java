@@ -55,7 +55,7 @@ public class JSContext extends JSObject {
     }
 
     protected void sync(final Runnable runnable) {
-        if (android.os.Process.myTid() == mContextThreadTid) {
+        if (!isThreadSpecific || (android.os.Process.myTid() == mContextThreadTid)) {
             runnable.run();
         } else {
             final Semaphore sempahore = new Semaphore(0);
@@ -71,7 +71,11 @@ public class JSContext extends JSObject {
         }
     }
     protected void async(final Runnable runnable) {
-        runInContextGroup(contextGroup.groupRef(),runnable);
+        if (!isThreadSpecific) {
+            runnable.run();
+        } else {
+            runInContextGroup(contextGroup.groupRef(), runnable);
+        }
     }
 
     private int mContextThreadTid = 0;
@@ -98,10 +102,12 @@ public class JSContext extends JSObject {
 
     protected Long ctx;
     private IJSExceptionHandler exceptionHandler;
+    private boolean isThreadSpecific = false;
 
     protected JSContext(long ctxHandle, JSContextGroup group) {
         context = this;
         contextGroup = group;
+        isThreadSpecific = true;
         ctx = ctxHandle;
         valueRef = getGlobalObject(ctx);
         addJSExports();
@@ -161,6 +167,7 @@ public class JSContext extends JSObject {
     protected void finalize() throws Throwable {
         super.finalize();
         if (!isDefunct) {
+            android.util.Log.d("JSContext.finalize()", "About to release context");
             release(ctx);
         }
     }

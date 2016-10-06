@@ -366,8 +366,10 @@ int NodeInstance::StartNodeInstance(void* arg) {
       java_node_context->SetDefunct();
       int count = java_node_context->release();
       if (count != 0) {
+      /*
         __android_log_assert("FAIL", "StartNodeInstance",
             "JSContext count not zero (%d)", count);
+      */
       }
 
       WaitForInspectorDisconnect(env);

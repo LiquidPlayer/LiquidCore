@@ -75,7 +75,7 @@
             'cflags': [ '-gxcoff' ],
             'ldflags': [ '-Wl,-bbigtoc' ],
           }],
-          ['OS == "android"', {
+          ['OS == "android" and node_shared!="true"', {
             'cflags': [ '-fPIE' ],
             'ldflags': [ '-fPIE', '-pie' ]
           }]
@@ -112,7 +112,7 @@
           ['OS!="mac" and OS!="win"', {
             'cflags': [ '-fno-omit-frame-pointer' ],
           }],
-          ['OS == "android"', {
+          ['OS == "android" and node_shared!="true"', {
             'cflags': [ '-fPIE' ],
             'ldflags': [ '-fPIE', '-pie' ]
           }]

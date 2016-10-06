@@ -44,9 +44,10 @@
     Local<Value> value = (reinterpret_cast<JSValue<Value>*>(valueRef))->Value()
 
 NATIVE(JSObject,jlong,make) (PARAMS, jlong ctx) {
+    JSValue<Value> *value;
     V8_ISOLATE_CTX(ctx,isolate,context);
 
-    JSValue<Value> *value = JSValue<Value>::New(context_, Object::New(isolate));
+    value = JSValue<Value>::New(context_, Object::New(isolate));
 
     V8_UNLOCK();
     return reinterpret_cast<long>(value);
@@ -58,500 +59,502 @@ NATIVE(JSFunction,jlong,makeFunctionWithCallback) (PARAMS, jlong ctx, jstring na
 }
 
 NATIVE(JSObject,jobject,makeArray) (PARAMS, jlong ctx, jlongArray args) {
-    V8_ISOLATE_CTX(ctx,isolate,context);
-
-    jsize len = env->GetArrayLength(args);
-    jlong *values = env->GetLongArrayElements(args, 0);
 
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
+    V8_ISOLATE_CTX(ctx,isolate,context);
+        jsize len = env->GetArrayLength(args);
+        jlong *values = env->GetLongArrayElements(args, 0);
 
-    JSValue<Value> *exception = nullptr;
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
 
-    Local<Array> array = Array::New(isolate, len);
+        JSValue<Value> *exception = nullptr;
 
-    TryCatch trycatch(isolate);
+        Local<Array> array = Array::New(isolate, len);
 
-    int i;
-    for (i=0; !exception && i<len; i++) {
-        Local<Value> element = reinterpret_cast<JSValue<Value>*>(values[i])->Value();
-        if (array->Set(context, i, element).IsNothing()) {
-            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        TryCatch trycatch(isolate);
+
+        int i;
+        for (i=0; !exception && i<len; i++) {
+            Local<Value> element = reinterpret_cast<JSValue<Value>*>(values[i])->Value();
+            if (array->Set(context, i, element).IsNothing()) {
+                exception = JSValue<Value>::New(context_, trycatch.Exception());
+            }
         }
-    }
-    env->ReleaseLongArrayElements(args, values, 0);
+        env->ReleaseLongArrayElements(args, values, 0);
 
-    if (!exception) {
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_,array)) );
-    }
+        if (!exception) {
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_,array)) );
+        }
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jlong,makeDate) (PARAMS, jlong ctx, jlongArray args) {
+    jlong out;
+
     V8_ISOLATE_CTX(ctx,isolate,context);
+        int i;
+        jsize len = env->GetArrayLength(args);
+        jlong *values = env->GetLongArrayElements(args, 0);
 
-    int i;
-    jsize len = env->GetArrayLength(args);
-    jlong *values = env->GetLongArrayElements(args, 0);
+        Local<Value> date;
+        if (len==0) {
+            Local<Object> DATE =
+                context->Global()->Get(String::NewFromUtf8(isolate, "Date"))->ToObject();
+            Local<Function> now = DATE->Get(String::NewFromUtf8(isolate, "now")).As<Function>();
 
-    Local<Value> date;
-    if (len==0) {
-        Local<Object> DATE =
-            context->Global()->Get(String::NewFromUtf8(isolate, "Date"))->ToObject();
-        Local<Function> now = DATE->Get(String::NewFromUtf8(isolate, "now")).As<Function>();
+            date = Date::New(isolate,
+                now->Call(Local<Value>::New(isolate,Null(isolate)), 0, nullptr)
+                    ->ToNumber(context).ToLocalChecked()->Value());
+        } else {
+            date = Date::New(isolate, (double)values[0]);
+        }
 
-        date = Date::New(isolate,
-            now->Call(Local<Value>::New(isolate,Null(isolate)), 0, nullptr)
-                ->ToNumber(context).ToLocalChecked()->Value());
-    } else {
-        date = Date::New(isolate, (double)values[0]);
-    }
+        env->ReleaseLongArrayElements(args, values, 0);
 
-    env->ReleaseLongArrayElements(args, values, 0);
-
-    jlong out = reinterpret_cast<long>(JSValue<Value>::New(context_, date));
-
+        out = reinterpret_cast<long>(JSValue<Value>::New(context_, date));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jlong,makeError) (PARAMS, jlong ctx, jstring message) {
+    jlong out;
+
     V8_ISOLATE_CTX(ctx,isolate,context);
+        const char *c_string = env->GetStringUTFChars(message, NULL);
+        Local<String> str =
+            String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
+        env->ReleaseStringUTFChars(message, c_string);
 
-    const char *c_string = env->GetStringUTFChars(message, NULL);
-    Local<String> str =
-        String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
-    env->ReleaseStringUTFChars(message, c_string);
-
-    jlong out = reinterpret_cast<long>(JSValue<Value>::New(context_, Exception::Error(str)));
-
+        out = reinterpret_cast<long>(JSValue<Value>::New(context_, Exception::Error(str)));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstring flags_) {
-    V8_ISOLATE_CTX(ctx,isolate,context);
-
-    const char *c_string = env->GetStringUTFChars(pattern_, NULL);
-    Local<String> pattern =
-        String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
-    env->ReleaseStringUTFChars(pattern_, c_string);
-
-    c_string = env->GetStringUTFChars(flags_, NULL);
-    RegExp::Flags flags = RegExp::Flags::kNone;
-    for (size_t i=0; i<strlen(c_string); i++) {
-        switch (c_string[i]) {
-            case 'g': flags = (RegExp::Flags) (flags | RegExp::Flags::kGlobal);     break;
-            case 'i': flags = (RegExp::Flags) (flags | RegExp::Flags::kIgnoreCase); break;
-            case 'm': flags = (RegExp::Flags) (flags | RegExp::Flags::kMultiline);  break;
-        }
-    }
-    env->ReleaseStringUTFChars(flags_, c_string);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_CTX(ctx,isolate,context);
+        const char *c_string = env->GetStringUTFChars(pattern_, NULL);
+        Local<String> pattern =
+            String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
+        env->ReleaseStringUTFChars(pattern_, c_string);
 
-    MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, flags);
-    if (regexp.IsEmpty()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        c_string = env->GetStringUTFChars(flags_, NULL);
+        RegExp::Flags flags = RegExp::Flags::kNone;
+        for (size_t i=0; i<strlen(c_string); i++) {
+            switch (c_string[i]) {
+                case 'g': flags = (RegExp::Flags) (flags | RegExp::Flags::kGlobal);     break;
+                case 'i': flags = (RegExp::Flags) (flags | RegExp::Flags::kIgnoreCase); break;
+                case 'm': flags = (RegExp::Flags) (flags | RegExp::Flags::kMultiline);  break;
+            }
+        }
+        env->ReleaseStringUTFChars(flags_, c_string);
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-    if (!exception) {
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_, regexp.ToLocalChecked())));
-    }
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, flags);
+        if (regexp.IsEmpty()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
+        if (!exception) {
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_, regexp.ToLocalChecked())));
+        }
+
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobject,makeFunction) (PARAMS, jlong ctx, jstring name_,
         jstring func_, jstring sourceURL_, jint startingLineNumber) {
 
-    V8_ISOLATE_CTX(ctx,isolate,context);
-
-    const char *c_string = env->GetStringUTFChars(name_, NULL);
-    Local<String> name =
-        String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
-    env->ReleaseStringUTFChars(name_, c_string);
-
-    c_string = env->GetStringUTFChars(func_, NULL);
-    Local<String> source =
-        String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
-    env->ReleaseStringUTFChars(func_, c_string);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_CTX(ctx,isolate,context);
+        const char *c_string = env->GetStringUTFChars(name_, NULL);
+        Local<String> name =
+            String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
+        env->ReleaseStringUTFChars(name_, c_string);
 
-    const char *sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
-    ScriptOrigin script_origin(
-        String::NewFromUtf8(isolate, sourceURL, NewStringType::kNormal).ToLocalChecked(),
-        Integer::New(isolate, startingLineNumber)
-    );
-    env->ReleaseStringUTFChars(sourceURL_, sourceURL);
+        c_string = env->GetStringUTFChars(func_, NULL);
+        Local<String> source =
+            String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
+        env->ReleaseStringUTFChars(func_, c_string);
 
-    MaybeLocal<Script> script = Script::Compile(context, source, &script_origin);
-    if (script.IsEmpty()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    MaybeLocal<Value> result;
+        const char *sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
+        ScriptOrigin script_origin(
+            String::NewFromUtf8(isolate, sourceURL, NewStringType::kNormal).ToLocalChecked(),
+            Integer::New(isolate, startingLineNumber)
+        );
+        env->ReleaseStringUTFChars(sourceURL_, sourceURL);
 
-    if (!exception) {
-        result = script.ToLocalChecked()->Run(context);
-        if (result.IsEmpty()) {
+        MaybeLocal<Script> script = Script::Compile(context, source, &script_origin);
+        if (script.IsEmpty()) {
             exception = JSValue<Value>::New(context_, trycatch.Exception());
         }
-    }
 
-    if (!exception) {
-        Local<Function> function = Local<Function>::Cast(result.ToLocalChecked());
-        function->SetName(name);
-        jfieldID fid = env->GetFieldID(ret , "reference", "J");
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_,
-                result.ToLocalChecked())));
-    }
+        MaybeLocal<Value> result;
 
-    jfieldID fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        if (!exception) {
+            result = script.ToLocalChecked()->Run(context);
+            if (result.IsEmpty()) {
+                exception = JSValue<Value>::New(context_, trycatch.Exception());
+            }
+        }
 
+        if (!exception) {
+            Local<Function> function = Local<Function>::Cast(result.ToLocalChecked());
+            function->SetName(name);
+            jfieldID fid = env->GetFieldID(ret , "reference", "J");
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_,
+                    result.ToLocalChecked())));
+        }
+
+        jfieldID fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jlong,getPrototype) (PARAMS, jlong ctx, jlong object) {
+    jlong out;
+
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    jlong out = reinterpret_cast<long>(JSValue<Value>::New(context_, o->GetPrototype()));
-
+        out = reinterpret_cast<long>(JSValue<Value>::New(context_, o->GetPrototype()));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,void,setPrototype) (PARAMS, jlong ctx, jlong object, jlong value) {
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    o->SetPrototype(context, reinterpret_cast<JSValue<Value>*>(value)->Value());
-
+        o->SetPrototype(context, reinterpret_cast<JSValue<Value>*>(value)->Value());
     V8_UNLOCK();
 }
 
 NATIVE(JSObject,jboolean,hasProperty) (PARAMS, jlong ctx, jlong object, jstring propertyName) {
+    bool v;
+
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        const char *c_string = env->GetStringUTFChars(propertyName, NULL);
+        Maybe<bool> has = o->Has(context, String::NewFromUtf8(isolate, c_string));
+        env->ReleaseStringUTFChars(propertyName, c_string);
 
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
-    Maybe<bool> has = o->Has(context, String::NewFromUtf8(isolate, c_string));
-    env->ReleaseStringUTFChars(propertyName, c_string);
-
-    bool v = has.FromMaybe(false);
-
+        v = has.FromMaybe(false);
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSObject,jobject,getProperty) (PARAMS, jlong ctx, jlong object,
         jstring propertyName) {
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
-    MaybeLocal<Value> value = o->Get(context, String::NewFromUtf8(isolate, c_string));
-    if (value.IsEmpty()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-    if (!exception) {
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
-    }
+        MaybeLocal<Value> value = o->Get(context, String::NewFromUtf8(isolate, c_string));
+        if (value.IsEmpty()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
+        if (!exception) {
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
+        }
 
-    env->ReleaseStringUTFChars(propertyName, c_string);
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+        env->ReleaseStringUTFChars(propertyName, c_string);
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobject,setProperty) (PARAMS, jlong ctx, jlong object, jstring propertyName,
     jlong value, jint attributes) {
 
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    enum {
-        kJSPropertyAttributeReadOnly = 1 << 1,
-        kJSPropertyAttributeDontEnum = 1 << 2,
-        kJSPropertyAttributeDontDelete = 1 << 3
-    };
-
-    int v8_attr = v8::None;
-    if (attributes & kJSPropertyAttributeReadOnly) v8_attr |= v8::ReadOnly;
-    if (attributes & kJSPropertyAttributeDontEnum) v8_attr |= v8::DontEnum;
-    if (attributes & kJSPropertyAttributeDontDelete) v8_attr |= v8::DontDelete;
-
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        enum {
+            kJSPropertyAttributeReadOnly = 1 << 1,
+            kJSPropertyAttributeDontEnum = 1 << 2,
+            kJSPropertyAttributeDontDelete = 1 << 3
+        };
 
-    Maybe<bool> defined = (attributes!=0) ?
-        o->DefineOwnProperty(
-            context,
-            String::NewFromUtf8(isolate, c_string),
-            reinterpret_cast<JSValue<Value>*>(value)->Value(),
-            static_cast<PropertyAttribute>(v8_attr))
-        :
-        o->Set(context, String::NewFromUtf8(isolate, c_string),
-            reinterpret_cast<JSValue<Value>*>(value)->Value());
+        int v8_attr = v8::None;
+        if (attributes & kJSPropertyAttributeReadOnly) v8_attr |= v8::ReadOnly;
+        if (attributes & kJSPropertyAttributeDontEnum) v8_attr |= v8::DontEnum;
+        if (attributes & kJSPropertyAttributeDontDelete) v8_attr |= v8::DontDelete;
 
-    if (defined.IsNothing()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
-    jfieldID fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    env->ReleaseStringUTFChars(propertyName, c_string);
+        Maybe<bool> defined = (attributes!=0) ?
+            o->DefineOwnProperty(
+                context,
+                String::NewFromUtf8(isolate, c_string),
+                reinterpret_cast<JSValue<Value>*>(value)->Value(),
+                static_cast<PropertyAttribute>(v8_attr))
+            :
+            o->Set(context, String::NewFromUtf8(isolate, c_string),
+                reinterpret_cast<JSValue<Value>*>(value)->Value());
 
+        if (defined.IsNothing()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
+
+        jfieldID fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+
+        env->ReleaseStringUTFChars(propertyName, c_string);
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobject,deleteProperty) (PARAMS, jlong ctx, jlong object, jstring propertyName) {
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
-    Maybe<bool> deleted = o->Delete(context, String::NewFromUtf8(isolate, c_string));
-    if (deleted.IsNothing()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    jfieldID fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        Maybe<bool> deleted = o->Delete(context, String::NewFromUtf8(isolate, c_string));
+        if (deleted.IsNothing()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    env->ReleaseStringUTFChars(propertyName, c_string);
+        jfieldID fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+        env->ReleaseStringUTFChars(propertyName, c_string);
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobject,getPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jint propertyIndex) {
 
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    MaybeLocal<Value> value = o->Get(context, propertyIndex);
-    if (value.IsEmpty()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        MaybeLocal<Value> value = o->Get(context, propertyIndex);
+        if (value.IsEmpty()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-    if (!exception) {
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
-    }
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
+        if (!exception) {
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
+        }
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobject,setPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jint propertyIndex, jlong value) {
 
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    Maybe<bool> defined =
-        o->Set(context, propertyIndex,
-            reinterpret_cast<JSValue<Value>*>(value)->Value());
+        Maybe<bool> defined =
+            o->Set(context, propertyIndex,
+                reinterpret_cast<JSValue<Value>*>(value)->Value());
 
-    if (defined.IsNothing()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        if (defined.IsNothing()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    jfieldID fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-
+        jfieldID fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jboolean,isFunction) (PARAMS, jlong ctx, jlong object) {
+    bool v;
+
     VALUE_ISOLATE(ctx,object,isolate,context,value);
-    bool v = value->IsFunction();
+        v = value->IsFunction();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSObject,jobject,callAsFunction) (PARAMS, jlong ctx, jlong object,
     jlong thisObject, jlongArray args) {
 
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    Local<Value> this_ = thisObject ?
-        reinterpret_cast<JSValue<Value>*>(thisObject)->Value() :
-        Local<Value>::New(isolate,Null(isolate));
-
-    int i;
-    jsize len = env->GetArrayLength(args);
-    jlong *values = env->GetLongArrayElements(args, 0);
-    Local<Value> *elements = new Local<Value>[len];
-    for (i=0; i<len; i++) {
-        elements[i] = reinterpret_cast<JSValue<Value>*>(values[i])->Value();
-    }
-    env->ReleaseLongArrayElements(args, values, 0);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        Local<Value> this_ = thisObject ?
+            reinterpret_cast<JSValue<Value>*>(thisObject)->Value() :
+            Local<Value>::New(isolate,Null(isolate));
 
-    MaybeLocal<Value> value = o->CallAsFunction(context, this_, len, elements);
-    if (value.IsEmpty()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        int i;
+        jsize len = env->GetArrayLength(args);
+        jlong *values = env->GetLongArrayElements(args, 0);
+        Local<Value> *elements = new Local<Value>[len];
+        for (i=0; i<len; i++) {
+            elements[i] = reinterpret_cast<JSValue<Value>*>(values[i])->Value();
+        }
+        env->ReleaseLongArrayElements(args, values, 0);
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-    if (!exception) {
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
-    }
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        MaybeLocal<Value> value = o->CallAsFunction(context, this_, len, elements);
+        if (value.IsEmpty()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    delete [] elements;
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
+        if (!exception) {
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
+        }
 
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+
+        delete [] elements;
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jboolean,isConstructor) (PARAMS, jlong ctx, jlong object) {
     // All functions can be constructors, yeah?  This is left over legacy from
     // JavaScriptCore.
+    bool v;
+
     VALUE_ISOLATE(ctx,object,isolate,context,value);
-    bool v = value->IsFunction();
+        v = value->IsFunction();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSObject,jobject,callAsConstructor) (PARAMS, jlong ctx, jlong object,
     jlongArray args) {
-    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
-
-    int i;
-    jsize len = env->GetArrayLength(args);
-    jlong *values = env->GetLongArrayElements(args, 0);
-    Local<Value> *elements = new Local<Value>[len];
-    for (i=0; i<len; i++) {
-        elements[i] = reinterpret_cast<JSValue<Value>*>(values[i])->Value();
-    }
-    env->ReleaseLongArrayElements(args, values, 0);
 
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        int i;
+        jsize len = env->GetArrayLength(args);
+        jlong *values = env->GetLongArrayElements(args, 0);
+        Local<Value> *elements = new Local<Value>[len];
+        for (i=0; i<len; i++) {
+            elements[i] = reinterpret_cast<JSValue<Value>*>(values[i])->Value();
+        }
+        env->ReleaseLongArrayElements(args, values, 0);
 
-    MaybeLocal<Value> value = o->CallAsConstructor(context, len, elements);
-    if (value.IsEmpty()) {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-    if (!exception) {
-        env->SetLongField( out, fid,
-            reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
-    }
+        MaybeLocal<Value> value = o->CallAsConstructor(context, len, elements);
+        if (value.IsEmpty()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
+        if (!exception) {
+            env->SetLongField( out, fid,
+                reinterpret_cast<long>(JSValue<Value>::New(context_, value.ToLocalChecked())));
+        }
 
-    delete [] elements;
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
 
+        delete [] elements;
     V8_UNLOCK();
+
     return out;
 }
 
 NATIVE(JSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong ctx, jlong object) {
+    jobjectArray ret;
+
     V8_ISOLATE_OBJ(ctx,object,isolate,context,o);
+        Local<Array> names = o->GetPropertyNames(context).ToLocalChecked();
 
-    Local<Array> names = o->GetPropertyNames(context).ToLocalChecked();
-
-    jobjectArray ret = (jobjectArray) env->NewObjectArray(
-        names->Length(),
-        env->FindClass("java/lang/String"),
-        env->NewStringUTF(""));
-    for (size_t i=0; i<names->Length(); i++) {
-        Local<String> property =
-            names->Get(context, i).ToLocalChecked()->ToString(context).ToLocalChecked();
-        String::Utf8Value const str(property);
-        env->SetObjectArrayElement(ret, i, env->NewStringUTF(*str));
-    }
-
+        ret = (jobjectArray) env->NewObjectArray(
+            names->Length(),
+            env->FindClass("java/lang/String"),
+            env->NewStringUTF(""));
+        for (size_t i=0; i<names->Length(); i++) {
+            Local<String> property =
+                names->Get(context, i).ToLocalChecked()->ToString(context).ToLocalChecked();
+            String::Utf8Value const str(property);
+            env->SetObjectArrayElement(ret, i, env->NewStringUTF(*str));
+        }
     V8_UNLOCK();
+
     return ret;
 }

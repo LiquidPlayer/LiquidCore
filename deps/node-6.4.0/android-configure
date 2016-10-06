@@ -21,16 +21,31 @@ case $ARCH in
         DEST_CPU="$ARCH"
         SUFFIX="$ARCH-linux-androideabi"
         TOOLCHAIN_NAME="$SUFFIX"
+        PLATFORM=android-9
         ;;
     x86)
         DEST_CPU="ia32"
         SUFFIX="i686-linux-android"
         TOOLCHAIN_NAME="$ARCH"
+        PLATFORM=android-13
         ;;
     x86_64)
-        DEST_CPU="ia32"
+        DEST_CPU="x64"
         SUFFIX="$ARCH-linux-android"
         TOOLCHAIN_NAME="$ARCH"
+        PLATFORM=android-21
+        ;;
+    arm64)
+        DEST_CPU="$ARCH"
+        SUFFIX="aarch64-linux-android"
+        TOOLCHAIN_NAME="$SUFFIX"
+        PLATFORM=android-21
+        ;;
+    mips)
+        DEST_CPU="mipsel"
+        SUFFIX="mipsel-linux-android"
+        TOOLCHAIN_NAME="$SUFFIX"
+        PLATFORM=android-9
         ;;
     *)
         echo "Unsupported architecture provided: $ARCH"
@@ -44,7 +59,7 @@ $1/build/tools/make-standalone-toolchain.sh \
     --toolchain=$TOOLCHAIN_NAME-$CC_VER \
     --arch=$ARCH \
     --install-dir=$TOOLCHAIN \
-    --platform=android-21
+    --platform=$PLATFORM
 export PATH=$TOOLCHAIN/bin:$PATH
 export AR=$TOOLCHAIN/bin/$SUFFIX-ar
 export CC=$TOOLCHAIN/bin/$SUFFIX-gcc

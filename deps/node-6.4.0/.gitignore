@@ -21,6 +21,7 @@ node_g
 icu_config.gypi
 
 /out
+/out.*
 
 # various stuff that VC++ produces/uses
 Debug/

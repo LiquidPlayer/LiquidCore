@@ -39,6 +39,16 @@ include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 
+ifeq (,$(findstring v7a,$(TARGET_ARCH_ABI)))
+	NODE_ARCH=arm
+else
+    ifeq (,$(findstring v8a,$(TARGET_ARCH_ABI)))
+        NODE_ARCH=arm64
+    else
+        NODE_ARCH=$(TARGET_ARCH_ABI)
+    endif
+endif
+
 LOCAL_MODULE    := nodedroid
 LOCAL_SRC_FILES := JSContext.cpp \
                    JSValue.cpp \
@@ -50,7 +60,7 @@ LOCAL_SRC_FILES := JSContext.cpp \
 LOCAL_SHARED_LIBRARIES := libnode
 
 DEFS_Release := \
-	-DNODE_ARCH="arm" \
+	-DNODE_ARCH="$(NODE_ARCH)" \
 	-DNODE_PLATFORM="android" \
 	-DNODE_WANT_INTERNALS=1 \
 	-DV8_DEPRECATION_WARNINGS=1 \

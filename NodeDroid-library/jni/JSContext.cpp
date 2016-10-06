@@ -157,7 +157,6 @@ JSContext::JSContext(ContextGroup* isolate, Local<Context> val) {
 
 JSContext::~JSContext() {
     m_context.Reset();
-
     m_isolate->release();
 };
 
@@ -172,6 +171,8 @@ void JSContext::SetDefunct() {
         std::set<JSValue<v8::Object>*>::iterator it = m_object_set.begin();
         (*it)->release();
     }
+
+    m_context.Reset();
 }
 
 void JSContext::retain(JSValue<v8::Value>* value) {
@@ -241,6 +242,8 @@ void ContextGroup::dispose_v8() {
     }
     s_mutex.unlock();
 }
+
+GenericAllocator ContextGroup::m_allocator;
 
 ContextGroup::ContextGroup() {
     init_v8();
@@ -324,20 +327,34 @@ void ContextGroup::callback(uv_async_t* handle) {
 
 ContextGroup::~ContextGroup() {
     if (m_manage_isolate) {
-        // Occasionally, the finalizer will run and attempt to dispose of an isolate
-        // before another thread has finished with it.  To avoid the message below,
-        // we dutifully wait for our turn to enter the isolate before disposing.
-        //#
-        //# Fatal error in v8::Isolate::Dispose()
-        //# Disposing the isolate that is entered by a thread.
-        //#
-        {
-            V8_ISOLATE(this,isolate);
-            V8_UNLOCK();
-        }
-        m_isolate->Dispose();
+        auto dispose = [](Isolate *isolate) {
+            // This is a hack to deal with the following failure message from V8
+            // when executed during the Java finalizer (sometimes):
+            // #
+            // # Fatal error in v8::Isolate::Dispose()
+            // # Disposing the isolate that is entered by a thread.
+            // #
+            // The only way to make this not occur is to (1) make sure we have entered
+            // an isolate (in this case, we are creating a temp one) and (2)
+            // execute outside of the finalizer thread.  I get why (1) is necessary
+            // (see code for v8::Isolate::TearDown() in deps/v8/src/isolate.cc), but
+            // I am confused as to why (2) is required.
+            Isolate::CreateParams params;
+            GenericAllocator array_buffer_allocator;
+            params.array_buffer_allocator = &array_buffer_allocator;
+            Isolate *temp_isolate = Isolate::New(params);
+            {
+                temp_isolate->Enter();
+                isolate->Dispose();
+                temp_isolate->Exit();
+            }
+            temp_isolate->Dispose();
+            dispose_v8();
+        };
+        std::thread(dispose, m_isolate).detach();
+    } else {
+        dispose_v8();
     }
-    dispose_v8();
 }
 
 /**
@@ -374,6 +391,8 @@ NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnab
             env->DeleteLocalRef(cls);
             if (super == NULL || env->ExceptionCheck()) {
                 if (super != NULL) env->DeleteLocalRef(super);
+                __android_log_assert("FAIL", "runInContextGroup",
+                    "Internal error.  Can't call back.");
                 return;
             }
             cls = super;
@@ -389,12 +408,6 @@ NATIVE(JSContextGroup,jlong,create) (PARAMS) {
     return reinterpret_cast<long>(group);
 }
 
-NATIVE(JSContextGroup,jlong,retain) (PARAMS,jlong group) {
-    ContextGroup *isolate = (ContextGroup*) group;
-    isolate->retain();
-    return group;
-}
-
 NATIVE(JSContextGroup,void,release) (PARAMS,jlong group) {
     ContextGroup *isolate = (ContextGroup*) group;
     isolate->release();
@@ -405,10 +418,8 @@ NATIVE(JSContext,jlong,create) (PARAMS) {
     ContextGroup *group = new ContextGroup();
     {
         V8_ISOLATE(group,isolate);
-
-        JSContext *ctx = new JSContext(group, Context::New(isolate));
-        out = reinterpret_cast<long>(ctx);
-
+            JSContext *ctx = new JSContext(group, Context::New(isolate));
+            out = reinterpret_cast<long>(ctx);
         V8_UNLOCK();
     }
 
@@ -422,10 +433,8 @@ NATIVE(JSContext,jlong,createInGroup) (PARAMS,jlong grp) {
     ContextGroup *group = reinterpret_cast<ContextGroup*>(grp);
     {
         V8_ISOLATE(group,isolate);
-
-        JSContext *ctx = new JSContext(group, Context::New(isolate));
-        out = reinterpret_cast<long>(ctx);
-
+            JSContext *ctx = new JSContext(group, Context::New(isolate));
+            out = reinterpret_cast<long>(ctx);
         V8_UNLOCK();
     }
 
@@ -444,9 +453,12 @@ NATIVE(JSContext,void,release) (PARAMS,jlong ctx) {
 }
 
 NATIVE(JSContext,jlong,getGlobalObject) (PARAMS, jlong ctx) {
+    jlong v=0;
+
     V8_ISOLATE_CTX(ctx,isolate,Ctx);
-    jlong v = reinterpret_cast<long>(context_->Global());
+        v = reinterpret_cast<long>(context_->Global());
     V8_UNLOCK();
+
     return v;
 }
 
@@ -471,50 +483,48 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
     {
         JSContext *context_ = reinterpret_cast<JSContext*>(ctx);
         V8_ISOLATE(context_->Group(), isolate);
+            TryCatch trycatch(isolate);
+            Local<Context> context;
 
-        TryCatch trycatch(isolate);
-        Local<Context> context;
+            context = context_->Value();
+            Context::Scope context_scope_(context);
 
-        context = context_->Value();
-        Context::Scope context_scope_(context);
+            JSValue<Value> *exception = nullptr;
 
-        JSValue<Value> *exception = nullptr;
+            ScriptOrigin script_origin(
+                String::NewFromUtf8(isolate, _sourceURL, NewStringType::kNormal).ToLocalChecked(),
+                Integer::New(isolate, startingLineNumber)
+            );
 
-        ScriptOrigin script_origin(
-            String::NewFromUtf8(isolate, _sourceURL, NewStringType::kNormal).ToLocalChecked(),
-            Integer::New(isolate, startingLineNumber)
-        );
+            MaybeLocal<String> source = String::NewFromUtf8(isolate, _script, NewStringType::kNormal);
+            MaybeLocal<Script> script;
 
-        MaybeLocal<String> source = String::NewFromUtf8(isolate, _script, NewStringType::kNormal);
-        MaybeLocal<Script> script;
-
-        MaybeLocal<Value>  result;
-        if (source.IsEmpty()) {
-            exception = JSValue<Value>::New(context_, trycatch.Exception());
-        }
-
-        if (!exception) {
-            script = Script::Compile(context, source.ToLocalChecked(), &script_origin);
-            if (script.IsEmpty()) {
+            MaybeLocal<Value>  result;
+            if (source.IsEmpty()) {
                 exception = JSValue<Value>::New(context_, trycatch.Exception());
             }
-        }
 
-        if (!exception) {
-            result = script.ToLocalChecked()->Run(context);
-            if (result.IsEmpty()) {
-                exception = JSValue<Value>::New(context_, trycatch.Exception());
+            if (!exception) {
+                script = Script::Compile(context, source.ToLocalChecked(), &script_origin);
+                if (script.IsEmpty()) {
+                    exception = JSValue<Value>::New(context_, trycatch.Exception());
+                }
             }
-        }
 
-        if (!exception) {
-            JSValue<Value> *value = JSValue<Value>::New(context_, result.ToLocalChecked());
-            env->SetLongField( out, fid, reinterpret_cast<long>(value));
-        }
+            if (!exception) {
+                result = script.ToLocalChecked()->Run(context);
+                if (result.IsEmpty()) {
+                    exception = JSValue<Value>::New(context_, trycatch.Exception());
+                }
+            }
 
-        fid = env->GetFieldID(ret , "exception", "J");
-        env->SetLongField(out, fid, reinterpret_cast<long>(exception));
+            if (!exception) {
+                JSValue<Value> *value = JSValue<Value>::New(context_, result.ToLocalChecked());
+                env->SetLongField( out, fid, reinterpret_cast<long>(value));
+            }
 
+            fid = env->GetFieldID(ret , "exception", "J");
+            env->SetLongField(out, fid, reinterpret_cast<long>(exception));
         V8_UNLOCK();
     }
 

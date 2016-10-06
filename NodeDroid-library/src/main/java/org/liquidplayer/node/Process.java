@@ -249,7 +249,6 @@ class Process {
 
     @SuppressWarnings("unused") // called from native code
     private void onStdout(byte [] chars) {
-        android.util.Log.d("node stdout", new String(chars, StandardCharsets.UTF_8));
     }
 
     private final long processRef;
@@ -367,10 +366,10 @@ class Process {
             String lDir = androidCtx.getFilesDir().getAbsolutePath() +
                     "/__org.liquidplayer.node__/_" + uniqueID;
             // Get the real directory (with resolved symlinks)
+            new File(lDir).mkdirs();
             localDir = ctx.evaluateScript(
                     "(function(){return require('fs').realpathSync('"+lDir+"');})()"
             ).toString();
-            new File(localDir).mkdirs();
 
             aliases_.property("/home", localDir);
 

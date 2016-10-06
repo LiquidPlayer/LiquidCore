@@ -118,6 +118,7 @@ struct Runnable {
     jobject runnable;
     JavaVM *jvm;
 };
+class JSContext;
 
 class ContextGroup : public Retainer {
 public:
@@ -131,9 +132,6 @@ public:
     }
     virtual std::thread::id Thread() {
         return m_thread_id;
-    }
-    virtual std::recursive_mutex& Locker() {
-        return m_isolate_mutex;
     }
 
     static void init_v8();
@@ -153,11 +151,10 @@ private:
 
     Isolate *m_isolate;
     Isolate::CreateParams m_create_params;
-    GenericAllocator m_allocator;
+    static GenericAllocator m_allocator;
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
-    std::recursive_mutex m_isolate_mutex;
 
 public:
     uv_async_t *m_async_handle;
@@ -220,20 +217,23 @@ private:
 };
 
 #define V8_ISOLATE(group,iso) \
-        Isolate *iso = group->isolate(); \
-        ContextGroup* group_ = group; \
-        if (!group->Loop()) group->Locker().lock(); \
-        Isolate::Scope isolate_scope_(iso); \
-        HandleScope handle_scope_(iso)
+        v8::Locker *lock_ = nullptr; \
+        { \
+            Isolate *iso = (group) ->isolate(); \
+            ContextGroup* group_ = (group); \
+            if (!group->Loop()) lock_ = new v8::Locker(iso); \
+            Isolate::Scope isolate_scope_(iso); \
+            HandleScope handle_scope_(iso);
 
 #define V8_ISOLATE_CTX(ctx,iso,Ctx) \
         JSContext *context_ = reinterpret_cast<JSContext*>(ctx); \
         V8_ISOLATE(context_->Group(),iso); \
-        Local<Context> Ctx = context_->Value(); \
-        Context::Scope context_scope_(Ctx)
+            Local<Context> Ctx = context_->Value(); \
+            Context::Scope context_scope_(Ctx)
 
 #define V8_UNLOCK() \
-        if (!group_->Loop()) group_->Locker().unlock()
+        } \
+        if (lock_) delete lock_
 
 
 #endif

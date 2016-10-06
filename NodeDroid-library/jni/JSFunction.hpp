@@ -44,32 +44,31 @@ class JSFunction : public JSValue<T> {
             m_JavaThis = env->NewWeakGlobalRef(thiz);
 
             V8_ISOLATE_CTX(ctx,isolate,context);
-            long this_ = reinterpret_cast<long>(this);
+                long this_ = reinterpret_cast<long>(this);
 
-            const char *c_string = env->GetStringUTFChars(name_, NULL);
-            Local<String> name =
-                String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
-            env->ReleaseStringUTFChars(name_, c_string);
+                const char *c_string = env->GetStringUTFChars(name_, NULL);
+                Local<String> name =
+                    String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
+                env->ReleaseStringUTFChars(name_, c_string);
 
-            Local<Value> data = Number::New(isolate, this_);
+                Local<Value> data = Number::New(isolate, this_);
 
-            Local<FunctionTemplate> ctor =
-                FunctionTemplate::New(isolate, StaticFunctionCallback, data);
-            Local<Function> function = ctor->GetFunction();
-            function->SetName(name);
+                Local<FunctionTemplate> ctor =
+                    FunctionTemplate::New(isolate, StaticFunctionCallback, data);
+                Local<Function> function = ctor->GetFunction();
+                function->SetName(name);
 
-            Local<Private> privateKey = v8::Private::ForApi(isolate,
-                String::NewFromUtf8(isolate, "__JSValue_ptr"));
-            function->SetPrivate(context, privateKey,
-                Number::New(isolate,(double)reinterpret_cast<long>(this)));
+                Local<Private> privateKey = v8::Private::ForApi(isolate,
+                    String::NewFromUtf8(isolate, "__JSValue_ptr"));
+                function->SetPrivate(context, privateKey,
+                    Number::New(isolate,(double)reinterpret_cast<long>(this)));
 
-            JSValue<T>::m_isNull = false;
-            JSValue<T>::m_isUndefined = false;
-            JSValue<T>::m_value = Persistent<T,CopyablePersistentTraits<T>>(isolate, function);
-            JSValue<T>::m_context = context_;
-            JSValue<T>::m_context->retain(this);
-            Retainer::m_count = 1;
-
+                JSValue<T>::m_isNull = false;
+                JSValue<T>::m_isUndefined = false;
+                JSValue<T>::m_value = Persistent<T,CopyablePersistentTraits<T>>(isolate, function);
+                JSValue<T>::m_context = context_;
+                JSValue<T>::m_context->retain(this);
+                Retainer::m_count = 1;
             V8_UNLOCK();
         }
 
@@ -103,10 +102,10 @@ class JSFunction : public JSValue<T> {
                 m_jvm->AttachCurrentThread(&env, NULL);
             }
 
-            {
-                V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
+            V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
                 Local<Context> context = JSValue<T>::m_context->Value();
                 Context::Scope context_scope_(context);
+
                 isConstructCall = info.IsConstructCall();
 
                 jclass cls = env->GetObjectClass(m_JavaThis);
@@ -127,7 +126,7 @@ class JSFunction : public JSValue<T> {
                         }
                         // FIXME: We should assert something here
 
-                        V8_UNLOCK();
+                        if (lock_) delete lock_; // V8_UNLOCK()
                         return;
                     }
                     cls = super;
@@ -146,8 +145,7 @@ class JSFunction : public JSValue<T> {
                         JSValue<T>::m_context, info[i]));
                 }
                 env->SetLongArrayRegion(argsArr,0,argumentCount,args);
-                V8_UNLOCK();
-            }
+            V8_UNLOCK();
 
             if (isConstructCall) {
                 env->CallVoidMethod(m_JavaThis, mid, objThis, argsArr, exceptionRefRef);
@@ -158,24 +156,24 @@ class JSFunction : public JSValue<T> {
 
             {
                 V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
-                Local<Context> context = JSValue<T>::m_context->Value();
-                Context::Scope context_scope_(context);
+                    Local<Context> context = JSValue<T>::m_context->Value();
+                    Context::Scope context_scope_(context);
 
-                if (isConstructCall) {
-                    info.GetReturnValue().Set(info.This());
-                } else {
-                    if (objret) {
-                        info.GetReturnValue().Set(reinterpret_cast<JSValue<Value>*>(objret)->Value());
+                    if (isConstructCall) {
+                        info.GetReturnValue().Set(info.This());
                     } else {
-                        info.GetReturnValue().SetUndefined();
+                        if (objret) {
+                            info.GetReturnValue().Set(reinterpret_cast<JSValue<Value>*>(objret)->Value());
+                        } else {
+                            info.GetReturnValue().SetUndefined();
+                        }
                     }
-                }
 
-                if (exception) {
-                    Local<Value> excp = exception->Value();
-                    exception->release();
-                    isolate->ThrowException(excp);
-                }
+                    if (exception) {
+                        Local<Value> excp = exception->Value();
+                        exception->release();
+                        isolate->ThrowException(excp);
+                    }
                 V8_UNLOCK();
             }
 

@@ -32,6 +32,12 @@
 */
 package org.liquidplayer.v8;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+
 /**
  * A JSContextGroup associates JavaScript contexts with one another. Contexts
  * in the same group may share and exchange JavaScript objects. Sharing and/or
@@ -63,8 +69,8 @@ public class JSContextGroup {
 
     @Override
     protected void finalize() throws Throwable {
-        if (group!=0) release(group);
         super.finalize();
+        release(group);
     }
 
     /**
@@ -92,6 +98,5 @@ public class JSContextGroup {
     }
 
     protected native long create();
-    protected native long retain(long group);
-    protected native void release(long group);
+    protected native static void release(long group);
 }

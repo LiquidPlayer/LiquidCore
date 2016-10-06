@@ -39,65 +39,89 @@
 
 NATIVE(JSValue,jboolean,isUndefined) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsUndefined();
+        v = value->IsUndefined();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isNull) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+
+    bool v;
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsNull();
+        v = value->IsNull();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isBoolean) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsBoolean();
+        v = value->IsBoolean();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isNumber) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsNumber();
+        v = value->IsNumber();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isString) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsString();
+        v = value->IsString();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isObject) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsObject();
+        v = value->IsObject();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isArray) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsArray();
+        v = value->IsArray();
     V8_UNLOCK();
+
     return v;
 }
 
 NATIVE(JSValue,jboolean,isDate) (PARAMS, jlong ctxRef, jlong valueRef)
 {
+    bool v;
+
     VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-    bool v = value->IsDate();
+        v = value->IsDate();
     V8_UNLOCK();
+
     return v;
 }
 
@@ -115,16 +139,16 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
     JSValue<Value> *exception = nullptr;
     {
         VALUE_ISOLATE(ctxRef,a,isolate,context,a_);
-        Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
+            Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
 
-        TryCatch trycatch(isolate);
+            TryCatch trycatch(isolate);
 
-        Maybe<bool> is = a_->Equals(context,b_);
-        if (is.IsNothing()) {
-            exception = JSValue<Value>::New(context_, trycatch.Exception());
-        } else {
-            result = is.FromMaybe(result);
-        }
+            Maybe<bool> is = a_->Equals(context,b_);
+            if (is.IsNothing()) {
+                exception = JSValue<Value>::New(context_, trycatch.Exception());
+            } else {
+                result = is.FromMaybe(result);
+            }
         V8_UNLOCK();
     }
 
@@ -138,9 +162,10 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
 
 NATIVE(JSValue,jboolean,isStrictEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
 {
+    bool v;
     VALUE_ISOLATE(ctxRef,a,isolate,context,a_);
-    Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
-    bool v = a_->StrictEquals(b_);
+        Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
+        v = a_->StrictEquals(b_);
     V8_UNLOCK();
     return v;
 }
@@ -149,67 +174,66 @@ NATIVE(JSValue,jboolean,isStrictEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
 
 NATIVE(JSValue,jlong,makeUndefined) (PARAMS, jlong ctx)
 {
+    JSValue<Value> *value;
+
     V8_ISOLATE_CTX(ctx,isolate,context);
-
-    JSValue<Value> *value =
-        JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
-
+        value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
     V8_UNLOCK();
+
     return reinterpret_cast<long>(value);
 }
 
 NATIVE(JSValue,jlong,makeNull) (PARAMS, jlong ctx)
 {
+    JSValue<Value> *value;
+
     V8_ISOLATE_CTX(ctx,isolate,context);
-
-    JSValue<Value> *value =
-        JSValue<Value>::New(context_,Local<Value>::New(isolate,Null(isolate)));
-
+        value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Null(isolate)));
     V8_UNLOCK();
+
     return reinterpret_cast<long>(value);
 }
 
 NATIVE(JSValue,jlong,makeBoolean) (PARAMS, jlong ctx, jboolean boolean)
 {
+    JSValue<Value> *value;
+
     V8_ISOLATE_CTX(ctx,isolate,context);
-
-    JSValue<Value> *value =
-        JSValue<Value>::New(context_,
+        value = JSValue<Value>::New(context_,
             Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate)));
-
     V8_UNLOCK();
+
     return reinterpret_cast<long>(value);
 }
 
 NATIVE(JSValue,jlong,makeNumber) (PARAMS, jlong ctx, jdouble number)
 {
+    JSValue<Value> *value;
+
     V8_ISOLATE_CTX(ctx,isolate,context);
-
-    JSValue<Value> *value =
-        JSValue<Value>::New(context_,Number::New(isolate,number));
-
+        value = JSValue<Value>::New(context_,Number::New(isolate,number));
     V8_UNLOCK();
+
     return reinterpret_cast<long>(value);
 }
 
 NATIVE(JSValue,jlong,makeString) (PARAMS, jlong ctx, jstring string)
 {
+    JSValue<Value> *value;
     V8_ISOLATE_CTX(ctx,isolate,context);
+        const char *c_string = env->GetStringUTFChars(string, NULL);
 
-    const char *c_string = env->GetStringUTFChars(string, NULL);
+        MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
+        Local<Value> rval;
+        if (str.IsEmpty()) {
+            rval = Local<Value>::New(isolate,Undefined(isolate));
+        } else {
+            rval = str.ToLocalChecked();
+        }
 
-    MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
-    Local<Value> rval;
-    if (str.IsEmpty()) {
-        rval = Local<Value>::New(isolate,Undefined(isolate));
-    } else {
-        rval = str.ToLocalChecked();
-    }
+        env->ReleaseStringUTFChars(string, c_string);
 
-    env->ReleaseStringUTFChars(string, c_string);
-
-    JSValue<Value> *value = JSValue<Value>::New(context_,rval);
-
+        value = JSValue<Value>::New(context_,rval);
     V8_UNLOCK();
     return reinterpret_cast<long>(value);
 }
@@ -218,50 +242,49 @@ NATIVE(JSValue,jlong,makeString) (PARAMS, jlong ctx, jstring string)
 
 NATIVE(JSValue,jlong,makeFromJSONString) (PARAMS, jlong ctx, jstring string)
 {
-    V8_ISOLATE_CTX(ctx,isolate,context);
-
-    const char *c_string = env->GetStringUTFChars(string, NULL);
-    MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
-    env->ReleaseStringUTFChars(string, c_string);
-
     JSValue<Value> *value = nullptr;
-    if (!str.IsEmpty()) {
-        MaybeLocal<Value> parsed = JSON::Parse(isolate, str.ToLocalChecked());
-        if (!parsed.IsEmpty())
-            value = JSValue<Value>::New(context_,parsed.ToLocalChecked());
-    }
 
-    if (!value) {
-        value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
-    }
+    V8_ISOLATE_CTX(ctx,isolate,context);
+        const char *c_string = env->GetStringUTFChars(string, NULL);
+        MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
+        env->ReleaseStringUTFChars(string, c_string);
 
+        if (!str.IsEmpty()) {
+            MaybeLocal<Value> parsed = JSON::Parse(isolate, str.ToLocalChecked());
+            if (!parsed.IsEmpty())
+                value = JSValue<Value>::New(context_,parsed.ToLocalChecked());
+        }
+
+        if (!value) {
+            value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
+        }
     V8_UNLOCK();
+
     return reinterpret_cast<long>(value);
 }
 
 NATIVE(JSValue,jobject,createJSONString) (PARAMS, jlong ctxRef, jlong valueRef, jint indent)
 {
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,inValue);
-
-    JSValue<Value> *exception = nullptr;
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
-    Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,inValue);
+        JSValue<Value> *exception = nullptr;
 
-    Local<Value> result = stringify->Call(json, 1, &inValue);
-    JSValue<Value> *value = JSValue<Value>::New(context_, result);
+        Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
+        Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
 
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(value));
+        Local<Value> result = stringify->Call(json, 1, &inValue);
+        JSValue<Value> *value = JSValue<Value>::New(context_, result);
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField(out, fid, reinterpret_cast<long>(exception));
+        jfieldID fid = env->GetFieldID(ret , "reference", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(value));
 
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField(out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
+
     return out;
 }
 
@@ -269,101 +292,93 @@ NATIVE(JSValue,jobject,createJSONString) (PARAMS, jlong ctxRef, jlong valueRef, 
 
 NATIVE(JSValue,jboolean,toBoolean) (PARAMS, jlong ctx, jlong valueRef)
 {
-    VALUE_ISOLATE(ctx,valueRef,isolate,context,value);
-
     bool ret = false;
-    MaybeLocal<Boolean> boolean = value->ToBoolean(context);
-    if (!boolean.IsEmpty()) {
-        ret = boolean.ToLocalChecked()->Value();
-    }
-
+    VALUE_ISOLATE(ctx,valueRef,isolate,context,value);
+        MaybeLocal<Boolean> boolean = value->ToBoolean(context);
+        if (!boolean.IsEmpty()) {
+            ret = boolean.ToLocalChecked()->Value();
+        }
     V8_UNLOCK();
     return ret;
 }
 
 NATIVE(JSValue,jobject,toNumber) (PARAMS, jlong ctxRef, jlong valueRef)
 {
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    MaybeLocal<Number> number = value->ToNumber(context);
-    double result = 0.0;
-    if (!number.IsEmpty()) {
-        result = number.ToLocalChecked()->Value();
-    } else {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        MaybeLocal<Number> number = value->ToNumber(context);
+        double result = 0.0;
+        if (!number.IsEmpty()) {
+            result = number.ToLocalChecked()->Value();
+        } else {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    jfieldID fid = env->GetFieldID(ret , "number", "D");
-    env->SetDoubleField( out, fid, result);
+        jfieldID fid = env->GetFieldID(ret , "number", "D");
+        env->SetDoubleField( out, fid, result);
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
     return out;
 }
 
 NATIVE(JSValue,jobject,toStringCopy) (PARAMS, jlong ctxRef, jlong valueRef)
 {
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
-    jstring retStr;
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
+        jstring retStr;
 
-    MaybeLocal<String> string = value->ToString(context);
-    if (!string.IsEmpty()) {
-        String::Utf8Value const str(string.ToLocalChecked());
-        retStr = env->NewStringUTF(*str);
-    } else {
-        retStr = env->NewStringUTF("");
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        MaybeLocal<String> string = value->ToString(context);
+        if (!string.IsEmpty()) {
+            String::Utf8Value const str(string.ToLocalChecked());
+            retStr = env->NewStringUTF(*str);
+        } else {
+            retStr = env->NewStringUTF("");
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    jfieldID fid = env->GetFieldID(ret , "string", "Ljava/lang/String;");
-    env->SetObjectField( out, fid, retStr);
+        jfieldID fid = env->GetFieldID(ret , "string", "Ljava/lang/String;");
+        env->SetObjectField( out, fid, retStr);
 
-    fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-
+        fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, reinterpret_cast<long>(exception));
     V8_UNLOCK();
     return out;
 }
 
 NATIVE(JSValue,jobject,toObject) (PARAMS, jlong ctxRef, jlong valueRef)
 {
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
-
     jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    TryCatch trycatch(isolate);
-    JSValue<Value> *exception = nullptr;
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+        TryCatch trycatch(isolate);
+        JSValue<Value> *exception = nullptr;
 
-    MaybeLocal<Object> obj = value->ToObject(context);
-    if (!obj.IsEmpty()) {
-        jfieldID fid = env->GetFieldID(ret , "reference", "J");
-        JSValue<Value> *o = JSValue<Value>::New(context_, value->ToObject());
-        env->SetLongField( out, fid, reinterpret_cast<long>(o));
-    } else {
-        exception = JSValue<Value>::New(context_, trycatch.Exception());
-    }
+        MaybeLocal<Object> obj = value->ToObject(context);
+        if (!obj.IsEmpty()) {
+            jfieldID fid = env->GetFieldID(ret , "reference", "J");
+            JSValue<Value> *o = JSValue<Value>::New(context_, value->ToObject());
+            env->SetLongField( out, fid, reinterpret_cast<long>(o));
+        } else {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        }
 
-    jfieldID fid = env->GetFieldID(ret , "exception", "J");
-    env->SetLongField( out, fid, (long) exception);
-
+        jfieldID fid = env->GetFieldID(ret , "exception", "J");
+        env->SetLongField( out, fid, (long) exception);
     V8_UNLOCK();
     return out;
 }

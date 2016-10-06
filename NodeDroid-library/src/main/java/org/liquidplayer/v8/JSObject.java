@@ -186,7 +186,7 @@ public class JSObject extends JSValue {
                     property(m.getName(), f, m.getAnnotation(jsexport.class).attributes());
                 }
             }
-        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+        } catch (Exception e) {
             context.throwJSException(new JSException(context,e.toString()));
         }
     }
