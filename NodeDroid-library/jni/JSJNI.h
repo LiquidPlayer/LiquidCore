@@ -151,7 +151,7 @@ private:
 
     Isolate *m_isolate;
     Isolate::CreateParams m_create_params;
-    static GenericAllocator m_allocator;
+    static GenericAllocator s_allocator;
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;

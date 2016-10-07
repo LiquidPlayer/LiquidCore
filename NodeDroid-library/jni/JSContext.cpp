@@ -243,11 +243,11 @@ void ContextGroup::dispose_v8() {
     s_mutex.unlock();
 }
 
-GenericAllocator ContextGroup::m_allocator;
+GenericAllocator ContextGroup::s_allocator;
 
 ContextGroup::ContextGroup() {
     init_v8();
-    m_create_params.array_buffer_allocator = &m_allocator;
+    m_create_params.array_buffer_allocator = &s_allocator;
     m_isolate = Isolate::New(m_create_params);
     m_manage_isolate = true;
     m_uv_loop = nullptr;
@@ -340,8 +340,7 @@ ContextGroup::~ContextGroup() {
             // (see code for v8::Isolate::TearDown() in deps/v8/src/isolate.cc), but
             // I am confused as to why (2) is required.
             Isolate::CreateParams params;
-            GenericAllocator array_buffer_allocator;
-            params.array_buffer_allocator = &array_buffer_allocator;
+            params.array_buffer_allocator = &s_allocator;
             Isolate *temp_isolate = Isolate::New(params);
             {
                 temp_isolate->Enter();

@@ -335,6 +335,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
         ContextGroup::Mutex()->unlock();
       }
 
+      java_node_context->retain();
       notify_start(java_node_context);
 
       bool more;
@@ -365,12 +366,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
       java_node_context->SetDefunct();
       int count = java_node_context->release();
-      if (count != 0) {
-      /*
-        __android_log_assert("FAIL", "StartNodeInstance",
-            "JSContext count not zero (%d)", count);
-      */
-      }
+      ASSERT_EQ(count,0);
 
       WaitForInspectorDisconnect(env);
 #if defined(LEAK_SANITIZER)
@@ -397,7 +393,8 @@ int NodeInstance::StartNodeInstance(void* arg) {
   isolate->Dispose();
   isolate = nullptr;
 
-//  group->release();
+  int count = group->release();
+  ASSERT_EQ(count,0);
 
   delete array_buffer_allocator;
 
