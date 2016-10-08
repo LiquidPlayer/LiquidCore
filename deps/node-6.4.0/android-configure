@@ -47,6 +47,12 @@ case $ARCH in
         TOOLCHAIN_NAME="$SUFFIX"
         PLATFORM=android-9
         ;;
+    mips64)
+        DEST_CPU="mips64el"
+        SUFFIX="mips64el-linux-android"
+        TOOLCHAIN_NAME="$SUFFIX"
+        PLATFORM=android-21
+        ;;
     *)
         echo "Unsupported architecture provided: $ARCH"
         exit 1
@@ -67,7 +73,14 @@ export CXX=$TOOLCHAIN/bin/$SUFFIX-g++
 export LINK=$TOOLCHAIN/bin/$SUFFIX-g++
 
 GYP_DEFINES="target_arch=$ARCH"
-GYP_DEFINES+=" v8_target_arch=$DEST_CPU"
+case $ARCH in
+    mips*)
+        GYP_DEFINES+=" v8_target_arch=$ARCH"
+        ;;
+    *)
+        GYP_DEFINES+=" v8_target_arch=$DEST_CPU"
+        ;;
+esac
 GYP_DEFINES+=" android_target_arch=$ARCH"
 GYP_DEFINES+=" host_os=linux OS=android"
 export GYP_DEFINES
@@ -78,6 +91,7 @@ if [ -f "configure" ]; then
         --dest-os=android \
         --without-snapshot \
         --openssl-no-asm \
+        --with-mips-arch-variant=r1 \
         --without-intl \
         --shared
 fi

@@ -133,7 +133,7 @@ class Process {
      * @return true if active, false otherwise
      */
     boolean isActive() {
-        return isActive;
+        return isActive && jscontext.get() != null;
     }
 
     /**
@@ -186,10 +186,14 @@ class Process {
             listener.onProcessAboutToExit(this, Long.valueOf(code).intValue());
         }
     }
+    private boolean notifiedExit = false;
     private void eventOnExit(long code) {
         exitCode = code;
-        for (EventListener listener : listeners) {
-            listener.onProcessExit(this, Long.valueOf(code).intValue());
+        if (!notifiedExit) {
+            notifiedExit = true;
+            for (EventListener listener : listeners) {
+                listener.onProcessExit(this, Long.valueOf(code).intValue());
+            }
         }
     }
 
@@ -209,34 +213,36 @@ class Process {
         ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
             @SuppressWarnings("unused")
             public void __nodedroid_onLoad() {
-                jscontext.get().deleteProperty("__nodedroid_onLoad");
-                // set exit handler
-                JSFunction onExit = new JSFunction(context, "onExit") {
-                    @SuppressWarnings("unused")
-                    public void onExit(int code) {
-                        eventOnAboutToExit(code);
-                    }
-                };
-                FileSystem fs = new FileSystem(ctx);
-                setFileSystem(mainContext,fs.valueRef());
-                new JSFunction(context,"__onExit", new String [] {"exitFunc"},
-                        "process.on('exit',exitFunc);"+
-                        "process.chdir('/home');",null,0).call(null,onExit);
-                eventOnStart(jscontext.get());
+                if (isActive()) {
+                    jscontext.get().deleteProperty("__nodedroid_onLoad");
+                    // set exit handler
+                    JSFunction onExit = new JSFunction(context, "onExit") {
+                        @SuppressWarnings("unused")
+                        public void onExit(int code) {
+                            eventOnAboutToExit(code);
+                        }
+                    };
+                    FileSystem fs = new FileSystem(ctx);
+                    setFileSystem(mainContext, fs.valueRef());
+                    new JSFunction(context, "__onExit", new String[]{"exitFunc"},
+                            "process.on('exit',exitFunc);" +
+                                    "process.chdir('/home');", null, 0).call(null, onExit);
+                    eventOnStart(jscontext.get());
+                }
             }
         });
     }
 
     @SuppressWarnings("unused") // called from native code
     private void onNodeExit(long exitCode) {
-        if (jscontext != null) {
+        isActive = false;
+        if (jscontext != null && jscontext.get() != null) {
             ProcessContext ctx = jscontext.get();
             if (ctx != null) {
                 ctx.setDefunct();
             }
-            jscontext = null;
         }
-        isActive = false;
+        jscontext = null;
         isDone = true;
         eventOnExit(exitCode);
         (new Thread() {
@@ -292,7 +298,9 @@ class Process {
         @Override
         public void finalize() throws Throwable {
             exit(kContextFinalizedButProcessStillActive);
+            eventOnExit(exitCode);
             super.finalize();
+            isActive = false;
         }
 
         private long handleRef = 0L;

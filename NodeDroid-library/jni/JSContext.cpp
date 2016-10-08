@@ -409,6 +409,16 @@ NATIVE(JSContextGroup,jlong,create) (PARAMS) {
 
 NATIVE(JSContextGroup,void,release) (PARAMS,jlong group) {
     ContextGroup *isolate = (ContextGroup*) group;
+#ifdef DEBUG_RETAINER
+    Retainer::m_debug_mutex.lock();
+    bool found = (std::find(Retainer::m_debug.begin(),
+        Retainer::m_debug.end(), isolate) != Retainer::m_debug.end());
+    Retainer::m_debug_mutex.unlock();
+    if (!found) {
+        __android_log_assert("FAIL", "ContextGroup::release",
+            "Attempting to release a deleted object!");
+    }
+#endif
     isolate->release();
 }
 
@@ -448,6 +458,16 @@ NATIVE(JSContext,jlong,retain) (PARAMS,jlong ctx) {
 
 NATIVE(JSContext,void,release) (PARAMS,jlong ctx) {
     JSContext *context = reinterpret_cast<JSContext*>(ctx);
+#ifdef DEBUG_RETAINER
+    Retainer::m_debug_mutex.lock();
+    bool found = (std::find(Retainer::m_debug.begin(),
+        Retainer::m_debug.end(), context) != Retainer::m_debug.end());
+    Retainer::m_debug_mutex.unlock();
+    if (!found) {
+        __android_log_assert("FAIL", "JSContext::release",
+            "Attempting to release a deleted object!");
+    }
+#endif
     context->release();
 }
 

@@ -34,7 +34,7 @@ parser = optparse.OptionParser()
 valid_os = ('win', 'mac', 'solaris', 'freebsd', 'openbsd', 'linux',
             'android', 'aix')
 valid_arch = ('arm', 'arm64', 'ia32', 'mips', 'mipsel', 'ppc', 'ppc64', 'x32',
-              'x64', 'x86', 's390', 's390x')
+              'x64', 'x86', 's390', 's390x', 'mips64', 'mips64el')
 valid_arm_float_abi = ('soft', 'softfp', 'hard')
 valid_arm_fpu = ('vfp', 'vfpv3', 'vfpv3-d16', 'neon')
 valid_mips_arch = ('loongson', 'r1', 'r2', 'r6', 'rx')
@@ -278,6 +278,14 @@ parser.add_option('--with-mips-arch-variant',
     default='r2',
     choices=valid_mips_arch,
     help='MIPS arch variant ({0}) [default: %default]'.format(
+        ', '.join(valid_mips_arch)))
+
+parser.add_option('--with-mips64-arch-variant',
+    action='store',
+    dest='mips64_arch_variant',
+    default='r6',
+    choices=valid_mips_arch,
+    help='MIPS64 arch variant ({0}) [default: %default]'.format(
         ', '.join(valid_mips_arch)))
 
 parser.add_option('--with-mips-fpu-mode',
@@ -671,6 +679,8 @@ def host_arch_cc():
     '__i386__'    : 'ia32',
     '__MIPSEL__'  : 'mipsel',
     '__mips__'    : 'mips',
+    '__MIPS64EL__': 'mips64el',
+    '__mips64__'  : 'mips64',
     '__PPC64__'   : 'ppc64',
     '__PPC__'     : 'ppc',
     '__x86_64__'  : 'x64',
@@ -738,6 +748,12 @@ def configure_mips(o):
   o['variables']['mips_arch_variant'] = options.mips_arch_variant
   o['variables']['mips_fpu_mode'] = options.mips_fpu_mode
 
+def configure_mips64(o):
+  can_use_fpu_instructions = (options.mips_float_abi != 'soft')
+  o['variables']['v8_can_use_fpu_instructions'] = b(can_use_fpu_instructions)
+  o['variables']['v8_use_mips_abi_hardfloat'] = b(can_use_fpu_instructions)
+  o['variables']['mips_arch_variant'] = options.mips64_arch_variant
+  o['variables']['mips_fpu_mode'] = options.mips_fpu_mode
 
 def configure_node(o):
   if options.dest_os == 'android':
@@ -765,6 +781,8 @@ def configure_node(o):
     configure_arm(o)
   elif target_arch in ('mips', 'mipsel'):
     configure_mips(o)
+  elif target_arch in ('mips64', 'mips64el'):
+    configure_mips64(o)
 
   if flavor == 'aix':
     o['variables']['node_core_target_name'] = 'node_base'

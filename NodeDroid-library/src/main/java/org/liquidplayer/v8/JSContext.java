@@ -167,7 +167,6 @@ public class JSContext extends JSObject {
     protected void finalize() throws Throwable {
         super.finalize();
         if (!isDefunct) {
-            android.util.Log.d("JSContext.finalize()", "About to release context");
             release(ctx);
         }
     }

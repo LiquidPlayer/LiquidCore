@@ -32,12 +32,6 @@
 */
 package org.liquidplayer.v8;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-
 /**
  * A JSContextGroup associates JavaScript contexts with one another. Contexts
  * in the same group may share and exchange JavaScript objects. Sharing and/or
