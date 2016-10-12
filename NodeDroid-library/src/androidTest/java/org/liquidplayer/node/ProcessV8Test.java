@@ -35,16 +35,17 @@ import static org.junit.Assert.*;
 
 public class ProcessV8Test {
 
-    JSContext context = null;
-    Process process = null;
-    Semaphore processCompleted;
+    private JSContext context = null;
+    private Process process = null;
+    private Semaphore processCompleted;
 
     @Before
     public void setUp() throws Exception {
         final Semaphore processStarted = new Semaphore(0);
         processCompleted = new Semaphore(0);
 
-        new Process(InstrumentationRegistry.getContext(),"_",new Process.EventListener() {
+        new Process(InstrumentationRegistry.getContext(),"_",
+                Process.kMediaAccessPermissionsRW,new Process.EventListener() {
             @Override
             public void onProcessStart(final Process proc, final JSContext ctx) {
                 context = ctx;
@@ -66,6 +67,16 @@ public class ProcessV8Test {
             public void onProcessFailed(Process process, Exception error) {
 
             }
+
+            @Override
+            public void onStdout(Process process, String string) {
+                android.util.Log.d("stdout", string);
+            }
+            @Override
+            public void onStderr(Process process, String string) {
+                android.util.Log.e("stderr", string);
+            }
+
         });
 
         // Hang out here until the process and promise are ready

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/NodeDroid-library/NodeDroid-library.iml" filepath="$PROJECT_DIR$/NodeDroid-library/NodeDroid-library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/nodeconsole/nodeconsole.iml" filepath="$PROJECT_DIR$/nodeconsole/nodeconsole.iml" />
       <module fileurl="file://$PROJECT_DIR$/nodedroid.iml" filepath="$PROJECT_DIR$/nodedroid.iml" />
     </modules>
   </component>

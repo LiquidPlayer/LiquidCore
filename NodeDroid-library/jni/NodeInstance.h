@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <map>
 
 #include "node.h"
 #include "uv.h"
@@ -56,6 +57,9 @@ private:
 
     static void Chdir(const FunctionCallbackInfo<Value>& args);
     static void Cwd(const FunctionCallbackInfo<Value>& args);
+    static void Exit(const FunctionCallbackInfo<Value>& args);
+
+    static std::map<Environment*,NodeInstance*> instance_map;
 
 private:
     Mutex node_isolate_mutex;
@@ -65,6 +69,7 @@ private:
     bool debug_wait_connect = false;
     bool trace_sync_io = false;
     bool use_debug_agent = false;
+    bool didExit = false;
 
     JavaVM *m_jvm = nullptr;
     jobject m_JavaThis = nullptr;

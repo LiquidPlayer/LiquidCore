@@ -1,6 +1,8 @@
 (function() {
     var fs = require('fs');
 
+    console.log("Test stdout capture!");
+
     // Test 1: Try to read the /data directory
     global.a = null;
     try {

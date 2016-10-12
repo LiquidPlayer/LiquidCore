@@ -14,8 +14,8 @@ import static org.junit.Assert.*;
 
 public class ProcessTest {
 
-    final Object mutex = new Object();
-    int count = 0;
+    private final Object mutex = new Object();
+    private int count = 0;
 
     @Test
     public void multiProcessTest() throws Exception {
@@ -52,10 +52,23 @@ public class ProcessTest {
             @Override
             public void onProcessFailed(final Process process, Exception error) {
             }
+
+            @Override
+            public void onStdout(Process process, String string) {
+                android.util.Log.d("stdout", string);
+            }
+            @Override
+            public void onStderr(Process process, String string) {
+                android.util.Log.e("stderr", string);
+            }
+
         };
-        new Process(InstrumentationRegistry.getContext(),"_1",listener);
-        new Process(InstrumentationRegistry.getContext(),"_2",listener);
-        new Process(InstrumentationRegistry.getContext(),"_3",listener);
+        new Process(InstrumentationRegistry.getContext(),"_1",
+                Process.kMediaAccessPermissionsRW,listener);
+        new Process(InstrumentationRegistry.getContext(),"_2",
+                Process.kMediaAccessPermissionsRW,listener);
+        new Process(InstrumentationRegistry.getContext(),"_3",
+                Process.kMediaAccessPermissionsRW,listener);
 
         // Hang out here until the processes all finish
         semaphore.acquire();
@@ -68,7 +81,8 @@ public class ProcessTest {
 
         final Semaphore semaphore = new Semaphore(0);
 
-        new Process(InstrumentationRegistry.getContext(),"_",new Process.EventListener() {
+        new Process(InstrumentationRegistry.getContext(),"_",
+                Process.kMediaAccessPermissionsRW,new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
 
@@ -111,6 +125,16 @@ public class ProcessTest {
             public void onProcessFailed(Process process, Exception error) {
 
             }
+
+            @Override
+            public void onStdout(Process process, String string) {
+                android.util.Log.d("stdout", string);
+            }
+            @Override
+            public void onStderr(Process process, String string) {
+                android.util.Log.e("stderr", string);
+            }
+
         });
 
         // Hang out here until the process finishes

@@ -191,6 +191,21 @@ void NodeInstance::Chdir(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
+std::map<Environment*,NodeInstance*> NodeInstance::instance_map;
+
+void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+
+  NodeInstance *instance;
+
+  ContextGroup::Mutex()->lock();
+  instance = instance_map[env];
+  ContextGroup::Mutex()->unlock();
+
+  WaitForInspectorDisconnect(Environment::GetCurrent(args));
+  uv_stop(env->event_loop());
+  instance->didExit = true;
+}
 
 void NodeInstance::Cwd(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
@@ -294,6 +309,11 @@ int NodeInstance::StartNodeInstance(void* arg) {
       // Remove process.dlopen().  Nothing good can come of it in this environment.
       process->Delete(env->context(), String::NewFromUtf8(isolate, "dlopen"));
 
+      // Override exit() so it doesn't nuke the app
+      env->SetMethod(process, "reallyExit", Exit);
+
+      instance_map[env] = this;
+
       isolate->SetAbortOnUncaughtExceptionCallback(
         ShouldAbortOnUncaughtException);
 
@@ -340,10 +360,13 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
       bool more;
       do {
-        PumpMessageLoop(isolate);
+        if (!didExit)
+            PumpMessageLoop(isolate);
         more = uv_run(env->event_loop(), UV_RUN_ONCE);
+        if (didExit)
+            uv_stop(env->event_loop());
 
-        if (more == false) {
+        if (more == false && didExit == false) {
           PumpMessageLoop(isolate);
           EmitBeforeExit(env);
 
@@ -374,6 +397,8 @@ int NodeInstance::StartNodeInstance(void* arg) {
 #endif
 
       array_buffer_allocator->set_env(nullptr);
+
+      instance_map.erase(env);
 
       env->Dispose();
       env = nullptr;
@@ -451,54 +476,8 @@ int NodeInstance::Start(int argc, char *argv[]) {
 #define NATIVE(package,rt,f) extern "C" JNIEXPORT \
     rt JNICALL Java_org_liquidplayer_node_##package##_##f
 
-static int pfd[2];
-static pthread_t thr;
-static const char *tag = nullptr;
-
-static void *thread_func(void*)
-{
-    ssize_t rdsz;
-    char buf[128];
-    while((rdsz = read(pfd[0], buf, sizeof buf - 1)) > 0) {
-        if (rdsz > 0) {
-            buf[rdsz] = 0;  /* add null-terminator */
-            char *line = strtok(buf, "\n");
-            while (line != nullptr) {
-                __android_log_write(ANDROID_LOG_DEBUG, tag, line);
-                line = strtok(nullptr, "\n");
-            }
-        }
-    }
-    return 0;
-}
-
-int start_logger(const char *app_name)
-{
-    tag = app_name;
-
-    /* make stdout line-buffered and stderr unbuffered */
-    setvbuf(stdout, 0, _IOLBF, 0);
-    setvbuf(stderr, 0, _IONBF, 0);
-
-    /* create the pipe and redirect stdout and stderr */
-    pipe(pfd);
-    dup2(pfd[1], 1);
-    dup2(pfd[1], 2);
-
-    /* spawn the logging thread */
-    if(pthread_create(&thr, 0, thread_func, 0) == -1)
-        return -1;
-    pthread_detach(thr);
-    return 0;
-}
-
 NATIVE(Process,jlong,start) (PARAMS)
 {
-    // One time set up
-    if (tag == nullptr) {
-        start_logger("nodedroid");
-    }
-
     NodeInstance *instance = new NodeInstance(env, thiz);
     return reinterpret_cast<jlong>(instance);
 }

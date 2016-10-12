@@ -1,1 +1,1 @@
-include ':NodeDroid-library'
+include ':NodeDroid-library', ':nodeconsole'

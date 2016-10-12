@@ -4,9 +4,9 @@ import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
+import org.liquidplayer.v8.JSBaseArray;
 import org.liquidplayer.v8.JSContext;
 import org.liquidplayer.v8.JSObject;
-import org.liquidplayer.v8.JSObject.jsexport;
 
 import java.io.File;
 import java.io.InputStream;
@@ -30,7 +30,8 @@ public class FSTest {
         Script(String script, OnDone onDone) {
             this.script = script;
             this.onDone = onDone;
-            new Process(InstrumentationRegistry.getContext(),"_",this);
+            new Process(InstrumentationRegistry.getContext(),"_",
+                    Process.kMediaAccessPermissionsRW,this);
         }
 
         @Override
@@ -54,6 +55,15 @@ public class FSTest {
 
         }
 
+        @Override
+        public void onStdout(Process process, String string) {
+            android.util.Log.d("stdout", string);
+        }
+        @Override
+        public void onStderr(Process process, String string) {
+            android.util.Log.e("stderr", string);
+        }
+
     }
 
     private class Foo extends JSObject {
@@ -68,6 +78,7 @@ public class FSTest {
         @jsexport(attributes = JSPropertyAttributeReadOnly)
         Property<String> read_only;
 
+        @SuppressWarnings("unused")
         @jsexport(attributes = JSPropertyAttributeReadOnly | JSPropertyAttributeDontDelete)
         int incr(int x) {
             return x+1;
@@ -78,7 +89,6 @@ public class FSTest {
     public void testFileSystem1() throws Exception {
         Context context = InstrumentationRegistry.getContext();
         String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__";
-        new File(context.getFilesDir() + "/__org.liquidplayer.node__/test.txt").delete();
 
         final String script = "" +
                 "var fs = require('fs');" +
@@ -95,7 +105,8 @@ public class FSTest {
         new Script(script, new OnDone() {
             @Override
             public void onDone(JSContext ctx) {
-                assertEquals("test.txt",ctx.property("files").toString());
+                JSBaseArray files = ctx.property("files").toJSArray();
+                assertTrue(files.contains("test.txt"));
 
                 Foo foo = new Foo(ctx);
                 ctx.property("foo", foo);

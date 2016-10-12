@@ -93,6 +93,21 @@ public class JSFunction extends JSObject {
         context.persistObject(this);
     }
 
+    /**
+     * Creates a JavaScript function that takes parameters 'parameterNames' and executes the
+     * JS code in 'body'.
+     *
+     * @param ctx                The JSContext in which to create the function
+     * @param name               The name of the function
+     * @param parameterNames     A String array containing the names of the parameters
+     * @param body               The JavaScript code to execute in the function
+     */
+    public JSFunction(JSContext ctx, final @NonNull String name, final @NonNull String body,
+                      final String ... parameterNames)
+    {
+        this(ctx,name,parameterNames,body,null,1);
+    }
+
     private long testException(JNIReturnObject jni) {
         if (jni.exception!=0) {
             context.throwJSException(new JSException(new JSValue(jni.exception, context)));
