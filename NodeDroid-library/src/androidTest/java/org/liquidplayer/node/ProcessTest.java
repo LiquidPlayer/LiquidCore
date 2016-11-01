@@ -3,10 +3,10 @@ package org.liquidplayer.node;
 import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
-import org.liquidplayer.v8.JSArray;
-import org.liquidplayer.v8.JSContext;
-import org.liquidplayer.v8.JSFunction;
-import org.liquidplayer.v8.JSValue;
+import org.liquidplayer.javascript.JSArray;
+import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSFunction;
+import org.liquidplayer.javascript.JSValue;
 
 import java.util.concurrent.Semaphore;
 

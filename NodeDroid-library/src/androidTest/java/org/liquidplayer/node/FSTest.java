@@ -4,9 +4,9 @@ import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
-import org.liquidplayer.v8.JSBaseArray;
-import org.liquidplayer.v8.JSContext;
-import org.liquidplayer.v8.JSObject;
+import org.liquidplayer.javascript.JSBaseArray;
+import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSObject;
 
 import java.io.File;
 import java.io.InputStream;

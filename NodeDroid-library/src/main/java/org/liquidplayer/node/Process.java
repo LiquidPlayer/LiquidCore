@@ -1,22 +1,16 @@
 package org.liquidplayer.node;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Environment;
 
-import org.liquidplayer.v8.JSArray;
-import org.liquidplayer.v8.JSArrayBuffer;
-import org.liquidplayer.v8.JSContext;
-import org.liquidplayer.v8.JSContextGroup;
-import org.liquidplayer.v8.JSFunction;
-import org.liquidplayer.v8.JSObject;
-import org.liquidplayer.v8.JSUint8Array;
+import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSContextGroup;
+import org.liquidplayer.javascript.JSFunction;
+import org.liquidplayer.javascript.JSObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

@@ -59,11 +59,11 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import org.liquidplayer.node.Process;
-import org.liquidplayer.v8.JSContext;
-import org.liquidplayer.v8.JSException;
-import org.liquidplayer.v8.JSFunction;
-import org.liquidplayer.v8.JSObject;
-import org.liquidplayer.v8.JSValue;
+import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSException;
+import org.liquidplayer.javascript.JSFunction;
+import org.liquidplayer.javascript.JSObject;
+import org.liquidplayer.javascript.JSValue;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
