@@ -4,13 +4,17 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
 
+import org.liquidplayer.v8.JSArray;
+import org.liquidplayer.v8.JSArrayBuffer;
 import org.liquidplayer.v8.JSContext;
 import org.liquidplayer.v8.JSContextGroup;
 import org.liquidplayer.v8.JSFunction;
 import org.liquidplayer.v8.JSObject;
+import org.liquidplayer.v8.JSUint8Array;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -91,10 +95,6 @@ public class Process {
          * @param error The thrown exception
          */
         void onProcessFailed(final Process process, Exception error);
-
-        void onStdout(Process process, String string);
-
-        void onStderr(Process process, String string);
     }
 
     /**
@@ -114,7 +114,7 @@ public class Process {
      * Adds an EventListener to this Process
      * @param listener the listener interface object
      */
-    public void addEventListener(final EventListener listener) {
+    public synchronized void addEventListener(final EventListener listener) {
         if (!listeners.contains(listener)) {
             listeners.add(listener);
         }
@@ -138,8 +138,10 @@ public class Process {
      * Removes a listener from this Process
      * @param listener the listener interface object to remove
      */
-    public void removeEventListener(EventListener listener) {
+    public synchronized void removeEventListener(EventListener listener) {
+        android.util.Log.d("removeEventListener", "There were " + listeners.size() + " listeners");
         listeners.remove(listener);
+        android.util.Log.d("removeEventListener", "There are now " + listeners.size() + " listeners");
     }
 
     /**
@@ -191,25 +193,15 @@ public class Process {
 
     /** -- private methods -- **/
 
-    private void eventOnStart(JSContext ctx) {
+    private synchronized void eventOnStart(JSContext ctx) {
         for (EventListener listener : listeners) {
             listener.onProcessStart(this, ctx);
         }
     }
-    private void eventOnAboutToExit(long code) {
+    private synchronized void eventOnAboutToExit(long code) {
         exitCode = code;
         for (EventListener listener : listeners) {
             listener.onProcessAboutToExit(this, Long.valueOf(code).intValue());
-        }
-    }
-    private void eventOnStdout(String string) {
-        for (EventListener listener : listeners) {
-            listener.onStdout(this, string);
-        }
-    }
-    private void eventOnStderr(String string) {
-        for (EventListener listener : listeners) {
-            listener.onStderr(this, string);
         }
     }
 
@@ -264,18 +256,19 @@ public class Process {
                     // intercept stdout and stderr
                     JSObject stdout =
                             ctx.property("process").toObject().property("stdout").toObject();
-                    stdout.property("write", new JSFunction(context, "write") {
+                    stdout.property("write", new JSFunction(stdout.getContext(), "write") {
                         @SuppressWarnings("unused")
                         public void write(String string) {
-                            onStdout(string);
+                            android.util.Log.i("stdout", string);
                         }
                     });
+
                     JSObject stderr =
                             ctx.property("process").toObject().property("stderr").toObject();
-                    stderr.property("write", new JSFunction(context, "write") {
+                    stderr.property("write", new JSFunction(stderr.getContext(), "write") {
                         @SuppressWarnings("unused")
                         public void write(String string) {
-                            onStderr(string);
+                            android.util.Log.e("stderr", string);
                         }
                     });
 
@@ -304,14 +297,6 @@ public class Process {
                 dispose(processRef);
             }
         }).start();
-    }
-
-    private void onStdout(String string) {
-        eventOnStdout(string);
-    }
-
-    private void onStderr(String string) {
-        eventOnStderr(string);
     }
 
     private final long processRef;

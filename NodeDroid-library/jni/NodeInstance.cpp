@@ -205,6 +205,7 @@ void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
   WaitForInspectorDisconnect(Environment::GetCurrent(args));
   uv_stop(env->event_loop());
   instance->didExit = true;
+  instance->exit_code = (int) args[0]->Int32Value();
 }
 
 void NodeInstance::Cwd(const FunctionCallbackInfo<Value>& args) {
@@ -225,7 +226,15 @@ void NodeInstance::Cwd(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(aliased);
 }
 
-
+void NodeInstance::OnFatalError(const char* location, const char* message) {
+  if (location) {
+    __android_log_print(ANDROID_LOG_ERROR, "NodeInstance",
+        "FATAL ERROR: %s %s", location, message);
+  } else {
+    __android_log_print(ANDROID_LOG_ERROR, "NodeInstance",
+        "FATAL ERROR: %s", message);
+  }
+}
 
 Environment* NodeInstance::CreateEnvironment(Isolate* isolate,
                                       Local<Context> context,
@@ -329,6 +338,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
       {
         Environment::AsyncCallbackScope callback_scope(env);
+        env->isolate()->SetFatalErrorHandler(OnFatalError);
         LoadEnvironment(env);
       }
 
@@ -360,13 +370,14 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
       bool more;
       do {
-        if (!didExit)
-            PumpMessageLoop(isolate);
+        PumpMessageLoop(isolate);
         more = uv_run(env->event_loop(), UV_RUN_ONCE);
-        if (didExit)
+        if (didExit) {
             uv_stop(env->event_loop());
+            more = false;
+        }
 
-        if (more == false && didExit == false) {
+        if (more == false) {
           PumpMessageLoop(isolate);
           EmitBeforeExit(env);
 
@@ -384,8 +395,12 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
       env->set_trace_sync_io(false);
 
-      exit_code = EmitExit(env);
-      RunAtExit(env);
+      if(!didExit) {
+        exit_code = EmitExit(env);
+        RunAtExit(env);
+      } else {
+        exit_code = this->exit_code;
+      }
 
       java_node_context->SetDefunct();
       int count = java_node_context->release();

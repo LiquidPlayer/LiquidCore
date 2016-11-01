@@ -100,7 +100,7 @@ public class JSValue {
     }
     /**
      * Creates a new JavaScript value from a Java value.  Classes supported are:
-     * Boolean, Double, Integer, Long, String, and JSString.  Any other object will
+     * Boolean, Double, Integer, Long, String, Byte, Short, List, Map, Float.  Any other object will
      * generate an undefined JavaScript value.
      * @param ctx  The context in which to create the value
      * @param val  The Java value
@@ -549,6 +549,8 @@ public class JSValue {
             return toBoolean();
         else if (clazz.isArray())
             return toJSArray().toArray(clazz.getComponentType());
+        else if (JSArray.class.isAssignableFrom(clazz))
+            return clazz.cast(toJSArray());
         else if (JSObject.class.isAssignableFrom(clazz))
             return clazz.cast(toObject());
         else if (JSValue.class.isAssignableFrom(clazz))

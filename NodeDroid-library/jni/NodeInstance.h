@@ -58,6 +58,7 @@ private:
     static void Chdir(const FunctionCallbackInfo<Value>& args);
     static void Cwd(const FunctionCallbackInfo<Value>& args);
     static void Exit(const FunctionCallbackInfo<Value>& args);
+    static void OnFatalError(const char* location, const char* message);
 
     static std::map<Environment*,NodeInstance*> instance_map;
 
@@ -70,6 +71,7 @@ private:
     bool trace_sync_io = false;
     bool use_debug_agent = false;
     bool didExit = false;
+    int  exit_code = 0;
 
     JavaVM *m_jvm = nullptr;
     jobject m_JavaThis = nullptr;

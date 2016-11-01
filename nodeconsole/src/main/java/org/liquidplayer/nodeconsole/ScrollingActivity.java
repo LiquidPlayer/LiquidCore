@@ -1,23 +1,29 @@
 package org.liquidplayer.nodeconsole;
 
-import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
-import android.text.Spanned;
-import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -26,10 +32,12 @@ import org.liquidplayer.node.Process;
 import org.liquidplayer.v8.JSContext;
 import org.liquidplayer.v8.JSException;
 import org.liquidplayer.v8.JSFunction;
+import org.liquidplayer.v8.JSObject;
 import org.liquidplayer.v8.JSValue;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 public class ScrollingActivity extends AppCompatActivity
         implements Process.EventListener, JSContext.IJSExceptionHandler {
@@ -39,10 +47,60 @@ public class ScrollingActivity extends AppCompatActivity
     private NestedScrollView scrollView;
     private ImageButton upHistory;
     private ImageButton downHistory;
+    private String uuid = null;
+    private Process process = null;
+    private JSContext js = null;
+    private JSFunction console_log = null;
+    private ArrayList<String> history = new ArrayList<>();
+    private int item = 0;
+    private ConsoleTextView consoleTextView;
+    private CoordinatorLayout coordinatorLayout;
+    private AppBarLayout appBarLayout;
+    private int rows;
+    private int columns;
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        android.util.Log.d("onSaveInstanceState","State saved");
+
+        outState.putCharSequence("textView", textView.getText());
+        outState.putStringArrayList("history", history);
+        outState.putInt("item", item);
+        outState.putCharSequence("inputBox", inputBox.getText());
+
+        if (process != null) {
+            outState.putString("uuid", uuid);
+            android.util.Log.d("onSaveInstanceState", "removing listener");
+            process.removeEventListener(this);
+        } else {
+            outState.remove("uuid");
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        android.util.Log.d("onPause","Paused");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        android.util.Log.d("onResume","Resumed");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        android.util.Log.d("onStart","Started");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("onCreate","Created");
+
         setContentView(R.layout.activity_scrolling);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -56,18 +114,17 @@ public class ScrollingActivity extends AppCompatActivity
             }
         });
 
-        new Process(this,"node_console",Process.kMediaAccessPermissionsRW,this);
-
         textView = (TextView) findViewById(R.id.console_text);
         inputBox = (EditText) findViewById(R.id.inputBox);
         scrollView = (NestedScrollView) findViewById(R.id.scroll);
+        coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coord);
+        appBarLayout = (AppBarLayout) findViewById(R.id.app_bar);
 
         inputBox.setFocusableInTouchMode(true);
         inputBox.requestFocus();
         inputBox.setOnEditorActionListener(new EditText.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                android.util.Log.d("action", "something happened id = " + actionId);
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     enterCommand();
                     return true;
@@ -99,9 +156,7 @@ public class ScrollingActivity extends AppCompatActivity
         inputBox.setEnabled(false);
 
         upHistory = (ImageButton) findViewById(R.id.up_history);
-        setButtonEnabled(upHistory,false);
         downHistory = (ImageButton) findViewById(R.id.down_history);
-        setButtonEnabled(downHistory,false);
 
         upHistory.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -115,13 +170,91 @@ public class ScrollingActivity extends AppCompatActivity
                 downHistory();
             }
         });
+        setButtonEnabled(upHistory,false);
+        setButtonEnabled(downHistory,false);
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            println(Html.fromHtml("", Html.FROM_HTML_MODE_LEGACY));
+        if (savedInstanceState == null) {
+            uuid = UUID.randomUUID().toString();
         } else {
-            //noinspection deprecation
-            println(Html.fromHtml(""));
+            textView.setText(savedInstanceState.getCharSequence("textView"));
+            history = savedInstanceState.getStringArrayList("history");
+            item = savedInstanceState.getInt("item");
+            if (savedInstanceState.containsKey("uuid")) {
+                uuid = savedInstanceState.getString("uuid");
+                inputBox.setText(savedInstanceState.getCharSequence("inputBox"));
+                if (item < history.size()) setButtonEnabled(downHistory,true);
+                if (item > 0) setButtonEnabled(upHistory,true);
+            } else {
+                uuid = null;
+            }
         }
+
+        ViewTreeObserver vto = scrollView.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                scrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                Paint textPaint = textView.getPaint();
+                int width = Math.round(textPaint.measureText("X") * textView.getTextScaleX());
+                int height = Math.round(textPaint.getTextSize() * textView.getTextScaleX());
+                rows = scrollView.getMeasuredHeight() / height;
+                columns = scrollView.getMeasuredWidth() / width;
+
+                if (uuid != null) {
+                    LocalBroadcastManager.getInstance(ScrollingActivity.this).registerReceiver(
+                            new BroadcastReceiver() {
+                                @Override
+                                public void onReceive(Context context, Intent intent) {
+                                    process = NodeProcessService.getProcess(uuid);
+                                    process.addEventListener(ScrollingActivity.this);
+                                }
+                            },
+                            new IntentFilter(uuid));
+
+                    Intent serviceIntent = new Intent(ScrollingActivity.this, NodeProcessService.class);
+                    serviceIntent.putExtra("org.liquidplayer.node.Process", uuid);
+                    startService(serviceIntent);
+                }
+            }
+        });
+
+        consoleTextView = new ConsoleTextView(textView,new Runnable()
+        {
+            @Override
+            public void run() {
+                View lastChild = scrollView.getChildAt(scrollView.getChildCount() - 1);
+                int bottom = lastChild.getBottom() + scrollView.getPaddingBottom();
+                int sy = scrollView.getScrollY();
+                int sh = scrollView.getHeight();
+                int delta = bottom - (sy + sh);
+
+                scrollView.smoothScrollBy(0, delta);
+                CoordinatorLayout.LayoutParams params =
+                        (CoordinatorLayout.LayoutParams) appBarLayout.getLayoutParams();
+                AppBarLayout.Behavior behavior =
+                        (AppBarLayout.Behavior) params.getBehavior();
+                if (behavior!=null) {
+                    behavior.onNestedFling(coordinatorLayout, appBarLayout,
+                            null, 0, 10000, true);
+                }
+            }
+        },
+        new ByteArrayOutputStream());
+
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                View lastChild = scrollView.getChildAt(scrollView.getChildCount() - 1);
+                int bottom = lastChild.getBottom() + scrollView.getPaddingBottom();
+                int sy = scrollView.getScrollY();
+                int sh = scrollView.getHeight();
+                int delta = bottom - (sy + sh);
+
+                scrollView.smoothScrollBy(0, delta);
+            }
+        });
+
     }
 
     private void setButtonEnabled(ImageButton button, boolean enable) {
@@ -158,77 +291,43 @@ public class ScrollingActivity extends AppCompatActivity
         processedException = false;
         final String cmd = inputBox.getText().toString();
 
-        Spanned text;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            text = Html.fromHtml(
-                    "<strong><font color=\"black\">&gt; " + cmd + "</font></strong>",
-                    Html.FROM_HTML_MODE_LEGACY);
-        } else {
-            //noinspection deprecation
-            text = Html.fromHtml(
-                    "<strong><font color=\"black\">&gt; " + cmd + "</font></strong>");
-        }
-
-        println(text);
+        consoleTextView.println("\u001b[30;1m> " + cmd);
         inputBox.setText("");
         history.add(cmd);
         item = history.size();
         setButtonEnabled(upHistory,true);
         setButtonEnabled(downHistory,false);
-        /*
-        InputMethodManager imm =
-                (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
-        imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
-        */
         new Thread(new Runnable() {
             @Override
             public void run() {
                 JSValue output = js.evaluateScript(cmd);
-                if (!processedException) {
+                if (!processedException && console_log != null) {
                     console_log.call(null, output);
                 }
             }
         }).start();
     }
 
-    private JSContext js = null;
-    private JSFunction console_log = null;
-    private List<String> history = new ArrayList<>();
-    private int item = 0;
-
-    private void println(final CharSequence string) {
-        print(string,true);
+    private interface StreamCallback {
+        void callback(String string);
     }
-    private void print(final CharSequence string) {
-        print(string,false);
-    }
-    private void print(final CharSequence string, final boolean addCr) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                    textView.append(addCr ?
-                        TextUtils.concat(string,Html.fromHtml("<br>",Html.FROM_HTML_MODE_LEGACY)) :
-                            string);
-                } else {
-                    //noinspection deprecation
-                    textView.append(addCr ? TextUtils.concat(string,Html.fromHtml("<br>")) : string);
-                }
-
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        View lastChild = scrollView.getChildAt(scrollView.getChildCount() - 1);
-                        int bottom = lastChild.getBottom() + scrollView.getPaddingBottom();
-                        int sy = scrollView.getScrollY();
-                        int sh = scrollView.getHeight();
-                        int delta = bottom - (sy + sh);
-
-                        scrollView.smoothScrollBy(0, delta);
-                    }
-                });
+    private void setupStream(final JSObject stream, final StreamCallback callback) {
+        stream.property("write", new JSFunction(stream.getContext(), "write") {
+            @SuppressWarnings("unused")
+            public void write(final String string) {
+                callback.callback(string);
             }
         });
+        stream.property("clearScreenDown", new JSFunction(stream.getContext(),"clearScreenDown",
+                "this.write('\\x1b[0J');"));
+        stream.property("moveCursor", new JSFunction(stream.getContext(),"moveCursor",
+                "var out = ''; c = c || 0; r = r || 0;" +
+                "if (c>0) out += '\\x1b['+c+'C'; else if (c<0) out+='\\x1b['+(-c)+'D';"+
+                "if (r>0) out += '\\x1b['+r+'B'; else if (r<0) out+='\\x1b['+(-r)+'A';"+
+                "this.write(out);",
+                "c", "r"));
+        stream.property("rows", rows);
+        stream.property("columns", columns);
     }
 
     @Override
@@ -243,17 +342,50 @@ public class ScrollingActivity extends AppCompatActivity
                 inputBox.setEnabled(true);
             }
         });
+
+        JSObject stdout =
+                js.property("process").toObject().property("stdout").toObject();
+        JSObject stderr =
+                js.property("process").toObject().property("stderr").toObject();
+        setupStream(stdout, new StreamCallback() {
+            @Override
+            public void callback(String string) {
+                consoleTextView.print(string);
+            }
+        });
+        setupStream(stderr, new StreamCallback() {
+            @Override
+            public void callback(String string) {
+                // Make it red!
+                string = "\u001b[31m" + string;
+                consoleTextView.print(string);
+            }
+        });
     }
 
     @Override
     public void onProcessAboutToExit(Process process, int exitCode) {
         console_log = null;
         js = null;
+        process.letDie();
+        consoleTextView.println("\u001B[31mProcess about to exit with code " + exitCode);
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                inputBox.setEnabled(false);
+                inputBox.setClickable(false);
+                inputBox.setAlpha(0.5f);
+                setButtonEnabled(downHistory,false);
+                setButtonEnabled(upHistory,false);
+            }
+        });
     }
 
     @Override
     public void onProcessExit(Process process, int exitCode) {
-
+        consoleTextView.println("\u001B[31mProcess exited with code " + exitCode);
+        android.util.Log.d("onProcessExit", "Process exited with code " + exitCode);
+        this.process = null;
     }
 
     @Override
@@ -261,66 +393,12 @@ public class ScrollingActivity extends AppCompatActivity
 
     }
 
-    @Override
-    public void onStdout(Process process, final String string) {
-        CharSequence text = "";
-        String [] str = string.split("\\n");
-        for (String f : str) {
-            Spanned text_;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                text_ = Html.fromHtml(Html.escapeHtml(f) + "<br>",
-                        Html.FROM_HTML_MODE_LEGACY);
-            } else {
-                //noinspection deprecation
-                text_ = Html.fromHtml(Html.escapeHtml(f) + "<br>");
-            }
-            text = TextUtils.concat(text,text_);
-        }
-        print(text);
-    }
-
-    @Override
-    public void onStderr(Process process, final String string) {
-        CharSequence text = "";
-        String [] str = string.split("\\n");
-        for (String f : str) {
-            Spanned text_;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                text_ = Html.fromHtml("<font color=\"red\">" + Html.escapeHtml(f) + "<br></font>",
-                        Html.FROM_HTML_MODE_LEGACY);
-            } else {
-                //noinspection deprecation
-                text_ = Html.fromHtml("<font color=\"red\">" + Html.escapeHtml(f) + "<br></font>");
-            }
-            text = TextUtils.concat(text,text_);
-        }
-        print(text);
-    }
-
     boolean processedException = false;
 
     @Override
     public void handle(final JSException e) {
         processedException = true;
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                CharSequence text = "";
-                String [] str = e.stack().split("\\n");
-                for (String f : str) {
-                    Spanned text_;
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                        text_ = Html.fromHtml("<font color=\"red\">" + Html.escapeHtml(f) + "<br></font>",
-                                Html.FROM_HTML_MODE_LEGACY);
-                    } else {
-                        //noinspection deprecation
-                        text_ = Html.fromHtml("<font color=\"red\">" + Html.escapeHtml(f) + "<br></font>");
-                    }
-                    text = TextUtils.concat(text,text_);
-                }
-                print(text);
-            }
-        });
+        consoleTextView.println("\u001b[31m" + e.stack());
     }
 
 

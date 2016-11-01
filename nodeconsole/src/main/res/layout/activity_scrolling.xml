@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent" android:fitsSystemWindows="true"
+    android:id="@+id/coord"
     tools:context="org.liquidplayer.nodeconsole.ScrollingActivity">
 
     <android.support.design.widget.AppBarLayout android:id="@+id/app_bar"
@@ -60,12 +61,27 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_marginTop="@dimen/app_bar_colsed_height"
             android:layout_above="@id/inputBoxLayout"
             >
 
-            <include layout="@layout/content_scrolling" />
+            <android.support.v4.widget.NestedScrollView
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                tools:context="org.liquidplayer.nodeconsole.ScrollingActivity"
+                android:id="@+id/scroll"
+                tools:showIn="@layout/activity_scrolling">
+
+                <TextView android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:fontFamily="monospace" android:textSize="12sp"
+                    android:layout_margin="@dimen/text_margin" android:id="@+id/console_text" />
+
+            </android.support.v4.widget.NestedScrollView>
+
         </LinearLayout>
 
     </RelativeLayout>
