@@ -54,16 +54,6 @@ public class FSTest {
         public void onProcessFailed(Process process, Exception error) {
 
         }
-
-        @Override
-        public void onStdout(Process process, String string) {
-            android.util.Log.d("stdout", string);
-        }
-        @Override
-        public void onStderr(Process process, String string) {
-            android.util.Log.e("stderr", string);
-        }
-
     }
 
     private class Foo extends JSObject {
@@ -88,10 +78,11 @@ public class FSTest {
     @Test
     public void testFileSystem1() throws Exception {
         Context context = InstrumentationRegistry.getContext();
-        String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__";
+        String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__/persistent";
 
         final String script = "" +
                 "var fs = require('fs');" +
+                "process.chdir('persistent');" +
                 "fs.writeFile('test.txt', 'Hello, World!', function(err) {" +
                 "   if(err) {" +
                 "       return console.log(err);" +

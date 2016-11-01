@@ -52,16 +52,6 @@ public class ProcessTest {
             @Override
             public void onProcessFailed(final Process process, Exception error) {
             }
-
-            @Override
-            public void onStdout(Process process, String string) {
-                android.util.Log.d("stdout", string);
-            }
-            @Override
-            public void onStderr(Process process, String string) {
-                android.util.Log.e("stderr", string);
-            }
-
         };
         new Process(InstrumentationRegistry.getContext(),"_1",
                 Process.kMediaAccessPermissionsRW,listener);
@@ -125,16 +115,6 @@ public class ProcessTest {
             public void onProcessFailed(Process process, Exception error) {
 
             }
-
-            @Override
-            public void onStdout(Process process, String string) {
-                android.util.Log.d("stdout", string);
-            }
-            @Override
-            public void onStderr(Process process, String string) {
-                android.util.Log.e("stderr", string);
-            }
-
         });
 
         // Hang out here until the process finishes

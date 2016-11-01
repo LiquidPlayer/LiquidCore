@@ -1,3 +1,35 @@
+//
+// ScrollingActivity.java
+// The NodeDroid project
+//
+// https://github.com/ericwlange/nodedroid/
+//
+// Created by Eric Lange
+//
+/*
+ Copyright (c) 2016 Eric Lange. All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 package org.liquidplayer.nodeconsole;
 
 import android.content.BroadcastReceiver;
@@ -5,12 +37,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -62,7 +92,6 @@ public class ScrollingActivity extends AppCompatActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        android.util.Log.d("onSaveInstanceState","State saved");
 
         outState.putCharSequence("textView", textView.getText());
         outState.putStringArrayList("history", history);
@@ -71,7 +100,6 @@ public class ScrollingActivity extends AppCompatActivity
 
         if (process != null) {
             outState.putString("uuid", uuid);
-            android.util.Log.d("onSaveInstanceState", "removing listener");
             process.removeEventListener(this);
         } else {
             outState.remove("uuid");
@@ -79,27 +107,8 @@ public class ScrollingActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        android.util.Log.d("onPause","Paused");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        android.util.Log.d("onResume","Resumed");
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        android.util.Log.d("onStart","Started");
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        android.util.Log.d("onCreate","Created");
 
         setContentView(R.layout.activity_scrolling);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -384,7 +393,6 @@ public class ScrollingActivity extends AppCompatActivity
     @Override
     public void onProcessExit(Process process, int exitCode) {
         consoleTextView.println("\u001B[31mProcess exited with code " + exitCode);
-        android.util.Log.d("onProcessExit", "Process exited with code " + exitCode);
         this.process = null;
     }
 

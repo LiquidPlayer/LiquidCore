@@ -67,16 +67,6 @@ public class ProcessV8Test {
             public void onProcessFailed(Process process, Exception error) {
 
             }
-
-            @Override
-            public void onStdout(Process process, String string) {
-                android.util.Log.d("stdout", string);
-            }
-            @Override
-            public void onStderr(Process process, String string) {
-                android.util.Log.e("stderr", string);
-            }
-
         });
 
         // Hang out here until the process and promise are ready
