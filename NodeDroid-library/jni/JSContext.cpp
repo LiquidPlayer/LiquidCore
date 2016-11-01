@@ -493,7 +493,7 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
     const char *_script = env->GetStringUTFChars(script, NULL);
     const char *_sourceURL = env->GetStringUTFChars(sourceURL, NULL);
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 

@@ -207,6 +207,7 @@ class ConsoleTextView extends HtmlAnsiOutputStream {
             while (count < row && index < text.length()) {
                 int next = text.indexOf('\n', index);
                 if (next < 0) break;
+                count++;
                 index = next + 1;
             }
 

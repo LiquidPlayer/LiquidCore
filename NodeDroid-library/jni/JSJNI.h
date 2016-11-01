@@ -51,7 +51,7 @@
 using namespace v8;
 
 #define NATIVE(package,rt,f) extern "C" JNIEXPORT \
-    rt JNICALL Java_org_liquidplayer_v8_##package##_##f
+    rt JNICALL Java_org_liquidplayer_javascript_##package##_##f
 #define PARAMS JNIEnv* env, jobject thiz
 
 //#define DEBUG_RETAINER 1

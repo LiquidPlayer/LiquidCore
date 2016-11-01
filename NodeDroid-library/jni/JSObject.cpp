@@ -60,7 +60,7 @@ NATIVE(JSFunction,jlong,makeFunctionWithCallback) (PARAMS, jlong ctx, jstring na
 
 NATIVE(JSObject,jobject,makeArray) (PARAMS, jlong ctx, jlongArray args) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -142,7 +142,7 @@ NATIVE(JSObject,jlong,makeError) (PARAMS, jlong ctx, jstring message) {
 }
 
 NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstring flags_) {
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -187,7 +187,7 @@ NATIVE(JSObject,jobject,makeRegExp) (PARAMS, jlong ctx, jstring pattern_, jstrin
 NATIVE(JSObject,jobject,makeFunction) (PARAMS, jlong ctx, jstring name_,
         jstring func_, jstring sourceURL_, jint startingLineNumber) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -275,7 +275,7 @@ NATIVE(JSObject,jboolean,hasProperty) (PARAMS, jlong ctx, jlong object, jstring 
 NATIVE(JSObject,jobject,getProperty) (PARAMS, jlong ctx, jlong object,
         jstring propertyName) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -308,7 +308,7 @@ NATIVE(JSObject,jobject,getProperty) (PARAMS, jlong ctx, jlong object,
 NATIVE(JSObject,jobject,setProperty) (PARAMS, jlong ctx, jlong object, jstring propertyName,
     jlong value, jint attributes) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -353,7 +353,7 @@ NATIVE(JSObject,jobject,setProperty) (PARAMS, jlong ctx, jlong object, jstring p
 }
 
 NATIVE(JSObject,jobject,deleteProperty) (PARAMS, jlong ctx, jlong object, jstring propertyName) {
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -380,7 +380,7 @@ NATIVE(JSObject,jobject,deleteProperty) (PARAMS, jlong ctx, jlong object, jstrin
 NATIVE(JSObject,jobject,getPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jint propertyIndex) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -409,7 +409,7 @@ NATIVE(JSObject,jobject,getPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
 NATIVE(JSObject,jobject,setPropertyAtIndex) (PARAMS, jlong ctx, jlong object,
     jint propertyIndex, jlong value) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -445,7 +445,7 @@ NATIVE(JSObject,jboolean,isFunction) (PARAMS, jlong ctx, jlong object) {
 NATIVE(JSObject,jobject,callAsFunction) (PARAMS, jlong ctx, jlong object,
     jlong thisObject, jlongArray args) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
@@ -501,7 +501,7 @@ NATIVE(JSObject,jboolean,isConstructor) (PARAMS, jlong ctx, jlong object) {
 NATIVE(JSObject,jobject,callAsConstructor) (PARAMS, jlong ctx, jlong object,
     jlongArray args) {
 
-    jclass ret = env->FindClass("org/liquidplayer/v8/JSValue$JNIReturnObject");
+    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
