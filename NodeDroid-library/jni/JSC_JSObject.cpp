@@ -565,7 +565,11 @@ JS_EXPORT JSObjectRef JSObjectMake(JSContextRef ctx, JSClassRef jsClass, void* d
     JSObjectRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context);
-        value = jsClass->NewInstance(ctx);
+        if (jsClass) {
+            value = jsClass->NewInstance(ctx);
+        } else {
+            value = JSValue<Value>::New(context_, Object::New(isolate));
+        }
         JSObjectSetPrivate(value, data);
     V8_UNLOCK();
 
