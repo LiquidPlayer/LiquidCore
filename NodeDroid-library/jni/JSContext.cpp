@@ -48,103 +48,6 @@ std::mutex Retainer::m_debug_mutex;
 #endif
 
 /**
- * class JSValue<T>
- **/
-
-template <typename T>
-JSValue<T> * JSValue<T>::New(JSContext* context, Local<T> val) {
-    if (val->IsObject()) {
-        Local<Private> privateKey = v8::Private::ForApi(context->isolate(),
-            String::NewFromUtf8(context->isolate(), "__JSValue_ptr"));
-        Local<Object> obj = val->ToObject(context->Value()).ToLocalChecked();
-        Local<v8::Value> identifier;
-        Maybe<bool> result = obj->HasPrivate(context->Value(), privateKey);
-        bool hasPrivate = false;
-        if (result.IsJust() && result.FromJust()) {
-            hasPrivate = obj->GetPrivate(context->Value(), privateKey).ToLocal(&identifier);
-        }
-        if (hasPrivate && identifier->IsNumber()) {
-            // This object is already wrapped, let's re-use it
-            JSValue<T> *value =
-                reinterpret_cast<JSValue<T>*>(
-                    (long)identifier->ToNumber(context->Value()).ToLocalChecked()->Value());
-            value->retain();
-            return value;
-        } else {
-            // First time wrap.  Create it new and mark it
-            JSValue<T> *value = new JSValue<T>(context,val);
-            obj->SetPrivate(context->Value(), privateKey,
-                Number::New(context->isolate(),(double)reinterpret_cast<long>(value)));
-            return value;
-        }
-    } else {
-        return new JSValue<T>(context,val);
-    }
-}
-
-template <typename T>
-JSValue<T>::JSValue(JSContext* context, Local<T> val) {
-    if (val->IsUndefined()) {
-        m_isUndefined = true;
-        m_isNull = false;
-    } else if (val->IsNull()) {
-        m_isUndefined = false;
-        m_isNull = true;
-    } else {
-        m_value = Persistent<T,CopyablePersistentTraits<T>>(context->isolate(), val);
-        m_isUndefined = false;
-        m_isNull = false;
-    }
-    m_context = context;
-    m_context->retain(this);
-}
-
-template <typename T>
-JSValue<T>::~JSValue<T>() {
-    V8_ISOLATE(m_context->Group(), isolate);
-
-    if (!m_isUndefined && !m_isNull) {
-        if (Value()->IsObject()) {
-            Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
-            // Clear wrapper pointer if it exists, in case this object is still held by JS
-            Local<Private> privateKey = v8::Private::ForApi(isolate,
-                String::NewFromUtf8(isolate, "__JSValue_ptr"));
-            obj->SetPrivate(m_context->Value(), privateKey,
-                Local<v8::Value>::New(isolate,Undefined(isolate)));
-        }
-        m_value.Reset();
-    }
-
-    m_context->release(this);
-    V8_UNLOCK();
-}
-
-template <typename T>
-Local<T> JSValue<T>::Value() {
-    if (m_isUndefined) {
-        Local<v8::Value> undefined =
-            Local<v8::Value>::New(isolate(),Undefined(isolate()));
-        return *reinterpret_cast<Local<T> *>(&undefined);
-    } else if (m_isNull) {
-        Local<v8::Value> null =
-            Local<v8::Value>::New(isolate(),Null(isolate()));
-        return *reinterpret_cast<Local<T> *>(&null);
-    } else {
-        return Local<T>::New(isolate(), m_value);
-    }
-}
-
-template <typename T>
-Isolate* JSValue<T>::isolate() {
-    return m_context->isolate();
-}
-
-template <typename T>
-ContextGroup* JSValue<T>::Group() {
-    return m_context->Group();
-}
-
-/**
  * class JSContext
  **/
 
@@ -172,6 +75,11 @@ void JSContext::SetDefunct() {
         (*it)->release();
     }
 
+    while (m_array_set.size() > 0) {
+        std::set<JSValue<v8::Array>*>::iterator it = m_array_set.begin();
+        (*it)->release();
+    }
+
     m_context.Reset();
 }
 
@@ -192,6 +100,16 @@ void JSContext::retain(JSValue<v8::Object>* value) {
 
 void JSContext::release(JSValue<v8::Object>* value) {
     m_object_set.erase(value);
+    Retainer::release();
+}
+
+void JSContext::retain(JSValue<v8::Array>* value) {
+    Retainer::retain();
+    m_array_set.insert(value);
+}
+
+void JSContext::release(JSValue<v8::Array>* value) {
+    m_array_set.erase(value);
     Retainer::release();
 }
 
@@ -552,4 +470,3 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
 
     return out;
 }
-

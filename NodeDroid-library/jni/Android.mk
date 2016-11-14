@@ -55,7 +55,12 @@ LOCAL_SRC_FILES := JSContext.cpp \
                    JSObject.cpp \
                    NodeInstance.cpp \
                    nodedroid_file.cc \
-                   process_wrap.cc
+                   process_wrap.cc \
+                   JSC_JSValue.cpp \
+                   JSC_JSString.cpp \
+                   JSC_JSContext.cpp \
+                   JSC_JSObject.cpp \
+                   JSC_JSBase.cpp
 
 LOCAL_SHARED_LIBRARIES := libnode
 
@@ -99,6 +104,7 @@ LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/cares/include \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/openssl/openssl/include \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/http_parser \
+    -I$(LOCAL_PATH)/../../deps/JavaScriptCore/include \
     $(DEFS_Release) $(CFLAGS_Release) $(CFLAGS_CC_Release)
 LOCAL_LDFLAGS := -llog -lm -ldl
 

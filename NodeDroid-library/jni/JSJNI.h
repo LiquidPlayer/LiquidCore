@@ -162,29 +162,8 @@ public:
     std::mutex m_async_mutex;
 };
 
-class JSContext;
-
 template <typename T>
-class JSValue : public Retainer {
-public:
-    virtual Local<T> Value();
-    virtual Isolate* isolate();
-    virtual ContextGroup* Group();
-    static JSValue<T> *New(JSContext* context, Local<T> val);
-
-protected:
-    JSValue(JSContext* context, Local<T> val);
-    JSValue() {}
-    virtual ~JSValue();
-
-protected:
-    Persistent<T, CopyablePersistentTraits<T>> m_value;
-    JSContext *m_context;
-    bool m_isUndefined;
-    bool m_isNull;
-
-friend class JSContext;
-};
+class JSValue;
 
 // CRTP sucks
 class JSContext : public Retainer {
@@ -201,6 +180,8 @@ public:
     virtual void release(JSValue<v8::Value>* value);
     virtual void retain(JSValue<v8::Object>* value);
     virtual void release(JSValue<v8::Object>* value);
+    virtual void retain(JSValue<v8::Array>* value);
+    virtual void release(JSValue<v8::Array>* value);
     virtual int retain() { return Retainer::retain(); }
     virtual int release() { return Retainer::release(); }
 
@@ -214,6 +195,7 @@ private:
     bool m_isDefunct;
     std::set<JSValue<v8::Value>*> m_value_set;
     std::set<JSValue<v8::Object>*> m_object_set;
+    std::set<JSValue<v8::Array>*> m_array_set;
 };
 
 #define V8_ISOLATE(group,iso) \
@@ -221,7 +203,7 @@ private:
         { \
             Isolate *iso = (group) ->isolate(); \
             ContextGroup* group_ = (group); \
-            if (!group->Loop()) lock_ = new v8::Locker(iso); \
+            if (!(group)->Loop()) lock_ = new v8::Locker(iso); \
             Isolate::Scope isolate_scope_(iso); \
             HandleScope handle_scope_(iso);
 
@@ -235,5 +217,102 @@ private:
         } \
         if (lock_) delete lock_
 
+template <typename T>
+class JSValue : public Retainer {
+public:
+    virtual Local<T> Value() {
+        if (m_isUndefined) {
+            Local<v8::Value> undefined =
+                Local<v8::Value>::New(isolate(),Undefined(isolate()));
+            return *reinterpret_cast<Local<T> *>(&undefined);
+        } else if (m_isNull) {
+            Local<v8::Value> null =
+                Local<v8::Value>::New(isolate(),Null(isolate()));
+            return *reinterpret_cast<Local<T> *>(&null);
+        } else {
+            return Local<T>::New(isolate(), m_value);
+        }
+    }
+    virtual Isolate* isolate() {
+        return m_context->isolate();
+    }
+    virtual ContextGroup* Group() {
+        return m_context->Group();
+    }
+    virtual JSContext* Context() { return m_context; }
+    static JSValue<T> *New(JSContext* context, Local<T> val) {
+        if (val->IsObject()) {
+            Local<Private> privateKey = v8::Private::ForApi(context->isolate(),
+                String::NewFromUtf8(context->isolate(), "__JSValue_ptr"));
+            Local<Object> obj = val->ToObject(context->Value()).ToLocalChecked();
+            Local<v8::Value> identifier;
+            Maybe<bool> result = obj->HasPrivate(context->Value(), privateKey);
+            bool hasPrivate = false;
+            if (result.IsJust() && result.FromJust()) {
+                hasPrivate = obj->GetPrivate(context->Value(), privateKey).ToLocal(&identifier);
+            }
+            if (hasPrivate && identifier->IsNumber()) {
+                // This object is already wrapped, let's re-use it
+                JSValue<T> *value =
+                    reinterpret_cast<JSValue<T>*>(
+                        (long)identifier->ToNumber(context->Value()).ToLocalChecked()->Value());
+                value->retain();
+                return value;
+            } else {
+                // First time wrap.  Create it new and mark it
+                JSValue<T> *value = new JSValue<T>(context,val);
+                obj->SetPrivate(context->Value(), privateKey,
+                    Number::New(context->isolate(),(double)reinterpret_cast<long>(value)));
+                return value;
+            }
+        } else {
+            return new JSValue<T>(context,val);
+        }
+    }
+
+protected:
+    JSValue(JSContext* context, Local<T> val) {
+        if (val->IsUndefined()) {
+            m_isUndefined = true;
+            m_isNull = false;
+        } else if (val->IsNull()) {
+            m_isUndefined = false;
+            m_isNull = true;
+        } else {
+            m_value = Persistent<T,CopyablePersistentTraits<T>>(context->isolate(), val);
+            m_isUndefined = false;
+            m_isNull = false;
+        }
+        m_context = context;
+        m_context->retain(this);
+    }
+    JSValue() {}
+    virtual ~JSValue() {
+        V8_ISOLATE(m_context->Group(), isolate);
+
+        if (!m_isUndefined && !m_isNull) {
+            if (Value()->IsObject()) {
+                Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
+                // Clear wrapper pointer if it exists, in case this object is still held by JS
+                Local<Private> privateKey = v8::Private::ForApi(isolate,
+                    String::NewFromUtf8(isolate, "__JSValue_ptr"));
+                obj->SetPrivate(m_context->Value(), privateKey,
+                    Local<v8::Value>::New(isolate,Undefined(isolate)));
+            }
+            m_value.Reset();
+        }
+
+        m_context->release(this);
+        V8_UNLOCK();
+    }
+
+protected:
+    Persistent<T, CopyablePersistentTraits<T>> m_value;
+    JSContext *m_context;
+    bool m_isUndefined;
+    bool m_isNull;
+
+friend class JSContext;
+};
 
 #endif
