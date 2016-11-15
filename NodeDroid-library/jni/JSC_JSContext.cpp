@@ -104,6 +104,6 @@ JS_EXPORT JSStringRef JSGlobalContextCopyName(JSGlobalContextRef ctx)
 JS_EXPORT void JSGlobalContextSetName(JSGlobalContextRef ctx, JSStringRef name)
 {
     V8_ISOLATE_CTX((JSContext*)ctx,isolate,context);
-        context->SetEmbedderData(1, name->Value());
+        context->SetEmbedderData(1, name->Value(isolate));
     V8_UNLOCK();
 }

@@ -235,7 +235,7 @@ JS_EXPORT JSValueRef JSValueMakeString(JSContextRef ctx, JSStringRef string)
     JSValue<Value> *value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context);
-        value = JSValue<Value>::New(context_,static_cast<OpaqueJSString*>(string)->Value());
+        value = JSValue<Value>::New(context_,static_cast<OpaqueJSString*>(string)->Value(isolate));
     V8_UNLOCK();
 
     return value;
@@ -249,7 +249,7 @@ JS_EXPORT JSValueRef JSValueMakeFromJSONString(JSContextRef ctx, JSStringRef str
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context);
         MaybeLocal<Value> parsed = JSON::Parse(isolate,
-            static_cast<OpaqueJSString*>(string)->Value());
+            static_cast<OpaqueJSString*>(string)->Value(isolate));
         if (!parsed.IsEmpty())
             value = JSValue<Value>::New(context_,parsed.ToLocalChecked());
 
@@ -274,7 +274,7 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
         Local<Value> result = stringify->Call(json, 1, &inValue);
         Local<String> string = result->ToString(context).ToLocalChecked();
 
-        value = new OpaqueJSString(isolate, string);
+        value = new OpaqueJSString(string);
     V8_UNLOCK();
 
     return value;

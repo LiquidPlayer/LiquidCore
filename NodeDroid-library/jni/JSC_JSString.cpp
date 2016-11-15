@@ -2,84 +2,72 @@
 // Created by Eric on 11/6/16.
 //
 
+#include <string>
 #include "JSC.h"
+#include "utf8.h"
 
-class Utf16ExternalStringResource : public String::ExternalStringResource {
-    public:
-        Utf16ExternalStringResource(const JSChar* chars, size_t numChars) {
-            m_chars = (JSChar *) malloc( sizeof(JSChar) * (numChars + 1) );
-            memcpy( m_chars, chars, sizeof(JSChar) * (int)numChars );
-            m_chars[numChars] = 0;
-            m_numChars = numChars;
-        }
-        virtual ~Utf16ExternalStringResource() {
-            free(m_chars);
-        }
-        const uint16_t* data() const {
-            return m_chars;
-        }
-        size_t length() const {
-            return m_numChars;
-        }
-
-    private:
-        JSChar* m_chars;
-        size_t m_numChars;
-};
-
-OpaqueJSString::OpaqueJSString(Isolate *isolate, Local<String> string)
+OpaqueJSString::OpaqueJSString(Local<String> string)
 {
-    m_isolate = isolate;
-    m_value = Persistent<String,CopyablePersistentTraits<String>>(isolate, string);
+    String::Utf8Value chars(string);
+    utf8::utf8to16(*chars, *chars + strlen(*chars), std::back_inserter(backstore));
+}
+
+OpaqueJSString::OpaqueJSString(const JSChar * chars, size_t numChars) :
+    backstore(chars, chars + numChars)
+{
+}
+
+OpaqueJSString::OpaqueJSString(const char * chars)
+{
+    utf8::utf8to16(chars, chars + strlen(chars), std::back_inserter(backstore));
 }
 
 OpaqueJSString::~OpaqueJSString()
 {
-    Isolate::Scope isolate_scope_(m_isolate);
-    m_value.Reset();
 }
 
-Local<String> OpaqueJSString::Value()
+Local<String> OpaqueJSString::Value(Isolate *isolate)
 {
-    Isolate::Scope isolate_scope_(m_isolate);
-    return Local<String>::New(m_isolate, m_value);
+    std::string utf8str;
+    Utf8String(utf8str);
+    return String::NewFromUtf8(isolate, utf8str.c_str());
 }
 
 const JSChar * OpaqueJSString::Chars()
 {
-    Isolate::Scope isolate_scope_(m_isolate);
-    Local<String> string = Value();
+    return backstore.data();
+}
 
-    if (!string->IsExternal()) {
-        String::Value const str(string);
-        Utf16ExternalStringResource *resource =
-            new Utf16ExternalStringResource(*str,string->Length());
-        string->MakeExternal(resource);
-    }
+size_t OpaqueJSString::Size()
+{
+    return backstore.size();
+}
 
-    return string->GetExternalStringResource()->data();
+size_t OpaqueJSString::Utf8Bytes()
+{
+    std::string utf8str;
+    utf8::utf16to8(backstore.begin(), backstore.end(), std::back_inserter(utf8str));
+    return utf8str.length();
+}
+
+void OpaqueJSString::Utf8String(std::string& utf8str)
+{
+    utf8::utf16to8(backstore.begin(), backstore.end(), std::back_inserter(utf8str));
+}
+
+bool OpaqueJSString::Equals(OpaqueJSString& other)
+{
+    return backstore == other.backstore;
 }
 
 JS_EXPORT JSStringRef JSStringCreateWithCharacters(const JSChar* chars, size_t numChars)
 {
-    Isolate *isolate = Isolate::GetCurrent();
-    Isolate::Scope isolate_scope_(isolate);
-
-    Local<String> string =
-        String::NewFromTwoByte(isolate, chars, NewStringType::kNormal, numChars).ToLocalChecked();
-
-    return (JSStringRef) new OpaqueJSString(isolate, string);
+    return new OpaqueJSString(chars, numChars);
 }
 
 JS_EXPORT JSStringRef JSStringCreateWithUTF8CString(const char* chars)
 {
-    Isolate *isolate = Isolate::GetCurrent();
-    Isolate::Scope isolate_scope_(isolate);
-
-    Local<String> string =
-        String::NewFromUtf8(isolate, chars, NewStringType::kNormal).ToLocalChecked();
-
-    return (JSStringRef) new OpaqueJSString(isolate, string);
+    return new OpaqueJSString(chars);
 }
 
 JS_EXPORT JSStringRef JSStringRetain(JSStringRef string)
@@ -95,59 +83,34 @@ JS_EXPORT void JSStringRelease(JSStringRef string)
 
 JS_EXPORT size_t JSStringGetLength(JSStringRef string)
 {
-    OpaqueJSString *value = static_cast<OpaqueJSString *>(string);
-    Isolate::Scope isolate_scope_(value->isolate());
-
-    return value->Value()->Length();
+    return string->Size();
 }
 
 JS_EXPORT const JSChar* JSStringGetCharactersPtr(JSStringRef string)
 {
-    OpaqueJSString *value = static_cast<OpaqueJSString *>(string);
-    return (JSChar *) value->Chars();
+    return string->Chars();
 }
 
 JS_EXPORT size_t JSStringGetMaximumUTF8CStringSize(JSStringRef string)
 {
-    OpaqueJSString *value = static_cast<OpaqueJSString *>(string);
-    Isolate::Scope isolate_scope_(value->isolate());
-
-    return value->Value()->Utf8Length();
+    return string->Utf8Bytes();
 }
 
 JS_EXPORT size_t JSStringGetUTF8CString(JSStringRef string, char* buffer, size_t bufferSize)
 {
-    OpaqueJSString *value = static_cast<OpaqueJSString *>(string);
-    Isolate::Scope isolate_scope_(value->isolate());
-
-    size_t bytes = (bufferSize > (size_t)value->Value()->Utf8Length()) ?
-        (size_t) value->Value()->Utf8Length() : bufferSize;
-
-    String::Utf8Value const str(value->Value());
-    memcpy(buffer, *str, bytes);
-
-    return bytes;
+    std::string utf8str;
+    string->Utf8String(utf8str);
+    strncpy(buffer, utf8str.c_str(), bufferSize);
+    return strlen(buffer);
 }
 
 JS_EXPORT bool JSStringIsEqual(JSStringRef a, JSStringRef b)
 {
-    OpaqueJSString *a_ = static_cast<OpaqueJSString *>(a);
-    OpaqueJSString *b_ = static_cast<OpaqueJSString *>(b);
-
-    Isolate::Scope isolate_scope_(a_->isolate());
-
-    String::Utf8Value const a__(a_->Value());
-    String::Utf8Value const b__(b_->Value());
-
-    return strcmp(*a__, *b__) == 0;
+    return a->Equals(*b);
 }
 
 JS_EXPORT bool JSStringIsEqualToUTF8CString(JSStringRef a, const char* b)
 {
-    OpaqueJSString *a_ = static_cast<OpaqueJSString *>(a);
-    Isolate::Scope isolate_scope_(a_->isolate());
-
-    String::Utf8Value const a__(a_->Value());
-
-    return strcmp(*a__, b) == 0;
+    OpaqueJSString b_(b);
+    return JSStringIsEqual(a,&b_);
 }

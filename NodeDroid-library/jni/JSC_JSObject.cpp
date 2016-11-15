@@ -339,7 +339,7 @@ void OpaqueJSClass::NamedPropertyEnumerator(const PropertyCallbackInfo< Array > 
 
         Local<Array> array = Array::New(isolate, accumulator.size());
         for(size_t i=0; accumulator.size() > 0; i++) {
-            array->Set(context, i, accumulator.back()->Value());
+            array->Set(context, i, accumulator.back()->Value(isolate));
             accumulator.back()->release();
             accumulator.pop_back();
         }
@@ -605,7 +605,7 @@ static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefi
         Local<Function> func = ftempl->GetFunction();
 
         if (name) {
-            func->SetName(name->Value());
+            func->SetName(name->Value(isolate));
         }
 
         data->Set(context, String::NewFromUtf8(isolate, "func"), func);
@@ -795,17 +795,17 @@ JS_EXPORT JSObjectRef JSObjectMakeFunction(JSContextRef ctx, JSStringRef name,
         Local<String> source = String::NewFromUtf8(isolate, "(function(");
         Local<String> comma = String::NewFromUtf8(isolate, ",");
         for (unsigned i=0; i<parameterCount; i++) {
-            source = String::Concat(source, parameterNames[i]->Value());
+            source = String::Concat(source, parameterNames[i]->Value(isolate));
             if (i+1 < parameterCount) {
                 source = String::Concat(source, comma);
             }
         }
         source = String::Concat(source, String::NewFromUtf8(isolate, "){\n"));
-        source = String::Concat(source, body->Value());
+        source = String::Concat(source, body->Value(isolate));
         source = String::Concat(source, String::NewFromUtf8(isolate, "\n})"));
 
         ScriptOrigin script_origin(
-            sourceURL->Value(),
+            sourceURL->Value(isolate),
             Integer::New(isolate, startingLineNumber)
         );
 
@@ -825,7 +825,7 @@ JS_EXPORT JSObjectRef JSObjectMakeFunction(JSContextRef ctx, JSStringRef name,
 
         if (!*exception) {
             Local<Function> function = Local<Function>::Cast(result.ToLocalChecked());
-            function->SetName(name->Value());
+            function->SetName(name->Value(isolate));
             out = JSValue<Value>::New(context_, result.ToLocalChecked());
         }
     V8_UNLOCK();
@@ -856,7 +856,7 @@ JS_EXPORT bool JSObjectHasProperty(JSContextRef ctx, JSObjectRef object, JSStrin
     bool v;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o);
-        Maybe<bool> has = o->Has(context, propertyName->Value());
+        Maybe<bool> has = o->Has(context, propertyName->Value(isolate));
         v = has.FromMaybe(false);
     V8_UNLOCK();
 
@@ -872,7 +872,7 @@ JS_EXPORT JSValueRef JSObjectGetProperty(JSContextRef ctx, JSObjectRef object,
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o);
         TryCatch trycatch(isolate);
 
-        MaybeLocal<Value> value = o->Get(context, propertyName->Value());
+        MaybeLocal<Value> value = o->Get(context, propertyName->Value(isolate));
         if (value.IsEmpty()) {
             *exception = JSValue<Value>::New(context_, trycatch.Exception());
         }
@@ -901,11 +901,11 @@ JS_EXPORT void JSObjectSetProperty(JSContextRef ctx, JSObjectRef object, JSStrin
         Maybe<bool> defined = (attributes!=0) ?
             o->DefineOwnProperty(
                 context,
-                propertyName->Value(),
+                propertyName->Value(isolate),
                 VALUE(value)->Value(),
                 static_cast<PropertyAttribute>(v8_attr))
             :
-            o->Set(context, propertyName->Value(), VALUE(value)->Value());
+            o->Set(context, propertyName->Value(isolate), VALUE(value)->Value());
 
         if (defined.IsNothing()) {
             *exception = JSValue<Value>::New(context_, trycatch.Exception());
@@ -922,7 +922,7 @@ JS_EXPORT bool JSObjectDeleteProperty(JSContextRef ctx, JSObjectRef object,
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o);
         TryCatch trycatch(isolate);
 
-        Maybe<bool> deleted = o->Delete(context, propertyName->Value());
+        Maybe<bool> deleted = o->Delete(context, propertyName->Value(isolate));
         if (deleted.IsNothing()) {
             *exception = JSValue<Value>::New(context_, trycatch.Exception());
         } else {

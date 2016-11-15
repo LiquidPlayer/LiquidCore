@@ -90,7 +90,8 @@ CFLAGS_Release := \
     -fno-omit-frame-pointer \
     -fPIE \
     -Wno-strict-aliasing \
-    -Wno-unused-variable
+    -Wno-unused-variable \
+    -fexceptions
 
 CFLAGS_CC_Release := \
 	-fno-rtti \
@@ -105,6 +106,7 @@ LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/openssl/openssl/include \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/http_parser \
     -I$(LOCAL_PATH)/../../deps/JavaScriptCore/include \
+    -I$(LOCAL_PATH)/../../deps/utfcpp \
     $(DEFS_Release) $(CFLAGS_Release) $(CFLAGS_CC_Release)
 LOCAL_LDFLAGS := -llog -lm -ldl
 

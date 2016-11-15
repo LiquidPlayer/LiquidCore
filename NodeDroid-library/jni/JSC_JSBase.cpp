@@ -20,12 +20,12 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
         Context::Scope context_scope_(context);
 
         ScriptOrigin script_origin(
-            sourceURL->Value(),
+            sourceURL->Value(isolate),
             Integer::New(isolate, startingLineNumber)
         );
 
         MaybeLocal<Value>  result;
-        MaybeLocal<Script> script = Script::Compile(context, script_->Value(), &script_origin);
+        MaybeLocal<Script> script = Script::Compile(context,script_->Value(isolate),&script_origin);
         if (script.IsEmpty()) {
             *exception = JSValue<Value>::New(context_, trycatch.Exception());
         }
@@ -60,12 +60,12 @@ JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStri
         Context::Scope context_scope_(context);
 
         ScriptOrigin script_origin(
-            sourceURL->Value(),
+            sourceURL->Value(isolate),
             Integer::New(isolate, startingLineNumber)
         );
 
         MaybeLocal<Value>  result;
-        MaybeLocal<Script> script = Script::Compile(context, script_->Value(), &script_origin);
+        MaybeLocal<Script> script = Script::Compile(context,script_->Value(isolate),&script_origin);
         if (script.IsEmpty()) {
             *exception = JSValue<Value>::New(context_, trycatch.Exception());
         } else {

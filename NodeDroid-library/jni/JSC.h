@@ -7,6 +7,9 @@
 
 #include "JSJNI.h"
 
+#include <vector>
+#include <string>
+
 #define OpaqueJSValue                   JSValue<Value>
 #define OpaqueJSContext                 JSContext
 #define OpaqueJSContextGroup            ContextGroup
@@ -17,15 +20,19 @@
 
 class OpaqueJSString : public Retainer {
     public:
-        OpaqueJSString(Isolate *isolate, Local<String> string);
+        OpaqueJSString(Local<String> string);
+        OpaqueJSString(const JSChar * chars, size_t numChars);
+        OpaqueJSString(const char * chars);
         virtual ~OpaqueJSString();
-        virtual Local<String> Value();
-        virtual Isolate * isolate() { return m_isolate; }
+        virtual Local<String> Value(Isolate *);
         virtual const JSChar * Chars();
+        virtual size_t Size();
+        virtual size_t Utf8Bytes();
+        virtual void Utf8String(std::string&);
+        virtual bool Equals(OpaqueJSString& other);
 
     private:
-        Persistent<String, CopyablePersistentTraits<String>> m_value;
-        Isolate *m_isolate;
+        std::vector<unsigned short> backstore;
 };
 
 class OpaqueJSClass : public Retainer {
