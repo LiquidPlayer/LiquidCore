@@ -40,13 +40,15 @@ class OpaqueJSClass : public Retainer {
         OpaqueJSClass(const JSClassDefinition *definition);
         virtual ~OpaqueJSClass();
 
-        virtual JSObjectRef NewInstance(JSContextRef);
+        virtual Local<ObjectTemplate> NewTemplate(Local<Object> *data);
+        virtual JSValueRef InitInstance(JSContextRef ctx, Local<Object> instance, Local<Object> data);
 
     static void StaticAccessorGetter(Local< String >, const PropertyCallbackInfo< Value > &);
     static void StaticAccessorSetter(Local<String>, Local<Value>,const PropertyCallbackInfo<void>&);
     static void StaticFunctionAccessorGetter(Local< String >, const PropertyCallbackInfo< Value >&);
     static void StaticFunctionCallHandler(const FunctionCallbackInfo< Value > &);
     static void NamedPropertyGetter(Local< String >, const PropertyCallbackInfo< Value > &);
+    static void NamedPropertyQuerier(Local< String >, const PropertyCallbackInfo< Integer > &);
     static void NamedPropertySetter(Local<String>,Local<Value>, const PropertyCallbackInfo<Value>&);
     static void NamedPropertyDeleter(Local< String >, const PropertyCallbackInfo< Boolean > &);
     static void NamedPropertyEnumerator(const PropertyCallbackInfo< Array > &);

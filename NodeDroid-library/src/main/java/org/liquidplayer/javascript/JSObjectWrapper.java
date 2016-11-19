@@ -32,8 +32,8 @@ package org.liquidplayer.javascript;
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-public abstract class JSObjectWrapper extends JSObject {
-    protected JSObjectWrapper(JSObject obj) {
+abstract class JSObjectWrapper extends JSObject {
+    JSObjectWrapper(JSObject obj) {
         mJSObject = obj;
         context = obj.getContext();
         valueRef = obj.valueRef();

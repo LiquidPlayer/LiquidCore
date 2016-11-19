@@ -21,32 +21,36 @@ JS_EXPORT void JSContextGroupRelease(JSContextGroupRef group)
     ((ContextGroup*)group)->release();
 }
 
+static JSContextGroupRef globalContextGroup = nullptr;
+
 JS_EXPORT JSGlobalContextRef JSGlobalContextCreate(JSClassRef globalObjectClass)
 {
-    // FIXME: This completely ignores 'globalObjectClass'
-    // FIXME: This creates a new ContextGroup each time, should be a global context group
-    JSContext *ctx;
-
-    ContextGroup *group = new ContextGroup();
-    {
-        V8_ISOLATE(group,isolate);
-            ctx = new JSContext(group, Context::New(isolate));
-        V8_UNLOCK();
+    if (!globalContextGroup) {
+        globalContextGroup = JSContextGroupCreate();
     }
+    JSContextRef ctx = JSGlobalContextCreateInGroup(globalContextGroup, globalObjectClass);
 
-    group->release();
-
-    return ctx;
+    return (JSGlobalContextRef)ctx;
 }
 
 JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef group,
     JSClassRef globalObjectClass)
 {
-    // FIXME: This completely ignores 'globalObjectClass'
     JSContext *ctx;
+
     {
         V8_ISOLATE((ContextGroup*)group,isolate);
-            ctx = new JSContext((ContextGroup*)group, Context::New(isolate));
+            if (globalObjectClass) {
+                Local<Object> data;
+                Local<ObjectTemplate> templ = globalObjectClass->NewTemplate(&data);
+                Local<Context> context = Context::New(isolate, nullptr, templ);
+                Local<Object> global = context->Global();
+                ctx = new JSContext((ContextGroup*)group, context);
+                JSValueRef value = globalObjectClass->InitInstance(ctx, global, data);
+                ((JSValue<Value>*)value)->release();
+            } else {
+                ctx = new JSContext((ContextGroup*)group, Context::New(isolate));
+            }
         V8_UNLOCK();
     }
 
