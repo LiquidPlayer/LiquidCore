@@ -107,6 +107,7 @@ JS_EXPORT JSGlobalContextRef JSContextGetGlobalContext(JSContextRef ctx)
 {
     // FIXME: What is this supposed to do?
     // FIXME: Gets the global context of a JavaScript execution context.
+    ((JSContext*)ctx)->retain();
     return (JSGlobalContextRef)ctx;
 }
 
