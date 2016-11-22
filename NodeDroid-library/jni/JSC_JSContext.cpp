@@ -23,11 +23,15 @@ JS_EXPORT void JSContextGroupRelease(JSContextGroupRef group)
 
 static JSContextGroupRef globalContextGroup = nullptr;
 
+class GlobalContextGroup : public ContextGroup
+{
+    public:
+        GlobalContextGroup() : ContextGroup() {}
+        virtual ~GlobalContextGroup() { globalContextGroup = nullptr; }
+};
+
 JS_EXPORT JSGlobalContextRef JSGlobalContextCreate(JSClassRef globalObjectClass)
 {
-    if (!globalContextGroup) {
-        globalContextGroup = JSContextGroupCreate();
-    }
     JSContextRef ctx = JSGlobalContextCreateInGroup(globalContextGroup, globalObjectClass);
 
     return (JSGlobalContextRef)ctx;
@@ -37,6 +41,15 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
     JSClassRef globalObjectClass)
 {
     JSContext *ctx;
+    bool created = false;
+
+    if (!group) {
+        if (!globalContextGroup) {
+            globalContextGroup = new GlobalContextGroup();
+            created = true;
+        }
+        group = globalContextGroup;
+    }
 
     {
         V8_ISOLATE((ContextGroup*)group,isolate);
@@ -53,6 +66,9 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
             }
         V8_UNLOCK();
     }
+
+    if (created)
+        ((ContextGroup*)group)->release();
 
     return ctx;
 }

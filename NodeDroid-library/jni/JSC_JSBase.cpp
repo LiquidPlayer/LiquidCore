@@ -11,7 +11,7 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
     // To deal with this, we create a function with the script as the body, and then call the
     // function.  This allows us to set 'thisObject'.
     *exception = nullptr;
-    JSValueRef ret;
+    JSValueRef ret = nullptr;
 
     JSObjectRef global = JSContextGetGlobalObject(ctx);
     if (!thisObject)
@@ -24,8 +24,8 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
         0,
         nullptr,
         script_,
-        sourceURL,
-        0,
+        sourceURL ? sourceURL : &name,
+        startingLineNumber,
         exception);
 
     if (!*exception) {
@@ -36,8 +36,6 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
             0,
             nullptr,
             exception);
-    } else {
-        ret = nullptr;
     }
     JSValueUnprotect(ctx, func);
     JSValueUnprotect(ctx, global);
@@ -82,6 +80,6 @@ JS_EXPORT void JSGarbageCollect(JSContextRef ctx)
     JSContext *context_ = (JSContext*)(ctx);
 
     V8_ISOLATE(context_->Group(), isolate);
-        while(!isolate->IdleNotificationDeadline(5)) {};
+        while(!isolate->IdleNotificationDeadline(1)) {};
     V8_UNLOCK();
 }

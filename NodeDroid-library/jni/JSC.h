@@ -56,7 +56,7 @@ class OpaqueJSClass : public Retainer {
     static void Finalize(const WeakCallbackInfo<UniquePersistent<Object>>&);
 
     private:
-        const JSClassDefinition *m_definition;
+        JSClassDefinition *m_definition;
 
 };
 

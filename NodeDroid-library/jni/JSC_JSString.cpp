@@ -72,13 +72,13 @@ JS_EXPORT JSStringRef JSStringCreateWithUTF8CString(const char* chars)
 
 JS_EXPORT JSStringRef JSStringRetain(JSStringRef string)
 {
-    static_cast<OpaqueJSString *>(string)->retain();
+    string->retain();
     return string;
 }
 
 JS_EXPORT void JSStringRelease(JSStringRef string)
 {
-    static_cast<OpaqueJSString *>(string)->release();
+    string->release();
 }
 
 JS_EXPORT size_t JSStringGetLength(JSStringRef string)

@@ -24,8 +24,11 @@
 #define VALUE(value) ((JSValue<Value> *)(value))
 #define CTX(ctx)     ((JSContext *)(ctx))
 
-OpaqueJSClass::OpaqueJSClass(const JSClassDefinition *definition) : m_definition(definition)
+OpaqueJSClass::OpaqueJSClass(const JSClassDefinition *definition)
 {
+    m_definition = new JSClassDefinition;
+    memcpy(m_definition, definition, sizeof(JSClassDefinition));
+
     if(m_definition->parentClass) {
         m_definition->parentClass->retain();
     }
@@ -36,6 +39,8 @@ OpaqueJSClass::~OpaqueJSClass()
     if (m_definition->parentClass) {
         m_definition->parentClass->release();
     }
+
+    delete m_definition;
 }
 
 void OpaqueJSClass::StaticAccessorGetter(Local< String > property,
