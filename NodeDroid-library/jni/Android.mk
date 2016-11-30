@@ -50,17 +50,21 @@ else
 endif
 
 LOCAL_MODULE    := nodedroid
-LOCAL_SRC_FILES := JSContext.cpp \
-                   JSValue.cpp \
-                   JSObject.cpp \
-                   NodeInstance.cpp \
-                   nodedroid_file.cc \
-                   process_wrap.cc \
-                   JSC_JSValue.cpp \
-                   JSC_JSString.cpp \
-                   JSC_JSContext.cpp \
-                   JSC_JSObject.cpp \
-                   JSC_JSBase.cpp
+LOCAL_SRC_FILES := common.cpp \
+                   JNI/JSContext.cpp \
+                   JNI/JSValue.cpp \
+                   JNI/JSObject.cpp \
+                   node/NodeInstance.cpp \
+                   node/nodedroid_file.cc \
+                   node/process_wrap.cc \
+                   JSC/JSC_JSValue.cpp \
+                   JSC/JSC_JSString.cpp \
+                   JSC/JSC_JSContext.cpp \
+                   JSC/JSC_JSObject.cpp \
+                   JSC/JSC_JSBase.cpp \
+                   androidTest/testapi.cpp \
+                   androidTest/CustomGlobalObjectClassTest.cpp
+
 
 LOCAL_SHARED_LIBRARIES := libnode
 

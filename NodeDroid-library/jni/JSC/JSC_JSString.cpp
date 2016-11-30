@@ -6,20 +6,22 @@
 #include "JSC.h"
 #include "utf8.h"
 
-OpaqueJSString::OpaqueJSString(Local<String> string)
+OpaqueJSString::OpaqueJSString(Local<String> string) : m_isNull(false)
 {
     String::Utf8Value chars(string);
     utf8::utf8to16(*chars, *chars + strlen(*chars), std::back_inserter(backstore));
 }
 
 OpaqueJSString::OpaqueJSString(const JSChar * chars, size_t numChars) :
-    backstore(chars, chars + numChars)
+    backstore(chars, chars + numChars) , m_isNull(!chars)
 {
 }
 
-OpaqueJSString::OpaqueJSString(const char * chars)
+OpaqueJSString::OpaqueJSString(const char * chars) : m_isNull(!chars)
 {
-    utf8::utf8to16(chars, chars + strlen(chars), std::back_inserter(backstore));
+    if (chars) {
+        utf8::utf8to16(chars, chars + strlen(chars), std::back_inserter(backstore));
+    }
 }
 
 OpaqueJSString::~OpaqueJSString()
@@ -35,6 +37,11 @@ Local<String> OpaqueJSString::Value(Isolate *isolate)
 
 const JSChar * OpaqueJSString::Chars()
 {
+    static const JSChar emptyString[] = {0};
+
+    if (m_isNull) return nullptr;
+    if (backstore.data() == nullptr) return emptyString;
+
     return backstore.data();
 }
 
@@ -47,7 +54,7 @@ size_t OpaqueJSString::Utf8Bytes()
 {
     std::string utf8str;
     utf8::utf16to8(backstore.begin(), backstore.end(), std::back_inserter(utf8str));
-    return utf8str.length();
+    return utf8str.length() + 1;
 }
 
 void OpaqueJSString::Utf8String(std::string& utf8str)

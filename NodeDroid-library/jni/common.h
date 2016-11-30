@@ -31,8 +31,8 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _JSJNI_H
-#define _JSJNI_H
+#ifndef _NODEDROID_COMMON_H
+#define _NODEDROID_COMMON_H
 
 #include <stdlib.h>
 #include <jni.h>
@@ -43,16 +43,13 @@
 #include <set>
 #include <thread>
 #include <list>
+#include <functional>
 
 #include "v8.h"
 #include "libplatform/libplatform.h"
 #include "uv.h"
 
 using namespace v8;
-
-#define NATIVE(package,rt,f) extern "C" JNIEXPORT \
-    rt JNICALL Java_org_liquidplayer_javascript_##package##_##f
-#define PARAMS JNIEnv* env, jobject thiz
 
 //#define DEBUG_RETAINER 1
 
@@ -117,6 +114,7 @@ struct Runnable {
     jobject thiz;
     jobject runnable;
     JavaVM *jvm;
+    std::function<void()> c_runnable;
 };
 class JSContext;
 
@@ -133,6 +131,8 @@ public:
     virtual std::thread::id Thread() {
         return m_thread_id;
     }
+
+    virtual void sync(std::function<void()> runnable);
 
     static void init_v8();
     static std::mutex *Mutex() { return &s_mutex; }
@@ -200,38 +200,31 @@ private:
 
 #define V8_ISOLATE(group,iso) \
         v8::Locker *lock_ = nullptr; \
+        ContextGroup* group_ = (group); \
+        auto runnable_ = [&]() \
         { \
-            Isolate *iso = (group) ->isolate(); \
-            ContextGroup* group_ = (group); \
-            if (!(group)->Loop()) lock_ = new v8::Locker(iso); \
+            Isolate *iso = group_->isolate(); \
+            if (!group_->Loop()) lock_ = new v8::Locker(iso); \
             Isolate::Scope isolate_scope_(iso); \
             HandleScope handle_scope_(iso);
 
 #define V8_ISOLATE_CTX(ctx,iso,Ctx) \
         JSContext *context_ = reinterpret_cast<JSContext*>(ctx); \
-        V8_ISOLATE(context_->Group(),iso); \
+        V8_ISOLATE(context_->Group(),iso) \
             Local<Context> Ctx = context_->Value(); \
-            Context::Scope context_scope_(Ctx)
+            Context::Scope context_scope_(Ctx);
 
 #define V8_UNLOCK() \
-        } \
-        if (lock_) delete lock_
+        }; \
+        if (group_->Loop()) { group_->sync(runnable_); } \
+        else runnable_(); \
+        if (lock_) delete lock_;
 
 template <typename T>
 class JSValue : public Retainer {
 public:
     virtual Local<T> Value() {
-        if (m_isUndefined) {
-            Local<v8::Value> undefined =
-                Local<v8::Value>::New(isolate(),Undefined(isolate()));
-            return *reinterpret_cast<Local<T> *>(&undefined);
-        } else if (m_isNull) {
-            Local<v8::Value> null =
-                Local<v8::Value>::New(isolate(),Null(isolate()));
-            return *reinterpret_cast<Local<T> *>(&null);
-        } else {
-            return Local<T>::New(isolate(), m_value);
-        }
+        return Local<T>::New(isolate(), m_value);
     }
     virtual Isolate* isolate() {
         return m_context->isolate();
@@ -315,4 +308,20 @@ protected:
 friend class JSContext;
 };
 
-#endif
+template<> inline
+Local<v8::Value> JSValue<v8::Value>::Value () {
+    if (m_isUndefined) {
+        Local<v8::Value> undefined =
+            Local<v8::Value>::New(isolate(),Undefined(isolate()));
+        return undefined;
+    } else if (m_isNull) {
+        Local<v8::Value> null =
+            Local<v8::Value>::New(isolate(),Null(isolate()));
+        return null;
+    } else {
+        return Local<v8::Value>::New(isolate(), m_value);
+    }
+};
+
+
+#endif // _NODEDROID_COMMON_H

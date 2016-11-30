@@ -5,18 +5,27 @@
 #ifndef NODEDROID_JSC_H
 #define NODEDROID_JSC_H
 
-#include "JSJNI.h"
+#include "common.h"
 
 #include <vector>
 #include <string>
 
 #define OpaqueJSValue                   JSValue<Value>
-#define OpaqueJSContext                 JSContext
 #define OpaqueJSContextGroup            ContextGroup
 #define OpaqueJSPropertyNameAccumulator std::list<JSStringRef>
 #define OpaqueJSPropertyNameArray       JSValue<Array>
 
 #include "JavaScriptCore/JavaScript.h"
+
+class OpaqueJSContext : public Retainer {
+    public:
+        OpaqueJSContext(JSContext *ctx);
+        virtual ~OpaqueJSContext();
+        JSContext *Context() const { return m_context; }
+
+    private:
+        JSContext *m_context;
+};
 
 class OpaqueJSString : public Retainer {
     public:
@@ -33,19 +42,18 @@ class OpaqueJSString : public Retainer {
 
     private:
         std::vector<unsigned short> backstore;
+        bool m_isNull;
 };
 
 class OpaqueJSClass : public Retainer {
     public:
         OpaqueJSClass(const JSClassDefinition *definition);
         virtual ~OpaqueJSClass();
+        virtual const JSClassDefinition * Definition() { return m_definition; }
 
         virtual Local<ObjectTemplate> NewTemplate(Local<Object> *data);
         virtual JSValueRef InitInstance(JSContextRef ctx, Local<Object> instance, Local<Object> data);
 
-    static void StaticAccessorGetter(Local< String >, const PropertyCallbackInfo< Value > &);
-    static void StaticAccessorSetter(Local<String>, Local<Value>,const PropertyCallbackInfo<void>&);
-    static void StaticFunctionAccessorGetter(Local< String >, const PropertyCallbackInfo< Value >&);
     static void StaticFunctionCallHandler(const FunctionCallbackInfo< Value > &);
     static void NamedPropertyGetter(Local< String >, const PropertyCallbackInfo< Value > &);
     static void NamedPropertyQuerier(Local< String >, const PropertyCallbackInfo< Integer > &);

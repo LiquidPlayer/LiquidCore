@@ -490,6 +490,8 @@ int NodeInstance::Start(int argc, char *argv[]) {
 #undef NATIVE
 #define NATIVE(package,rt,f) extern "C" JNIEXPORT \
     rt JNICALL Java_org_liquidplayer_node_##package##_##f
+#undef PARAMS
+#define PARAMS JNIEnv* env, jobject thiz
 
 NATIVE(Process,jlong,start) (PARAMS)
 {

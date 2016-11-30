@@ -26,7 +26,7 @@
 #include "node_crypto.h"
 #endif
 
-#include "JSJNI.h"
+#include "common.h"
 
 using namespace node;
 

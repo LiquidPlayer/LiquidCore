@@ -43,7 +43,9 @@ class JSFunction : public JSValue<T> {
             env->GetJavaVM(&m_jvm);
             m_JavaThis = env->NewWeakGlobalRef(thiz);
 
-            V8_ISOLATE_CTX(ctx,isolate,context);
+            Persistent<T, CopyablePersistentTraits<T>> value;
+
+            V8_ISOLATE_CTX(ctx,isolate,context)
                 long this_ = reinterpret_cast<long>(this);
 
                 const char *c_string = env->GetStringUTFChars(name_, NULL);
@@ -63,13 +65,15 @@ class JSFunction : public JSValue<T> {
                 function->SetPrivate(context, privateKey,
                     Number::New(isolate,(double)reinterpret_cast<long>(this)));
 
-                JSValue<T>::m_isNull = false;
-                JSValue<T>::m_isUndefined = false;
-                JSValue<T>::m_value = Persistent<T,CopyablePersistentTraits<T>>(isolate, function);
-                JSValue<T>::m_context = context_;
-                JSValue<T>::m_context->retain(this);
-                Retainer::m_count = 1;
-            V8_UNLOCK();
+                value = Persistent<T,CopyablePersistentTraits<T>>(isolate, function);
+            V8_UNLOCK()
+
+            JSValue<T>::m_isNull = false;
+            JSValue<T>::m_isUndefined = false;
+            JSValue<T>::m_value = value;
+            JSValue<T>::m_context = context_;
+            JSValue<T>::m_context->retain(this);
+            Retainer::m_count = 1;
         }
 
     protected:
@@ -87,9 +91,9 @@ class JSFunction : public JSValue<T> {
         }
 
         void FunctionCallback(const FunctionCallbackInfo< Value > &info) {
-            jlong objThis;
-            jlongArray argsArr;
-            jlong *args;
+            jlong objThis = 0L;
+            jlongArray argsArr = nullptr;
+            jlong *args = nullptr;
             jmethodID mid;
             JSValue<Value> *exception = nullptr;
             jlong exceptionRefRef = reinterpret_cast<jlong>(&exception);
@@ -102,8 +106,12 @@ class JSFunction : public JSValue<T> {
                 m_jvm->AttachCurrentThread(&env, NULL);
             }
 
-            V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
-                Local<Context> context = JSValue<T>::m_context->Value();
+            ContextGroup *grp = JSValue<T>::m_context->Group();
+            JSContext *ctxt = JSValue<T>::m_context;
+
+            {
+            V8_ISOLATE(grp, isolate)
+                Local<Context> context = ctxt->Value();
                 Context::Scope context_scope_(context);
 
                 isConstructCall = info.IsConstructCall();
@@ -125,27 +133,29 @@ class JSFunction : public JSValue<T> {
                             m_jvm->DetachCurrentThread();
                         }
                         // FIXME: We should assert something here
-
-                        if (lock_) delete lock_; // V8_UNLOCK()
-                        return;
+                        return; // Drops out of this context
                     }
                     cls = super;
                 } while (true);
                 env->DeleteLocalRef(cls);
 
                 objThis = reinterpret_cast<jlong>
-                    (JSValue<Value>::New(JSValue<T>::m_context, info.This()));
+                    (JSValue<Value>::New(ctxt, info.This()));
 
                 int argumentCount = info.Length();
 
                 argsArr = env->NewLongArray(argumentCount);
                 args = new jlong[argumentCount];
                 for (int i=0; i<argumentCount; i++) {
-                    args[i] = reinterpret_cast<long>(JSValue<Value>::New(
-                        JSValue<T>::m_context, info[i]));
+                    args[i] = reinterpret_cast<long>(JSValue<Value>::New(ctxt, info[i]));
                 }
                 env->SetLongArrayRegion(argsArr,0,argumentCount,args);
-            V8_UNLOCK();
+            V8_UNLOCK()
+            }
+
+            // The 'return' statement above only returns from the lambda function buried
+            // in the V8* macro
+            if (!args) return;
 
             if (isConstructCall) {
                 env->CallVoidMethod(m_JavaThis, mid, objThis, argsArr, exceptionRefRef);
@@ -155,8 +165,8 @@ class JSFunction : public JSValue<T> {
             }
 
             {
-                V8_ISOLATE(JSValue<T>::m_context->Group(), isolate);
-                    Local<Context> context = JSValue<T>::m_context->Value();
+                V8_ISOLATE(grp, isolate)
+                    Local<Context> context = ctxt->Value();
                     Context::Scope context_scope_(context);
 
                     if (isConstructCall) {
@@ -174,7 +184,7 @@ class JSFunction : public JSValue<T> {
                         exception->release();
                         isolate->ThrowException(excp);
                     }
-                V8_UNLOCK();
+                V8_UNLOCK()
             }
 
             delete args;

@@ -35,15 +35,15 @@
 
 #define VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value) \
     V8_ISOLATE_CTX(ctxRef,isolate,context); \
-    Local<Value> value = (reinterpret_cast<JSValue<Value>*>(valueRef))->Value()
+    Local<Value> value = (reinterpret_cast<JSValue<Value>*>(valueRef))->Value();
 
 NATIVE(JSValue,jboolean,isUndefined) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsUndefined();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -52,9 +52,9 @@ NATIVE(JSValue,jboolean,isNull) (PARAMS, jlong ctxRef, jlong valueRef)
 {
 
     bool v;
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsNull();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -63,9 +63,9 @@ NATIVE(JSValue,jboolean,isBoolean) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsBoolean();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -74,9 +74,9 @@ NATIVE(JSValue,jboolean,isNumber) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsNumber();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -85,9 +85,9 @@ NATIVE(JSValue,jboolean,isString) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsString();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -96,9 +96,9 @@ NATIVE(JSValue,jboolean,isObject) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsObject();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -107,9 +107,9 @@ NATIVE(JSValue,jboolean,isArray) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsArray();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -118,9 +118,9 @@ NATIVE(JSValue,jboolean,isDate) (PARAMS, jlong ctxRef, jlong valueRef)
 {
     bool v;
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         v = value->IsDate();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -138,7 +138,7 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
     bool result = false;
     JSValue<Value> *exception = nullptr;
     {
-        VALUE_ISOLATE(ctxRef,a,isolate,context,a_);
+        VALUE_ISOLATE(ctxRef,a,isolate,context,a_)
             Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
 
             TryCatch trycatch(isolate);
@@ -149,7 +149,7 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
             } else {
                 result = is.FromMaybe(result);
             }
-        V8_UNLOCK();
+        V8_UNLOCK()
     }
 
     env->SetBooleanField( out, fid, result);
@@ -163,10 +163,10 @@ NATIVE(JSValue,jobject,isEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
 NATIVE(JSValue,jboolean,isStrictEqual) (PARAMS, jlong ctxRef, jlong a, jlong b)
 {
     bool v;
-    VALUE_ISOLATE(ctxRef,a,isolate,context,a_);
+    VALUE_ISOLATE(ctxRef,a,isolate,context,a_)
         Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(b))->Value();
         v = a_->StrictEquals(b_);
-    V8_UNLOCK();
+    V8_UNLOCK()
     return v;
 }
 
@@ -176,9 +176,9 @@ NATIVE(JSValue,jlong,makeUndefined) (PARAMS, jlong ctx)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(ctx,isolate,context);
+    V8_ISOLATE_CTX(ctx,isolate,context)
         value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return reinterpret_cast<long>(value);
 }
@@ -187,9 +187,9 @@ NATIVE(JSValue,jlong,makeNull) (PARAMS, jlong ctx)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(ctx,isolate,context);
+    V8_ISOLATE_CTX(ctx,isolate,context)
         value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Null(isolate)));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return reinterpret_cast<long>(value);
 }
@@ -198,10 +198,10 @@ NATIVE(JSValue,jlong,makeBoolean) (PARAMS, jlong ctx, jboolean boolean)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(ctx,isolate,context);
+    V8_ISOLATE_CTX(ctx,isolate,context)
         value = JSValue<Value>::New(context_,
             Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate)));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return reinterpret_cast<long>(value);
 }
@@ -210,9 +210,9 @@ NATIVE(JSValue,jlong,makeNumber) (PARAMS, jlong ctx, jdouble number)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(ctx,isolate,context);
+    V8_ISOLATE_CTX(ctx,isolate,context)
         value = JSValue<Value>::New(context_,Number::New(isolate,number));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return reinterpret_cast<long>(value);
 }
@@ -220,7 +220,7 @@ NATIVE(JSValue,jlong,makeNumber) (PARAMS, jlong ctx, jdouble number)
 NATIVE(JSValue,jlong,makeString) (PARAMS, jlong ctx, jstring string)
 {
     JSValue<Value> *value;
-    V8_ISOLATE_CTX(ctx,isolate,context);
+    V8_ISOLATE_CTX(ctx,isolate,context)
         const char *c_string = env->GetStringUTFChars(string, NULL);
 
         MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
@@ -234,7 +234,7 @@ NATIVE(JSValue,jlong,makeString) (PARAMS, jlong ctx, jstring string)
         env->ReleaseStringUTFChars(string, c_string);
 
         value = JSValue<Value>::New(context_,rval);
-    V8_UNLOCK();
+    V8_UNLOCK()
     return reinterpret_cast<long>(value);
 }
 
@@ -244,7 +244,7 @@ NATIVE(JSValue,jlong,makeFromJSONString) (PARAMS, jlong ctx, jstring string)
 {
     JSValue<Value> *value = nullptr;
 
-    V8_ISOLATE_CTX(ctx,isolate,context);
+    V8_ISOLATE_CTX(ctx,isolate,context)
         const char *c_string = env->GetStringUTFChars(string, NULL);
         MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
         env->ReleaseStringUTFChars(string, c_string);
@@ -258,7 +258,7 @@ NATIVE(JSValue,jlong,makeFromJSONString) (PARAMS, jlong ctx, jstring string)
         if (!value) {
             value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
         }
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return reinterpret_cast<long>(value);
 }
@@ -269,7 +269,7 @@ NATIVE(JSValue,jobject,createJSONString) (PARAMS, jlong ctxRef, jlong valueRef, 
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,inValue);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,inValue)
         JSValue<Value> *exception = nullptr;
 
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
@@ -283,7 +283,7 @@ NATIVE(JSValue,jobject,createJSONString) (PARAMS, jlong ctxRef, jlong valueRef, 
 
         fid = env->GetFieldID(ret , "exception", "J");
         env->SetLongField(out, fid, reinterpret_cast<long>(exception));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return out;
 }
@@ -293,12 +293,12 @@ NATIVE(JSValue,jobject,createJSONString) (PARAMS, jlong ctxRef, jlong valueRef, 
 NATIVE(JSValue,jboolean,toBoolean) (PARAMS, jlong ctx, jlong valueRef)
 {
     bool ret = false;
-    VALUE_ISOLATE(ctx,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctx,valueRef,isolate,context,value)
         MaybeLocal<Boolean> boolean = value->ToBoolean(context);
         if (!boolean.IsEmpty()) {
             ret = boolean.ToLocalChecked()->Value();
         }
-    V8_UNLOCK();
+    V8_UNLOCK()
     return ret;
 }
 
@@ -308,7 +308,7 @@ NATIVE(JSValue,jobject,toNumber) (PARAMS, jlong ctxRef, jlong valueRef)
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         TryCatch trycatch(isolate);
         JSValue<Value> *exception = nullptr;
 
@@ -325,7 +325,7 @@ NATIVE(JSValue,jobject,toNumber) (PARAMS, jlong ctxRef, jlong valueRef)
 
         fid = env->GetFieldID(ret , "exception", "J");
         env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-    V8_UNLOCK();
+    V8_UNLOCK()
     return out;
 }
 
@@ -335,7 +335,7 @@ NATIVE(JSValue,jobject,toStringCopy) (PARAMS, jlong ctxRef, jlong valueRef)
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         TryCatch trycatch(isolate);
         JSValue<Value> *exception = nullptr;
         jstring retStr;
@@ -354,7 +354,7 @@ NATIVE(JSValue,jobject,toStringCopy) (PARAMS, jlong ctxRef, jlong valueRef)
 
         fid = env->GetFieldID(ret , "exception", "J");
         env->SetLongField( out, fid, reinterpret_cast<long>(exception));
-    V8_UNLOCK();
+    V8_UNLOCK()
     return out;
 }
 
@@ -364,7 +364,7 @@ NATIVE(JSValue,jobject,toObject) (PARAMS, jlong ctxRef, jlong valueRef)
     jmethodID cid = env->GetMethodID(ret,"<init>","()V");
     jobject out = env->NewObject(ret, cid);
 
-    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value);
+    VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value)
         TryCatch trycatch(isolate);
         JSValue<Value> *exception = nullptr;
 
@@ -379,7 +379,7 @@ NATIVE(JSValue,jobject,toObject) (PARAMS, jlong ctxRef, jlong valueRef)
 
         jfieldID fid = env->GetFieldID(ret , "exception", "J");
         env->SetLongField( out, fid, (long) exception);
-    V8_UNLOCK();
+    V8_UNLOCK()
     return out;
 }
 

@@ -4,104 +4,121 @@
 
 #include "JSC.h"
 
-#define VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value) \
-    V8_ISOLATE_CTX(ctxRef,isolate,context); \
-    Local<Value> value = (reinterpret_cast<JSValue<Value>*>(valueRef))->Value()
 #define VALUE(value) ((JSValue<Value> *)(value))
-#define CTX(ctx)     ((JSContext *)(ctx))
+#define CTX(ctx)     ((ctx)->Context())
+#define VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value) \
+    V8_ISOLATE_CTX(ctxRef,isolate,context) \
+    Local<Value> value = VALUE(valueRef)->Value();
 
 JS_EXPORT JSType JSValueGetType(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return kJSTypeNull;
+
     JSType type = kJSTypeUndefined;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         if      (value->IsNull())   type = kJSTypeNull;
         else if (value->IsObject()) type = kJSTypeObject;
         else if (value->IsNumber()) type = kJSTypeNumber;
         else if (value->IsString()) type = kJSTypeString;
         else if (value->IsBoolean())type = kJSTypeBoolean;
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return type;
 }
 
 JS_EXPORT bool JSValueIsUndefined(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return false;
+
     bool v;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         v = value->IsUndefined();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
 
 JS_EXPORT bool JSValueIsNull(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return true;
+
     bool v;
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         v = value->IsNull();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
 
 JS_EXPORT bool JSValueIsBoolean(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return false;
     bool v;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         v = value->IsBoolean();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
 
 JS_EXPORT bool JSValueIsNumber(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return false;
     bool v;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         v = value->IsNumber();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
 
 JS_EXPORT bool JSValueIsString(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return false;
     bool v;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         v = value->IsString();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
 
 JS_EXPORT bool JSValueIsObject(JSContextRef ctxRef, JSValueRef valueRef)
 {
+    if (!valueRef) return false;
     bool v;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         v = value->IsObject();
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
 
 JS_EXPORT bool JSValueIsObjectOfClass(JSContextRef ctx, JSValueRef value, JSClassRef jsClass)
 {
+    if (!value || !jsClass) return false;
+
     bool v=false;
-    VALUE_ISOLATE(CTX(ctx),VALUE(value),isolate,context,value_);
+    VALUE_ISOLATE(CTX(ctx),VALUE(value),isolate,context,value_)
         MaybeLocal<Object> obj = value_->ToObject(context);
         if (!obj.IsEmpty()) {
             Local<Object> o = obj.ToLocalChecked();
             if (o->InternalFieldCount() > 0) {
                 v = ((JSClassRef)o->GetAlignedPointerFromInternalField(0)) == jsClass;
+            } else if (o->GetPrototype()->IsObject()) {
+                Local<Object> proto = o->GetPrototype()->ToObject(context).ToLocalChecked();
+                if (proto->InternalFieldCount() > 0) {
+                    v = ((JSClassRef)proto->GetAlignedPointerFromInternalField(0)) == jsClass;
+                }
             }
         }
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return v;
 }
@@ -109,23 +126,37 @@ JS_EXPORT bool JSValueIsObjectOfClass(JSContextRef ctx, JSValueRef value, JSClas
 /* Comparing values */
 
 JS_EXPORT bool JSValueIsEqual(JSContextRef ctxRef, JSValueRef a, JSValueRef b,
-    JSValueRef* exception)
+    JSValueRef* exceptionRef)
 {
+    if (!a && !b) return true;
+    if (!a) return JSValueIsNull(ctxRef, b);
+    if (!b) return JSValueIsNull(ctxRef, a);
+
     bool result = false;
-    *exception = nullptr;
+    JSValueRef exception = nullptr;
     {
-        VALUE_ISOLATE(CTX(ctxRef),VALUE(a),isolate,context,a_);
+        VALUE_ISOLATE(CTX(ctxRef),VALUE(a),isolate,context,a_)
             Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(VALUE(b)))->Value();
 
             TryCatch trycatch(isolate);
 
             Maybe<bool> is = a_->Equals(context,b_);
             if (is.IsNothing()) {
-                *exception = JSValue<Value>::New(context_, trycatch.Exception());
+                if (trycatch.HasCaught())
+                    exception = JSValue<Value>::New(context_, trycatch.Exception());
+                else {
+                    JSValue<Value> *e = JSValue<Value>::New(context_,
+                        String::NewFromUtf8(isolate, "Cannot compare values"));
+                    exception = JSObjectMakeError(ctxRef, 1, &e, nullptr);
+                }
+
             } else {
                 result = is.FromMaybe(result);
             }
-        V8_UNLOCK();
+
+            if (exceptionRef) *exceptionRef = exception;
+            else if (exception) VALUE(exception)->release();
+        V8_UNLOCK()
     }
 
     return result;
@@ -133,19 +164,27 @@ JS_EXPORT bool JSValueIsEqual(JSContextRef ctxRef, JSValueRef a, JSValueRef b,
 
 JS_EXPORT bool JSValueIsStrictEqual(JSContextRef ctxRef, JSValueRef a, JSValueRef b)
 {
+    if (!a && !b) return true;
+    if (!a) return JSValueIsNull(ctxRef, b);
+    if (!b) return JSValueIsNull(ctxRef, a);
+
     bool v;
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(a),isolate,context,a_);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(a),isolate,context,a_)
         Local<Value> b_ = (reinterpret_cast<JSValue<Value>*>(VALUE(b)))->Value();
         v = a_->StrictEquals(b_);
-    V8_UNLOCK();
+    V8_UNLOCK()
     return v;
 }
 
 JS_EXPORT bool JSValueIsInstanceOfConstructor(JSContextRef ctxRef, JSValueRef valueRef,
-    JSObjectRef constructor, JSValueRef* exception)
+    JSObjectRef constructor, JSValueRef* exceptionRef)
 {
+    if (!valueRef || !constructor) return false;
+
     bool is=false;
-    V8_ISOLATE_CTX(CTX(ctxRef),isolate,context);
+    JSValueRef exception = nullptr;
+
+    V8_ISOLATE_CTX(CTX(ctxRef),isolate,context)
         JSStringRef paramList[] = { JSStringCreateWithUTF8CString("value"),
             JSStringCreateWithUTF8CString("ctor") };
         JSStringRef fname = JSStringCreateWithUTF8CString("__instanceof");
@@ -160,16 +199,16 @@ JS_EXPORT bool JSValueIsInstanceOfConstructor(JSContextRef ctxRef, JSValueRef va
             body,
             source,
             1,
-            exception);
-        if (!*exception) {
+            &exception);
+        if (!exception) {
             JSValueRef is_ = JSObjectCallAsFunction(
                 ctxRef,
                 function,
                 nullptr,
                 2,
                 argList,
-                exception);
-            if (!*exception) {
+                &exception);
+            if (!exception) {
                 is = JSValueToBoolean(ctxRef, is_);
             }
         }
@@ -178,7 +217,10 @@ JS_EXPORT bool JSValueIsInstanceOfConstructor(JSContextRef ctxRef, JSValueRef va
         fname->release();
         body->release();
         source->release();
-    V8_UNLOCK();
+
+        if (exceptionRef) *exceptionRef = exception;
+        else if (exception) VALUE(exception)->release();
+    V8_UNLOCK()
 
     return is;
 }
@@ -189,9 +231,9 @@ JS_EXPORT JSValueRef JSValueMakeUndefined(JSContextRef ctx)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(CTX(ctx),isolate,context);
+    V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return value;
 }
@@ -200,9 +242,9 @@ JS_EXPORT JSValueRef JSValueMakeNull(JSContextRef ctx)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(CTX(ctx),isolate,context);
+    V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Null(isolate)));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return value;
 }
@@ -211,10 +253,10 @@ JS_EXPORT JSValueRef JSValueMakeBoolean(JSContextRef ctx, bool boolean)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(CTX(ctx),isolate,context);
+    V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         value = JSValue<Value>::New(context_,
             Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate)));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return value;
 }
@@ -223,20 +265,22 @@ JS_EXPORT JSValueRef JSValueMakeNumber(JSContextRef ctx, double number)
 {
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(CTX(ctx),isolate,context);
+    V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         value = JSValue<Value>::New(context_,Number::New(isolate,number));
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return value;
 }
 
 JS_EXPORT JSValueRef JSValueMakeString(JSContextRef ctx, JSStringRef string)
 {
+    if (!string) return nullptr;
+
     JSValue<Value> *value;
 
-    V8_ISOLATE_CTX(CTX(ctx),isolate,context);
-        value = JSValue<Value>::New(context_,static_cast<OpaqueJSString*>(string)->Value(isolate));
-    V8_UNLOCK();
+    V8_ISOLATE_CTX(CTX(ctx),isolate,context)
+        value = JSValue<Value>::New(context_,string->Value(isolate));
+    V8_UNLOCK()
 
     return value;
 }
@@ -245,37 +289,48 @@ JS_EXPORT JSValueRef JSValueMakeString(JSContextRef ctx, JSStringRef string)
 
 JS_EXPORT JSValueRef JSValueMakeFromJSONString(JSContextRef ctx, JSStringRef string)
 {
+    if (!string || !string->Chars()) return nullptr;
     JSValue<Value> *value = nullptr;
 
-    V8_ISOLATE_CTX(CTX(ctx),isolate,context);
+    V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         MaybeLocal<Value> parsed = JSON::Parse(isolate,
             static_cast<OpaqueJSString*>(string)->Value(isolate));
         if (!parsed.IsEmpty())
             value = JSValue<Value>::New(context_,parsed.ToLocalChecked());
-
-        if (!value) {
-            value = JSValue<Value>::New(context_,Local<Value>::New(isolate,Undefined(isolate)));
-        }
-    V8_UNLOCK();
+    V8_UNLOCK()
 
     return value;
 }
 
 JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef valueRef,
-    unsigned indent, JSValueRef* exception)
+    unsigned indent, JSValueRef* exceptionRef)
 {
-    *exception = nullptr;
+    if (!valueRef) return new OpaqueJSString("null");
+
+    JSValueRef exception = nullptr;
     OpaqueJSString *value = nullptr;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,inValue);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,inValue)
+        TryCatch trycatch(isolate);
+
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
         Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
 
-        Local<Value> result = stringify->Call(json, 1, &inValue);
-        Local<String> string = result->ToString(context).ToLocalChecked();
+        MaybeLocal<Value> result = stringify->Call(context, json, 1, &inValue);
+        if (result.IsEmpty()) {
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
+        } else if (!result.ToLocalChecked()->IsUndefined()) {
+            Local<String> string = result.ToLocalChecked()->ToString(context).ToLocalChecked();
+            value = new OpaqueJSString(string);
+        } else if (exceptionRef) {
+            JSValue<Value> *e = JSValue<Value>::New(context_,
+                String::NewFromUtf8(isolate, "Unserializable value"));
+            exception = JSObjectMakeError(ctxRef, 1, &e, nullptr);
+        }
 
-        value = new OpaqueJSString(string);
-    V8_UNLOCK();
+        if (exceptionRef) *exceptionRef = exception;
+        else if (exception) VALUE(exception)->release();
+    V8_UNLOCK()
 
     return value;
 }
@@ -284,59 +339,76 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
 
 JS_EXPORT bool JSValueToBoolean(JSContextRef ctx, JSValueRef valueRef)
 {
+    if (!valueRef) return false;
+
     bool ret = false;
-    VALUE_ISOLATE(CTX(ctx),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctx),VALUE(valueRef),isolate,context,value)
         MaybeLocal<Boolean> boolean = value->ToBoolean(context);
         if (!boolean.IsEmpty()) {
             ret = boolean.ToLocalChecked()->Value();
         }
-    V8_UNLOCK();
+    V8_UNLOCK()
     return ret;
 }
 
-JS_EXPORT double JSValueToNumber(JSContextRef ctxRef, JSValueRef valueRef, JSValueRef* exception)
+JS_EXPORT double JSValueToNumber(JSContextRef ctxRef, JSValueRef valueRef, JSValueRef* exceptionRef)
 {
-    double result = 0.0;
-    *exception = nullptr;
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    if (!valueRef) return 0;
+
+    double result = __builtin_nan("");
+    JSValueRef exception = nullptr;
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         TryCatch trycatch(isolate);
 
         MaybeLocal<Number> number = value->ToNumber(context);
         if (!number.IsEmpty()) {
             result = number.ToLocalChecked()->Value();
         } else {
-            *exception = JSValue<Value>::New(context_, trycatch.Exception());
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
         }
-    V8_UNLOCK();
+
+        if (exceptionRef) *exceptionRef = exception;
+        else if (exception) VALUE(exception)->release();
+    V8_UNLOCK()
 
     return result;
 }
 
-JS_EXPORT JSStringRef JSValueToStringCopy(JSContextRef ctxRef, JSValueRef valueRef, JSValueRef* exception)
+JS_EXPORT JSStringRef JSValueToStringCopy(JSContextRef ctxRef, JSValueRef valueRef,
+    JSValueRef* exceptionRef)
 {
-    *exception = nullptr;
+    if (!valueRef) return new OpaqueJSString("null");
+
+    JSValueRef exception = nullptr;
     JSStringRef out = nullptr;
 
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         TryCatch trycatch(isolate);
 
         MaybeLocal<String> string = value->ToString(context);
         if (!string.IsEmpty()) {
-            String::Utf8Value const str(string.ToLocalChecked());
-            out = JSStringCreateWithUTF8CString((char*)*str);
+            String::Utf8Value chars(string.ToLocalChecked());
+            out = new OpaqueJSString(*chars);
         } else {
-            *exception = JSValue<Value>::New(context_, trycatch.Exception());
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
         }
-    V8_UNLOCK();
+
+        if (exceptionRef) *exceptionRef = exception;
+        else if (exception) VALUE(exception)->release();
+    V8_UNLOCK()
+
     return out;
 }
 
 JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
-    JSValueRef* exception)
+    JSValueRef* exceptionRef)
 {
-    *exception = nullptr;
+    JSValueRef null = JSValueMakeNull(ctxRef);
+    if (!valueRef) valueRef = null;
+
+    JSValueRef exception = nullptr;
     JSValue<Value> *out = nullptr;
-    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value);
+    VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,value)
         TryCatch trycatch(isolate);
 
         MaybeLocal<Object> obj = value->ToObject(context);
@@ -344,32 +416,41 @@ JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
             out = JSValue<Value>::New(context_, value->ToObject());
 
         } else {
-            *exception = JSValue<Value>::New(context_, trycatch.Exception());
+            exception = JSValue<Value>::New(context_, trycatch.Exception());
         }
 
-    V8_UNLOCK();
+        if (exceptionRef) *exceptionRef = exception;
+        else if (exception) VALUE(exception)->release();
+
+        VALUE(null)->release();
+    V8_UNLOCK()
+
     return out;
 }
 
 /* Garbage collection */
 JS_EXPORT void JSValueProtect(JSContextRef ctx, JSValueRef valueRef)
 {
-    JSValue<Value> *value = static_cast<JSValue<Value>*>(VALUE(valueRef));
-    value->retain();
+    if (valueRef) {
+        JSValue<Value> *value = static_cast<JSValue<Value>*>(VALUE(valueRef));
+        value->retain();
+    }
 }
 
 JS_EXPORT void JSValueUnprotect(JSContextRef ctx, JSValueRef valueRef)
 {
-    JSValue<Value> *value = static_cast<JSValue<Value>*>(VALUE(valueRef));
+    if (valueRef) {
+        JSValue<Value> *value = static_cast<JSValue<Value>*>(VALUE(valueRef));
 #ifdef DEBUG_RETAINER
-    Retainer::m_debug_mutex.lock();
-    bool found = (std::find(Retainer::m_debug.begin(),
-        Retainer::m_debug.end(), value) != Retainer::m_debug.end());
-    Retainer::m_debug_mutex.unlock();
-    if (!found) {
-        __android_log_assert(found ? "FAIL" : nullptr,
-            "unprotect", "Attempting to unprotect a dead reference!");
-    }
+        Retainer::m_debug_mutex.lock();
+        bool found = (std::find(Retainer::m_debug.begin(),
+            Retainer::m_debug.end(), value) != Retainer::m_debug.end());
+        Retainer::m_debug_mutex.unlock();
+        if (!found) {
+            __android_log_assert(found ? "FAIL" : nullptr,
+                "unprotect", "Attempting to unprotect a dead reference!");
+        }
 #endif
-    value->release();
+        value->release();
+    }
 }
