@@ -2,6 +2,8 @@ package org.liquidplayer.test;
 
 import org.liquidplayer.javascript.JSContext;
 
+import java.util.Scanner;
+
 @SuppressWarnings("JniMissingFunction")
 public class JSC {
 
@@ -10,7 +12,8 @@ public class JSC {
     }
 
     public int test() throws Exception {
-        String script = getClass().getClassLoader().getResource("testapi.js").getContent().toString();
+        String script = new Scanner(getClass().getClassLoader()
+                .getResourceAsStream("testapi.js"), "UTF-8").useDelimiter("\\A").next();
         return main(script);
     }
 

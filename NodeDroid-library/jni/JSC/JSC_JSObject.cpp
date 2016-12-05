@@ -23,6 +23,14 @@
     JSContextRef ctxRef_ = (JSContextRef)obj_->GetAlignedPointerFromInternalField(1); \
     V8_ISOLATE_CTX(ctxRef_->Context(),isolate,context)
 
+#define TO_REAL_GLOBAL(o) \
+    o = o->StrictEquals(context->Global()) && \
+        !o->GetPrototype()->ToObject(context).IsEmpty() && \
+        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount() ? \
+        o->GetPrototype()->ToObject(context).ToLocalChecked() : \
+        o;
+
+
 #define VALUE(value) ((JSValue<Value> *)(value))
 #define CTX(ctx)     ((ctx)->Context())
 
@@ -102,6 +110,103 @@ void OpaqueJSClass::StaticFunctionCallHandler(const FunctionCallbackInfo< Value 
     V8_UNLOCK()
 }
 
+void OpaqueJSClass::ConvertFunctionCallHandler(const FunctionCallbackInfo< Value > &info)
+{
+    V8_ISOLATE_CALLBACK(info,isolate,context,definition)
+        JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
+
+        String::Utf8Value const str(info[0]);
+
+        JSValueRef exception = nullptr;
+        JSValueRef value = nullptr;
+
+        JSType type =
+            !strcmp("number",  *str) ? kJSTypeNumber :
+            !strcmp("string", *str) ? kJSTypeString :
+            kJSTypeNumber; // FIXME
+
+        while (definition && !exception && !value) {
+
+            if (definition->convertToType) {
+                value = definition->convertToType(
+                    ctxRef_,
+                    thisObject,
+                    type,
+                    &exception);
+            }
+
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        thisObject->release();
+
+        if (exception) {
+            isolate->ThrowException(VALUE(exception)->Value());
+            VALUE(exception)->release();
+        }
+
+        if (value) {
+            info.GetReturnValue().Set(VALUE(value)->Value());
+            VALUE(value)->release();
+        }
+
+    V8_UNLOCK()
+}
+
+void OpaqueJSClass::HasInstanceFunctionCallHandler(const FunctionCallbackInfo< Value > &info)
+{
+    V8_ISOLATE_CALLBACK(info,isolate,context,definition)
+        JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
+
+        JSValueRef exception = nullptr;
+        JSValueRef value = nullptr;
+
+        JSValue<Value>* possibleInstance = JSValue<Value>::New(context_, info[0]);
+
+        if (obj_->InternalFieldCount() > 2 && info[0]->IsObject() &&
+            obj_->GetAlignedPointerFromInternalField(2)) {
+
+            JSClassRef ctor = (JSClassRef)obj_-> GetAlignedPointerFromInternalField(2);
+            if (info[0].As<Object>()->InternalFieldCount() > 0) {
+                JSClassRef inst =
+                    (JSClassRef) info[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+                bool has = false;
+                for( ; inst && !has; inst = inst->Definition()->parentClass) {
+                    has = ctor == inst;
+                }
+                value = JSValue<Value>::New(context_, Boolean::New(isolate, has));
+            }
+        }
+
+        while (definition && !exception && !value) {
+
+            if (definition->hasInstance) {
+                bool has = definition->hasInstance(
+                    ctxRef_,
+                    thisObject,
+                    possibleInstance,
+                    &exception);
+                value = JSValue<Value>::New(context_, Boolean::New(isolate, has));
+            }
+
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        thisObject->release();
+        possibleInstance->release();
+
+        if (exception) {
+            isolate->ThrowException(VALUE(exception)->Value());
+            VALUE(exception)->release();
+        }
+
+        if (value) {
+            info.GetReturnValue().Set(VALUE(value)->Value());
+            VALUE(value)->release();
+        }
+    V8_UNLOCK()
+}
+
 void OpaqueJSClass::NamedPropertyQuerier(Local< String > property,
     const PropertyCallbackInfo< Integer > &info)
 {
@@ -131,6 +236,41 @@ void OpaqueJSClass::NamedPropertyQuerier(Local< String > property,
                         has = true;
                     }
                 }
+            }
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        thisObject->release();
+        string->release();
+
+        if (has) {
+            info.GetReturnValue().Set(v8::DontEnum);
+        }
+    V8_UNLOCK()
+}
+
+void OpaqueJSClass::IndexedPropertyQuerier(uint32_t index,
+    const PropertyCallbackInfo< Integer > &info)
+{
+    char prop[50];
+    sprintf(prop, "%u", index);
+    Isolate::Scope isolate_scope_(info.GetIsolate());
+    HandleScope handle_scope_(info.GetIsolate());
+    NamedPropertyQuerier(String::NewFromUtf8(info.GetIsolate(),prop), info);
+}
+
+void OpaqueJSClass::ProtoPropertyQuerier(Local< String > property,
+    const PropertyCallbackInfo< Integer > &info)
+{
+    V8_ISOLATE_CALLBACK(info,isolate,context,definition)
+        JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
+
+        String::Utf8Value const str(property);
+        JSStringRef string = JSStringCreateWithUTF8CString(*str);
+
+        bool has = false;
+
+        while (definition && !has) {
                 // check static functions
                 for (int i=0; !has && definition->staticFunctions &&
                     definition->staticFunctions[i].name;
@@ -142,7 +282,6 @@ void OpaqueJSClass::NamedPropertyQuerier(Local< String > property,
                         has = true;
                     }
                 }
-            }
             definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
         }
 
@@ -150,7 +289,7 @@ void OpaqueJSClass::NamedPropertyQuerier(Local< String > property,
         string->release();
 
         if (has) {
-            info.GetReturnValue().Set(v8::None);
+            info.GetReturnValue().Set(v8::DontEnum);
         }
     V8_UNLOCK()
 }
@@ -168,8 +307,17 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
 
         JSValueRef value = nullptr;
 
-        while (definition && !exception && !value) {
-            if (definition->getProperty) {
+        const JSClassDefinition *top = definition;
+        while (definition && !value && !exception) {
+            // Check accessor
+            bool hasProperty = true;
+            if (definition->hasProperty) {
+                hasProperty = definition->hasProperty(
+                    ctxRef_,
+                    thisObject,
+                    string);
+            }
+            if (hasProperty && definition->getProperty) {
                 value = definition->getProperty(
                     ctxRef_,
                     thisObject,
@@ -177,6 +325,8 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
                     &exception);
             }
 
+            // If this function returns NULL, the get request forwards to object's statically
+            // declared properties ...
             // Check static values
             for (int i=0; !value && !exception &&
                 definition->staticValues && definition->staticValues[i].name;
@@ -193,6 +343,94 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
                 }
             }
 
+            // then its parent class chain (which includes the default object class)
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        if (!value) {
+            definition = top;
+            while (definition && !value && !exception) {
+                if (definition->hasProperty) {
+                    bool has = definition->hasProperty(
+                        ctxRef_,
+                        thisObject,
+                        string);
+                    if (has) {
+                        // Oops.  We claim to have this property, but we really don't
+                        Local<String> error = String::NewFromUtf8(isolate, "Invalid property: ");
+                        error = String::Concat(error, property);
+                        exception = JSValue<Value>::New(context_, Exception::Error(error));
+                    }
+                }
+                definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+            }
+        }
+
+        // ... then its prototype chain.
+
+        thisObject->release();
+        string->release();
+
+        if (exception) {
+            isolate->ThrowException(VALUE(exception)->Value());
+            VALUE(exception)->release();
+        }
+        if (value) {
+            info.GetReturnValue().Set(VALUE(value)->Value());
+            VALUE(value)->release();
+        }
+    V8_UNLOCK()
+}
+
+void OpaqueJSClass::IndexedPropertyGetter(uint32_t index,
+    const PropertyCallbackInfo< Value > &info)
+{
+    char prop[50];
+    sprintf(prop, "%u", index);
+    Isolate::Scope isolate_scope_(info.GetIsolate());
+    HandleScope handle_scope_(info.GetIsolate());
+    NamedPropertyGetter(String::NewFromUtf8(info.GetIsolate(),prop), info);
+}
+
+void OpaqueJSClass::ProtoPropertyGetter(Local< String > property,
+    const PropertyCallbackInfo< Value > &info)
+{
+    V8_ISOLATE_CALLBACK(info,isolate,context,definition)
+        JSValueRef exception = nullptr;
+
+        JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
+
+        String::Utf8Value const str(property);
+        JSStringRef string = JSStringCreateWithUTF8CString(*str);
+
+        JSValueRef value = nullptr;
+
+        while (definition && !value && !exception) {
+            auto valueFromFunction = [&](FunctionCallback function) {
+                Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
+                templ->SetInternalFieldCount(2);
+                Local<Object> data = templ->NewInstance(context).ToLocalChecked();
+                data->SetAlignedPointerInInternalField(0,(void*)definition);
+                data->SetAlignedPointerInInternalField(1,(void*)ctxRef_);
+                data->Set(context, String::NewFromUtf8(isolate, "name"), property);
+                //context_->retain();
+                UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, data);
+                weak->SetWeak<UniquePersistent<Object>>(
+                    weak,
+                    [](const WeakCallbackInfo<UniquePersistent<Object>>& info) {
+
+                    //JSContext* ctx = reinterpret_cast<JSContext*>(info.GetInternalField(1));
+                    //ctx->release();
+                    info.GetParameter()->Reset();
+                    delete info.GetParameter();
+                }, v8::WeakCallbackType::kInternalFields);
+
+                Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate, function, data);
+                Local<Function> func = ftempl->GetFunction();
+                data->Set(context, String::NewFromUtf8(isolate, "func"), func);
+                value = JSValue<Value>::New(context_, func);
+            };
+
             // Check static functions
             for (int i=0; !value && !exception &&
                 definition->staticFunctions && definition->staticFunctions[i].name;
@@ -201,32 +439,11 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
                 if (!strcmp(definition->staticFunctions[i].name, *str) &&
                     definition->staticFunctions[i].callAsFunction) {
 
-                    Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
-                    templ->SetInternalFieldCount(2);
-                    Local<Object> data = templ->NewInstance(context).ToLocalChecked();
-                    data->SetAlignedPointerInInternalField(0,(void*)definition);
-                    data->SetAlignedPointerInInternalField(1,(void*)ctxRef_);
-                    data->Set(context, String::NewFromUtf8(isolate, "name"), property);
-                    //context_->retain();
-                    UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, data);
-                    weak->SetWeak<UniquePersistent<Object>>(
-                        weak,
-                        [](const WeakCallbackInfo<UniquePersistent<Object>>& info) {
-
-                        //JSContext* ctx = reinterpret_cast<JSContext*>(info.GetInternalField(1));
-                        //ctx->release();
-                        info.GetParameter()->Reset();
-                        delete info.GetParameter();
-                    }, v8::WeakCallbackType::kInternalFields);
-
-                    Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate,
-                        StaticFunctionCallHandler, data);
-                    Local<Function> func = ftempl->GetFunction();
-                    data->Set(context, String::NewFromUtf8(isolate, "func"), func);
-                    value = JSValue<Value>::New(context_, func);
+                    valueFromFunction(StaticFunctionCallHandler);
                 }
             }
 
+            // then its parent class chain (which includes the default object class)
             definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
         }
 
@@ -258,22 +475,13 @@ void OpaqueJSClass::NamedPropertySetter(Local< String > property, Local< Value >
 
         bool set = false;
         while (definition && !exception && !set) {
-            if (definition->setProperty) {
-                set = definition->setProperty(
-                    ctxRef_,
-                    thisObject,
-                    string,
-                    valueRef,
-                    &exception);
-            }
-
             // Check static values
             for (int i=0; !set && !exception &&
                 definition->staticValues && definition->staticValues[i].name;
                 i++) {
 
                 if (!strcmp(definition->staticValues[i].name, *str) &&
-                    definition->staticValues[i].getProperty) {
+                    definition->staticValues[i].setProperty) {
 
                     set = definition->staticValues[i].setProperty(
                         ctxRef_,
@@ -281,6 +489,26 @@ void OpaqueJSClass::NamedPropertySetter(Local< String > property, Local< Value >
                         string,
                         valueRef,
                         &exception);
+                }
+            }
+
+            if( !set && !exception) {
+                if (definition->hasProperty) {
+                    // Don't set real property if we are overriding accessors
+                    set = definition->hasProperty(
+                        ctxRef_,
+                        thisObject,
+                        string);
+                }
+
+                if (definition->setProperty) {
+                    bool reset = definition->setProperty(
+                        ctxRef_,
+                        thisObject,
+                        string,
+                        valueRef,
+                        &exception);
+                    set = set || reset;
                 }
             }
 
@@ -293,12 +521,24 @@ void OpaqueJSClass::NamedPropertySetter(Local< String > property, Local< Value >
 
         if (exception) {
             isolate->ThrowException(VALUE(exception)->Value());
+            value = VALUE(exception)->Value();
+            set = true;
             VALUE(exception)->release();
         }
         if (set) {
             info.GetReturnValue().Set(value);
         }
     V8_UNLOCK()
+}
+
+void OpaqueJSClass::IndexedPropertySetter(uint32_t index, Local< Value > value,
+    const PropertyCallbackInfo< Value > &info)
+{
+    char prop[50];
+    sprintf(prop, "%u", index);
+    Isolate::Scope isolate_scope_(info.GetIsolate());
+    HandleScope handle_scope_(info.GetIsolate());
+    NamedPropertySetter(String::NewFromUtf8(info.GetIsolate(),prop), value, info);
 }
 
 void OpaqueJSClass::NamedPropertyDeleter(Local< String > property,
@@ -313,7 +553,7 @@ void OpaqueJSClass::NamedPropertyDeleter(Local< String > property,
         JSStringRef string = JSStringCreateWithUTF8CString(*str);
 
         bool deleted = false;
-        while (definition && !exception && !deleted) {
+        while (definition && !exception && !deleted/* && !isReal*/) {
             if (definition->deleteProperty) {
                 deleted = definition->deleteProperty(
                     ctxRef_,
@@ -337,22 +577,171 @@ void OpaqueJSClass::NamedPropertyDeleter(Local< String > property,
     V8_UNLOCK()
 }
 
+void OpaqueJSClass::IndexedPropertyDeleter(uint32_t index,
+    const PropertyCallbackInfo< Boolean > &info)
+{
+    char prop[50];
+    sprintf(prop, "%u", index);
+    Isolate::Scope isolate_scope_(info.GetIsolate());
+    HandleScope handle_scope_(info.GetIsolate());
+    NamedPropertyDeleter(String::NewFromUtf8(info.GetIsolate(),prop), info);
+}
+
 void OpaqueJSClass::NamedPropertyEnumerator(const PropertyCallbackInfo< Array > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
         JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
 
         OpaqueJSPropertyNameAccumulator accumulator;
-        if (definition->getPropertyNames) {
-            definition->getPropertyNames(
-                ctxRef_,
-                thisObject,
-                &accumulator);
+        while (definition) {
+            if (definition->getPropertyNames) {
+                definition->getPropertyNames(
+                    ctxRef_,
+                    thisObject,
+                    &accumulator);
+            }
+
+            // Add static values
+            for (int i=0; definition->staticValues &&
+                definition->staticValues[i].name; i++) {
+
+                if (!(definition->staticValues[i].attributes &
+                    kJSPropertyAttributeDontEnum)) {
+
+                    JSStringRef property =
+                        JSStringCreateWithUTF8CString(definition->staticValues[i].name);
+                    JSPropertyNameAccumulatorAddName(&accumulator, property);
+                    JSStringRelease(property);
+                }
+            }
+
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
         }
 
-        Local<Array> array = Array::New(isolate, accumulator.size());
-        for(size_t i=0; accumulator.size() > 0; i++) {
-            array->Set(context, i, accumulator.back()->Value(isolate));
+        Local<Array> array = Array::New(isolate);
+        Local<Function> indexOf = array->Get(context, String::NewFromUtf8(isolate, "indexOf"))
+                .ToLocalChecked().As<Function>();
+        Local<Function> push = array->Get(context, String::NewFromUtf8(isolate, "push"))
+                .ToLocalChecked().As<Function>();
+        while (accumulator.size() > 0) {
+            Local<Value> property = accumulator.back()->Value(isolate);
+            Local<Value> index = indexOf->Call(context, array, 1, &property).ToLocalChecked();
+            if (index->ToNumber(context).ToLocalChecked()->Value() < 0) {
+                push->Call(context, array, 1, &property);
+            }
+            accumulator.back()->release();
+            accumulator.pop_back();
+        }
+
+        info.GetReturnValue().Set(array);
+
+        thisObject->release();
+    V8_UNLOCK()
+}
+
+void OpaqueJSClass::IndexedPropertyEnumerator(const PropertyCallbackInfo< Array > &info)
+{
+    V8_ISOLATE_CALLBACK(info,isolate,context,definition)
+        JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
+
+        OpaqueJSPropertyNameAccumulator accumulator;
+        while (definition) {
+            if (definition->getPropertyNames) {
+                definition->getPropertyNames(
+                    ctxRef_,
+                    thisObject,
+                    &accumulator);
+            }
+
+            // Add static values
+            for (int i=0; definition->staticValues &&
+                definition->staticValues[i].name; i++) {
+
+                if (!(definition->staticValues[i].attributes &
+                    kJSPropertyAttributeDontEnum)) {
+
+                    JSStringRef property =
+                        JSStringCreateWithUTF8CString(definition->staticValues[i].name);
+                    JSPropertyNameAccumulatorAddName(&accumulator, property);
+                    JSStringRelease(property);
+                }
+            }
+
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        Local<Array> array = Array::New(isolate);
+        Local<Function> indexOf = array->Get(context, String::NewFromUtf8(isolate, "indexOf"))
+                .ToLocalChecked().As<Function>();
+        Local<Function> sort = array->Get(context, String::NewFromUtf8(isolate, "sort"))
+                .ToLocalChecked().As<Function>();
+        Local<Function> push = array->Get(context, String::NewFromUtf8(isolate, "push"))
+                .ToLocalChecked().As<Function>();
+        Local<Function> isNaN= context->Global()->Get(context, String::NewFromUtf8(isolate,"isNaN"))
+                .ToLocalChecked().As<Function>();
+        Local<Object> Number= context->Global()->Get(context, String::NewFromUtf8(isolate,"Number"))
+                .ToLocalChecked()->ToObject(context).ToLocalChecked();
+        Local<Function> isInteger = Number->Get(context, String::NewFromUtf8(isolate,"isInteger"))
+                .ToLocalChecked().As<Function>();
+        while (accumulator.size() > 0) {
+            Local<Value> property = accumulator.back()->Value(isolate);
+            Local<Value> numeric = property->ToNumber(context).ToLocalChecked();
+            if (!isNaN->Call(context, isNaN, 1, &property).ToLocalChecked()
+                ->ToBoolean(context).ToLocalChecked()->Value() &&
+                isInteger->Call(context, isInteger, 1, &numeric).ToLocalChecked()
+                ->ToBoolean(context).ToLocalChecked()->Value()) {
+
+                Local<Value> index = indexOf->Call(context, array, 1,&numeric).ToLocalChecked();
+                if (index->ToNumber(context).ToLocalChecked()->Value() < 0) {
+                    push->Call(context, array, 1, &numeric);
+                }
+            }
+            accumulator.back()->release();
+            accumulator.pop_back();
+        }
+        sort->Call(context, array, 0, nullptr);
+
+        info.GetReturnValue().Set(array);
+
+        thisObject->release();
+    V8_UNLOCK()
+}
+
+void OpaqueJSClass::ProtoPropertyEnumerator(const PropertyCallbackInfo< Array > &info)
+{
+    V8_ISOLATE_CALLBACK(info,isolate,context,definition)
+        JSObjectRef thisObject = JSValue<Value>::New(context_, info.This());
+
+        OpaqueJSPropertyNameAccumulator accumulator;
+        while (definition) {
+            // Add static functions
+            for (int i=0; definition->staticFunctions &&
+                definition->staticFunctions[i].name; i++) {
+
+                if (!(definition->staticFunctions[i].attributes &
+                    kJSPropertyAttributeDontEnum)) {
+
+                    JSStringRef property =
+                        JSStringCreateWithUTF8CString(definition->staticFunctions[i].name);
+                    JSPropertyNameAccumulatorAddName(&accumulator, property);
+                    JSStringRelease(property);
+                }
+            }
+
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        Local<Array> array = Array::New(isolate);
+        Local<Function> indexOf = array->Get(context, String::NewFromUtf8(isolate, "indexOf"))
+                .ToLocalChecked().As<Function>();
+        Local<Function> push = array->Get(context, String::NewFromUtf8(isolate, "push"))
+                .ToLocalChecked().As<Function>();
+        while (accumulator.size() > 0) {
+            Local<Value> property = accumulator.back()->Value(isolate);
+            Local<Value> index = indexOf->Call(context, array, 1, &property).ToLocalChecked();
+            if (index->ToNumber(context).ToLocalChecked()->Value() < 0) {
+                push->Call(context, array, 1, &property);
+            }
             accumulator.back()->release();
             accumulator.pop_back();
         }
@@ -378,32 +767,25 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
 
         JSValueRef value = nullptr;
         while (definition && !exception && !value) {
-            if (info.IsConstructCall() && definition->callAsConstructor) {
+            if (info.IsConstructCall() && obj_->InternalFieldCount() > 2 &&
+                obj_->GetAlignedPointerFromInternalField(2)) {
+                value =
+                    JSObjectMake(ctxRef_, (JSClassRef)obj_->GetAlignedPointerFromInternalField(2),
+                        nullptr);
+            } else if (info.IsConstructCall() && definition->callAsConstructor) {
                 value = definition->callAsConstructor(
                     ctxRef_,
                     function,
                     (size_t) info.Length(),
                     arguments,
                     &exception);
-                if (!exception) {
-                    // FIXME: This shallow copy doesn't do exactly what JSC expects
-                    // JSC expects to return the instance object.  However, V8 wants to create the
-                    // instance object for you, which you can modify.  To deal with this, we are
-                    // simply doing a shallow copy of properties from the JSC returned instance
-                    // object to the V8 assigned instance object.  In the simplest cases, this will
-                    // probably have equivalent functionality.  But non-enumerable properties will
-                    // not get copied, read-only properties will become read/write, and any explicit
-                    // expectations of JSObjectRefs being equal will not be true.  There are likely
-                    // other unintended consequences as well.
-                    Local<Object> OBJECT =
-                        context->Global()->Get(String::NewFromUtf8(isolate, "Object"))->ToObject();
-                    Local<Function> assign =
-                        OBJECT->Get(String::NewFromUtf8(isolate, "assign")).As<Function>();
-                    Local<Value> *arguments = new Local<Value>[2];
-                    arguments[1] = info.This();
-                    arguments[2] = VALUE(value)->Value();
-                    assign->Call(Local<Value>::New(isolate,Null(isolate)), 2, arguments);
-                    delete [] arguments;
+                if (!value || !VALUE(value)->Value()->IsObject()) {
+                    if (value) {
+                        VALUE(value)->release();
+                    }
+                    value = nullptr;
+                    Local<String> error = String::NewFromUtf8(isolate, "Bad constructor");
+                    exception = JSValue<Value>::New(context_, Exception::Error(error));
                 }
             } else if (!info.IsConstructCall() && definition->callAsFunction) {
                 value = definition->callAsFunction(
@@ -457,6 +839,30 @@ void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& i
     delete info.GetParameter();
 }
 
+bool OpaqueJSClass::IsFunction()
+{
+    const JSClassDefinition *definition = m_definition;
+    while (definition) {
+        if (definition->callAsFunction) {
+            return true;
+        }
+        definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+    }
+    return false;
+}
+
+bool OpaqueJSClass::IsConstructor()
+{
+    const JSClassDefinition *definition = m_definition;
+    while (definition) {
+        if (definition->callAsConstructor) {
+            return true;
+        }
+        definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+    }
+    return false;
+}
+
 Local<ObjectTemplate> OpaqueJSClass::NewTemplate(Local<Object> *data)
 {
     Isolate *isolate = Isolate::GetCurrent();
@@ -489,12 +895,17 @@ Local<ObjectTemplate> OpaqueJSClass::NewTemplate(Local<Object> *data)
         NamedPropertyEnumerator,
         *data);
 
-    if (m_definition->callAsFunction || m_definition->callAsConstructor) {
+    object->SetIndexedPropertyHandler(
+        IndexedPropertyGetter,
+        IndexedPropertySetter,
+        IndexedPropertyQuerier,
+        IndexedPropertyDeleter,
+        IndexedPropertyEnumerator,
+        *data);
+
+    if (IsFunction() || IsConstructor()) {
         object->SetCallAsFunctionHandler(CallAsFunction, *data);
     }
-
-    // FIXME: hasInstance not implemented
-    // FIXME: convertToType not implemented
 
     object->SetInternalFieldCount(1);
 
@@ -509,10 +920,14 @@ JSValueRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance,
         data->SetAlignedPointerInInternalField(1,(void*)ctx);
         //((OpaqueJSContext*)ctx)->retain();
 
-        if (m_definition->callAsFunction || m_definition->callAsConstructor) {
+        if (IsFunction() || IsConstructor()) {
             data->Set(CTX(ctx)->Value(), String::NewFromUtf8(isolate, "func"), instance);
         }
-        retObj = JSValue<Value>::New(ctx->Context(), instance);
+        if (IsFunction()) {
+            retObj = JSValue<Value>::New(ctx->Context(), instance.As<Function>());
+        } else {
+            retObj = JSValue<Value>::New(ctx->Context(), instance);
+        }
 
         UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, instance);
         weak->SetWeak<UniquePersistent<Object>>(
@@ -520,23 +935,75 @@ JSValueRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance,
             Finalize,
             v8::WeakCallbackType::kInternalFields);
 
-        /*
-        if (instance->InternalFieldCount()) {
-            instance->SetAlignedPointerInInternalField(0,this);
-        } else {
-            Local<Object> prototype = instance->GetPrototype()->ToObject(context).ToLocalChecked();
-            prototype->SetAlignedPointerInInternalField(0,this);
-        }
-        */
         instance->SetAlignedPointerInInternalField(0,this);
         retain();
 
+        // Set up a prototype object to handle static functions
+        Local<ObjectTemplate> protoTemplate = ObjectTemplate::New(isolate);
+        protoTemplate->SetNamedPropertyHandler(
+            ProtoPropertyGetter,
+            nullptr,
+            ProtoPropertyQuerier,
+            nullptr,
+            ProtoPropertyEnumerator,
+            data);
+        Local<Object> prototype = protoTemplate->NewInstance(context).ToLocalChecked();
+        instance->SetPrototype(context, prototype);
+
+        // Set className
+        const JSClassDefinition *definition = m_definition;
+        while (true) {
+            const char* sClassName = definition ? definition->className : "CallbackObject";
+            if (sClassName) {
+                Local<String> className = String::NewFromUtf8(isolate, sClassName);
+                Local<Object> Symbol =
+                    context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject();
+                Local<Value> toStringTag = Symbol->Get(String::NewFromUtf8(isolate, "toStringTag"));
+                prototype->Set(context, toStringTag, className);
+                break;
+            }
+            if (!definition) break;
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        // Override @@toPrimitive if convertToType set
+        definition = m_definition;
+        while (definition) {
+            if (definition->convertToType) {
+                Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate,
+                    ConvertFunctionCallHandler, data);
+                Local<Function> function = ftempl->GetFunction(context).ToLocalChecked();
+                Local<Object> Symbol =
+                    context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject();
+                Local<Value> toPrimitive = Symbol->Get(String::NewFromUtf8(isolate, "toPrimitive"));
+                prototype->Set(context, toPrimitive, function);
+                break;
+            }
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
+        // Override @@hasInstance if hasInstance set
+        definition = m_definition;
+        while (definition) {
+            if (definition->hasInstance) {
+                Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate,
+                    HasInstanceFunctionCallHandler, data);
+                Local<Function> function = ftempl->GetFunction(context).ToLocalChecked();
+                Local<Object> Symbol =
+                    context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject();
+                Local<Value> hasInstance = Symbol->Get(String::NewFromUtf8(isolate, "hasInstance"));
+                prototype->Set(context, hasInstance, function);
+                break;
+            }
+            definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+        }
+
         // Find the greatest ancestor
-        const JSClassDefinition *definition = nullptr;
+        definition = nullptr;
         for (definition = m_definition; definition && definition->parentClass;
             definition = definition->parentClass->m_definition);
 
-        // Walk backwards and call 'initialize on each'
+        // Walk backwards and call 'initialize' on each
         while (true) {
             if (definition->initialize)
                 definition->initialize(ctx, retObj);
@@ -554,10 +1021,11 @@ JSValueRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance,
 
 const JSClassDefinition kJSClassDefinitionEmpty = {
     0, 0,
+    nullptr,
     nullptr, nullptr,
-    nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 JS_EXPORT JSClassRef JSClassCreate(const JSClassDefinition* definition)
@@ -590,6 +1058,11 @@ JS_EXPORT JSObjectRef JSObjectMake(JSContextRef ctx, JSClassRef jsClass, void* d
             instance->SetPrivate(context, privateKey,
                 Number::New(isolate,(double)reinterpret_cast<long>(data)));
             value = VALUE(jsClass->InitInstance(ctx, instance, payload));
+            /*
+            JSObjectRef proto = VALUE(jsClass->InitInstance(ctx, instance, payload));
+            value = JSValue<Value>::New(context_, Object::New(isolate));
+            VALUE(value)->Value()->ToObject(context).ToLocalChecked()->SetPrototype(context, VALUE(proto)->Value());
+            */
         } else {
             value = JSValue<Value>::New(context_, Object::New(isolate));
             //JSObjectSetPrivate(value, data);
@@ -599,15 +1072,17 @@ JS_EXPORT JSObjectRef JSObjectMake(JSContextRef ctx, JSClassRef jsClass, void* d
     return value;
 }
 
-static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefinition *definition)
+static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefinition *definition,
+    JSClassRef jsClass, bool isConstructor)
 {
     JSObjectRef obj;
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
-        templ->SetInternalFieldCount(2);
+        templ->SetInternalFieldCount(3);
         Local<Object> data = templ->NewInstance(context).ToLocalChecked();
         data->SetAlignedPointerInInternalField(0,definition);
         data->SetAlignedPointerInInternalField(1,(void*)ctx);
+        data->SetAlignedPointerInInternalField(2,(void*)jsClass);
         //context_->retain();
         UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, data);
         weak->SetWeak<UniquePersistent<Object>>(
@@ -623,12 +1098,32 @@ static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefi
             delete info.GetParameter();
         }, v8::WeakCallbackType::kInternalFields);
 
-        Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate,
-            OpaqueJSClass::CallAsFunction, data);
-        Local<Function> func = ftempl->GetFunction();
+        Local<Object> func;
 
-        if (name) {
-            func->SetName(name->Value(isolate));
+        if (!isConstructor) {
+            Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate,
+                OpaqueJSClass::CallAsFunction, data);
+            Local<Function> f = ftempl->GetFunction();
+            if (name) {
+                f->SetName(name->Value(isolate));
+            }
+            func = f;
+        } else {
+            Local<ObjectTemplate> ctempl = ObjectTemplate::New(isolate);
+            ctempl->SetCallAsFunctionHandler(OpaqueJSClass::CallAsFunction, data);
+            func = ctempl->NewInstance(context).ToLocalChecked();
+        }
+
+        if (jsClass) {
+            Local<FunctionTemplate> ftempl = FunctionTemplate::New(isolate,
+                OpaqueJSClass::HasInstanceFunctionCallHandler, data);
+            Local<Function> function = ftempl->GetFunction(context).ToLocalChecked();
+            Local<Object> Symbol =
+                context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject();
+            Local<Value> hasInstance = Symbol->Get(String::NewFromUtf8(isolate, "hasInstance"));
+            Local<Object> prototype = Object::New(isolate);
+            prototype->Set(context, hasInstance, function);
+            func->SetPrototype(context, prototype);
         }
 
         data->Set(context, String::NewFromUtf8(isolate, "func"), func);
@@ -646,7 +1141,7 @@ JS_EXPORT JSObjectRef JSObjectMakeFunctionWithCallback(JSContextRef ctx, JSStrin
     memset(definition, 0, sizeof(JSClassDefinition));
     definition->callAsFunction = callAsFunction;
 
-    return SetUpFunction(ctx, name, definition);
+    return SetUpFunction(ctx, name, definition, nullptr, false);
 }
 
 JS_EXPORT JSObjectRef JSObjectMakeConstructor(JSContextRef ctx, JSClassRef jsClass,
@@ -656,14 +1151,7 @@ JS_EXPORT JSObjectRef JSObjectMakeConstructor(JSContextRef ctx, JSClassRef jsCla
     memset(definition, 0, sizeof(JSClassDefinition));
     definition->callAsConstructor = callAsConstructor;
 
-    JSObjectRef function = SetUpFunction(ctx, nullptr, definition);
-    if (jsClass) {
-        JSObjectRef proto = JSObjectMake(ctx, jsClass, nullptr);
-        JSObjectSetPrototype(ctx, function, proto);
-        proto->release();
-    }
-
-    return function;
+    return SetUpFunction(ctx, nullptr, definition, jsClass, true);
 }
 
 JS_EXPORT JSObjectRef JSObjectMakeArray(JSContextRef ctx, size_t argumentCount,
@@ -880,9 +1368,10 @@ JS_EXPORT JSObjectRef JSObjectMakeFunction(JSContextRef ctx, JSStringRef name,
 
 JS_EXPORT JSValueRef JSObjectGetPrototype(JSContextRef ctx, JSObjectRef object)
 {
-    JSValueRef out;
+    JSValueRef out = nullptr;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
+        TO_REAL_GLOBAL(o);
         out = JSValue<Value>::New(context_, o->GetPrototype());
     V8_UNLOCK()
 
@@ -895,7 +1384,9 @@ JS_EXPORT void JSObjectSetPrototype(JSContextRef ctx, JSObjectRef object, JSValu
     if (!value) value = null;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
+        TO_REAL_GLOBAL(o);
         o->SetPrototype(context, VALUE(value)->Value());
+
         VALUE(null)->release();
     V8_UNLOCK()
 }
@@ -1054,6 +1545,10 @@ JS_EXPORT void* JSObjectGetPrivate(JSObjectRef object)
     void *data = nullptr;
 
     V8_ISOLATE_OBJ(object->Context(),object,isolate,context,o)
+        if (!o->InternalFieldCount()) {
+            if (o->GetPrototype()->IsObject())
+                o = o->GetPrototype()->ToObject(context).ToLocalChecked();
+        }
         Local<Private> privateKey = v8::Private::ForApi(isolate,
             String::NewFromUtf8(isolate, "__private"));
         Local<Value> payload;
@@ -1071,6 +1566,10 @@ JS_EXPORT bool JSObjectSetPrivate(JSObjectRef object, void* data)
     bool has = false;
 
     V8_ISOLATE_OBJ(object->Context(),object,isolate,context,o)
+        if (!o->InternalFieldCount()) {
+            if (o->GetPrototype()->IsObject())
+                o = o->GetPrototype()->ToObject(context).ToLocalChecked();
+        }
         Local<Value> payload;
         Local<Private> privateKey = v8::Private::ForApi(isolate,
             String::NewFromUtf8(isolate, "__private"));
@@ -1186,47 +1685,6 @@ JS_EXPORT JSPropertyNameArrayRef JSObjectCopyPropertyNames(JSContextRef ctx, JSO
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
         Local<Array> names = o->GetPropertyNames(context).ToLocalChecked();
-        JSClassRef classRef = nullptr;
-
-        if (o->InternalFieldCount()) {
-            classRef = (JSClassRef) o->GetAlignedPointerFromInternalField(0);
-        } else if (!o->GetPrototype()->ToObject(context).IsEmpty()) {
-            Local<Object> prototype = o->GetPrototype()->ToObject(context).ToLocalChecked();
-            if (prototype->InternalFieldCount()) {
-                classRef = (JSClassRef) prototype->GetAlignedPointerFromInternalField(0);
-            }
-        }
-        /*
-        if (o->InternalFieldCount()) {
-            classRef = (JSClassRef) o->GetAlignedPointerFromInternalField(0);
-        }
-        */
-
-        if (classRef) {
-            __android_log_print(ANDROID_LOG_DEBUG, "PropertyNames", "need to add some shit");
-            // Add static values
-            for (int i=0; classRef->Definition()->staticValues &&
-                classRef->Definition()->staticValues[i].name; i++) {
-
-                if (!(classRef->Definition()->staticValues[i].attributes &
-                    kJSPropertyAttributeDontEnum)) {
-
-                    names->Set(context, names->Length(), String::NewFromUtf8(isolate,
-                        classRef->Definition()->staticValues[i].name));
-                }
-            }
-            // Add static functions
-            for (int i=0; classRef->Definition()->staticFunctions &&
-                classRef->Definition()->staticFunctions[i].name; i++) {
-
-                if (!(classRef->Definition()->staticFunctions[i].attributes &
-                    kJSPropertyAttributeDontEnum)) {
-
-                    names->Set(context, names->Length(), String::NewFromUtf8(isolate,
-                        classRef->Definition()->staticFunctions[i].name));
-                }
-            }
-        }
         array = JSValue<Array>::New(context_, names);
     V8_UNLOCK()
 
@@ -1287,6 +1745,7 @@ JS_EXPORT void JSPropertyNameAccumulatorAddName(JSPropertyNameAccumulatorRef acc
     JSStringRef propertyName)
 {
     if (accumulator && propertyName) {
+        JSStringRetain(propertyName);
         accumulator->push_front(propertyName);
     }
 }

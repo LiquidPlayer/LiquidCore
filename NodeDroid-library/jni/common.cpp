@@ -112,6 +112,9 @@ std::mutex ContextGroup::s_mutex;
 void ContextGroup::init_v8() {
     s_mutex.lock();
     if (s_init_count++ == 0) {
+        // see: https://github.com/nodejs/node/issues/7918
+        const char *flags = "--harmony-instanceof";
+        V8::SetFlagsFromString(flags, strlen(flags));
         s_platform = platform::CreateDefaultPlatform(4);
         V8::InitializePlatform(s_platform);
         V8::Initialize();

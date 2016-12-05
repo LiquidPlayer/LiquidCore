@@ -38,7 +38,8 @@
 #include <android/log.h>
 #include <jni.h>
 #include <exception>
-#define ASSERT(x) if(!(x)) throw std::runtime_error( "Assertion failure: " #x);
+//#define ASSERT(x) if(!(x)) throw std::runtime_error( "Assertion failure: " #x);
+#define ASSERT(x) assertTrue(x, #x);
 #undef printf
 #define printf(...) __android_log_print(ANDROID_LOG_INFO, "testapi", __VA_ARGS__)
 #undef fprintf
@@ -213,6 +214,11 @@ static JSValueRef MyObject_getProperty(JSContextRef context, JSObjectRef object,
     if (JSStringIsEqualToUTF8CString(propertyName, "0")) {
         *exception = JSValueMakeNumber(context, 1);
         return JSValueMakeNumber(context, 1);
+    }
+
+    // We don't expose private properties, so we'll fake it for this test
+    if (JSStringIsEqualToUTF8CString(propertyName, "privateProperty")) {
+        return 0;
     }
 
     return JSValueMakeNull(context);
@@ -981,8 +987,6 @@ static JSStaticFunction globalObject_staticFunctions[] = {
     { 0, 0, 0 }
 };
 
-static char* createStringWithContentsOfFile(const char* fileName);
-
 static void testInitializeFinalize()
 {
     JSObjectRef o = JSObjectMake(context, Derived_class(context), (void*)1);
@@ -1198,13 +1202,6 @@ static bool extendTerminateCallback(JSContextRef ctx, void* context)
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* env,
     jobject thiz, jstring testapi_js)
 {
-#if OS(WINDOWS)
-    // Cygwin calls ::SetErrorMode(SEM_FAILCRITICALERRORS), which we will inherit. This is bad for
-    // testing/debugging, as it causes the post-mortem debugger not to be invoked. We reset the
-    // error mode here to work around Cygwin's behavior. See <http://webkit.org/b/55222>.
-    ::SetErrorMode(0);
-#endif
-
 #if JSC_OBJC_API_ENABLED
     testObjectiveCAPI();
 #endif
@@ -1238,12 +1235,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSGlobalContextRelease(context);
     ASSERT(JSContextGetGlobalContext(context) == context);
 
-    /*
-    JSReportExtraMemoryCost(context, 0);
-    JSReportExtraMemoryCost(context, 1);
-    JSReportExtraMemoryCost(context, 1024);
-    */
-
     JSObjectRef globalObject = JSContextGetGlobalObject(context);
     ASSERT(JSValueIsObject(context, globalObject));
 
@@ -1272,48 +1263,19 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSValueRef jsOneString = JSValueMakeString(context, jsOneIString);
 
     UniChar singleUniChar = 65; // Capital A
-    /*
-    CFMutableStringRef cfString =
-        CFStringCreateMutableWithExternalCharactersNoCopy(kCFAllocatorDefault,
-                                                          &singleUniChar,
-                                                          1,
-                                                          1,
-                                                          kCFAllocatorNull);
-    JSStringRef jsCFIString = JSStringCreateWithCFString(cfString);
-    */
     JSStringRef jsCFIString = JSStringCreateWithCharacters(&singleUniChar, 1);
 
     JSValueRef jsCFString = JSValueMakeString(context, jsCFIString);
 
-    /*
-    CFStringRef cfEmptyString = CFStringCreateWithCString(kCFAllocatorDefault, "", kCFStringEncodingUTF8);
-
-    JSStringRef jsCFEmptyIString = JSStringCreateWithCFString(cfEmptyString);
-    */
     JSStringRef jsCFEmptyIString = JSStringCreateWithUTF8CString("");
 
     JSValueRef jsCFEmptyString = JSValueMakeString(context, jsCFEmptyIString);
 
-    /*
-    CFIndex cfStringLength = CFStringGetLength(cfString);
-    UniChar* buffer = (UniChar*)malloc(cfStringLength * sizeof(UniChar));
-    CFStringGetCharacters(cfString,
-                          CFRangeMake(0, cfStringLength),
-                          buffer);
-    */
     JSStringRef jsCFIStringWithCharacters = JSStringCreateWithCharacters((JSChar*)&singleUniChar, 1);
     JSValueRef jsCFStringWithCharacters = JSValueMakeString(context, jsCFIStringWithCharacters);
 
     JSStringRef jsCFEmptyIStringWithCharacters = JSStringCreateWithCharacters((JSChar*)&singleUniChar, 0);
-//    free(buffer);
     JSValueRef jsCFEmptyStringWithCharacters = JSValueMakeString(context, jsCFEmptyIStringWithCharacters);
-
-    /*
-    JSChar constantString[] = { 'H', 'e', 'l', 'l', 'o', };
-    JSStringRef constantStringRef = JSStringCreateWithCharactersNoCopy(constantString, sizeof(constantString) / sizeof(constantString[0]));
-    ASSERT(JSStringGetCharactersPtr(constantStringRef) == constantString);
-    JSStringRelease(constantStringRef);
-    */
 
     ASSERT(JSValueGetType(context, NULL) == kJSTypeNull);
     ASSERT(JSValueGetType(context, jsUndefined) == kJSTypeUndefined);
@@ -1401,64 +1363,51 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     aHeapRef = aStackRef;
     JSObjectSetProperty(context, aHeapRef, lengthStr, JSValueMakeNumber(context, 10), 0, 0);
 
+    JSValueRef exception = NULL;
     JSStringRef privatePropertyName = JSStringCreateWithUTF8CString("privateProperty");
-    /*
-    if (!JSObjectSetPrivateProperty(context, myObject, privatePropertyName, aHeapRef)) {
+    JSObjectSetProperty(context, myObject, privatePropertyName, aHeapRef, kJSPropertyAttributeNone, &exception);
+    if (exception) {
         printf("FAIL: Could not set private property.\n");
         failed = 1;
     } else
         printf("PASS: Set private property.\n");
     aStackRef = 0;
-    if (JSObjectSetPrivateProperty(context, aHeapRef, privatePropertyName, aHeapRef)) {
-        printf("FAIL: JSObjectSetPrivateProperty should fail on non-API objects.\n");
-        failed = 1;
-    } else
-        printf("PASS: Did not allow JSObjectSetPrivateProperty on a non-API object.\n");
-    if (JSObjectGetPrivateProperty(context, myObject, privatePropertyName) != aHeapRef) {
+    exception = NULL;
+    /*
+    if (JSObjectGetProperty(context, myObject, privatePropertyName, NULL) != aHeapRef) {
         printf("FAIL: Could not retrieve private property.\n");
         failed = 1;
     } else
         printf("PASS: Retrieved private property.\n");
-    if (JSObjectGetPrivateProperty(context, aHeapRef, privatePropertyName)) {
+    */
+    JSValueRef RetrievedObject = JSObjectGetProperty(context, myObject, privatePropertyName, NULL);
+    if (!JSValueIsStrictEqual(context, RetrievedObject, aHeapRef)) {
+        printf("FAIL: Could not retrieve private property.\n");
+        failed = 1;
+    } else
+        printf("PASS: Retrieved private property.\n");
+
+    /*
+    if (JSObjectGetProperty(context, aHeapRef, privatePropertyName, NULL)) {
         printf("FAIL: JSObjectGetPrivateProperty should return NULL when called on a non-API object.\n");
         failed = 1;
     } else
         printf("PASS: JSObjectGetPrivateProperty return NULL.\n");
     */
 
-    if (JSObjectGetProperty(context, myObject, privatePropertyName, 0) == aHeapRef) {
-        printf("FAIL: Accessed private property through ordinary property lookup.\n");
-        failed = 1;
-    } else
-        printf("PASS: Cannot access private property through ordinary property lookup.\n");
-
     JSGarbageCollect(context);
 
     for (int i = 0; i < 10000; i++)
         JSObjectMake(context, 0, 0);
 
-    /*
-    aHeapRef = JSValueToObject(context, JSObjectGetPrivateProperty(context, myObject, privatePropertyName), 0);
+    aHeapRef = JSValueToObject(context, JSObjectGetProperty(context, myObject, privatePropertyName, NULL), 0);
     if (JSValueToNumber(context, JSObjectGetProperty(context, aHeapRef, lengthStr, 0), 0) != 10) {
         printf("FAIL: Private property has been collected.\n");
         failed = 1;
     } else
         printf("PASS: Private property does not appear to have been collected.\n");
-    */
     JSStringRelease(lengthStr);
-
-    /*
-    if (!JSObjectSetPrivateProperty(context, myObject, privatePropertyName, 0)) {
-        printf("FAIL: Could not set private property to NULL.\n");
-        failed = 1;
-    } else
-        printf("PASS: Set private property to NULL.\n");
-    if (JSObjectGetPrivateProperty(context, myObject, privatePropertyName)) {
-        printf("FAIL: Could not retrieve private property.\n");
-        failed = 1;
-    } else
-        printf("PASS: Retrieved private property.\n");
-    */
+    JSStringRelease(privatePropertyName);
 
     JSStringRef nullJSON = JSStringCreateWithUTF8CString(0);
     JSValueRef nullJSONObject = JSValueMakeFromJSONString(context, nullJSON);
@@ -1486,7 +1435,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
         failed = 1;
     } else
         printf("PASS: Correctly returned null for invalid JSON data.\n");
-    JSValueRef exception;
+    exception = NULL;
     JSStringRef str = JSValueCreateJSONString(context, jsonObject, 0, 0);
     if (!JSStringIsEqualToUTF8CString(str, "{\"aProperty\":true}")) {
         printf("FAIL: Did not correctly serialise with indent of 0.\n");
@@ -1531,7 +1480,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(exception);
 
     exception = NULL;
-    // FIXME <rdar://4668451> - On i386 the isnan(double) macro tries to map to the isnan(float) function,
+    // <rdar://4668451> - On i386 the isnan(double) macro tries to map to the isnan(float) function,
     // causing a build break with -Wshorten-64-to-32 enabled.  The issue is known by the appropriate team.
     // After that's resolved, we can remove these casts
     ASSERT(isnan((float)JSValueToNumber(context, jsObjectNoProto, &exception)));
@@ -1550,7 +1499,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     exception = NULL;
     JSObjectGetPropertyAtIndex(context, myObject, 0, &exception);
 
-    // FIXME -- trying to capture ConvertToType
+    // FIXME: Known incompatibility: v8 does not allow capture of ConvertToType
     //ASSERT(1 == JSValueToNumber(context, exception, NULL));
 
     assertEqualsAsBoolean(jsUndefined, false);
@@ -1582,8 +1531,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     assertEqualsAsNumber(jsCFEmptyStringWithCharacters, 0);
     ASSERT(sizeof(JSChar) == sizeof(UniChar));
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO -2");
-
     assertEqualsAsCharactersPtr(jsUndefined, "undefined");
     assertEqualsAsCharactersPtr(jsNull, "null");
     assertEqualsAsCharactersPtr(jsTrue, "true");
@@ -1597,8 +1544,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     assertEqualsAsCharactersPtr(jsCFStringWithCharacters, "A");
     assertEqualsAsCharactersPtr(jsCFEmptyString, "");
     assertEqualsAsCharactersPtr(jsCFEmptyStringWithCharacters, "");
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO -1");
 
     assertEqualsAsUTF8String(jsUndefined, "undefined");
     assertEqualsAsUTF8String(jsNull, "null");
@@ -1614,29 +1559,13 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     assertEqualsAsUTF8String(jsCFEmptyString, "");
     assertEqualsAsUTF8String(jsCFEmptyStringWithCharacters, "");
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO -0.5");
-
     checkConstnessInJSObjectNames();
 
     ASSERT(JSValueIsStrictEqual(context, jsTrue, jsTrue));
     ASSERT(!JSValueIsStrictEqual(context, jsOne, jsOneString));
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO -0.3");
-
     ASSERT(JSValueIsEqual(context, jsOne, jsOneString, NULL));
     ASSERT(!JSValueIsEqual(context, jsTrue, jsFalse, NULL));
-
-    /*
-    CFStringRef cfJSString = JSStringCopyCFString(kCFAllocatorDefault, jsCFIString);
-    CFStringRef cfJSEmptyString = JSStringCopyCFString(kCFAllocatorDefault, jsCFEmptyIString);
-    ASSERT(CFEqual(cfJSString, cfString));
-    ASSERT(CFEqual(cfJSEmptyString, cfEmptyString));
-    CFRelease(cfJSString);
-    CFRelease(cfJSEmptyString);
-
-    CFRelease(cfString);
-    CFRelease(cfEmptyString);
-    */
 
     jsGlobalValue = JSObjectMake(context, NULL, NULL);
     makeGlobalNumberValue(context);
@@ -1651,17 +1580,11 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSStringRef badSyntax = JSStringCreateWithUTF8CString(badSyntaxConstant);
     ASSERT(JSCheckScriptSyntax(context, goodSyntax, NULL, 0, NULL));
     ASSERT(!JSCheckScriptSyntax(context, badSyntax, NULL, 0, NULL));
-    /*
-    ASSERT(!JSScriptCreateFromString(contextGroup, 0, 0, badSyntax, 0, 0));
-    ASSERT(!JSScriptCreateReferencingImmortalASCIIText(contextGroup, 0, 0, badSyntaxConstant, strlen(badSyntaxConstant), 0, 0));
-    */
 
     JSValueRef result;
     JSValueRef v;
     JSObjectRef o;
     JSStringRef string;
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 0");
 
     result = JSEvaluateScript(context, goodSyntax, NULL, NULL, 1, NULL);
     ASSERT(result);
@@ -1672,8 +1595,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(!result);
     ASSERT(JSValueIsObject(context, exception));
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 0.5");
-
     JSStringRef array = JSStringCreateWithUTF8CString("Array");
     JSObjectRef arrayConstructor = JSValueToObject(context, JSObjectGetProperty(context, globalObject, array, NULL), NULL);
     JSStringRelease(array);
@@ -1682,8 +1603,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(JSValueIsObject(context, result));
     ASSERT(JSValueIsInstanceOfConstructor(context, result, arrayConstructor, NULL));
     ASSERT(!JSValueIsInstanceOfConstructor(context, JSValueMakeNull(context), arrayConstructor, NULL));
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 0.6");
 
     o = JSValueToObject(context, result, NULL);
     exception = NULL;
@@ -1700,19 +1619,19 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSStringRef functionBody;
     JSObjectRef function;
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 1");
-
     exception = NULL;
     functionBody = JSStringCreateWithUTF8CString("rreturn Array;");
     JSStringRef line = JSStringCreateWithUTF8CString("line");
     ASSERT(!JSObjectMakeFunction(context, NULL, 0, NULL, functionBody, NULL, 1, &exception));
     ASSERT(JSValueIsObject(context, exception));
     v = JSObjectGetProperty(context, JSValueToObject(context, exception, NULL), line, NULL);
-    assertEqualsAsNumber(v, 1);
+
+    // FIXME: Known incompatibility : V8 does not set 'line' property in Error
+    //assertEqualsAsNumber(v, 1);
+    ASSERT(JSValueIsUndefined(context, v));
+
     JSStringRelease(functionBody);
     JSStringRelease(line);
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 2");
 
     exception = NULL;
     functionBody = JSStringCreateWithUTF8CString("rreturn Array;");
@@ -1720,11 +1639,13 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(!JSObjectMakeFunction(context, NULL, 0, NULL, functionBody, NULL, -42, &exception));
     ASSERT(JSValueIsObject(context, exception));
     v = JSObjectGetProperty(context, JSValueToObject(context, exception, NULL), line, NULL);
-    assertEqualsAsNumber(v, 1);
+
+    // FIXME: Known incompatibility : V8 does not set 'line' property in Error
+    //assertEqualsAsNumber(v, 1);
+    ASSERT(JSValueIsUndefined(context, v));
+
     JSStringRelease(functionBody);
     JSStringRelease(line);
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 3");
 
     exception = NULL;
     functionBody = JSStringCreateWithUTF8CString("// Line one.\nrreturn Array;");
@@ -1732,11 +1653,13 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(!JSObjectMakeFunction(context, NULL, 0, NULL, functionBody, NULL, 1, &exception));
     ASSERT(JSValueIsObject(context, exception));
     v = JSObjectGetProperty(context, JSValueToObject(context, exception, NULL), line, NULL);
-    assertEqualsAsNumber(v, 2);
+
+    // FIXME: Known incompatibility : V8 does not set 'line' property in Error
+    //assertEqualsAsNumber(v, 2);
+    ASSERT(JSValueIsUndefined(context, v));
+
     JSStringRelease(functionBody);
     JSStringRelease(line);
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 4");
 
     exception = NULL;
     functionBody = JSStringCreateWithUTF8CString("return Array;");
@@ -1748,16 +1671,12 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(v);
     ASSERT(JSValueIsEqual(context, v, arrayConstructor, NULL));
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 5");
-
     exception = NULL;
     function = JSObjectMakeFunction(context, NULL, 0, NULL, jsEmptyIString, NULL, 0, &exception);
     ASSERT(!exception);
     v = JSObjectCallAsFunction(context, function, NULL, 0, NULL, &exception);
     ASSERT(v && !exception);
     ASSERT(JSValueIsUndefined(context, v));
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 6");
 
     exception = NULL;
     v = NULL;
@@ -1771,11 +1690,9 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSStringRelease(foo);
     JSStringRelease(functionBody);
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "Is this where we crap?");
     string = JSValueToStringCopy(context, function, NULL);
     assertEqualsAsUTF8String(JSValueMakeString(context, string), "function foo(foo) { return foo;\n}");
     JSStringRelease(string);
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "Or is it past this?");
 
     JSStringRef print = JSStringCreateWithUTF8CString("print");
     JSObjectRef printFunction = JSObjectMakeFunctionWithCallback(context, print, print_callAsFunction);
@@ -1867,8 +1784,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     nullClass = JSClassCreate(&nullDefinition);
     JSClassRelease(nullClass);
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 7");
-
     functionBody = JSStringCreateWithUTF8CString("return this;");
     function = JSObjectMakeFunction(context, NULL, 0, NULL, functionBody, NULL, 1, NULL);
     JSStringRelease(functionBody);
@@ -1876,8 +1791,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     ASSERT(JSValueIsEqual(context, v, globalObject, NULL));
     v = JSObjectCallAsFunction(context, function, o, 0, NULL, NULL);
     ASSERT(JSValueIsEqual(context, v, o, NULL));
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 8");
 
     functionBody = JSStringCreateWithUTF8CString("return eval(\"this\");");
     function = JSObjectMakeFunction(context, NULL, 0, NULL, functionBody, NULL, 1, NULL);
@@ -1887,8 +1800,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     v = JSObjectCallAsFunction(context, function, o, 0, NULL, NULL);
     ASSERT(JSValueIsEqual(context, v, o, NULL));
 
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 9");
-
     const char* thisScript = "this;";
     JSStringRef script = JSStringCreateWithUTF8CString(thisScript);
     v = JSEvaluateScript(context, script, NULL, NULL, 1, NULL);
@@ -1896,16 +1807,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     v = JSEvaluateScript(context, script, o, NULL, 1, NULL);
     ASSERT(JSValueIsEqual(context, v, o, NULL));
     JSStringRelease(script);
-
-    /*
-    JSScriptRef scriptObject = JSScriptCreateReferencingImmortalASCIIText(contextGroup, 0, 0, thisScript, strlen(thisScript), 0, 0);
-    v = JSScriptEvaluate(context, scriptObject, NULL, NULL);
-    ASSERT(JSValueIsEqual(context, v, globalObject, NULL));
-    v = JSScriptEvaluate(context, scriptObject, o, NULL);
-    ASSERT(JSValueIsEqual(context, v, o, NULL));
-    JSScriptRelease(scriptObject);
-    */
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 10");
 
     script = JSStringCreateWithUTF8CString("eval(this);");
     v = JSEvaluateScript(context, script, NULL, NULL, 1, NULL);
@@ -1921,12 +1822,14 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSEvaluateScript(context, script, NULL, sourceURL, 1, &exception);
     ASSERT(exception);
     v = JSObjectGetProperty(context, JSValueToObject(context, exception, NULL), sourceURLKey, NULL);
-    assertEqualsAsUTF8String(v, "file:///foo/bar.js");
+
+    // FIXME: Known incompatibility : V8 does not set 'sourceURL' property in Error
+    //    assertEqualsAsUTF8String(v, "file:///foo/bar.js");
+    assertEqualsAsUTF8String(v, "undefined");
+
     JSStringRelease(script);
     JSStringRelease(sourceURL);
     JSStringRelease(sourceURLKey);
-
-    __android_log_print(ANDROID_LOG_DEBUG,"test", "FOO 11");
 
     // Verify that creating a constructor for a class with no static functions does not trigger
     // an assert inside putDirect or lead to a crash during GC. <https://bugs.webkit.org/show_bug.cgi?id=25785>
@@ -1935,201 +1838,30 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSObjectMakeConstructor(context, nullClass, 0);
     JSClassRelease(nullClass);
 
-    //char* scriptUTF8 = createStringWithContentsOfFile(scriptPath);
     if (!scriptUTF8) {
         printf("FAIL: Test script could not be loaded.\n");
         failed = 1;
     } else {
         JSStringRef url = JSStringCreateWithUTF8CString(scriptPath);
         JSStringRef script = JSStringCreateWithUTF8CString(scriptUTF8);
-        JSStringRef errorMessage = 0;
         int errorLine = 0;
-        /*
-        JSScriptRef scriptObject = JSScriptCreateFromString(contextGroup, url, 1, script, &errorMessage, &errorLine);
-        ASSERT((!scriptObject) != (!errorMessage));
-        if (!scriptObject) {
-            printf("FAIL: Test script did not parse\n\t%s:%d\n\t", scriptPath, errorLine);
-            CFStringRef errorCF = JSStringCopyCFString(kCFAllocatorDefault, errorMessage);
-            CFShow(errorCF);
-            CFRelease(errorCF);
-            JSStringRelease(errorMessage);
-            failed = 1;
-        }
-        */
 
-        JSStringRelease(script);
-
-        /*
         exception = NULL;
-        result = scriptObject ? JSScriptEvaluate(context, scriptObject, 0, &exception) : 0;
+        result = JSEvaluateScript(context, script, 0, url, 0, &exception);
         if (result && JSValueIsUndefined(context, result))
             printf("PASS: Test script executed successfully.\n");
         else {
             printf("FAIL: Test script returned unexpected value:\n");
             JSStringRef exceptionIString = JSValueToStringCopy(context, exception, NULL);
-            CFStringRef exceptionCF = JSStringCopyCFString(kCFAllocatorDefault, exceptionIString);
-            CFShow(exceptionCF);
-            CFRelease(exceptionCF);
+            char buffer[JSStringGetMaximumUTF8CStringSize(exceptionIString)];
+            JSStringGetUTF8CString(exceptionIString, buffer, sizeof(buffer));
+            printf("%s\n", buffer);
             JSStringRelease(exceptionIString);
             failed = 1;
         }
-        JSScriptRelease(scriptObject);
-        */
-        //free(scriptUTF8);
+        JSStringRelease(script);
+        JSStringRelease(url);
     }
-
-#if OS(DARWIN)
-    JSStringRef currentCPUTimeStr = JSStringCreateWithUTF8CString("currentCPUTime");
-    JSObjectRef currentCPUTimeFunction = JSObjectMakeFunctionWithCallback(context, currentCPUTimeStr, currentCPUTime_callAsFunction);
-    JSObjectSetProperty(context, globalObject, currentCPUTimeStr, currentCPUTimeFunction, kJSPropertyAttributeNone, NULL);
-    JSStringRelease(currentCPUTimeStr);
-
-    /* Test script timeout: */
-    JSContextGroupSetExecutionTimeLimit(contextGroup, .10f, shouldTerminateCallback, 0);
-    {
-        const char* loopForeverScript = "var startTime = currentCPUTime(); while (true) { if (currentCPUTime() - startTime > .150) break; } ";
-        JSStringRef script = JSStringCreateWithUTF8CString(loopForeverScript);
-        double startTime;
-        double endTime;
-        exception = NULL;
-        shouldTerminateCallbackWasCalled = false;
-        startTime = currentCPUTime();
-        v = JSEvaluateScript(context, script, NULL, NULL, 1, &exception);
-        endTime = currentCPUTime();
-
-        if (((endTime - startTime) < .150f) && shouldTerminateCallbackWasCalled)
-            printf("PASS: script timed out as expected.\n");
-        else {
-            if (!((endTime - startTime) < .150f))
-                printf("FAIL: script did not timed out as expected.\n");
-            if (!shouldTerminateCallbackWasCalled)
-                printf("FAIL: script timeout callback was not called.\n");
-            failed = true;
-        }
-
-        if (!exception) {
-            printf("FAIL: TerminatedExecutionException was not thrown.\n");
-            failed = true;
-        }
-    }
-
-    /* Test the script timeout's TerminatedExecutionException should NOT be catchable: */
-    JSContextGroupSetExecutionTimeLimit(contextGroup, 0.10f, shouldTerminateCallback, 0);
-    {
-        const char* loopForeverScript = "var startTime = currentCPUTime(); try { while (true) { if (currentCPUTime() - startTime > .150) break; } } catch(e) { }";
-        JSStringRef script = JSStringCreateWithUTF8CString(loopForeverScript);
-        double startTime;
-        double endTime;
-        exception = NULL;
-        shouldTerminateCallbackWasCalled = false;
-        startTime = currentCPUTime();
-        v = JSEvaluateScript(context, script, NULL, NULL, 1, &exception);
-        endTime = currentCPUTime();
-
-        if (((endTime - startTime) >= .150f) || !shouldTerminateCallbackWasCalled) {
-            if (!((endTime - startTime) < .150f))
-                printf("FAIL: script did not timed out as expected.\n");
-            if (!shouldTerminateCallbackWasCalled)
-                printf("FAIL: script timeout callback was not called.\n");
-            failed = true;
-        }
-
-        if (exception)
-            printf("PASS: TerminatedExecutionException was not catchable as expected.\n");
-        else {
-            printf("FAIL: TerminatedExecutionException was caught.\n");
-            failed = true;
-        }
-    }
-
-    /* Test script timeout with no callback: */
-    JSContextGroupSetExecutionTimeLimit(contextGroup, .10f, 0, 0);
-    {
-        const char* loopForeverScript = "var startTime = currentCPUTime(); while (true) { if (currentCPUTime() - startTime > .150) break; } ";
-        JSStringRef script = JSStringCreateWithUTF8CString(loopForeverScript);
-        double startTime;
-        double endTime;
-        exception = NULL;
-        startTime = currentCPUTime();
-        v = JSEvaluateScript(context, script, NULL, NULL, 1, &exception);
-        endTime = currentCPUTime();
-
-        if (((endTime - startTime) < .150f) && shouldTerminateCallbackWasCalled)
-            printf("PASS: script timed out as expected when no callback is specified.\n");
-        else {
-            if (!((endTime - startTime) < .150f))
-                printf("FAIL: script did not timed out as expected when no callback is specified.\n");
-            failed = true;
-        }
-
-        if (!exception) {
-            printf("FAIL: TerminatedExecutionException was not thrown.\n");
-            failed = true;
-        }
-    }
-
-    /* Test script timeout cancellation: */
-    JSContextGroupSetExecutionTimeLimit(contextGroup, 0.10f, cancelTerminateCallback, 0);
-    {
-        const char* loopForeverScript = "var startTime = currentCPUTime(); while (true) { if (currentCPUTime() - startTime > .150) break; } ";
-        JSStringRef script = JSStringCreateWithUTF8CString(loopForeverScript);
-        double startTime;
-        double endTime;
-        exception = NULL;
-        startTime = currentCPUTime();
-        v = JSEvaluateScript(context, script, NULL, NULL, 1, &exception);
-        endTime = currentCPUTime();
-
-        if (((endTime - startTime) >= .150f) && cancelTerminateCallbackWasCalled && !exception)
-            printf("PASS: script timeout was cancelled as expected.\n");
-        else {
-            if (((endTime - startTime) < .150) || exception)
-                printf("FAIL: script timeout was not cancelled.\n");
-            if (!cancelTerminateCallbackWasCalled)
-                printf("FAIL: script timeout callback was not called.\n");
-            failed = true;
-        }
-
-        if (exception) {
-            printf("FAIL: Unexpected TerminatedExecutionException thrown.\n");
-            failed = true;
-        }
-    }
-
-    /* Test script timeout extension: */
-    JSContextGroupSetExecutionTimeLimit(contextGroup, 0.100f, extendTerminateCallback, 0);
-    {
-        const char* loopForeverScript = "var startTime = currentCPUTime(); while (true) { if (currentCPUTime() - startTime > .500) break; } ";
-        JSStringRef script = JSStringCreateWithUTF8CString(loopForeverScript);
-        double startTime;
-        double endTime;
-        double deltaTime;
-        exception = NULL;
-        startTime = currentCPUTime();
-        v = JSEvaluateScript(context, script, NULL, NULL, 1, &exception);
-        endTime = currentCPUTime();
-        deltaTime = endTime - startTime;
-
-        if ((deltaTime >= .300f) && (deltaTime < .500f) && (extendTerminateCallbackCalled == 2) && exception)
-            printf("PASS: script timeout was extended as expected.\n");
-        else {
-            if (deltaTime < .200f)
-                printf("FAIL: script timeout was not extended as expected.\n");
-            else if (deltaTime >= .500f)
-                printf("FAIL: script did not timeout.\n");
-
-            if (extendTerminateCallbackCalled < 1)
-                printf("FAIL: script timeout callback was not called.\n");
-            if (extendTerminateCallbackCalled < 2)
-                printf("FAIL: script timeout callback was not called after timeout extension.\n");
-
-            if (!exception)
-                printf("FAIL: TerminatedExecutionException was not thrown during timeout extension test.\n");
-
-            failed = true;
-        }
-    }
-#endif /* OS(DARWIN) */
 
     // Clear out local variables pointing at JSObjectRefs to allow their values to be collected
     function = NULL;
@@ -2197,41 +1929,3 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     printf("PASS: Program exited normally.\n");
     return 0;
 }
-
-static char* createStringWithContentsOfFile(const char* fileName)
-{
-    char* buffer;
-
-    size_t buffer_size = 0;
-    size_t buffer_capacity = 1024;
-    buffer = (char*)malloc(buffer_capacity);
-
-    FILE* f = fopen(fileName, "r");
-    if (!f) {
-        fprintf(stderr, "Could not open file: %s\n", fileName);
-        free(buffer);
-        return 0;
-    }
-
-    while (!feof(f) && !ferror(f)) {
-        buffer_size += fread(buffer + buffer_size, 1, buffer_capacity - buffer_size, f);
-        if (buffer_size == buffer_capacity) { // guarantees space for trailing '\0'
-            buffer_capacity *= 2;
-            buffer = (char*)realloc(buffer, buffer_capacity);
-            ASSERT(buffer);
-        }
-
-        ASSERT(buffer_size < buffer_capacity);
-    }
-    fclose(f);
-    buffer[buffer_size] = '\0';
-
-    return buffer;
-}
-
-#if OS(WINDOWS)
-extern "C" __declspec(dllexport) int WINAPI dllLauncherEntryPoint(int argc, const char* argv[])
-{
-    return main(argc, const_cast<char**>(argv));
-}
-#endif

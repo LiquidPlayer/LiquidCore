@@ -313,10 +313,16 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
     VALUE_ISOLATE(CTX(ctxRef),VALUE(valueRef),isolate,context,inValue)
         TryCatch trycatch(isolate);
 
+        Local<Value> args[] = {
+            inValue,
+            Local<Value>::New(isolate,Null(isolate)),
+            Number::New(isolate, indent)
+        };
+
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
         Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
 
-        MaybeLocal<Value> result = stringify->Call(context, json, 1, &inValue);
+        MaybeLocal<Value> result = stringify->Call(context, json, 3, args);
         if (result.IsEmpty()) {
             exception = JSValue<Value>::New(context_, trycatch.Exception());
         } else if (!result.ToLocalChecked()->IsUndefined()) {
