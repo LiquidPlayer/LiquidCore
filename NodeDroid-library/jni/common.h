@@ -132,12 +132,12 @@ public:
         return m_thread_id;
     }
     virtual void Lock() {
-        if (Loop()) {
+        if (!Loop()) {
             m_lock.lock();
         }
     }
     virtual void Unlock() {
-        if (Loop()) {
+        if (!Loop()) {
             m_lock.unlock();
         }
     }
