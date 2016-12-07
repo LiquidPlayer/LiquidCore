@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <android/log.h>
 #include <exception>
+#include <condition_variable>
 
 /**
  * class Retainer
@@ -257,11 +258,9 @@ ContextGroup::~ContextGroup() {
 }
 
 void ContextGroup::sync(std::function<void()> runnable) {
-/*
     if (Loop() && std::this_thread::get_id() != Thread()) {
 
-        pthread_mutex_t mutex;
-        pthread_cond_t cond;
+        std::condition_variable cv;
         bool signaled = false;
 
         struct Runnable *r = new struct Runnable;
@@ -270,13 +269,14 @@ void ContextGroup::sync(std::function<void()> runnable) {
         r->jvm = nullptr;
         r->c_runnable = [&]() {
             runnable();
-            pthread_mutex_lock(&mutex);
-            signaled = true;
-            pthread_cond_signal(&cond);
-            pthread_mutex_unlock(&mutex);
+            {
+                std::lock_guard<std::mutex> lk(m_async_mutex);
+                signaled = true;
+            }
+            cv.notify_one();
         };
 
-        m_async_mutex.lock();
+        std::unique_lock<std::mutex> lk(m_async_mutex);
         m_runnables.push_back(r);
 
         if (!m_async_handle) {
@@ -285,15 +285,10 @@ void ContextGroup::sync(std::function<void()> runnable) {
             uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
             uv_async_send(m_async_handle);
         }
-        m_async_mutex.unlock();
 
-        pthread_mutex_lock(&mutex);
-        while (!signaled)
-            pthread_cond_wait(&cond, &mutex);
-        pthread_mutex_unlock(&mutex);
+        cv.wait(lk, [&]{return signaled;});
+        lk.unlock();
     } else {
         runnable();
     }
-*/
-    runnable();
 }
