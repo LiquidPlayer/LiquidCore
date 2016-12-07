@@ -1058,14 +1058,8 @@ JS_EXPORT JSObjectRef JSObjectMake(JSContextRef ctx, JSClassRef jsClass, void* d
             instance->SetPrivate(context, privateKey,
                 Number::New(isolate,(double)reinterpret_cast<long>(data)));
             value = VALUE(jsClass->InitInstance(ctx, instance, payload));
-            /*
-            JSObjectRef proto = VALUE(jsClass->InitInstance(ctx, instance, payload));
-            value = JSValue<Value>::New(context_, Object::New(isolate));
-            VALUE(value)->Value()->ToObject(context).ToLocalChecked()->SetPrototype(context, VALUE(proto)->Value());
-            */
         } else {
             value = JSValue<Value>::New(context_, Object::New(isolate));
-            //JSObjectSetPrivate(value, data);
         }
     V8_UNLOCK()
 

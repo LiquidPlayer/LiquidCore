@@ -38,7 +38,6 @@
 #include <android/log.h>
 #include <jni.h>
 #include <exception>
-//#define ASSERT(x) if(!(x)) throw std::runtime_error( "Assertion failure: " #x);
 #define ASSERT(x) assertTrue(x, #x);
 #undef printf
 #define printf(...) __android_log_print(ANDROID_LOG_INFO, "testapi", __VA_ARGS__)
@@ -1209,8 +1208,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     const char *scriptPath = "testapi.js";
     const char *scriptUTF8 = env->GetStringUTFChars(testapi_js, NULL);
 
-    try {
-
     // Test garbage collection with a fresh context
     context = JSGlobalContextCreateInGroup(NULL, NULL);
     TestInitializeFinalize = true;
@@ -1913,11 +1910,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     customGlobalObjectClassTest();
     globalObjectSetPrototypeTest();
     globalObjectPrivatePropertyTest();
-
-    } catch (std::exception& e) {
-        printf( "FAIL: %s\n", e.what() );
-        failed = true;
-    }
 
     env->ReleaseStringUTFChars(testapi_js, scriptUTF8);
 

@@ -33,6 +33,7 @@ using namespace node;
 class NodeInstance {
 public:
     NodeInstance(JNIEnv* env, jobject thiz);
+    NodeInstance();
     virtual ~NodeInstance();
 
 private:

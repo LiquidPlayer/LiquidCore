@@ -147,10 +147,6 @@ JS_EXPORT JSObjectRef JSContextGetGlobalObject(JSContextRef ctx)
 
     V8_ISOLATE_CTX(ctx->Context(),isolate,Ctx)
         JSValue<Object> *object = context_->Global();
-        /*
-        MaybeLocal<Object> proto = object->Value()->GetPrototype()->ToObject(Ctx);
-        Local<Object> global = proto.IsEmpty() ? object->Value() : proto.ToLocalChecked();
-        */
         Local<Object> global = object->Value();
         v = JSValue<Value>::New(context_, global);
         object->release();

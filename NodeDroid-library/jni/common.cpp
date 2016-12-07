@@ -3,6 +3,7 @@
 //
 
 #include "common.h"
+#include "node/NodeInstance.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -115,10 +116,12 @@ void ContextGroup::init_v8() {
         // see: https://github.com/nodejs/node/issues/7918
         const char *flags = "--harmony-instanceof";
         V8::SetFlagsFromString(flags, strlen(flags));
+
         s_platform = platform::CreateDefaultPlatform(4);
         V8::InitializePlatform(s_platform);
         V8::Initialize();
     }
+
     s_mutex.unlock();
 }
 
@@ -139,6 +142,10 @@ void ContextGroup::dispose_v8() {
 GenericAllocator ContextGroup::s_allocator;
 
 ContextGroup::ContextGroup() {
+    if (!s_init_count) {
+        NodeInstance init;
+    }
+
     init_v8();
     m_create_params.array_buffer_allocator = &s_allocator;
     m_isolate = Isolate::New(m_create_params);

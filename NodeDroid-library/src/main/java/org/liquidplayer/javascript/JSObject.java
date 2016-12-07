@@ -466,6 +466,37 @@ public class JSObject extends JSValue {
         return valueRef().intValue();
     }
 
+    /**
+     * Gets the prototype object, if it exists
+     * @return A JSValue referencing the prototype object, or null if none
+     * @since 3.0
+     */
+    public JSValue prototype() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.reference = getPrototype(context.ctxRef(), valueRef);
+            }
+        };
+        context.sync(runnable);
+        return new JSValue(runnable.jni.reference,context);
+    }
+
+    /**
+     * Sets the prototype object
+     * @param proto The object defining the function prototypes
+     * @since 3.0
+     */
+    public void prototype(final JSValue proto) {
+        context.sync(new Runnable() {
+            @Override
+            public void run() {
+                setPrototype(context.ctxRef(), valueRef, proto.valueRef());
+            }
+        });
+    }
+
     protected final List<JSObject> zombies = new ArrayList<>();
 
     @Override

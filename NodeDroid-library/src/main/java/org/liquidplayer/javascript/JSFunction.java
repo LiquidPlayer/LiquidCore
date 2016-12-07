@@ -493,37 +493,6 @@ public class JSFunction extends JSObject {
         return context.getObjectFromRef(testException(runnable.jni));
     }
 
-    /**
-     * Gets the prototype object, if it exists
-     * @return A JSValue referencing the prototype object, or null if none
-     * @since 3.0
-     */
-    public JSValue prototype() {
-        JNIReturnClass runnable = new JNIReturnClass() {
-            @Override
-            public void run() {
-                jni = new JNIReturnObject();
-                jni.reference = getPrototype(context.ctxRef(), valueRef);
-            }
-        };
-        context.sync(runnable);
-        //if (runnable.jni.reference==0) return null;
-        return new JSValue(runnable.jni.reference,context);
-    }
-    /**
-     * Sets the prototype object
-     * @param proto The object defining the function prototypes
-     * @since 3.0
-     */
-    public void prototype(final JSValue proto) {
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                setPrototype(context.ctxRef(), valueRef, proto.valueRef());
-            }
-        });
-    }
-
     @SuppressWarnings("unused") // This is called directly from native code
     private long functionCallback(long thisObjectRef,
                                   long argumentsValueRef[], long exceptionRefRef) {
@@ -596,15 +565,9 @@ public class JSFunction extends JSObject {
                     JSObject thiz = (JSObject) defaultConstructor.newInstance();
                     thiz.context = context;
                     thiz.valueRef = thisObj;
-                    thiz.property("constructor",JSFunction.this,JSObject.JSPropertyAttributeDontEnum);
                     function(thiz,args);
                     context.persistObject(thiz);
                     context.zombies.add(thiz);
-                    if (proto != null && proto.isObject()) {
-                        for (String prop : proto.toObject().propertyNames()) {
-                            thiz.property(prop, proto.toObject().property(prop));
-                        }
-                    }
                 } catch (NoSuchMethodException e) {
                     String error = e.toString() + "If " + subclass.getName() + " is an embedded " +
                             "class, did you specify it as 'static'?";

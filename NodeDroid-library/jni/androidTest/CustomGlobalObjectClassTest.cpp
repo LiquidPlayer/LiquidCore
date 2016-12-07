@@ -25,7 +25,6 @@
 
 #include "CustomGlobalObjectClassTest.h"
 
-//#include <JavaScriptCore/JSObjectRefPrivate.h>
 #include <JavaScriptCore/JavaScript.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -131,18 +130,4 @@ void globalObjectPrivatePropertyTest()
     JSClassRef global = JSClassCreate(&definition);
     JSGlobalContextRef context = JSGlobalContextCreate(global);
     JSObjectRef globalObject = JSContextGetGlobalObject(context);
-
-    /*
-    JSStringRef privateName = JSStringCreateWithUTF8CString("private");
-    JSValueRef privateValue = JSValueMakeString(context, privateName);
-    assertTrue(JSObjectSetPrivateProperty(context, globalObject, privateName, privateValue), "JSObjectSetPrivateProperty succeeded");
-    JSValueRef result = JSObjectGetPrivateProperty(context, globalObject, privateName);
-    assertTrue(JSValueIsStrictEqual(context, privateValue, result), "privateValue === \"private\"");
-
-    assertTrue(JSObjectDeletePrivateProperty(context, globalObject, privateName), "JSObjectDeletePrivateProperty succeeded");
-    result = JSObjectGetPrivateProperty(context, globalObject, privateName);
-    assertTrue(JSValueIsNull(context, result), "Deleted private property is indeed no longer present");
-
-    JSStringRelease(privateName);
-    */
 }

@@ -31,6 +31,12 @@ NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     node_main_thread = new std::thread(node_main_task,reinterpret_cast<void*>(this));
 }
 
+NodeInstance::NodeInstance() {
+    m_jvm = nullptr;
+    m_JavaThis = nullptr;
+    node_main_thread = new std::thread(node_main_task,reinterpret_cast<void*>(this));
+}
+
 NodeInstance::~NodeInstance() {
     node_main_thread->join();
     delete node_main_thread;
@@ -39,7 +45,12 @@ NodeInstance::~NodeInstance() {
 void NodeInstance::spawnedThread()
 {
     enum { kMaxArgs = 64 };
-    char cmd[] = "node -e global.__nodedroid_onLoad();";
+    char cmd[60];
+    if (m_jvm) {
+        strcpy(cmd, "node -e global.__nodedroid_onLoad();");
+    } else {
+        strcpy(cmd, "node");
+    }
 
     int argc = 0;
     char *argv[kMaxArgs];
@@ -54,37 +65,39 @@ void NodeInstance::spawnedThread()
 
     int ret = Start(argc, argv);
 
-    JNIEnv *env;
-    int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
-    if (getEnvStat == JNI_EDETACHED) {
-        m_jvm->AttachCurrentThread(&env, NULL);
-    }
-
-    jclass cls = env->GetObjectClass(m_JavaThis);
-    jmethodID mid;
-    do {
-        mid = env->GetMethodID(cls,"onNodeExit","(J)V");
-        if (!env->ExceptionCheck()) break;
-        env->ExceptionClear();
-        jclass super = env->GetSuperclass(cls);
-        env->DeleteLocalRef(cls);
-        if (super == NULL || env->ExceptionCheck()) {
-            if (super != NULL) env->DeleteLocalRef(super);
-            if (getEnvStat == JNI_EDETACHED) {
-                m_jvm->DetachCurrentThread();
-            }
-            return;
+    if (m_jvm) {
+        JNIEnv *env;
+        int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
+        if (getEnvStat == JNI_EDETACHED) {
+            m_jvm->AttachCurrentThread(&env, NULL);
         }
-        cls = super;
-    } while (true);
-    env->DeleteLocalRef(cls);
 
-    env->CallVoidMethod(m_JavaThis, mid, (jlong)ret);
+        jclass cls = env->GetObjectClass(m_JavaThis);
+        jmethodID mid;
+        do {
+            mid = env->GetMethodID(cls,"onNodeExit","(J)V");
+            if (!env->ExceptionCheck()) break;
+            env->ExceptionClear();
+            jclass super = env->GetSuperclass(cls);
+            env->DeleteLocalRef(cls);
+            if (super == NULL || env->ExceptionCheck()) {
+                if (super != NULL) env->DeleteLocalRef(super);
+                if (getEnvStat == JNI_EDETACHED) {
+                    m_jvm->DetachCurrentThread();
+                }
+                return;
+            }
+            cls = super;
+        } while (true);
+        env->DeleteLocalRef(cls);
 
-    env->DeleteGlobalRef(m_JavaThis);
+        env->CallVoidMethod(m_JavaThis, mid, (jlong)ret);
 
-    if (getEnvStat == JNI_EDETACHED) {
-        m_jvm->DetachCurrentThread();
+        env->DeleteGlobalRef(m_JavaThis);
+
+        if (getEnvStat == JNI_EDETACHED) {
+            m_jvm->DetachCurrentThread();
+        }
     }
 
     // Commit suicide
@@ -366,7 +379,9 @@ int NodeInstance::StartNodeInstance(void* arg) {
       }
 
       java_node_context->retain();
-      notify_start(java_node_context);
+      if (m_jvm) {
+        notify_start(java_node_context);
+      }
 
       bool more;
       do {

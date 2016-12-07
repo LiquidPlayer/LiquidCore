@@ -230,7 +230,7 @@ public class JSFunctionTest {
     public class ConstructorFunction extends JSFunction {
         public ConstructorFunction(JSContext ctx) {
             super(ctx,"constructor");
-            prototype(new PrototypeObject(ctx));
+            property("prototype", new PrototypeObject(ctx));
         }
         @SuppressWarnings("unused")
         public void constructor(int param) {
@@ -271,29 +271,29 @@ public class JSFunctionTest {
 
         final String script2 =
                 "var empty = {}; \n" +
-                        "var constructorObject = function(val) {\n" +
-                        "    this.value = val; \n" +
-                        "};" +
-                        "constructorObject.prototype = { \n" +
-                        "   voidFunc:    function() {}, \n" +
-                        "   jsvalueFunc: function() { var undef; return undef; }, \n" +
-                        "   jsobjectFunc:function() { return {}; }, \n" +
-                        "   intFunc:     function() { return 5; }, \n" +
-                        "   intFunc2:    function() { return 9; }, \n" +
-                        "   longFunc:    function() { return 6; }, \n" +
-                        "   longFunc2:   function() { return 10; }, \n" +
-                        "   floatFunc:   function() { return 7.6; }, \n" +
-                        "   floatFunc2:  function() { return 17.6; }, \n" +
-                        "   doubleFunc:  function() { return 8.8; }, \n" +
-                        "   doubleFunc2: function() { return 18.8; }, \n" +
-                        "   stringFunc:  function() { return 'string'; }, \n" +
-                        "   arrayFunc:   function() { return [5,6,7,8]; }, \n" +
-                        "   booleanFunc: function() { return true; }, \n" +
-                        "   myValue:     function() { return this.value; } \n" +
-                        "};";
+                "var constructorObject = function(val) {\n" +
+                "    this.value = val; \n" +
+                "};" +
+                "constructorObject.prototype = { \n" +
+                "   voidFunc:    function() {}, \n" +
+                "   jsvalueFunc: function() { var undef; return undef; }, \n" +
+                "   jsobjectFunc:function() { return {}; }, \n" +
+                "   intFunc:     function() { return 5; }, \n" +
+                "   intFunc2:    function() { return 9; }, \n" +
+                "   longFunc:    function() { return 6; }, \n" +
+                "   longFunc2:   function() { return 10; }, \n" +
+                "   floatFunc:   function() { return 7.6; }, \n" +
+                "   floatFunc2:  function() { return 17.6; }, \n" +
+                "   doubleFunc:  function() { return 8.8; }, \n" +
+                "   doubleFunc2: function() { return 18.8; }, \n" +
+                "   stringFunc:  function() { return 'string'; }, \n" +
+                "   arrayFunc:   function() { return [5,6,7,8]; }, \n" +
+                "   booleanFunc: function() { return true; }, \n" +
+                "   myValue:     function() { return this.value; } \n" +
+                "};";
 
         ConstructorFunction constructorFunction = new ConstructorFunction(context);
-        assertEquals(PrototypeObject.class,constructorFunction.prototype().toObject().getClass());
+        assertEquals(PrototypeObject.class,constructorFunction.property("prototype").toObject().getClass());
         context.property("constructorObjectJava", constructorFunction);
         context.evaluateScript(script2);
         JSObject js1   = context.evaluateScript("new constructorObject(5)").toObject();
