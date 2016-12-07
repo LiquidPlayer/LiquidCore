@@ -142,10 +142,6 @@ void ContextGroup::dispose_v8() {
 GenericAllocator ContextGroup::s_allocator;
 
 ContextGroup::ContextGroup() {
-    if (!s_init_count) {
-        NodeInstance init;
-    }
-
     init_v8();
     m_create_params.array_buffer_allocator = &s_allocator;
     m_isolate = Isolate::New(m_create_params);

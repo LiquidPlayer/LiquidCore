@@ -131,6 +131,16 @@ public:
     virtual std::thread::id Thread() {
         return m_thread_id;
     }
+    virtual void Lock() {
+        if (Loop()) {
+            m_lock.lock();
+        }
+    }
+    virtual void Unlock() {
+        if (Loop()) {
+            m_lock.unlock();
+        }
+    }
 
     virtual void sync(std::function<void()> runnable);
 
@@ -155,6 +165,7 @@ private:
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
+    std::recursive_mutex m_lock;
 
 public:
     uv_async_t *m_async_handle;
@@ -199,12 +210,11 @@ private:
 };
 
 #define V8_ISOLATE(group,iso) \
-        v8::Locker *lock_ = nullptr; \
         ContextGroup* group_ = (group); \
         auto runnable_ = [&]() \
         { \
             Isolate *iso = group_->isolate(); \
-            if (!group_->Loop()) lock_ = new v8::Locker(iso); \
+            group_->Lock(); \
             Isolate::Scope isolate_scope_(iso); \
             HandleScope handle_scope_(iso);
 
@@ -218,7 +228,7 @@ private:
         }; \
         if (group_->Loop()) { group_->sync(runnable_); } \
         else runnable_(); \
-        if (lock_) delete lock_;
+        group_->Unlock();
 
 template <typename T>
 class JSValue : public Retainer {
