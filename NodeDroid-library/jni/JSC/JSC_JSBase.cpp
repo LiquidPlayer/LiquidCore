@@ -4,8 +4,6 @@
 
 #include "JSC.h"
 
-#define VALUE(value) ((JSValue<Value> *)(value))
-
 JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSObjectRef thisObject,
     JSStringRef sourceURL, int startingLineNumber, JSValueRef* exceptionRef)
 {
@@ -13,23 +11,19 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
     // To deal with this, we create a function with the script as the body, and then call the
     // function.  This allows us to set 'thisObject'.
     if (thisObject) {
-        JSStringRef s = JSStringCreateWithUTF8CString("s");
-        JSStringRef body = JSStringCreateWithUTF8CString("return eval(s);");
-        JSValueRef  eval = JSValueMakeString(ctx, script_);
-        JSObjectRef function = JSObjectMakeFunction(ctx, nullptr, 1, &s, body,
-            sourceURL, startingLineNumber, exceptionRef);
-        JSValueRef ret = JSObjectCallAsFunction(ctx, function, thisObject, 1, &eval, exceptionRef);
-        VALUE(eval)->release();
-        JSStringRelease(body);
-        JSStringRelease(s);
-        return ret;
+        OpaqueJSString s("s"); JSStringRef args[] = { &s };
+        OpaqueJSString body("return eval(s);");
+        TempJSValue eval(JSValueMakeString(ctx, script_)); JSValueRef callargs[] = { *eval };
+        TempJSValue function(JSObjectMakeFunction(ctx, nullptr, 1, args, &body,
+            sourceURL, startingLineNumber, exceptionRef));
+        return JSObjectCallAsFunction(ctx, const_cast<JSObjectRef>(*function), thisObject,
+            1, callargs, exceptionRef);
     } else {
-        JSValueRef exception = nullptr;
         JSValueRef ret = nullptr;
 
-        OpaqueJSString anonymous("anonymous");
-
         V8_ISOLATE_CTX(ctx->Context(), isolate, context)
+            TempJSValue exception;
+            OpaqueJSString anonymous("anonymous");
             TryCatch trycatch(isolate);
 
             ScriptOrigin script_origin(
@@ -40,19 +34,17 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
             MaybeLocal<Script> script = Script::Compile(context, script_->Value(isolate),
                 &script_origin);
             if (script.IsEmpty()) {
-                exception = JSValue<Value>::New(context_, trycatch.Exception());
+                exception.Set(ctx, trycatch.Exception());
             } else {
                 MaybeLocal<Value> result = script.ToLocalChecked()->Run(context);
                 if (result.IsEmpty()) {
-                    exception = JSValue<Value>::New(context_, trycatch.Exception());
+                    exception.Set(ctx, trycatch.Exception());
                 } else {
-                    ret = JSValue<Value>::New(context_, result.ToLocalChecked());
+                    ret = new OpaqueJSValue(ctx, result.ToLocalChecked());
                 }
             }
 
-            if (exceptionRef) *exceptionRef = exception;
-            else if (exception) ((JSValue<Value>*)exception)->release();
-
+            exception.CopyTo(exceptionRef);
         V8_UNLOCK()
 
         return ret;
@@ -62,12 +54,11 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
 JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStringRef sourceURL,
     int startingLineNumber, JSValueRef* exceptionRef)
 {
-    JSValueRef exception = nullptr;
     bool out = false;
 
-    OpaqueJSString anonymous("anonymous");
-
     V8_ISOLATE_CTX(ctx->Context(), isolate, context)
+        TempJSValue exception;
+        OpaqueJSString anonymous("anonymous");
         TryCatch trycatch(isolate);
 
         ScriptOrigin script_origin(
@@ -78,13 +69,12 @@ JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStri
         MaybeLocal<Value>  result;
         MaybeLocal<Script> script = Script::Compile(context,script_->Value(isolate),&script_origin);
         if (script.IsEmpty()) {
-            exception = JSValue<Value>::New(context_, trycatch.Exception());
+            exception.Set(ctx, trycatch.Exception());
         } else {
             out = true;
         }
 
-        if (exceptionRef) *exceptionRef = exception;
-        else if (exception) ((JSValue<Value>*)exception)->release();
+        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;

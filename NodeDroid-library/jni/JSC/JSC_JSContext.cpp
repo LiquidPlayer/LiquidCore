@@ -83,12 +83,11 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
                     Local<Object> global =
                         context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
                     ctx = new OpaqueJSContext(new JSContext((ContextGroup*)group, context));
-                    JSValueRef value = globalObjectClass->InitInstance(ctx, global, data);
+                    TempJSValue value(globalObjectClass->InitInstance(ctx, global, data));
                     Local<Private> privateKey = v8::Private::ForApi(isolate,
                         String::NewFromUtf8(isolate, "__private"));
                     global->SetPrivate(context, privateKey,
                         Number::New(isolate,(double)reinterpret_cast<long>(nullptr)));
-                    ((JSValue<Value>*)value)->release();
                 }
             } else {
                 ctx = new OpaqueJSContext(
@@ -143,12 +142,12 @@ JS_EXPORT void JSGlobalContextRelease(JSGlobalContextRef ctx)
 
 JS_EXPORT JSObjectRef JSContextGetGlobalObject(JSContextRef ctx)
 {
-    JSValue<Value> *v;
+    JSObjectRef v;
 
     V8_ISOLATE_CTX(ctx->Context(),isolate,Ctx)
         JSValue<Object> *object = context_->Global();
         Local<Object> global = object->Value();
-        v = JSValue<Value>::New(context_, global);
+        v = new OpaqueJSValue(ctx, global);
         object->release();
     V8_UNLOCK()
 
@@ -188,7 +187,8 @@ JS_EXPORT void JSGlobalContextSetName(JSGlobalContextRef ctx, JSStringRef name)
         if (name) {
             ctx->Context()->Value()->SetEmbedderData(0, name->Value(isolate));
         } else {
-            ctx->Context()->Value()->SetEmbedderData(0, Local<Value>::New(isolate,Undefined(isolate)));
+            ctx->Context()->Value()->
+                SetEmbedderData(0, Local<Value>::New(isolate,Undefined(isolate)));
         }
     V8_UNLOCK()
 }

@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 
-#define OpaqueJSValue                   JSValue<Value>
+//#define OpaqueJSValue                   JSValue<Value>
 #define OpaqueJSContextGroup            ContextGroup
 #define OpaqueJSPropertyNameAccumulator std::list<JSStringRef>
 #define OpaqueJSPropertyNameArray       JSValue<Array>
@@ -52,7 +52,7 @@ class OpaqueJSClass : public Retainer {
         virtual const JSClassDefinition * Definition() { return m_definition; }
 
         virtual Local<ObjectTemplate> NewTemplate(Local<Object> *data);
-        virtual JSValueRef InitInstance(JSContextRef ctx, Local<Object> instance, Local<Object> data);
+        virtual JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance, Local<Object> data);
 
         static void CallAsFunction(const FunctionCallbackInfo< Value > &);
         static void HasInstanceFunctionCallHandler(const FunctionCallbackInfo< Value > &);
@@ -83,6 +83,73 @@ class OpaqueJSClass : public Retainer {
         virtual bool IsConstructor();
         JSClassDefinition *m_definition;
         JSObjectRef m_classObject;
+};
+
+class OpaqueJSValue {
+    public:
+        OpaqueJSValue(JSContextRef context, Local<Value> v) :
+            value(JSValue<Value>::New(context->Context(), v)){}
+        OpaqueJSValue(JSContextRef context, const char *s) :
+            value(JSValue<Value>::New(context->Context(),
+                String::NewFromUtf8(context->Context()->isolate(),s)))
+            {}
+        virtual ~OpaqueJSValue() {
+            value->release();
+        }
+
+        JSValue<Value> * operator->() const {
+            return value;
+        }
+        virtual void Clean() const {
+            if (m_count <= 0) {
+                delete this;
+            }
+        }
+        virtual int Retain() { return ++m_count; }
+        virtual int Release() {
+            int count = --m_count;
+            if (count < 0) {
+                __android_log_assert("FAIL", "OpaqueJSValue::Release",
+                    "Mismatched Retain/Release");
+            }
+            Clean();
+            return count;
+        }
+
+    private:
+        JSValue<Value> *value;
+        int m_count = 0;
+};
+
+class TempJSValue {
+    public:
+        TempJSValue() : m_value(nullptr) {}
+        TempJSValue(JSContextRef context, Local<Value> v) : m_value(new OpaqueJSValue(context,v)) {}
+        TempJSValue(JSContextRef context, const char *s) : m_value(new OpaqueJSValue(context,s)) {}
+        TempJSValue(JSValueRef v) : m_value(v) {}
+        virtual ~TempJSValue() {
+            Reset();
+        }
+        virtual void Set(JSContextRef context, Local<Value> v) {
+            m_value = new OpaqueJSValue(context,v);
+        }
+        virtual void Set(JSContextRef context, const char *s) {
+            m_value = new OpaqueJSValue(context,s);
+        }
+        virtual void Set(JSValueRef v) {
+            m_value = v;
+        }
+        virtual void Reset() {
+            if (m_value) { /*m_value->Clean();*/ }
+            m_value = nullptr;
+        }
+        JSValueRef operator*() const { return m_value; }
+        JSValueRef* operator&() { return &m_value; }
+        virtual void CopyTo(JSValueRef *exceptionRef) {
+            if (exceptionRef) { *exceptionRef = m_value; m_value = nullptr;}
+        }
+    private:
+        const OpaqueJSValue *m_value;
 };
 
 #endif //NODEDROID_JSC_H
