@@ -17,6 +17,9 @@
 
 #include "JavaScriptCore/JavaScript.h"
 
+#define ASSERT(x) if(!(x)) \
+    __android_log_assert("conditional", "ASSERT FAILED", "%s(%d) : %s", __FILE__, __LINE__, #x);
+
 class OpaqueJSContext : public Retainer {
     public:
         OpaqueJSContext(JSContext *ctx);
@@ -106,13 +109,12 @@ class OpaqueJSValue {
             }
         }
         virtual int Retain() { return ++m_count; }
-        virtual int Release() {
+        virtual int Release(bool cleanOnZero=true) {
             int count = --m_count;
-            if (count < 0) {
-                __android_log_assert("FAIL", "OpaqueJSValue::Release",
-                    "Mismatched Retain/Release");
+            ASSERT(count >= 0)
+            if (cleanOnZero) {
+                Clean();
             }
-            Clean();
             return count;
         }
 
@@ -124,32 +126,75 @@ class OpaqueJSValue {
 class TempJSValue {
     public:
         TempJSValue() : m_value(nullptr) {}
-        TempJSValue(JSContextRef context, Local<Value> v) : m_value(new OpaqueJSValue(context,v)) {}
-        TempJSValue(JSContextRef context, const char *s) : m_value(new OpaqueJSValue(context,s)) {}
-        TempJSValue(JSValueRef v) : m_value(v) {}
+        TempJSValue(JSContextRef context, Local<Value> v) : m_value(new OpaqueJSValue(context,v)) {
+            const_cast<OpaqueJSValue *>(m_value)->Retain();
+        }
+        TempJSValue(JSContextRef context, const char *s) : m_value(new OpaqueJSValue(context,s)) {
+            const_cast<OpaqueJSValue *>(m_value)->Retain();
+        }
+        TempJSValue(JSValueRef v) : m_value(v) {
+            const_cast<OpaqueJSValue *>(m_value)->Retain();
+        }
         virtual ~TempJSValue() {
-            Reset();
+            if (m_value) {
+                const_cast<OpaqueJSValue *>(m_value)->Release();
+            }
+            m_value = nullptr;
         }
-        virtual void Set(JSContextRef context, Local<Value> v) {
+        void Set(JSContextRef context, Local<Value> v) {
+            ASSERT(m_value==nullptr)
             m_value = new OpaqueJSValue(context,v);
+            const_cast<OpaqueJSValue *>(m_value)->Retain();
+            m_didSet = true;
         }
-        virtual void Set(JSContextRef context, const char *s) {
+        void Set(JSContextRef context, const char *s) {
+            ASSERT(m_value==nullptr)
             m_value = new OpaqueJSValue(context,s);
+            const_cast<OpaqueJSValue *>(m_value)->Retain();
+            m_didSet = true;
         }
-        virtual void Set(JSValueRef v) {
+        void Set(JSValueRef v) {
+            ASSERT(m_value==nullptr)
             m_value = v;
+            if (v) {
+                const_cast<OpaqueJSValue *>(m_value)->Retain();
+                m_didSet = true;
+            }
         }
-        virtual void Reset() {
-            if (m_value) { /*m_value->Clean();*/ }
+        void Reset() {
+            if (m_value) {
+                const_cast<OpaqueJSValue *>(m_value)->Release();
+            }
+            m_didSet = false;
             m_value = nullptr;
         }
         JSValueRef operator*() const { return m_value; }
-        JSValueRef* operator&() { return &m_value; }
-        virtual void CopyTo(JSValueRef *exceptionRef) {
-            if (exceptionRef) { *exceptionRef = m_value; m_value = nullptr;}
-        }
-    private:
+    protected:
         const OpaqueJSValue *m_value;
+        bool m_didSet = false;
+};
+
+class TempException : public TempJSValue {
+    public:
+        TempException(JSValueRef *exceptionRef) : TempJSValue() {
+            m_exceptionRef = exceptionRef;
+        }
+        virtual ~TempException() {
+            if (m_exceptionRef) {
+                *m_exceptionRef = m_value;
+            }
+            if (m_value && m_didSet) {
+                const_cast<OpaqueJSValue *>(m_value)->Release(!m_exceptionRef);
+            }
+            m_value = nullptr;
+        }
+        void Reset() {
+            ASSERT(false);
+        }
+        JSValueRef* operator&() { return &m_value; }
+
+    private:
+        JSValueRef *m_exceptionRef;
 };
 
 #endif //NODEDROID_JSC_H

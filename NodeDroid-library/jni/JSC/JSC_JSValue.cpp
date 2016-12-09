@@ -134,7 +134,7 @@ JS_EXPORT bool JSValueIsEqual(JSContextRef ctxRef, JSValueRef a, JSValueRef b,
     bool result = false;
     {
         VALUE_ISOLATE(CTX(ctxRef),a,isolate,context,a_)
-            TempJSValue exception;
+            TempException exception(exceptionRef);
             Local<Value> b_ = (*b)->Value();
 
             TryCatch trycatch(isolate);
@@ -152,8 +152,6 @@ JS_EXPORT bool JSValueIsEqual(JSContextRef ctxRef, JSValueRef a, JSValueRef b,
             } else {
                 result = is.FromMaybe(result);
             }
-
-            exception.CopyTo(exceptionRef);
         V8_UNLOCK()
     }
 
@@ -181,7 +179,7 @@ JS_EXPORT bool JSValueIsInstanceOfConstructor(JSContextRef ctxRef, JSValueRef va
 
     bool is=false;
     V8_ISOLATE_CTX(CTX(ctxRef),isolate,context)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
 
         OpaqueJSString value("value");
         OpaqueJSString ctor("ctor");
@@ -212,8 +210,6 @@ JS_EXPORT bool JSValueIsInstanceOfConstructor(JSContextRef ctxRef, JSValueRef va
                 is = JSValueToBoolean(ctxRef, is_);
             }
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return is;
@@ -304,7 +300,7 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
     OpaqueJSString *value = nullptr;
 
     VALUE_ISOLATE(CTX(ctxRef),valueRef,isolate,context,inValue)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TryCatch trycatch(isolate);
 
         Local<Value> args[] = {
@@ -327,8 +323,6 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
             JSValueRef args[] = {*e};
             exception.Set(JSObjectMakeError(ctxRef, 1, args, nullptr));
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return value;
@@ -356,7 +350,7 @@ JS_EXPORT double JSValueToNumber(JSContextRef ctxRef, JSValueRef valueRef, JSVal
 
     double result = __builtin_nan("");
     VALUE_ISOLATE(CTX(ctxRef),valueRef,isolate,context,value)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TryCatch trycatch(isolate);
 
         MaybeLocal<Number> number = value->ToNumber(context);
@@ -365,8 +359,6 @@ JS_EXPORT double JSValueToNumber(JSContextRef ctxRef, JSValueRef valueRef, JSVal
         } else {
             exception.Set(ctxRef, trycatch.Exception());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return result;
@@ -380,7 +372,7 @@ JS_EXPORT JSStringRef JSValueToStringCopy(JSContextRef ctxRef, JSValueRef valueR
     JSStringRef out = nullptr;
 
     VALUE_ISOLATE(CTX(ctxRef),valueRef,isolate,context,value)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TryCatch trycatch(isolate);
 
         MaybeLocal<String> string = value->ToString(context);
@@ -390,8 +382,6 @@ JS_EXPORT JSStringRef JSValueToStringCopy(JSContextRef ctxRef, JSValueRef valueR
         } else {
             exception.Set(ctxRef, trycatch.Exception());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -405,7 +395,7 @@ JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
         TempJSValue null(JSValueMakeNull(ctxRef));
         if (!valueRef) valueRef = *null;
 
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TryCatch trycatch(isolate);
 
         MaybeLocal<Object> obj = value->ToObject(context);
@@ -414,8 +404,6 @@ JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
         } else {
             exception.Set(ctxRef, trycatch.Exception());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;

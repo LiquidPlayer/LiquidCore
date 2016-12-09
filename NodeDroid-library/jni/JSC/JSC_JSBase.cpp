@@ -22,7 +22,7 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
         JSValueRef ret = nullptr;
 
         V8_ISOLATE_CTX(ctx->Context(), isolate, context)
-            TempJSValue exception;
+            TempException exception(exceptionRef);
             OpaqueJSString anonymous("anonymous");
             TryCatch trycatch(isolate);
 
@@ -43,8 +43,6 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
                     ret = new OpaqueJSValue(ctx, result.ToLocalChecked());
                 }
             }
-
-            exception.CopyTo(exceptionRef);
         V8_UNLOCK()
 
         return ret;
@@ -57,7 +55,7 @@ JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStri
     bool out = false;
 
     V8_ISOLATE_CTX(ctx->Context(), isolate, context)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         OpaqueJSString anonymous("anonymous");
         TryCatch trycatch(isolate);
 
@@ -73,8 +71,6 @@ JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStri
         } else {
             out = true;
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;

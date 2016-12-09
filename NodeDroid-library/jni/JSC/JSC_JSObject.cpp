@@ -66,7 +66,7 @@ void OpaqueJSClass::StaticFunctionCallHandler(const FunctionCallbackInfo< Value 
             String::NewFromUtf8(isolate, "func")).ToLocalChecked());
         TempJSValue thisObject(ctxRef_, info.This());
 
-        TempJSValue exception;
+        TempException exception(nullptr);
         TempJSValue value;
 
         while (definition && !*exception && !*value) {
@@ -112,7 +112,7 @@ void OpaqueJSClass::ConvertFunctionCallHandler(const FunctionCallbackInfo< Value
 
         String::Utf8Value const str(info[0]);
 
-        TempJSValue exception;
+        TempException exception(nullptr);
         TempJSValue value;
 
         JSType type =
@@ -149,7 +149,7 @@ void OpaqueJSClass::HasInstanceFunctionCallHandler(const FunctionCallbackInfo< V
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
         TempJSValue thisObject(ctxRef_, info.This());
-        TempJSValue exception;
+        TempException exception(nullptr);
         TempJSValue value;
         TempJSValue possibleInstance(ctxRef_, info[0]);
 
@@ -274,7 +274,7 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
     const PropertyCallbackInfo< Value > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
-        TempJSValue exception;
+        TempException exception(nullptr);
         TempJSValue thisObject(ctxRef_, info.This());
         TempJSValue value;
 
@@ -336,7 +336,7 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
                         exception.Set(ctxRef_, Exception::Error(error));
                     }
                 }
-                definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
+                definition = definition->parentClass ?definition->parentClass->m_definition:nullptr;
             }
         }
 
@@ -349,7 +349,6 @@ void OpaqueJSClass::NamedPropertyGetter(Local< String > property,
         if (*value) {
             info.GetReturnValue().Set((**value)->Value());
         }
-
     V8_UNLOCK()
 }
 
@@ -367,7 +366,7 @@ void OpaqueJSClass::ProtoPropertyGetter(Local< String > property,
     const PropertyCallbackInfo< Value > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
-        TempJSValue exception;
+        TempException exception(nullptr);
         TempJSValue thisObject(ctxRef_, info.This());
         TempJSValue value;
 
@@ -430,7 +429,7 @@ void OpaqueJSClass::NamedPropertySetter(Local< String > property, Local< Value >
     const PropertyCallbackInfo< Value > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
-        TempJSValue exception;
+        TempException exception(nullptr);
         TempJSValue thisObject(ctxRef_, info.This());
         TempJSValue valueRef(ctxRef_,value);
 
@@ -505,7 +504,7 @@ void OpaqueJSClass::NamedPropertyDeleter(Local< String > property,
     const PropertyCallbackInfo< Boolean > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
-        TempJSValue exception;
+        TempException exception(nullptr);
 
         TempJSValue thisObject(ctxRef_, info.This());
 
@@ -705,7 +704,7 @@ void OpaqueJSClass::ProtoPropertyEnumerator(const PropertyCallbackInfo< Array > 
 void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
-        TempJSValue exception;
+        TempException exception(nullptr);
 
         JSValueRef arguments[info.Length()];
         for (int i=0; i<info.Length(); i++) {
@@ -1113,7 +1112,7 @@ JS_EXPORT JSObjectRef JSObjectMakeDate(JSContextRef ctx, size_t argumentCount,
     JSObjectRef out;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         Local<Value> date;
         if (argumentCount==0) {
             Local<Object> DATE =
@@ -1139,8 +1138,6 @@ JS_EXPORT JSObjectRef JSObjectMakeDate(JSContextRef ctx, size_t argumentCount,
         }
 
         out = new OpaqueJSValue(ctx, date);
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1152,7 +1149,7 @@ JS_EXPORT JSObjectRef JSObjectMakeError(JSContextRef ctx, size_t argumentCount,
 {
     JSObjectRef out;
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
 
         Local<String> str =
             String::NewFromUtf8(isolate, "", NewStringType::kNormal).ToLocalChecked();
@@ -1168,8 +1165,6 @@ JS_EXPORT JSObjectRef JSObjectMakeError(JSContextRef ctx, size_t argumentCount,
         }
 
         out = new OpaqueJSValue(ctx, Exception::Error(str));
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1182,7 +1177,7 @@ JS_EXPORT JSObjectRef JSObjectMakeRegExp(JSContextRef ctx, size_t argumentCount,
     JSObjectRef out = nullptr;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         Local<String> pattern =
             String::NewFromUtf8(isolate, "", NewStringType::kNormal).ToLocalChecked();
         Local<String> flags_ =
@@ -1228,8 +1223,6 @@ JS_EXPORT JSObjectRef JSObjectMakeRegExp(JSContextRef ctx, size_t argumentCount,
                 out = new OpaqueJSValue(ctx, regexp.ToLocalChecked());
             }
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1243,7 +1236,7 @@ JS_EXPORT JSObjectRef JSObjectMakeFunction(JSContextRef ctx, JSStringRef name,
     JSObjectRef out = nullptr;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         OpaqueJSString anonymous("anonymous");
 
         TryCatch trycatch(isolate);
@@ -1292,8 +1285,6 @@ JS_EXPORT JSObjectRef JSObjectMakeFunction(JSContextRef ctx, JSStringRef name,
             }
             out = new OpaqueJSValue(ctx, result.ToLocalChecked());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1340,7 +1331,7 @@ JS_EXPORT JSValueRef JSObjectGetProperty(JSContextRef ctx, JSObjectRef object,
     JSValueRef out = nullptr;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TryCatch trycatch(isolate);
 
         MaybeLocal<Value> value = o->Get(context, propertyName->Value(isolate));
@@ -1351,8 +1342,6 @@ JS_EXPORT JSValueRef JSObjectGetProperty(JSContextRef ctx, JSObjectRef object,
         if (!*exception) {
             out = new OpaqueJSValue(ctx, value.ToLocalChecked());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1362,7 +1351,7 @@ JS_EXPORT void JSObjectSetProperty(JSContextRef ctx, JSObjectRef object, JSStrin
     JSValueRef value, JSPropertyAttributes attributes, JSValueRef* exceptionRef)
 {
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TempJSValue null(JSValueMakeNull(ctx));
         if (!value) value = *null;
         int v8_attr = v8::None;
@@ -1384,8 +1373,6 @@ JS_EXPORT void JSObjectSetProperty(JSContextRef ctx, JSObjectRef object, JSStrin
         if (defined.IsNothing()) {
             exception.Set(ctx, trycatch.Exception());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 }
 
@@ -1396,7 +1383,7 @@ JS_EXPORT bool JSObjectDeleteProperty(JSContextRef ctx, JSObjectRef object,
 
     bool v = false;
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
 
         TryCatch trycatch(isolate);
 
@@ -1406,8 +1393,6 @@ JS_EXPORT bool JSObjectDeleteProperty(JSContextRef ctx, JSObjectRef object,
         } else {
             v = deleted.FromMaybe(false);
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return v;
@@ -1419,7 +1404,7 @@ JS_EXPORT JSValueRef JSObjectGetPropertyAtIndex(JSContextRef ctx, JSObjectRef ob
     JSValueRef out = nullptr;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TryCatch trycatch(isolate);
 
         MaybeLocal<Value> value = o->Get(context, propertyIndex);
@@ -1430,8 +1415,6 @@ JS_EXPORT JSValueRef JSObjectGetPropertyAtIndex(JSContextRef ctx, JSObjectRef ob
         if (!*exception) {
             out = new OpaqueJSValue(ctx, value.ToLocalChecked());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1441,7 +1424,7 @@ JS_EXPORT void JSObjectSetPropertyAtIndex(JSContextRef ctx, JSObjectRef object,
     unsigned propertyIndex, JSValueRef value, JSValueRef* exceptionRef)
 {
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         TempJSValue null(JSValueMakeNull(ctx));
         if (!value) value = *null;
         TryCatch trycatch(isolate);
@@ -1452,8 +1435,6 @@ JS_EXPORT void JSObjectSetPropertyAtIndex(JSContextRef ctx, JSObjectRef object,
         if (defined.IsNothing()) {
             exception.Set(ctx, trycatch.Exception());
         }
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 }
 
@@ -1523,7 +1504,7 @@ JS_EXPORT JSValueRef JSObjectCallAsFunction(JSContextRef ctx, JSObjectRef object
     JSValueRef out = nullptr;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         Local<Value> this_ = thisObject ?
             (*thisObject)->Value() :
             Local<Value>::New(isolate,Null(isolate));
@@ -1548,8 +1529,6 @@ JS_EXPORT JSValueRef JSObjectCallAsFunction(JSContextRef ctx, JSObjectRef object
             out = new OpaqueJSValue(ctx, value.ToLocalChecked());
         }
         delete [] elements;
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
@@ -1568,7 +1547,7 @@ JS_EXPORT JSObjectRef JSObjectCallAsConstructor(JSContextRef ctx, JSObjectRef ob
     JSObjectRef out = nullptr;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        TempJSValue exception;
+        TempException exception(exceptionRef);
         Local<Value> *elements = new Local<Value>[argumentCount];
         for (size_t i=0; i<argumentCount; i++) {
             elements[i] = (*arguments[i])->Value();
@@ -1585,8 +1564,6 @@ JS_EXPORT JSObjectRef JSObjectCallAsConstructor(JSContextRef ctx, JSObjectRef ob
             out = new OpaqueJSValue(ctx, value.ToLocalChecked());
         }
         delete [] elements;
-
-        exception.CopyTo(exceptionRef);
     V8_UNLOCK()
 
     return out;
