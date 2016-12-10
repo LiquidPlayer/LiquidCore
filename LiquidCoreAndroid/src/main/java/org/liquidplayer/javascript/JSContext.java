@@ -48,7 +48,7 @@ public class JSContext extends JSObject {
 
     static {
         System.loadLibrary("node");
-        System.loadLibrary("nodedroid");
+        System.loadLibrary("liquidcore");
     }
     public static void dummy() {
         // Force libraries to load

@@ -1,1 +1,1 @@
-include ':NodeDroid-library', ':nodeconsole'
+include ':LiquidCoreAndroid', ':nodeconsole'

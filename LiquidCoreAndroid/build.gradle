@@ -3,15 +3,15 @@ apply plugin: 'jacoco'
 apply plugin: 'com.github.dcendents.android-maven'
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 25
     buildToolsVersion "23.0.2"
 
     defaultConfig {
         minSdkVersion 10
         targetSdkVersion 19
-        versionCode 1
-        versionName "1.0"
-        setProperty("archivesBaseName", "NodeDroid-$versionName")
+        versionCode 0
+        versionName "0.1"
+        setProperty("archivesBaseName", "LiquidCore-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -30,8 +30,8 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:24.2.1'
-    androidTestCompile 'com.android.support:support-annotations:24.2.1'
+    compile 'com.android.support:appcompat-v7:25.0.1'
+    androidTestCompile 'com.android.support:support-annotations:25.0.1'
     androidTestCompile 'com.android.support.test:runner:0.5'
     androidTestCompile 'com.android.support.test:rules:0.5'
     androidTestCompile 'org.hamcrest:hamcrest-library:1.3'
@@ -64,7 +64,7 @@ artifacts {
 
 apply plugin: 'com.github.dcendents.android-maven'
 
-group='com.github.ericwlange'
+group='com.github.liquidplayer'
 
 task ndkBuild(type: Exec) {
     def rootDir = project.rootDir

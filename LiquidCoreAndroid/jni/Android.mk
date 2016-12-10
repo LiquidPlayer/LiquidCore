@@ -49,7 +49,7 @@ else
     endif
 endif
 
-LOCAL_MODULE    := nodedroid
+LOCAL_MODULE    := liquidcore
 LOCAL_SRC_FILES := common.cpp \
                    JNI/JSContext.cpp \
                    JNI/JSValue.cpp \
