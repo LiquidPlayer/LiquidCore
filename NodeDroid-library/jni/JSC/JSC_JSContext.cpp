@@ -88,6 +88,10 @@ class GlobalContextGroup : public ContextGroup
         virtual ~GlobalContextGroup() {
             globalContextGroup = nullptr;
         }
+        virtual int release() {
+            return --m_count;
+            ASSERT(m_count >= 0);
+        }
 };
 
 JS_EXPORT JSGlobalContextRef JSGlobalContextCreate(JSClassRef globalObjectClass)

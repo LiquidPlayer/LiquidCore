@@ -63,6 +63,7 @@ void testObjectiveCAPI(void);
 bool assertTrue(bool value, const char* message);
 extern void JSSynchronousGarbageCollectForDebugging(JSContextRef);
 
+static JSContextGroupRef contextGroup;
 static JSGlobalContextRef context;
 int failed;
 static void assertEqualsAsBoolean(JSValueRef value, bool expectedValue)
@@ -450,6 +451,8 @@ static JSClassRef MyObject_class(JSContextRef context)
     return jsClass;
 }
 
+static size_t count1, count2, count3, count4, count5;
+
 static JSValueRef PropertyCatchalls_getProperty(JSContextRef context, JSObjectRef object, JSStringRef propertyName, JSValueRef* exception)
 {
     UNUSED_PARAM(context);
@@ -458,8 +461,7 @@ static JSValueRef PropertyCatchalls_getProperty(JSContextRef context, JSObjectRe
     UNUSED_PARAM(exception);
 
     if (JSStringIsEqualToUTF8CString(propertyName, "x")) {
-        static size_t count;
-        if (count++ < 5)
+        if (count1++ < 5)
             return NULL;
 
         // Swallow all .x gets after 5, returning null.
@@ -467,8 +469,7 @@ static JSValueRef PropertyCatchalls_getProperty(JSContextRef context, JSObjectRe
     }
 
     if (JSStringIsEqualToUTF8CString(propertyName, "y")) {
-        static size_t count;
-        if (count++ < 5)
+        if (count2++ < 5)
             return NULL;
 
         // Swallow all .y gets after 5, returning null.
@@ -476,8 +477,7 @@ static JSValueRef PropertyCatchalls_getProperty(JSContextRef context, JSObjectRe
     }
 
     if (JSStringIsEqualToUTF8CString(propertyName, "z")) {
-        static size_t count;
-        if (count++ < 5)
+        if (count3++ < 5)
             return NULL;
 
         // Swallow all .y gets after 5, returning null.
@@ -496,8 +496,7 @@ static bool PropertyCatchalls_setProperty(JSContextRef context, JSObjectRef obje
     UNUSED_PARAM(exception);
 
     if (JSStringIsEqualToUTF8CString(propertyName, "x")) {
-        static size_t count;
-        if (count++ < 5)
+        if (count4++ < 5)
             return false;
 
         // Swallow all .x sets after 4.
@@ -517,11 +516,10 @@ static void PropertyCatchalls_getPropertyNames(JSContextRef context, JSObjectRef
     UNUSED_PARAM(context);
     UNUSED_PARAM(object);
 
-    static size_t count;
     static const char* numbers[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
     // Provide a property of a different name every time.
-    JSStringRef propertyName = JSStringCreateWithUTF8CString(numbers[count++ % 10]);
+    JSStringRef propertyName = JSStringCreateWithUTF8CString(numbers[count5++ % 10]);
     JSPropertyNameAccumulatorAddName(propertyNames, propertyName);
     JSStringRelease(propertyName);
 }
@@ -1007,7 +1005,7 @@ bool assertTrue(bool value, const char* message)
 static bool checkForCycleInPrototypeChain()
 {
     bool result = true;
-    JSGlobalContextRef context = JSGlobalContextCreate(0);
+    JSGlobalContextRef context = JSGlobalContextCreateInGroup(contextGroup,0);
     JSObjectRef object1 = JSObjectMake(context, /* jsClass */ 0, /* data */ 0);
     JSObjectRef object2 = JSObjectMake(context, /* jsClass */ 0, /* data */ 0);
     JSObjectRef object3 = JSObjectMake(context, /* jsClass */ 0, /* data */ 0);
@@ -1065,7 +1063,7 @@ static bool valueToObjectExceptionTest()
     globalObjectClassDefinition.staticFunctions = globalObject_staticFunctions;
     globalObjectClassDefinition.attributes = kJSClassAttributeNoAutomaticPrototype;
     JSClassRef globalObjectClass = JSClassCreate(&globalObjectClassDefinition);
-    testContext = JSGlobalContextCreateInGroup(NULL, globalObjectClass);
+    testContext = JSGlobalContextCreateInGroup(contextGroup, globalObjectClass);
     JSObjectRef globalObject = JSContextGetGlobalObject(testContext);
 
     JSStringRef valueToObject = JSStringCreateWithUTF8CString("valueToObject");
@@ -1086,7 +1084,7 @@ static bool valueToObjectExceptionTest()
 static bool globalContextNameTest()
 {
     bool result = true;
-    JSGlobalContextRef context = JSGlobalContextCreate(0);
+    JSGlobalContextRef context = JSGlobalContextCreateInGroup(contextGroup,0);
 
     JSStringRef str = JSGlobalContextCopyName(context);
     result &= assertTrue(!str, "Default context name is NULL");
@@ -1125,79 +1123,32 @@ static void checkConstnessInJSObjectNames()
     ASSERT(!strcmp(fun.name,val.name));
 }
 
-#if OS(DARWIN)
-static double currentCPUTime()
-{
-    mach_msg_type_number_t infoCount = THREAD_BASIC_INFO_COUNT;
-    thread_basic_info_data_t info;
-
-    /* Get thread information */
-    mach_port_t threadPort = mach_thread_self();
-    thread_info(threadPort, THREAD_BASIC_INFO, (thread_info_t)(&info), &infoCount);
-    mach_port_deallocate(mach_task_self(), threadPort);
-
-    double time = info.user_time.seconds + info.user_time.microseconds / 1000000.;
-    time += info.system_time.seconds + info.system_time.microseconds / 1000000.;
-
-    return time;
+static void reset_globals() {
+    jsNumberValue =  NULL;
+    aHeapRef = NULL;
+    TestInitializeFinalize = false;
+    Base_didFinalize = false;
+    contextGroup = NULL;
+    context = NULL;
+    failed = 0;
+    count1 = count2 = count3 = count4 = count5 = 0;
 }
-
-static JSValueRef currentCPUTime_callAsFunction(JSContextRef ctx, JSObjectRef functionObject, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-{
-    UNUSED_PARAM(functionObject);
-    UNUSED_PARAM(thisObject);
-    UNUSED_PARAM(argumentCount);
-    UNUSED_PARAM(arguments);
-    UNUSED_PARAM(exception);
-
-    ASSERT(JSContextGetGlobalContext(ctx) == context);
-    return JSValueMakeNumber(ctx, currentCPUTime());
-}
-
-bool shouldTerminateCallbackWasCalled = false;
-static bool shouldTerminateCallback(JSContextRef ctx, void* context)
-{
-    UNUSED_PARAM(ctx);
-    UNUSED_PARAM(context);
-    shouldTerminateCallbackWasCalled = true;
-    return true;
-}
-
-bool cancelTerminateCallbackWasCalled = false;
-static bool cancelTerminateCallback(JSContextRef ctx, void* context)
-{
-    UNUSED_PARAM(ctx);
-    UNUSED_PARAM(context);
-    cancelTerminateCallbackWasCalled = true;
-    return false;
-}
-
-int extendTerminateCallbackCalled = 0;
-static bool extendTerminateCallback(JSContextRef ctx, void* context)
-{
-    UNUSED_PARAM(context);
-    extendTerminateCallbackCalled++;
-    if (extendTerminateCallbackCalled == 1) {
-        JSContextGroupRef contextGroup = JSContextGetGroup(ctx);
-        JSContextGroupSetExecutionTimeLimit(contextGroup, .200f, extendTerminateCallback, 0);
-        return false;
-    }
-    return true;
-}
-#endif /* OS(DARWIN) */
 
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* env,
-    jobject thiz, jstring testapi_js)
+    jobject thiz, jstring testapi_js, jlong group)
 {
+    reset_globals();
+
 #if JSC_OBJC_API_ENABLED
     testObjectiveCAPI();
 #endif
+    contextGroup = reinterpret_cast<JSContextGroupRef>(group);
 
     const char *scriptPath = "testapi.js";
     const char *scriptUTF8 = env->GetStringUTFChars(testapi_js, NULL);
 
     // Test garbage collection with a fresh context
-    context = JSGlobalContextCreateInGroup(NULL, NULL);
+    context = JSGlobalContextCreateInGroup(contextGroup, NULL);
     TestInitializeFinalize = true;
     testInitializeFinalize();
     JSGlobalContextRelease(context);
@@ -1211,7 +1162,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     globalObjectClassDefinition.staticFunctions = globalObject_staticFunctions;
     globalObjectClassDefinition.attributes = kJSClassAttributeNoAutomaticPrototype;
     JSClassRef globalObjectClass = JSClassCreate(&globalObjectClassDefinition);
-    context = JSGlobalContextCreateInGroup(NULL, globalObjectClass);
+    context = JSGlobalContextCreateInGroup(contextGroup, globalObjectClass);
 
     JSContextGroupRef contextGroup = JSContextGetGroup(context);
 
@@ -1872,7 +1823,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSClassDefinition prototypeLoopClassDefinition = kJSClassDefinitionEmpty;
     prototypeLoopClassDefinition.staticFunctions = globalObject_staticFunctions;
     JSClassRef prototypeLoopClass = JSClassCreate(&prototypeLoopClassDefinition);
-    JSGlobalContextRef prototypeLoopContext = JSGlobalContextCreateInGroup(NULL, prototypeLoopClass);
+    JSGlobalContextRef prototypeLoopContext = JSGlobalContextCreateInGroup(contextGroup, prototypeLoopClass);
 
     JSStringRef nameProperty = JSStringCreateWithUTF8CString("name");
     JSObjectHasProperty(prototypeLoopContext, JSContextGetGlobalObject(prototypeLoopContext), nameProperty);
@@ -1894,9 +1845,9 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     if (globalContextNameTest())
         printf("PASS: global context name behaves as expected.\n");
 
-    customGlobalObjectClassTest();
-    globalObjectSetPrototypeTest();
-    globalObjectPrivatePropertyTest();
+    customGlobalObjectClassTest(contextGroup);
+    globalObjectSetPrototypeTest(contextGroup);
+    globalObjectPrivatePropertyTest(contextGroup);
 
     env->ReleaseStringUTFChars(testapi_js, scriptUTF8);
 

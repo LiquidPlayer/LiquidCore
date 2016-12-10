@@ -757,10 +757,6 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
 
 void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& info)
 {
-    __android_log_print(ANDROID_LOG_DEBUG, "Finalize", "Are we getting called?");
-    Isolate::Scope isolate_scope_(info.GetIsolate());
-    HandleScope handle_scope_(info.GetIsolate());
-
     OpaqueJSClass* clazz = reinterpret_cast<OpaqueJSClass*>(info.GetInternalField(0));
     JSObjectRef objRef = reinterpret_cast<JSObjectRef>(info.GetInternalField(1));
     if (!objRef->HasFinalized()) {
@@ -773,6 +769,7 @@ void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& i
             definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
         }
     }
+    clazz->release();
     info.GetParameter()->Reset();
     delete info.GetParameter();
 }
@@ -870,6 +867,7 @@ JSObjectRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance
             weak,
             Finalize,
             v8::WeakCallbackType::kInternalFields);
+        retain();
 
         instance->SetAlignedPointerInInternalField(0,this);
         instance->SetAlignedPointerInInternalField(1,(void*)retObj);

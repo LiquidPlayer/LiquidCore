@@ -309,6 +309,9 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
             Number::New(isolate, indent)
         };
 
+        // FIXME: I don't understand why this hack works but will fail in a secondary context without
+        context->Global()->Get(context, String::NewFromUtf8(isolate, "JSON"));
+
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
         Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
 

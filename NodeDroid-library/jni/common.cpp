@@ -153,7 +153,7 @@ ContextGroup::ContextGroup() {
     m_async_handle = nullptr;
 
     s_isolate_map[m_isolate] = this;
-    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+    //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
@@ -164,7 +164,7 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
     m_async_handle = nullptr;
 
     s_isolate_map[m_isolate] = this;
-    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+    //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
 void ContextGroup::callback(uv_async_t* handle) {

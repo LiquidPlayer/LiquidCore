@@ -63,10 +63,10 @@ static JSClassRef jsClassRef()
     return bridgedObjectClass;
 }
 
-void customGlobalObjectClassTest()
+void customGlobalObjectClassTest(JSContextGroupRef contextGroup)
 {
     JSClassRef bridgedObjectJsClassRef = jsClassRef();
-    JSGlobalContextRef globalContext = JSGlobalContextCreate(bridgedObjectJsClassRef);
+    JSGlobalContextRef globalContext = JSGlobalContextCreateInGroup(contextGroup, bridgedObjectJsClassRef);
 
     JSObjectRef globalObj = JSContextGetGlobalObject(globalContext);
 
@@ -100,12 +100,12 @@ void customGlobalObjectClassTest()
     assertTrue(executedCallback, "Executed custom global object callback");
 }
 
-void globalObjectSetPrototypeTest()
+void globalObjectSetPrototypeTest(JSContextGroupRef contextGroup)
 {
     JSClassDefinition definition = kJSClassDefinitionEmpty;
     definition.className = "Global";
     JSClassRef global = JSClassCreate(&definition);
-    JSGlobalContextRef context = JSGlobalContextCreate(global);
+    JSGlobalContextRef context = JSGlobalContextCreateInGroup(contextGroup,global);
     JSObjectRef object = JSContextGetGlobalObject(context);
 
     JSObjectRef above = JSObjectMake(context, 0, 0);
@@ -123,11 +123,11 @@ void globalObjectSetPrototypeTest()
     JSStringRelease(script);
 }
 
-void globalObjectPrivatePropertyTest()
+void globalObjectPrivatePropertyTest(JSContextGroupRef contextGroup)
 {
     JSClassDefinition definition = kJSClassDefinitionEmpty;
     definition.className = "Global";
     JSClassRef global = JSClassCreate(&definition);
-    JSGlobalContextRef context = JSGlobalContextCreate(global);
+    JSGlobalContextRef context = JSGlobalContextCreateInGroup(contextGroup,global);
     JSObjectRef globalObject = JSContextGetGlobalObject(context);
 }

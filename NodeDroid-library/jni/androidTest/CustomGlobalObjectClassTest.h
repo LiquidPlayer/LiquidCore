@@ -26,8 +26,10 @@
 #ifndef CustomGlobalObjectClassTest_h
 #define CustomGlobalObjectClassTest_h
 
-void customGlobalObjectClassTest(void);
-void globalObjectSetPrototypeTest(void);
-void globalObjectPrivatePropertyTest(void);
+#include <JavaScriptCore/JavaScript.h>
+
+void customGlobalObjectClassTest(JSContextGroupRef);
+void globalObjectSetPrototypeTest(JSContextGroupRef);
+void globalObjectPrivatePropertyTest(JSContextGroupRef);
 
 #endif // CustomGlobalObjectClassTest_h

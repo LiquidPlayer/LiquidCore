@@ -43,12 +43,14 @@
 static JSValueRef print(JSContextRef context, JSObjectRef object, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception);
 
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_minidom(JNIEnv* env,
-    jobject thiz, jstring minidom_js)
+    jobject thiz, jstring minidom_js, jlong group)
 {
     const char *scriptPath = "minidom.js";
     const char *scriptUTF8 = env->GetStringUTFChars(minidom_js, NULL);
 
-    JSGlobalContextRef context = JSGlobalContextCreateInGroup(NULL, NULL);
+    JSContextGroupRef contextGroup = reinterpret_cast<JSContextGroupRef>(group);
+
+    JSGlobalContextRef context = JSGlobalContextCreateInGroup(contextGroup, NULL);
     JSObjectRef globalObject = JSContextGetGlobalObject(context);
 
     JSStringRef printIString = JSStringCreateWithUTF8CString("print");
