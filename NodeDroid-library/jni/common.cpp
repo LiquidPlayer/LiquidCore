@@ -110,12 +110,13 @@ ContextGroup* JSContext::Group() {
 Platform *ContextGroup::s_platform = NULL;
 int ContextGroup::s_init_count = 0;
 std::mutex ContextGroup::s_mutex;
+std::map<Isolate *, ContextGroup *> ContextGroup::s_isolate_map;
 
 void ContextGroup::init_v8() {
     s_mutex.lock();
     if (s_init_count++ == 0) {
         // see: https://github.com/nodejs/node/issues/7918
-        const char *flags = "--harmony-instanceof";
+        const char *flags = "--harmony-instanceof"; // " --expose_gc";
         V8::SetFlagsFromString(flags, strlen(flags));
 
         s_platform = platform::CreateDefaultPlatform(4);
@@ -150,6 +151,9 @@ ContextGroup::ContextGroup() {
     m_uv_loop = nullptr;
     m_thread_id = std::this_thread::get_id();
     m_async_handle = nullptr;
+
+    s_isolate_map[m_isolate] = this;
+    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
@@ -158,6 +162,9 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
     m_uv_loop = uv_loop;
     m_thread_id = std::this_thread::get_id();
     m_async_handle = nullptr;
+
+    s_isolate_map[m_isolate] = this;
+    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
 void ContextGroup::callback(uv_async_t* handle) {
@@ -226,7 +233,40 @@ void ContextGroup::callback(uv_async_t* handle) {
     group->m_async_mutex.unlock();
 }
 
+void ContextGroup::RegisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void*), void *data) {
+    struct GCCallback *gc = new struct GCCallback;
+    gc->cb = cb;
+    gc->data = data;
+    m_gc_callbacks.push_back(gc);
+}
+
+void ContextGroup::UnregisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void*), void *data) {
+    for (
+        std::list<struct GCCallback*>::iterator it=m_gc_callbacks.begin();
+        it!=m_gc_callbacks.end();
+        ++it
+    ) {
+
+        if ((*it)->cb == cb && (*it)->data == data) {
+            delete (*it);
+            m_gc_callbacks.erase(it);
+        }
+    }
+}
+
+void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags) {
+    for (
+        std::list<struct GCCallback*>::iterator it=m_gc_callbacks.begin();
+        it!=m_gc_callbacks.end();
+        ++it
+    ) {
+        (*it)->cb(type, flags, (*it)->data);
+    }
+}
+
 ContextGroup::~ContextGroup() {
+    m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
+    s_isolate_map.erase(m_isolate);
     if (m_manage_isolate) {
         auto dispose = [](Isolate *isolate) {
             // This is a hack to deal with the following failure message from V8

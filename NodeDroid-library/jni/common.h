@@ -44,6 +44,7 @@
 #include <thread>
 #include <list>
 #include <functional>
+#include <map>
 
 #include "v8.h"
 #include "libplatform/libplatform.h"
@@ -143,14 +144,20 @@ public:
     }
 
     virtual void sync(std::function<void()> runnable);
+    virtual void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
+    virtual void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
 
     static void init_v8();
     static std::mutex *Mutex() { return &s_mutex; }
     static v8::Platform * Platform() { return s_platform; }
     static void callback(uv_async_t* handle);
+    static void StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags) {
+        s_isolate_map[isolate]->GCPrologueCallback(type, flags);
+    }
 
 protected:
     virtual ~ContextGroup();
+    virtual void GCPrologueCallback(GCType type, GCCallbackFlags flags);
 
 private:
     static void dispose_v8();
@@ -158,6 +165,7 @@ private:
     static v8::Platform *s_platform;
     static int s_init_count;
     static std::mutex s_mutex;
+    static std::map<Isolate *, ContextGroup *> s_isolate_map;
 
     Isolate *m_isolate;
     Isolate::CreateParams m_create_params;
@@ -166,6 +174,12 @@ private:
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
     std::recursive_mutex m_lock;
+
+    struct GCCallback {
+        void (*cb)(GCType type, GCCallbackFlags flags, void*);
+        void *data;
+    };
+    std::list<struct GCCallback *> m_gc_callbacks;
 
 public:
     uv_async_t *m_async_handle;

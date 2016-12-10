@@ -6,20 +6,60 @@
 
 OpaqueJSContext::OpaqueJSContext(JSContext *ctx) : m_context(ctx)
 {
-
+    ctx->Group()->RegisterGCCallback(StaticGCCallback, this);
 }
+
 OpaqueJSContext::~OpaqueJSContext()
 {
     V8_ISOLATE(m_context->Group(), isolate);
-        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "About to destructorize");
-        m_context->SetDefunct();
-        while(!isolate->IdleNotificationDeadline(
-            group_->Platform()->MonotonicallyIncreasingTime() + 1.0)) {};
-        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "Finished");
+        m_context->Group()->UnregisterGCCallback(StaticGCCallback, this);
+
+        ForceGC();
+        //For testing only.  Must also specify --enable_gc flag in common.cpp
+        //isolate->RequestGarbageCollectionForTesting(Isolate::kFullGarbageCollection);
+
+        m_gc_lock.lock();
+        for (const auto& v : m_collection) {
+            v->Clean(true);
+        }
+        for (const auto& v : m_collection) {
+            while (const_cast<OpaqueJSValue *>(v)->Release()) {};
+        }
+        m_gc_lock.unlock();
+
+        ASSERT(m_collection.empty());
+
         int count = m_context->release();
-        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "count = %d", count);
     V8_UNLOCK();
 
+}
+
+void OpaqueJSContext::MarkForCollection(JSValueRef value)
+{
+    ASSERT(value->Context() == this);
+    m_gc_lock.lock();
+    m_collection.push_back(value);
+    m_gc_lock.unlock();
+}
+
+void OpaqueJSContext::MarkCollected(JSValueRef value)
+{
+    ASSERT(value->Context() == this);
+    m_gc_lock.lock();
+    m_collection.remove(value);
+    m_gc_lock.unlock();
+}
+
+void OpaqueJSContext::GCCallback(GCType type, GCCallbackFlags flags)
+{
+}
+
+void OpaqueJSContext::ForceGC()
+{
+    V8_ISOLATE(Context()->Group(), isolate)
+        while(!isolate->IdleNotificationDeadline(
+            group_->Platform()->MonotonicallyIncreasingTime() + 1.0)) {};
+    V8_UNLOCK()
 }
 
 JS_EXPORT JSContextGroupRef JSContextGroupCreate()
@@ -30,7 +70,7 @@ JS_EXPORT JSContextGroupRef JSContextGroupCreate()
 
 JS_EXPORT JSContextGroupRef JSContextGroupRetain(JSContextGroupRef group)
 {
-    ((ContextGroup*)group)->retain();
+    const_cast<ContextGroup*>(group)->retain();
     return group;
 }
 
@@ -46,7 +86,6 @@ class GlobalContextGroup : public ContextGroup
     public:
         GlobalContextGroup() : ContextGroup() {}
         virtual ~GlobalContextGroup() {
-            __android_log_print(ANDROID_LOG_DEBUG, "~GlobalContextGroup()", "destructing");
             globalContextGroup = nullptr;
         }
 };
@@ -83,11 +122,7 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
                     Local<Object> global =
                         context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
                     ctx = new OpaqueJSContext(new JSContext((ContextGroup*)group, context));
-                    TempJSValue value(globalObjectClass->InitInstance(ctx, global, data));
-                    Local<Private> privateKey = v8::Private::ForApi(isolate,
-                        String::NewFromUtf8(isolate, "__private"));
-                    global->SetPrivate(context, privateKey,
-                        Number::New(isolate,(double)reinterpret_cast<long>(nullptr)));
+                    TempJSValue value(globalObjectClass->InitInstance(ctx, global, data, nullptr));
                 }
             } else {
                 ctx = new OpaqueJSContext(
@@ -147,7 +182,7 @@ JS_EXPORT JSObjectRef JSContextGetGlobalObject(JSContextRef ctx)
     V8_ISOLATE_CTX(ctx->Context(),isolate,Ctx)
         JSValue<Object> *object = context_->Global();
         Local<Object> global = object->Value();
-        v = new OpaqueJSValue(ctx, global);
+        v = OpaqueJSValue::New(ctx, global);
         object->release();
     V8_UNLOCK()
 
@@ -156,15 +191,12 @@ JS_EXPORT JSObjectRef JSContextGetGlobalObject(JSContextRef ctx)
 
 JS_EXPORT JSContextGroupRef JSContextGetGroup(JSContextRef ctx)
 {
-    ctx->Context()->Group()->retain();
     return ctx->Context()->Group();
 }
 
 JS_EXPORT JSGlobalContextRef JSContextGetGlobalContext(JSContextRef ctx)
 {
     // FIXME: What is this supposed to do?
-    // FIXME: Gets the global context of a JavaScript execution context.
-    ctx->Context()->retain();
     return (JSGlobalContextRef)ctx;
 }
 

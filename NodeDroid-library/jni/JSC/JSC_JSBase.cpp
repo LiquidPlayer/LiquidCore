@@ -40,7 +40,7 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
                 if (result.IsEmpty()) {
                     exception.Set(ctx, trycatch.Exception());
                 } else {
-                    ret = new OpaqueJSValue(ctx, result.ToLocalChecked());
+                    ret = OpaqueJSValue::New(ctx, result.ToLocalChecked());
                 }
             }
         V8_UNLOCK()
@@ -79,10 +79,5 @@ JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStri
 
 JS_EXPORT void JSGarbageCollect(JSContextRef ctx)
 {
-    JSContext *context_ = ctx->Context();
-
-    V8_ISOLATE(context_->Group(), isolate)
-        while(!isolate->IdleNotificationDeadline(
-            group_->Platform()->MonotonicallyIncreasingTime() + 1.0)) {};
-    V8_UNLOCK()
+    const_cast<OpaqueJSContext *>(ctx)->ForceGC();
 }

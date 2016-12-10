@@ -23,10 +23,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-#include <wtf/Platform.h>
-*/
-
 #define WINDOWS 0
 #define DARWIN  0
 #define OS(x) (x)
@@ -45,16 +41,8 @@
 #define fprintf(x,...) __android_log_print(ANDROID_LOG_ERROR, "testapi", __VA_ARGS__)
 
 #include "JavaScriptCore/JavaScript.h"
-/*
-#include "JSBasePrivate.h"
-#include "JSContextRefPrivate.h"
-#include "JSObjectRefPrivate.h"
-#include "JSScriptRefPrivate.h"
-#include "JSStringRefPrivate.h"
-*/
 #include <math.h>
 #define ASSERT_DISABLED 1
-//#include <wtf/Assertions.h>
 
 #if OS(DARWIN)
 #include <mach/mach.h>
@@ -1215,8 +1203,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     JSGlobalContextRelease(context);
     TestInitializeFinalize = false;
 
-    // FIXME
-    //ASSERT(Base_didFinalize);
+    ASSERT(Base_didFinalize);
 
     JSClassDefinition globalObjectClassDefinition = kJSClassDefinitionEmpty;
     globalObjectClassDefinition.initialize = globalObject_initialize;

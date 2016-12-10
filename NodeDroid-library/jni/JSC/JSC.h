@@ -10,10 +10,9 @@
 #include <vector>
 #include <string>
 
-//#define OpaqueJSValue                   JSValue<Value>
 #define OpaqueJSContextGroup            ContextGroup
 #define OpaqueJSPropertyNameAccumulator std::list<JSStringRef>
-#define OpaqueJSPropertyNameArray       JSValue<Array>
+#define OpaqueJSPropertyNameArray       OpaqueJSValue
 
 #include "JavaScriptCore/JavaScript.h"
 
@@ -25,9 +24,20 @@ class OpaqueJSContext : public Retainer {
         OpaqueJSContext(JSContext *ctx);
         virtual ~OpaqueJSContext();
         JSContext *Context() const { return m_context; }
+        virtual void MarkForCollection(JSValueRef value);
+        virtual void MarkCollected(JSValueRef value);
+        virtual void ForceGC();
 
     private:
+        virtual void GCCallback(GCType type, GCCallbackFlags flags);
+
         JSContext *m_context;
+        std::list<JSValueRef> m_collection;
+        std::recursive_mutex m_gc_lock;
+
+        static void StaticGCCallback(GCType type, GCCallbackFlags flags, void*data) {
+            ((OpaqueJSContext*)data)->GCCallback(type,flags);
+        }
 };
 
 class OpaqueJSString : public Retainer {
@@ -55,7 +65,8 @@ class OpaqueJSClass : public Retainer {
         virtual const JSClassDefinition * Definition() { return m_definition; }
 
         virtual Local<ObjectTemplate> NewTemplate(Local<Object> *data);
-        virtual JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance, Local<Object> data);
+        virtual JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance,
+            Local<Object> data, void *privateData);
 
         static void CallAsFunction(const FunctionCallbackInfo< Value > &);
         static void HasInstanceFunctionCallHandler(const FunctionCallbackInfo< Value > &);
@@ -90,25 +101,78 @@ class OpaqueJSClass : public Retainer {
 
 class OpaqueJSValue {
     public:
-        OpaqueJSValue(JSContextRef context, Local<Value> v) :
-            value(JSValue<Value>::New(context->Context(), v)){}
-        OpaqueJSValue(JSContextRef context, const char *s) :
-            value(JSValue<Value>::New(context->Context(),
-                String::NewFromUtf8(context->Context()->isolate(),s)))
-            {}
+        static OpaqueJSValue* New(JSContextRef ctx, Local<Value> v,
+            const JSClassDefinition* fromClass=0)
+        {
+            OpaqueJSValue *out = nullptr;
+            V8_ISOLATE(ctx->Context()->Group(), isolate)
+                if (v->IsObject() && !fromClass) {
+                    Local<v8::Context> context = ctx->Context()->Value();
+                    Context::Scope(ctx->Context()->Value());
+                    Local<Object> o = v->ToObject(context).ToLocalChecked();
+                    o = o->StrictEquals(context->Global()) && \
+                        !o->GetPrototype()->ToObject(context).IsEmpty() && \
+                        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()?\
+                        o->GetPrototype()->ToObject(context).ToLocalChecked() : \
+                        o;
+                    if (o->InternalFieldCount() > 1) {
+                        out=
+                         reinterpret_cast<OpaqueJSValue*>(o->GetAlignedPointerFromInternalField(1));
+                        //out->Retain();
+                    }
+                }
+            V8_UNLOCK()
+            if (!out) {
+                out = new OpaqueJSValue(ctx, v, fromClass);
+            }
+            return out;
+        }
+        static OpaqueJSValue* New(JSContextRef context, const char *s)
+        {
+            ASSERT(s);
+            Local<String> local = String::NewFromUtf8(context->Context()->isolate(),s);
+            return new OpaqueJSValue(context, local);
+        }
         virtual ~OpaqueJSValue() {
-            value->release();
+            const_cast<OpaqueJSContext *>(m_ctx)->MarkCollected(this);
+            if (value) {
+                value->release();
+            }
+            weak.Reset();
         }
 
-        JSValue<Value> * operator->() const {
-            return value;
+        Local<Value> L() const {
+            if (value) {
+                return value->Value();
+            }
+            return Local<Value>::New(m_ctx->Context()->isolate(), weak);
         }
-        virtual void Clean() const {
+        virtual void Clean(bool fromGC=false) const {
             if (m_count <= 0) {
+                if (!HasFinalized()) {
+                    const_cast<OpaqueJSValue *>(this)->m_finalized = true;
+                    const JSClassDefinition *definition = m_fromClassDefinition;
+                    while (definition) {
+                        if (definition->finalize) {
+                            definition->finalize(const_cast<JSObjectRef>(this));
+                        }
+                        definition =
+                            definition->parentClass? definition->parentClass->Definition(): nullptr;
+                    }
+                }
                 delete this;
             }
         }
-        virtual int Retain() { return ++m_count; }
+        virtual int Retain() {
+            if (!value) {
+                V8_ISOLATE(m_ctx->Context()->Group(), isolate)
+                    Context::Scope(m_ctx->Context()->Value());
+                    value = JSValue<Value>::New(m_ctx->Context(), Local<Value>::New(isolate,weak));
+                    weak.Reset();
+                V8_UNLOCK()
+            }
+            return ++m_count;
+        }
         virtual int Release(bool cleanOnZero=true) {
             int count = --m_count;
             ASSERT(count >= 0)
@@ -117,19 +181,60 @@ class OpaqueJSValue {
             }
             return count;
         }
+        virtual JSContextRef Context() const {
+            return m_ctx;
+        }
+        virtual bool SetPrivateData(void *data) {
+            if (m_fromClassDefinition) {
+                m_private_data = data;
+            }
+            return m_fromClassDefinition;
+        }
+        virtual void *GetPrivateData() {
+            return m_private_data;
+        }
+        virtual void SetFinalized() {
+            m_finalized = true;
+        }
+        virtual bool HasFinalized() const {
+            return m_finalized;
+        }
+        virtual bool IsClassObject() const {
+            return m_fromClassDefinition;
+        }
+
+    protected:
+        OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass=0) :
+            value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass)
+        {
+            weak = UniquePersistent<Value>(context->Context()->isolate(), v);
+            weak.SetWeak<OpaqueJSValue>(this, [](const WeakCallbackInfo<OpaqueJSValue> &info) {
+                (info.GetParameter())->WeakCallback();
+            }, v8::WeakCallbackType::kParameter);
+            const_cast<OpaqueJSContext *>(context)->MarkForCollection(this);
+        }
 
     private:
+        virtual void WeakCallback() {
+            weak.Reset();
+        }
+
         JSValue<Value> *value;
+        UniquePersistent<Value> weak;
         int m_count = 0;
+        JSContextRef m_ctx;
+        void *m_private_data = nullptr;
+        const JSClassDefinition *m_fromClassDefinition = nullptr;
+        bool m_finalized = false;
 };
 
 class TempJSValue {
     public:
         TempJSValue() : m_value(nullptr) {}
-        TempJSValue(JSContextRef context, Local<Value> v) : m_value(new OpaqueJSValue(context,v)) {
+        TempJSValue(JSContextRef context, Local<Value> v) : m_value(OpaqueJSValue::New(context,v)) {
             const_cast<OpaqueJSValue *>(m_value)->Retain();
         }
-        TempJSValue(JSContextRef context, const char *s) : m_value(new OpaqueJSValue(context,s)) {
+        TempJSValue(JSContextRef context, const char *s) : m_value(OpaqueJSValue::New(context,s)) {
             const_cast<OpaqueJSValue *>(m_value)->Retain();
         }
         TempJSValue(JSValueRef v) : m_value(v) {
@@ -137,19 +242,19 @@ class TempJSValue {
         }
         virtual ~TempJSValue() {
             if (m_value) {
-                const_cast<OpaqueJSValue *>(m_value)->Release();
+                const_cast<OpaqueJSValue *>(m_value)->Release(!m_value->IsClassObject());
             }
             m_value = nullptr;
         }
         void Set(JSContextRef context, Local<Value> v) {
             ASSERT(m_value==nullptr)
-            m_value = new OpaqueJSValue(context,v);
+            m_value = OpaqueJSValue::New(context,v);
             const_cast<OpaqueJSValue *>(m_value)->Retain();
             m_didSet = true;
         }
         void Set(JSContextRef context, const char *s) {
             ASSERT(m_value==nullptr)
-            m_value = new OpaqueJSValue(context,s);
+            m_value = OpaqueJSValue::New(context,s);
             const_cast<OpaqueJSValue *>(m_value)->Retain();
             m_didSet = true;
         }
@@ -163,7 +268,7 @@ class TempJSValue {
         }
         void Reset() {
             if (m_value) {
-                const_cast<OpaqueJSValue *>(m_value)->Release();
+                const_cast<OpaqueJSValue *>(m_value)->Release(!m_value->IsClassObject());
             }
             m_didSet = false;
             m_value = nullptr;
@@ -184,7 +289,8 @@ class TempException : public TempJSValue {
                 *m_exceptionRef = m_value;
             }
             if (m_value && m_didSet) {
-                const_cast<OpaqueJSValue *>(m_value)->Release(!m_exceptionRef);
+                const_cast<OpaqueJSValue *>(m_value)->Release(!m_exceptionRef &&
+                    !m_value->IsClassObject());
             }
             m_value = nullptr;
         }
@@ -196,5 +302,6 @@ class TempException : public TempJSValue {
     private:
         JSValueRef *m_exceptionRef;
 };
+
 
 #endif //NODEDROID_JSC_H

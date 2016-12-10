@@ -7,7 +7,7 @@
 #define CTX(ctx)     ((ctx)->Context())
 #define VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value) \
     V8_ISOLATE_CTX(ctxRef,isolate,context) \
-    Local<Value> value = (*valueRef)->Value();
+    Local<Value> value = (valueRef->L());
 
 JS_EXPORT JSType JSValueGetType(JSContextRef ctxRef, JSValueRef valueRef)
 {
@@ -135,7 +135,7 @@ JS_EXPORT bool JSValueIsEqual(JSContextRef ctxRef, JSValueRef a, JSValueRef b,
     {
         VALUE_ISOLATE(CTX(ctxRef),a,isolate,context,a_)
             TempException exception(exceptionRef);
-            Local<Value> b_ = (*b)->Value();
+            Local<Value> b_ = b->L();
 
             TryCatch trycatch(isolate);
 
@@ -166,7 +166,7 @@ JS_EXPORT bool JSValueIsStrictEqual(JSContextRef ctxRef, JSValueRef a, JSValueRe
 
     bool v;
     VALUE_ISOLATE(CTX(ctxRef),a,isolate,context,a_)
-        Local<Value> b_ = (*b)->Value();
+        Local<Value> b_ = b->L();
         v = a_->StrictEquals(b_);
     V8_UNLOCK()
     return v;
@@ -222,7 +222,7 @@ JS_EXPORT JSValueRef JSValueMakeUndefined(JSContextRef ctx)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = new OpaqueJSValue(ctx,Local<Value>::New(isolate,Undefined(isolate)));
+        value = OpaqueJSValue::New(ctx,Local<Value>::New(isolate,Undefined(isolate)));
     V8_UNLOCK()
 
     return value;
@@ -233,7 +233,7 @@ JS_EXPORT JSValueRef JSValueMakeNull(JSContextRef ctx)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = new OpaqueJSValue(ctx,Local<Value>::New(isolate,Null(isolate)));
+        value = OpaqueJSValue::New(ctx,Local<Value>::New(isolate,Null(isolate)));
     V8_UNLOCK()
 
     return value;
@@ -244,7 +244,7 @@ JS_EXPORT JSValueRef JSValueMakeBoolean(JSContextRef ctx, bool boolean)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = new OpaqueJSValue(ctx,
+        value = OpaqueJSValue::New(ctx,
             Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate)));
     V8_UNLOCK()
 
@@ -256,7 +256,7 @@ JS_EXPORT JSValueRef JSValueMakeNumber(JSContextRef ctx, double number)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = new OpaqueJSValue(ctx,Number::New(isolate,number));
+        value = OpaqueJSValue::New(ctx,Number::New(isolate,number));
     V8_UNLOCK()
 
     return value;
@@ -269,7 +269,7 @@ JS_EXPORT JSValueRef JSValueMakeString(JSContextRef ctx, JSStringRef string)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = new OpaqueJSValue(ctx,string->Value(isolate));
+        value = OpaqueJSValue::New(ctx,string->Value(isolate));
     V8_UNLOCK()
 
     return value;
@@ -286,7 +286,7 @@ JS_EXPORT JSValueRef JSValueMakeFromJSONString(JSContextRef ctx, JSStringRef str
         MaybeLocal<Value> parsed = JSON::Parse(isolate,
             static_cast<OpaqueJSString*>(string)->Value(isolate));
         if (!parsed.IsEmpty())
-            value = new OpaqueJSValue(ctx,parsed.ToLocalChecked());
+            value = OpaqueJSValue::New(ctx,parsed.ToLocalChecked());
     V8_UNLOCK()
 
     return value;
@@ -400,7 +400,7 @@ JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
 
         MaybeLocal<Object> obj = value->ToObject(context);
         if (!obj.IsEmpty()) {
-            out = new OpaqueJSValue(ctxRef, value->ToObject());
+            out = OpaqueJSValue::New(ctxRef, value->ToObject());
         } else {
             exception.Set(ctxRef, trycatch.Exception());
         }
@@ -420,6 +420,6 @@ JS_EXPORT void JSValueProtect(JSContextRef ctx, JSValueRef valueRef)
 JS_EXPORT void JSValueUnprotect(JSContextRef ctx, JSValueRef valueRef)
 {
     if (valueRef) {
-        const_cast<OpaqueJSValue *>(valueRef)->Release();
+        const_cast<OpaqueJSValue *>(valueRef)->Release(false);
     }
 }
