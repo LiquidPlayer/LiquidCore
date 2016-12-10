@@ -712,12 +712,7 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
 
         TempJSValue value;
         while (definition && !*exception && !*value) {
-            if (info.IsConstructCall() && obj_->InternalFieldCount() > 2 &&
-                obj_->GetAlignedPointerFromInternalField(2)) {
-                value.Set(
-                    JSObjectMake(ctxRef_, (JSClassRef)obj_->GetAlignedPointerFromInternalField(2),
-                        nullptr));
-            } else if (info.IsConstructCall() && definition->callAsConstructor) {
+            if (info.IsConstructCall() && definition->callAsConstructor) {
                 value.Set(definition->callAsConstructor(
                     ctxRef_,
                     const_cast<JSObjectRef>(*function),
@@ -729,6 +724,11 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
                     Local<String> error = String::NewFromUtf8(isolate, "Bad constructor");
                     exception.Set(ctxRef_, Exception::Error(error));
                 }
+            } else if (info.IsConstructCall() && obj_->InternalFieldCount() > 2 &&
+                obj_->GetAlignedPointerFromInternalField(2)) {
+                value.Set(
+                    JSObjectMake(ctxRef_, (JSClassRef)obj_->GetAlignedPointerFromInternalField(2),
+                        nullptr));
             } else if (!info.IsConstructCall() && definition->callAsFunction) {
                 value.Set(definition->callAsFunction(
                     ctxRef_,

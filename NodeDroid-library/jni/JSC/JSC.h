@@ -118,7 +118,7 @@ class OpaqueJSValue {
                     if (o->InternalFieldCount() > 1) {
                         out=
                          reinterpret_cast<OpaqueJSValue*>(o->GetAlignedPointerFromInternalField(1));
-                        //out->Retain();
+                        out->Retain();
                     }
                 }
             V8_UNLOCK()

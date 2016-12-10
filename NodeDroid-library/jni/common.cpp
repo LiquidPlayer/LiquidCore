@@ -265,7 +265,8 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags) {
 }
 
 ContextGroup::~ContextGroup() {
-    m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
+    //Not really necessary at this point
+    //m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
     s_isolate_map.erase(m_isolate);
     if (m_manage_isolate) {
         auto dispose = [](Isolate *isolate) {

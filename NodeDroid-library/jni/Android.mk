@@ -63,7 +63,12 @@ LOCAL_SRC_FILES := common.cpp \
                    JSC/JSC_JSObject.cpp \
                    JSC/JSC_JSBase.cpp \
                    androidTest/testapi.cpp \
-                   androidTest/CustomGlobalObjectClassTest.cpp
+                   androidTest/CustomGlobalObjectClassTest.cpp \
+                   androidTest/JSNode.cpp \
+                   androidTest/JSNodeList.cpp \
+                   androidTest/Node.cpp \
+                   androidTest/NodeList.cpp \
+                   androidTest/minidom.cpp
 
 
 LOCAL_SHARED_LIBRARIES := libnode
