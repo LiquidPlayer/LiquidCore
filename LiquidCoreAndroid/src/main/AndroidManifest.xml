@@ -5,6 +5,10 @@
         android:allowBackup="true"
         android:supportsRtl="true">
 
+        <service
+            android:name="org.liquidplayer.node.NodeProcessService"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

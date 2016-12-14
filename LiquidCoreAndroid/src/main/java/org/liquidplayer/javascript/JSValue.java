@@ -1,10 +1,11 @@
-package org.liquidplayer.javascript;
-
 //
 // JSValue.java
-// AndroidJSCore project
 //
+// AndroidJSCore project
 // https://github.com/ericwlange/AndroidJSCore/
+//
+// LiquidPlayer project
+// https://github.com/LiquidPlayer
 //
 // Created by Eric Lange
 //
@@ -32,6 +33,7 @@ package org.liquidplayer.javascript;
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package org.liquidplayer.javascript;
 
 import java.util.List;
 import java.util.Map;

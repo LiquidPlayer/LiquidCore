@@ -53,6 +53,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import org.liquidplayer.node.NodeProcessService;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSException;

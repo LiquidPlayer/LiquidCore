@@ -1,10 +1,11 @@
-package org.liquidplayer.javascript;
-
 //
-// JSArrayBuffer.java
+// JSObjectWrapper.java
+//
 // AndroidJSCore project
-//
 // https://github.com/ericwlange/AndroidJSCore/
+//
+// LiquidPlayer project
+// https://github.com/LiquidPlayer
 //
 // Created by Eric Lange
 //
@@ -32,6 +33,9 @@ package org.liquidplayer.javascript;
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package org.liquidplayer.javascript;
+
+
 abstract class JSObjectWrapper extends JSObject {
     JSObjectWrapper(JSObject obj) {
         mJSObject = obj;

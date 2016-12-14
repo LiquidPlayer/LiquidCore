@@ -1,8 +1,11 @@
 //
 // JSUint16Array.java
-// AndroidJSCore project
 //
+// AndroidJSCore project
 // https://github.com/ericwlange/AndroidJSCore/
+//
+// LiquidPlayer project
+// https://github.com/LiquidPlayer
 //
 // Created by Eric Lange
 //

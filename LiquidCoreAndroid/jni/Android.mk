@@ -3,6 +3,7 @@
 # AndroidJSCore project
 #
 # https://github.com/ericwlange/AndroidJSCore/
+# https://github.com/LiquidPlayer
 #
 # Created by Eric Lange
 #

@@ -1,13 +1,13 @@
 //
-// JSJNI.h
-// AndroidJSCore project
+// common.h
 //
-// https://github.com/ericwlange/AndroidJSCore/
+// LiquidPlayer project
+// https://github.com/LiquidPlayer
 //
 // Created by Eric Lange
 //
 /*
- Copyright (c) 2014-2016 Eric Lange. All rights reserved.
+ Copyright (c) 2016 Eric Lange. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -30,7 +30,6 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
 #ifndef _NODEDROID_COMMON_H
 #define _NODEDROID_COMMON_H
 
