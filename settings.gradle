@@ -1,1 +1,1 @@
-include ':LiquidCoreAndroid', ':nodeconsole'
+include ':LiquidCoreAndroid', ':nodeconsole', ':demoapp'

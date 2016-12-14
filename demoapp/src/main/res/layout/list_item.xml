@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="?android:attr/listPreferredItemHeight"
+    android:layout_width="match_parent"
+    android:orientation="vertical">
+    >
+
+    <RelativeLayout
+        android:id="@+id/item_linear_layout"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/icon"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginRight="6dip"
+            android:layout_marginEnd="6dip"
+            android:contentDescription="TODO"
+            android:src="@android:drawable/stat_sys_download" />
+
+        <ImageView
+            android:id="@+id/trash"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginLeft="2dip"
+            android:layout_marginStart="2dip"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_centerInParent="true"
+            android:contentDescription="TODO"
+            android:src="@android:drawable/ic_menu_delete" />
+
+        <ImageView
+            android:id="@+id/console"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginLeft="2dip"
+            android:layout_marginStart="2dip"
+            android:layout_toLeftOf="@id/trash"
+            android:layout_toStartOf="@id/trash"
+            android:layout_centerInParent="true"
+            android:contentDescription="TODO"
+            android:src="@android:drawable/ic_menu_more" />
+
+        <ProgressBar
+            android:id="@+id/secondLine"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_alignParentBottom="true"
+            android:layout_toLeftOf="@id/console"
+            android:layout_toStartOf="@id/console"
+            android:layout_toRightOf="@id/icon"
+            android:layout_toEndOf="@id/icon"
+            android:ellipsize="marquee"
+            android:maxLines="1"
+            android:text="Description" />
+
+        <TextView
+            android:id="@+id/firstLine"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/secondLine"
+            android:layout_toLeftOf="@id/console"
+            android:layout_toStartOf="@id/console"
+            android:layout_alignParentTop="true"
+            android:layout_alignWithParentIfMissing="true"
+            android:layout_toRightOf="@id/icon"
+            android:layout_toEndOf="@id/icon"
+            android:gravity="center_vertical"
+            android:text="Example application"
+            android:textSize="16sp" />
+
+    </RelativeLayout>
+
+    <org.liquidplayer.demoapp.ExpandingLayout
+        android:id="@+id/expanding_layout"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/fragment"
+            android:orientation="vertical"
+            >
+
+        </LinearLayout>
+        <!--
+        <TextView
+            android:id="@+id/text_view"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:textColor="#ffffff"
+            android:gravity="center_horizontal"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingBottom="20dp"/>
+        -->
+
+    </org.liquidplayer.demoapp.ExpandingLayout>
+
+</LinearLayout>

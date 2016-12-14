@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Demo App</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="short_lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit</string>
+    <string name="medium_lorem_ipsum">"Pellentesque dictum sit amet sapien in faucibus. Curabitur fermentum, nulla quis placerat imperdiet, est nisi placerat arcu, non ornare erat justo at enim. Nam vitae porttitor sem. Quisque non quam nisi. Proin quis urna id elit ultrices cursus non tempus dolor"</string>
+    <string name="long_lorem_ipsum">"Mauris dapibus convallis massa, vitae ultrices est ultricies ut. Nam porttitor et metus ac bibendum. Nam at justo vitae felis lacinia ultrices laoreet ut arcu. Nam ac purus et turpis convallis mollis. Integer lorem eros, hendrerit imperdiet interdum vitae, sagittis eget ipsum. Donec dignissim tortor at felis fringilla, sed dignissim diam vulputate. Nam sit amet facilisis massa. Suspendisse posuere quam quis augue dapibus venenatis."</string>
+
+</resources>
