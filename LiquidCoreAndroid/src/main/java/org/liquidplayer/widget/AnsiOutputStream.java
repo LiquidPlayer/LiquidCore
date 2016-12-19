@@ -18,7 +18,7 @@
  * Edited by Eric Lange for LiquidPlayer
  * Copyright (C) 2016, Eric Lange.  All Rights Reserved.
  */
-package org.fusesource.jansi;
+package org.liquidplayer.widget;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;

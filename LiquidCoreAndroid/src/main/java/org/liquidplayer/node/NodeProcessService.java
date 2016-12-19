@@ -54,6 +54,7 @@ public class NodeProcessService extends IntentService implements Process.EventLi
         String uuid = workIntent.getExtras().getString("org.liquidplayer.node.Process");
 
         if (processMap.get(uuid) == null) {
+            android.util.Log.d("NodeProcessService", "Creating new Process UUID " + uuid);
             processMap.put(uuid,
                     new Process(this, "node_console", Process.kMediaAccessPermissionsRW, this));
         }
@@ -72,6 +73,13 @@ public class NodeProcessService extends IntentService implements Process.EventLi
 
     @Override
     public void onProcessAboutToExit(Process process, int exitCode) {
+        for (Map.Entry<String,Process> entry : processMap.entrySet()) {
+            if (entry.getValue() == process) {
+                processMap.remove(entry.getKey());
+                process.removeEventListener(this);
+                break;
+            }
+        }
     }
 
     @Override
@@ -79,6 +87,7 @@ public class NodeProcessService extends IntentService implements Process.EventLi
         for (Map.Entry<String,Process> entry : processMap.entrySet()) {
             if (entry.getValue() == process) {
                 processMap.remove(entry.getKey());
+                process.removeEventListener(this);
                 break;
             }
         }

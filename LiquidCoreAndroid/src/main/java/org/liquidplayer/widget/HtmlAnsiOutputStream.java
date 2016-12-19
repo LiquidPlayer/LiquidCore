@@ -19,14 +19,12 @@
  * Copyright (C) 2016, Eric Lange.  All Rights Reserved.
  */
 
-package org.fusesource.jansi;
+package org.liquidplayer.widget;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.fusesource.jansi.AnsiOutputStream;
 
 /**
  * @author <a href="http://code.dblock.org">Daniel Doubrovkine</a>

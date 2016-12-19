@@ -20,6 +20,8 @@
             android:layout_alignParentTop="true"
             android:layout_marginRight="6dip"
             android:layout_marginEnd="6dip"
+            android:alpha="0.5"
+            android:enabled="false"
             android:contentDescription="TODO"
             android:src="@android:drawable/stat_sys_download" />
 
@@ -92,19 +94,6 @@
             >
 
         </LinearLayout>
-        <!--
-        <TextView
-            android:id="@+id/text_view"
-            android:layout_height="match_parent"
-            android:layout_width="match_parent"
-            android:textStyle="bold"
-            android:textSize="22sp"
-            android:textColor="#ffffff"
-            android:gravity="center_horizontal"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp"
-            android:paddingBottom="20dp"/>
-        -->
 
     </org.liquidplayer.demoapp.ExpandingLayout>
 

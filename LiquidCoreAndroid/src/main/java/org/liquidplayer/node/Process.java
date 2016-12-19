@@ -220,13 +220,13 @@ public class Process {
     /** -- private methods -- **/
 
     private synchronized void eventOnStart(JSContext ctx) {
-        for (EventListener listener : listeners) {
+        for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
             listener.onProcessStart(this, ctx);
         }
     }
     private synchronized void eventOnAboutToExit(long code) {
         exitCode = code;
-        for (EventListener listener : listeners) {
+        for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
             listener.onProcessAboutToExit(this, Long.valueOf(code).intValue());
         }
     }

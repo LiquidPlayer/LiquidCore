@@ -1,3 +1,35 @@
+//
+// CustomArrayAdapter.java
+// LiquidPlayer Project
+//
+// https://github.com/LiquidPlayer
+//
+// Created by Eric Lange
+//
+/*
+ Copyright (c) 2016 Eric Lange. All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 /*
  * Copyright (C) 2013 The Android Open Source Project
  *
@@ -18,29 +50,22 @@ package org.liquidplayer.demoapp;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.PorterDuff.Mode;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.telecom.Call;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewStub;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -55,6 +80,7 @@ import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
+import org.liquidplayer.widget.NodeConsoleView;
 
 import java.io.File;
 import java.util.List;
@@ -64,13 +90,169 @@ import java.util.Scanner;
  * This is a custom array adapter used to populate the listview whose items will
  * expand to display extra content in addition to the default display.
  */
-public class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
+class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
+
+    static String webtorrent_js = null;
+
+    private class CallbackObject extends JSObject implements NodeConsoleView.Listener {
+        CallbackObject(JSContext ctx, ExpandableListItem object,
+                       View convertView, int position, NodeConsoleView consoleView) {
+            super(ctx);
+            this.object = object;
+            this.position = position;
+            this.convertView = convertView;
+
+            if (webtorrent_js == null) {
+                webtorrent_js = new Scanner(getClass().getClassLoader()
+                        .getResourceAsStream("webtorrent.js"), "UTF-8")
+                        .useDelimiter("\\A").next();
+
+            }
+
+            download = (ImageButton) convertView.findViewById(R.id.icon);
+            trash = (ImageView) convertView.findViewById(R.id.trash);
+            progressBar = (ProgressBar) convertView.findViewById(R.id.secondLine);
+
+            uiThread.post(setDownloadPlayButton);
+
+            progressBar.setMax(1000);
+
+            this.consoleView = consoleView;
+        }
+
+        private final ExpandableListItem object;
+        private final ImageButton download;
+        private final ImageView trash;
+        private final ProgressBar progressBar;
+        private final int position;
+        private final NodeConsoleView consoleView;
+        private final View convertView;
+
+        private final Handler uiThread = new Handler(Looper.getMainLooper());
+
+        private Runnable setDownloadPlayButton = new Runnable() {
+            @Override
+            public void run() {
+                if (object.getFileName() != null) {
+                    download.setImageResource(Resources.getSystem()
+                            .getIdentifier("ic_media_play", "drawable", "android"));
+                    download.setAlpha(1f);
+                    download.setEnabled(true);
+                    download.setOnClickListener(playVideo);
+
+                    trash.setAlpha(1f);
+                    trash.setEnabled(true);
+                    trash.setOnClickListener(deleter);
+                } else {
+                    download.setImageResource(Resources.getSystem()
+                            .getIdentifier("stat_sys_download", "drawable", "android"));
+                    download.setAlpha(1f);
+                    download.setEnabled(true);
+                    download.setOnClickListener(downloader);
+
+                    trash.setAlpha(0.5f);
+                    trash.setEnabled(false);
+                }
+            }
+        };
+
+        final View.OnClickListener downloader = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                download.setAlpha(0.5f);
+                download.setEnabled(false);
+                getContext().evaluateScript("process.chdir('/home/external/persistent')");
+                getContext().property("process").toObject().property("argv", new String[]{
+                        "node", "webtorrent.js", "-p", "" + (8080 + position), "download",
+                        object.getUrl()
+                });
+                getContext().evaluateScript(webtorrent_js);
+            }
+        };
+
+        private View.OnClickListener playVideo = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Dialog dialog = new Dialog(CustomArrayAdapter.this.getContext());
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog.setContentView(R.layout.video_dialog);
+                dialog.show();
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT);
+                lp.copyFrom(dialog.getWindow().getAttributes());
+                dialog.getWindow().setAttributes(lp);
+                File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
+                String path = external.getAbsolutePath() +
+                        "/LiquidPlayer/node_console/" + object.getFileName();
+                Uri uriPath = Uri.fromFile(new File(path));
+
+                VideoView videoView = (VideoView) dialog.findViewById(R.id.video_view);
+                videoView.setVideoURI(uriPath);
+                videoView.start();
+            }
+        };
+
+        private View.OnClickListener deleter = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
+                String path = external.getAbsolutePath() +
+                        "/LiquidPlayer/node_console/" + object.getFileName();
+                new File(path).delete();
+                getContext().evaluateScript("global.callbackObject={onTorrentDone:function(){}, onDraw:function(){}};");
+                consoleView.reset();
+                object.setFileName(null);
+                progressBar.setProgress(0);
+                trash.setAlpha(0.5f);
+                trash.setEnabled(false);
+                download.setImageResource(Resources.getSystem()
+                        .getIdentifier("stat_sys_download", "drawable", "android"));
+                download.setAlpha(0.5f);
+                download.setEnabled(false);
+
+                consoleView.setListener(CallbackObject.this);
+            }
+        };
+
+        @Override
+        public void onJSReady(final JSContext ctx) {
+            ctx.property("callbackObject",
+                    new CallbackObject(ctx,object,convertView,position,consoleView));
+        }
+
+        @JSObject.jsexport
+        void onTorrentDone(JSObject torrent) {
+            android.util.Log.d("torrent", "onTorrentDone");
+            if (torrent.property("files").isArray() && torrent.property("length").toNumber() > 0) {
+                @SuppressWarnings("unchecked")
+                JSObject file =
+                    ((JSArray<JSValue>) torrent.property("files").toJSArray()).get(0).toObject();
+                String fileName = file.property("path").toString();
+                android.util.Log.d("torrent", "file = " + fileName);
+                object.setFileName(fileName);
+                uiThread.post(setDownloadPlayButton);
+            }
+        }
+
+        @JSObject.jsexport
+        void onDraw(JSObject torrent) {
+            final double progress = torrent.property("progress").toNumber();
+            uiThread.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setProgress((int) (progress * 1000));
+            }
+            });
+        }
+
+    }
 
     private List<ExpandableListItem> mData;
     private int mLayoutViewResourceId;
     private ExpandingListView mListView;
 
-    public CustomArrayAdapter(Context context, int layoutViewResourceId,
+    CustomArrayAdapter(Context context, int layoutViewResourceId,
                               List<ExpandableListItem> data, ExpandingListView listView) {
         super(context, layoutViewResourceId, data);
         mData = data;
@@ -90,6 +272,7 @@ public class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
 
         final ExpandableListItem object = mData.get(position);
 
+        int id = position==0 ? R.id.console1 : position==1 ? R.id.console2 : R.id.console3;
         if(convertView == null) {
             LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
             convertView = inflater.inflate(mLayoutViewResourceId, parent, false);
@@ -101,8 +284,7 @@ public class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
             linearLayout.setLayoutParams(linearLayoutParams);
 
             TextView titleView = (TextView) convertView.findViewById(R.id.firstLine);
-            final ProgressBar progressBar = (ProgressBar) convertView.findViewById(R.id.secondLine);
-            progressBar.setMax(1000);
+
             ImageView consoleButton = (ImageView) convertView.findViewById(R.id.console);
             final View itemView = convertView;
             consoleButton.setOnClickListener(new View.OnClickListener() {
@@ -117,152 +299,35 @@ public class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
             });
 
             titleView.setText(object.getTitle());
-            //textView.setText(object.getText());
 
-            final ImageButton download = (ImageButton) convertView.findViewById(R.id.icon);
-            download.setAlpha(0.5f);
-            download.setEnabled(false);
-
-            final ImageView trash = (ImageView) convertView.findViewById(R.id.trash);
-            trash.setAlpha(0.5f);
-            trash.setEnabled(false);
-
-            convertView.setLayoutParams(new ListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT,
+            convertView.setLayoutParams(new ListView.LayoutParams(
+                    AbsListView.LayoutParams.MATCH_PARENT,
                     AbsListView.LayoutParams.WRAP_CONTENT));
 
             ExpandingLayout expandingLayout = (ExpandingLayout) convertView.findViewById(R.id
                     .expanding_layout);
-            final LinearLayout fragLayout = (LinearLayout) convertView.findViewById(R.id.fragment);
+            final LinearLayout ll = (LinearLayout) convertView.findViewById(R.id.fragment);
+            ll.setId(ViewStub.generateViewId());
 
-            final FrameLayout fl = new FrameLayout((Activity) getContext());
-            fl.setId(View.generateViewId());
-
-            FragmentManager fragMan = ((Activity) getContext()).getFragmentManager();
-            FragmentTransaction fragTransaction = fragMan.beginTransaction();
-            NodeConsoleFragment fragment = NodeConsoleFragment.newInstance("fragment" + position);
-            fragment.setListener(new NodeConsoleFragment.Listener() {
+            final NodeConsoleView consoleView = new NodeConsoleView(getContext());
+            consoleView.setId(id);
+            consoleView.setLayoutParams(
+                    new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+                            (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300,
+                                    getContext().getResources().getDisplayMetrics())));
+            consoleView.setListener(new NodeConsoleView.Listener() {
                 @Override
                 public void onJSReady(final JSContext ctx) {
+                    ctx.property("callbackObject",
+                            new CallbackObject(ctx,object,itemView,position,consoleView));
 
                     final JSFunction log = ctx.property("console").toObject()
                             .property("log").toFunction();
-                    ctx.evaluateScript("process.chdir('/home/external/persistent')");
-
-                    ctx.property("onInfoHash", new JSFunction(ctx, "onInfoHash_") {
-                        @SuppressWarnings("unused")
-                        void onInfoHash_(JSObject torrent) {
-                            android.util.Log.d("torrent", "onInfoHash");
-                        }
-                    });
-
-                    final View.OnClickListener downloadClickListener = new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            download.setAlpha(0.5f);
-                            download.setEnabled(false);
-                            String webtorrent_js = new Scanner(getClass().getClassLoader()
-                                    .getResourceAsStream("webtorrent.js"), "UTF-8")
-                                    .useDelimiter("\\A").next();
-                            ctx.evaluateScript(webtorrent_js);
-                        }
-                    };
-
-                    ctx.property("onTorrentDone", new JSFunction(ctx, "onTorrentDone_") {
-                        @SuppressWarnings("unused")
-                        void onTorrentDone_(JSObject torrent) {
-                            android.util.Log.d("torrent", "onTorrentDone");
-                            if (torrent.property("files").isArray() && torrent.property("length").toNumber() > 0) {
-                                @SuppressWarnings("unchecked")
-                                JSObject file = ((JSArray<JSValue>)torrent.property("files").toJSArray()).get(0).toObject();
-                                String fileName = file.property("path").toString();
-                                android.util.Log.d("torrent", "file = " + fileName);
-                                object.setFileName(fileName);
-                                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        download.setImageResource(Resources.getSystem()
-                                            .getIdentifier("ic_media_play", "drawable", "android"));
-                                        download.setAlpha(1f);
-                                        download.setEnabled(true);
-                                        download.setOnClickListener(new View.OnClickListener() {
-                                            @Override
-                                            public void onClick(View view) {
-                                                final Dialog dialog = new Dialog(CustomArrayAdapter.this.getContext());// add here your class name
-                                                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                                                dialog.setContentView(R.layout.video_dialog);//add your own xml with defied with and height of videoview
-                                                dialog.show();
-                                                WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                                                        WindowManager.LayoutParams.WRAP_CONTENT,
-                                                        WindowManager.LayoutParams.WRAP_CONTENT);
-                                                lp.copyFrom(dialog.getWindow().getAttributes());
-                                                dialog.getWindow().setAttributes(lp);
-                                                File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
-                                                String path = external.getAbsolutePath() +
-                                                        "/LiquidPlayer/node_console/" + object.getFileName();
-                                                Uri uriPath = Uri.fromFile(new File(path));
-
-                                                VideoView videoView = (VideoView) dialog.findViewById(R.id.video_view);
-                                                videoView.setVideoURI(uriPath);
-                                                videoView.start();
-                                            }
-                                        });
-                                        trash.setAlpha(1f);
-                                        trash.setEnabled(true);
-                                        trash.setOnClickListener(new View.OnClickListener() {
-                                            @Override
-                                            public void onClick(View view) {
-                                                File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
-                                                String path = external.getAbsolutePath() +
-                                                        "/LiquidPlayer/node_console/" + object.getFileName();
-                                                new File(path).delete();
-                                                trash.setAlpha(0.5f);
-                                                trash.setEnabled(false);
-                                                download.setImageResource(Resources.getSystem()
-                                                        .getIdentifier("stat_sys_download", "drawable", "android"));
-                                                download.setOnClickListener(downloadClickListener);
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                    });
-
-                    ctx.property("onDraw", new JSFunction(ctx, "onDraw_") {
-                        @SuppressWarnings("unused")
-                        void onDraw_(JSObject torrent) {
-                            final double progress = torrent.property("progress").toNumber();
-                            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    progressBar.setProgress((int) (progress * 1000));
-                                }
-                            });
-                        }
-                    });
-
-                    ctx.property("process").toObject().property("argv", new String[] {
-                        "node", "webtorrent.js", "-p", "" + (8080+position), "download",
-                        object.getUrl()
-                    });
-
                     log.call(null, "all set up");
-
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            download.setAlpha(1f);
-                            download.setEnabled(true);
-                            download.setOnClickListener(downloadClickListener);
-                        }
-                    });
                 }
             });
 
-            fragTransaction.replace(fl.getId(), fragment, "fragment" + position);
-            fragTransaction.commit();
-
-            fragLayout.addView(fl);
+            ll.addView(consoleView);
 
             expandingLayout.setExpandedHeight(object.getExpandedHeight());
             expandingLayout.setSizeChangedListener(object);
@@ -275,32 +340,5 @@ public class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
         }
         return convertView;
     }
-
-    /**
-     * Crops a circle out of the thumbnail photo.
-     */
-    public Bitmap getCroppedBitmap(Bitmap bitmap) {
-        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(),
-                Config.ARGB_8888);
-
-        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
-
-        Canvas canvas = new Canvas(output);
-
-        final Paint paint = new Paint();
-        paint.setAntiAlias(true);
-
-        int halfWidth = bitmap.getWidth()/2;
-        int halfHeight = bitmap.getHeight()/2;
-
-        canvas.drawCircle(halfWidth, halfHeight, Math.max(halfWidth, halfHeight), paint);
-
-        paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-
-        canvas.drawBitmap(bitmap, rect, rect, paint);
-
-        return output;
-    }
-
 
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="console1" type="id"/>
+    <item name="console2" type="id"/>
+    <item name="console3" type="id"/>
+</resources>

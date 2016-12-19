@@ -292,7 +292,6 @@ function runDownload (torrentId) {
         '{green:fetching torrent metadata from} {bold:%s} {green:peers}',
         torrent.numPeers
       )
-      onInfoHash(torrent);
     }
 
     if (!argv.quiet) {
@@ -328,7 +327,7 @@ function runDownload (torrentId) {
         torrent.numPeers,
         getRuntime()
       )
-      onTorrentDone(torrent);
+      callbackObject.onTorrentDone(torrent);
     }
     torrentDone()
   })
@@ -609,7 +608,7 @@ function drawTorrent (torrent) {
       linesRemaining -= 1
     }
 
-    onDraw(torrent);
+    callbackObject.onDraw(torrent);
   }
 }
 
