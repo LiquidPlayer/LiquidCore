@@ -20,7 +20,7 @@ LiquidCore is built on top of [Node.js], which is in turn built on [V8].  So, th
 is natively available to any app which includes the LiquidCore library.  In addition to
 directly interacting with V8 (a powerful, but incredibly complex API), LiquidCore provides
 two additional APIs: a Java Native Interface (JNI) API for Android, and a JavaScriptCore
-API for iOS and React Native.
+API for iOS and [React Native].
 
 ### Java Native Interface (JNI) for Android
 
