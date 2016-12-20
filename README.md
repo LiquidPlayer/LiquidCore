@@ -215,3 +215,4 @@ License
 [Node.js]:https://nodejs.org/
 [SQLite]:https://sqlite.org/
 [The LiquidPlayer Project]:https://github.com/LiquidPlayer/
+[React Native]:https://facebook.github.io/react-native/
