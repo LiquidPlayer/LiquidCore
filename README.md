@@ -29,7 +29,7 @@ In fact, development on `AndroidJSCore` has ceased and is superseded by LiquidCo
 the [Javadocs] for complete documentation of the API.  If you have been using `AndroidJSCore`,
 the interface will look familiar.  To migrate from `AndroidJSCore`, you must:
 
-1. Replace the `AndroidJSCore` library with the `LiquidCore` library in `gradle.build`
+1. Replace the `AndroidJSCore` library with the `LiquidCore` library in `build.gradle`
 2. Change the package name from `org.liquidplayer.webkit.javascriptcore` to `org.liquidplayer.javascript` in all of your source files
 3. Fix any inconsistencies between the versions.  There aren't many.  It is 99% the same.
 
