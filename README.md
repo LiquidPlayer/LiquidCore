@@ -1,12 +1,12 @@
 LiquidCore
 ==========
 
-The LiquidPlayer Project is an open source mobile micro-app ecosystem and development
+[The LiquidPlayer Project] is an open source mobile micro-app ecosystem and development
 environment built around the JavaScript language.  More on that later.
 
 The LiquidCore library is the kernel of LiquidPlayer.  It provides independent,
-instantiable Node.js virtual machines each with its own lifecycle, virtual file system,
-persistent and non-persistent storage, and SQLite database.
+instantiable [Node.js] virtual machines each with its own lifecycle, virtual file system,
+persistent and non-persistent storage, and [SQLite] database.
 
 LiquidCore provides 3 interfaces to the host app:
 
@@ -16,7 +16,7 @@ LiquidCore provides 3 interfaces to the host app:
 
 JavaScript API
 --------------
-LiquidCore is built on top of Node.js, which is in turn built on V8.  So, the V8 API
+LiquidCore is built on top of [Node.js], which is in turn built on [V8].  So, the V8 API
 is natively available to any app which includes the LiquidCore library.  In addition to
 directly interacting with V8 (a powerful, but incredibly complex API), LiquidCore provides
 two additional APIs: a Java Native Interface (JNI) API for Android, and a JavaScriptCore
@@ -207,6 +207,11 @@ License
 
 [NDK]:http://developer.android.com/ndk/index.html
 [latest release]:https://github.com/ericwlange/AndroidJSCore/releases
-[Android Studio]:http://developer.android.com/sdk/index.html
-[webkit]:https://github.com/ericwlange/webkit
+[webkit]:https://webkit.org/
 [Javadocs]:http://ericwlange.github.io/
+[JavaScriptCore]:https://developer.apple.com/reference/javascriptcore
+[JavaScriptCore framework]:https://www.bignerdranch.com/blog/javascriptcore-example/
+[V8]:https://developers.google.com/v8/
+[Node.js]:https://nodejs.org/
+[SQLite]:https://sqlite.org/
+[The LiquidPlayer Project]:https://github.com/LiquidPlayer/
