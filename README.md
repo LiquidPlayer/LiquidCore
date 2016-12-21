@@ -176,7 +176,7 @@ build each library (if you so choose), you can do the following:
 ```
 .../LiquidCore/deps/node-6.4.0% ./android-configure /path/to/android/ndk <abi>
 ```
-where <abi> is one of `arm`, `arm64`, `x86` or `x86_64`
+where \<abi\> is one of `arm`, `arm64`, `x86` or `x86_64`
 
 
 License
