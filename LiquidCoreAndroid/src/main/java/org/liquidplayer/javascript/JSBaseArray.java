@@ -80,7 +80,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
      * @param clazz   The class to convert the elements to (Integer.class, Double.class,
      *                String.class, JSValue.class, etc.)
      * @return The captured static array
-     * @since 3.0
+     * @since 0.1.0
      */
     public Object[] toArray(Class clazz) {
         int count = size();
@@ -107,7 +107,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
      * @see List#get(int)
      * @param index  Index of the element to get
      * @return  The JSValue at index 'index'
-     * @since 1.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -123,7 +123,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
      * Adds a JSValue to the end of an array.  The Java Object is converted to a JSValue.
      * @see List#add(Object)
      * @param val  The Java object to add to the array, will get converted to a JSValue
-     * @since 1.0
+     * @since 0.1.0
      */
     @Override
     public boolean add(final T val) {
@@ -134,7 +134,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#size()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public int size() {
@@ -169,7 +169,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#isEmpty() ()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean isEmpty() {
@@ -178,7 +178,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#contains(Object)  ()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean contains(final Object object) {
@@ -265,7 +265,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#iterator()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public @NonNull
@@ -275,7 +275,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#toArray(Object[])
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -298,7 +298,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#remove(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean remove(final Object object) {
@@ -314,7 +314,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#containsAll(Collection)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean containsAll(final @NonNull Collection<?> collection) {
@@ -326,7 +326,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#addAll(Collection)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean addAll(final @NonNull Collection<? extends T> collection) {
@@ -335,7 +335,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#addAll(int, Collection)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -349,7 +349,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#removeAll(Collection)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean removeAll(final @NonNull Collection<?> collection) {
@@ -370,7 +370,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#retainAll(Collection)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean retainAll(final @NonNull Collection<?> collection) {
@@ -395,7 +395,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#clear()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public void clear() {
@@ -406,7 +406,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#set(int, Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -422,7 +422,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#add(int, Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -432,7 +432,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#remove(int)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -442,7 +442,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#indexOf(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public int indexOf(final Object object) {
@@ -457,7 +457,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#lastIndexOf(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public int lastIndexOf(final Object object) {
@@ -472,7 +472,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#listIterator()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public ListIterator<T> listIterator() {
@@ -481,7 +481,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#listIterator(int)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override @NonNull
     public ListIterator<T> listIterator(final int index) {
@@ -490,7 +490,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#equals(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean equals(final Object other) {
@@ -518,7 +518,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     /**
      * @see List#hashCode()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public int hashCode() {

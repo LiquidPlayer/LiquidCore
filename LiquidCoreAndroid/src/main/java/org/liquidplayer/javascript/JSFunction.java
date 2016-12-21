@@ -44,7 +44,7 @@ import java.util.ArrayList;
 
 /**
  * A JavaScript function object.
- * @since 3.0
+ * @since 0.1.0
  *
  */
 @SuppressWarnings("JniMissingFunction")
@@ -64,7 +64,7 @@ public class JSFunction extends JSObject {
      * @param body               The JavaScript code to execute in the function
      * @param sourceURL          The URI of the source file, only used for reporting in stack trace (optional)
      * @param startingLineNumber The beginning line number, only used for reporting in stack trace (optional)
-     * @since 2.2
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx, final @NonNull String name, final @NonNull String[] parameterNames,
                       final @NonNull String body, final String sourceURL, final int startingLineNumber)
@@ -104,6 +104,7 @@ public class JSFunction extends JSObject {
      * @param name               The name of the function
      * @param parameterNames     A String array containing the names of the parameters
      * @param body               The JavaScript code to execute in the function
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx, final @NonNull String name, final @NonNull String body,
                       final String ... parameterNames)
@@ -155,7 +156,7 @@ public class JSFunction extends JSObject {
      * @param method The method to invoke
      * @param instanceClass The class to be created on 'new' call
      * @param invokeObject  The object on which to invoke the method
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx,
                       final Method method,
@@ -206,7 +207,7 @@ public class JSFunction extends JSObject {
      * @param ctx    The JSContext to create the object in
      * @param method The method to invoke
      * @param instanceClass The class to be created on 'new' call
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx,
                       final Method method,
@@ -242,7 +243,7 @@ public class JSFunction extends JSObject {
      *
      * @param ctx    The JSContext to create the object in
      * @param method The method to invoke
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx,
                       final Method method) {
@@ -264,7 +265,7 @@ public class JSFunction extends JSObject {
      *
      *
      * @param ctx    The JSContext to create the object in
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx) {
         this(ctx,(String)null);
@@ -305,7 +306,7 @@ public class JSFunction extends JSObject {
      * @param methodName The method to invoke (searches for first instance)
      * @param instanceClass The class to be created on 'new' call
      * @param invokeObject  The object on which to invoke the method
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx,
                       final String methodName,
@@ -366,7 +367,7 @@ public class JSFunction extends JSObject {
      * @param ctx    The JSContext to create the object in
      * @param methodName The method to invoke (searches for first instance)
      * @param instanceClass The class to be created on 'new' call
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx,
                       final String methodName,
@@ -396,7 +397,7 @@ public class JSFunction extends JSObject {
      *
      * @param ctx    The JSContext to create the object in
      * @param methodName The method to invoke (searches for first instance)
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(JSContext ctx,
                       final String methodName) {
@@ -407,7 +408,7 @@ public class JSFunction extends JSObject {
      * Wraps an existing object as a JSFunction
      * @param objRef  The JavaScriptCore object reference
      * @param context The JSContext the object
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSFunction(final long objRef, JSContext context) {
         super(objRef, context);
@@ -418,7 +419,7 @@ public class JSFunction extends JSObject {
      * @param thiz  The 'this' object on which the function operates, null if not on a constructor object
      * @param args  The argument list to be passed to the function
      * @return The JSValue returned by the function
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSValue call(final JSObject thiz, final Object ... args) {
         return apply(thiz,args);
@@ -453,7 +454,7 @@ public class JSFunction extends JSObject {
      * @param thiz  The 'this' object on which the function operates, null if not on a constructor object
      * @param args  An array of arguments to be passed to the function
      * @return The JSValue returned by the function
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSValue apply(final JSObject thiz, final Object [] args) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -473,7 +474,7 @@ public class JSFunction extends JSObject {
     /**
      * Calls this JavaScript function with no args and 'this' as null
      * @return The JSValue returned by the function
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSValue call() {
         return call(null);
@@ -483,7 +484,7 @@ public class JSFunction extends JSObject {
      * Calls this JavaScript function as a constructor, i.e. same as calling 'new func(args)'
      * @param args The argument list to be passed to the function
      * @return an instance object of the constructor
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSObject newInstance(final Object ... args) {
         JNIReturnClass runnable = new JNIReturnClass() {

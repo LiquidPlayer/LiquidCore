@@ -38,14 +38,14 @@ package org.liquidplayer.javascript;
 /**
  * A wrapper class for a JavaScript DataView
  * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView
- * @since 3.0
+ * @since 0.1.0
  */
 public class JSDataView extends JSObjectWrapper {
 
     /**
      * Creates a new DataView JavaScript object from ArrayBuffer 'buffer' and wraps it for Java
      * @param buffer  the JSArrayBuffer to create a DataView from
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSDataView(JSArrayBuffer buffer) {
         super(new JSFunction(buffer.getJSObject().getContext(),
@@ -59,7 +59,7 @@ public class JSDataView extends JSObjectWrapper {
      * 'byteOffset' and wraps it for Java
      * @param buffer  the JSArrayBuffer to create a DataView from
      * @param byteOffset the byte offset in 'buffer' to create the DataView from
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSDataView(JSArrayBuffer buffer, int byteOffset) {
         super(new JSFunction(buffer.getJSObject().getContext(),
@@ -74,7 +74,7 @@ public class JSDataView extends JSObjectWrapper {
      * @param buffer  the JSArrayBuffer to create a DataView from
      * @param byteOffset the byte offset in 'buffer' to create the DataView from
      * @param byteLength the length, in bytes, from 'byteOffset' to use for the DataView
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSDataView(JSArrayBuffer buffer, int byteOffset, int byteLength) {
         super(new JSFunction(buffer.getJSObject().getContext(),
@@ -88,7 +88,7 @@ public class JSDataView extends JSObjectWrapper {
      * Treats an existing JSObject as a DataView.  It is up to the user to ensure the
      * underlying JSObject is actually an DataView.
      * @param view  The DataView JSObject to wrap
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSDataView(JSObject view) {
         super(view);
@@ -98,6 +98,7 @@ public class JSDataView extends JSObjectWrapper {
      * JavasScript DataView.prototype.buffer, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/buffer
      * @return the JSArrayBuffer on which the DataView is built
+     * @since 0.1.0
      */
     public JSArrayBuffer buffer() {
         return new JSArrayBuffer(property("buffer").toObject());
@@ -107,6 +108,7 @@ public class JSDataView extends JSObjectWrapper {
      * JavasScript DataView.prototype.byteLength, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/byteLength
      * @return the length in bytes of the DataView
+     * @since 0.1.0
      */
     public int byteLength() {
         return property("byteLength").toNumber().intValue();
@@ -115,6 +117,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.byteOffset, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/byteOffset
+     * @since 0.1.0
      * @return the byte offset in the JSArrayBuffer where the DataView starts
      */
     public int byteOffset() {
@@ -124,6 +127,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getFloat32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getFloat32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @param littleEndian  whether the value is stored with little endianness
      * @return the value at byteOffset
@@ -135,6 +139,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getFloat32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getFloat32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -146,6 +151,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setFloat32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setFloat32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      * @param littleEndian  whether the value is to be stored with little endianness
@@ -156,6 +162,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setFloat32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setFloat32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -166,6 +173,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getFloat64(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getFloat64
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @param littleEndian  whether the value is stored with little endianness
      * @return the value at byteOffset
@@ -177,6 +185,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getFloat64(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getFloat64
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -188,6 +197,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setFloat64(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setFloat64
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      * @param littleEndian  whether the value is to be stored with little endianness
@@ -198,6 +208,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setFloat64(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setFloat64
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -208,6 +219,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getInt32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getInt32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @param littleEndian  whether the value is stored with little endianness
      * @return the value at byteOffset
@@ -219,6 +231,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getInt32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getInt32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -230,6 +243,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setInt32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setInt32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      * @param littleEndian  whether the value is to be stored with little endianness
@@ -240,6 +254,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setInt32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setInt32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -250,6 +265,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getUint32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @param littleEndian  whether the value is stored with little endianness
      * @return the value at byteOffset
@@ -263,6 +279,7 @@ public class JSDataView extends JSObjectWrapper {
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint32
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
+     * @since 0.1.0
      */
     public Long getUint32(int byteOffset) {
         return property("getUint32").toFunction().call(this,byteOffset)
@@ -275,6 +292,7 @@ public class JSDataView extends JSObjectWrapper {
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      * @param littleEndian  whether the value is to be stored with little endianness
+     * @since 0.1.0
      */
     public void setUint32(int byteOffset, Long value, boolean littleEndian) {
         property("setUint32").toFunction().call(this,byteOffset,value,littleEndian);
@@ -282,6 +300,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setUint32(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setUint32
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -292,6 +311,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getInt16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getInt16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @param littleEndian  whether the value is stored with little endianness
      * @return the value at byteOffset
@@ -303,6 +323,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getInt16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getInt16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -314,6 +335,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setInt16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setInt16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      * @param littleEndian  whether the value is to be stored with little endianness
@@ -324,6 +346,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setInt16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setInt16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -334,6 +357,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getUint16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @param littleEndian  whether the value is stored with little endianness
      * @return the value at byteOffset
@@ -345,6 +369,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getUint16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -356,6 +381,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setUint16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setUint16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      * @param littleEndian  whether the value is to be stored with little endianness
@@ -366,6 +392,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setUint16(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setUint16
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -376,6 +403,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getInt8(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getInt8
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -387,6 +415,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setInt8(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setInt8
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */
@@ -397,6 +426,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.getUint8(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/getUint8
+     * @since 0.1.0
      * @param byteOffset  the byte offset to read from
      * @return the value at byteOffset
      */
@@ -408,6 +438,7 @@ public class JSDataView extends JSObjectWrapper {
     /**
      * JavasScript DataView.prototype.setUint8(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView/setUint8
+     * @since 0.1.0
      * @param byteOffset  the byte offset to write to
      * @param value the value to store at 'byteOffset'
      */

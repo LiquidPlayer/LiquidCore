@@ -39,7 +39,7 @@ package org.liquidplayer.javascript;
  * A convenience base class for JavaScript typed arrays.  This is an abstract class, and is
  * subclassed by JSInt8Array, JSInt16Array, JSInt32Array, JSUint8Array, JSUint16Array,
  * JSUint32Array, JSUint8ClampedArray, JSFloat32Array, and JSFloat64Array
- * @since 3.0
+ * @since 0.1.0
  * @param <T> Parameterized type of array elements
  */
 public abstract class JSTypedArray<T> extends JSBaseArray<T> {
@@ -132,7 +132,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/from
      * @param obj source object
      * @return a new typed array
-     * @since 3.0
+     * @since 0.1.0
      */
     public static JSTypedArray from(JSObject obj) {
         JSTypedArray arr = null;
@@ -167,7 +167,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      * Determineds if a JSValue is a typed array
      * @param value  the JSValue to test
      * @return  true if a typed array, false otherwise
-     * @since 3.0
+     * @since 0.1.0
      */
     public static boolean isTypedArray(JSValue value) {
         if (!value.isObject()) return false;
@@ -180,7 +180,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      * JavaScript: TypedArray.prototype.buffer, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/buffer
      * @return the underlying ArrayBuffer of this typed array
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSArrayBuffer buffer() {
         return new JSArrayBuffer(property("buffer").toObject());
@@ -190,7 +190,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      * JavaScript: TypedArray.prototype.buffer, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/byteLength
      * @return the length in bytes of the underlying ArrayBuffer
-     * @since 3.0
+     * @since 0.1.0
      */
     public int byteLength() {
         return property("byteLength").toNumber().intValue();
@@ -200,7 +200,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      * JavaScript: TypedArray.prototype.buffer, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/byteOffset
      * @return the byte offset of the typed array in the underlying ArrayBuffer
-     * @since 3.0
+     * @since 0.1.0
      */
     public int byteOffset() {
         return property("byteOffset").toNumber().intValue();
@@ -226,6 +226,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
     /**
      * Always throws UnsupportedOperationException.  Typed Arrays operate on a fixed
      * JSArrayBuffer.  Items cannot be added, inserted or removed, only modified.
+     * @since 0.1.0
      * @param val  The value to add to the array
      * @return nothing
      * @throws UnsupportedOperationException always

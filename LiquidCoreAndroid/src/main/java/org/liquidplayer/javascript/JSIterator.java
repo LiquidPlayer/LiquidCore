@@ -39,13 +39,13 @@ import java.util.Iterator;
 
 /**
  * A JavaScript iterator interface shadow object
- * @since 3.0
+ * @since 0.1.0
  * @param <T> Parameterized type of iterator elements
  */
 public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
     /**
      * Represents the object returned by 'next'
-     * @since 3.0
+     * @since 0.1.0
      */
     public class Next extends JSObjectWrapper {
         protected Next(JSObject next) {
@@ -71,6 +71,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
 
     /**
      * Wraps a JavaScript iterator in a Java iterator
+     * @since 0.1.0
      * @param iterator the JavaScript iterator object.  Assumes the object is a properly formed JS
      *                 iterator
      */
@@ -86,6 +87,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
 
     /**
      * The 'next' JavaScript iterator object
+     * @since 0.1.0
      * @return the next JSObject in the JSIterator
      */
     public Next jsnext() {
@@ -96,6 +98,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
 
     /**
      * @see Iterator#next()
+     * @since 0.1.0
      * @return next value in the iterator
      */
     @Override
@@ -106,6 +109,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
 
     /**
      * @see Iterator#hasNext()
+     * @since 0.1.0
      * @return true if next() will return a value, false if no values left
      */
     @Override
@@ -115,6 +119,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
 
     /**
      * @see Iterator#remove()
+     * @since 0.1.0
      * @throws UnsupportedOperationException always
      */
     @Override

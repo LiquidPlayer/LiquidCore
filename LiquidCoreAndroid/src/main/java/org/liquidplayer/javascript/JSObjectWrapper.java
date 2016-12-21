@@ -48,7 +48,7 @@ abstract class JSObjectWrapper extends JSObject {
     /**
      * Gets underlying JSObject
      * @return JSObject representing the wrapped object
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSObject getJSObject() {
         return mJSObject;

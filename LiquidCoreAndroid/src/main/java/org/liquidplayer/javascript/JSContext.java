@@ -53,8 +53,12 @@ public class JSContext extends JSObject {
         System.loadLibrary("node");
         System.loadLibrary("liquidcore");
     }
+
+    /**
+     * Forces static libraries to load
+     * @since 0.1.0
+     */
     public static void dummy() {
-        // Force libraries to load
     }
 
     protected void sync(final Runnable runnable) {
@@ -92,13 +96,13 @@ public class JSContext extends JSObject {
 
     /**
      * Object interface for handling JSExceptions.
-     * @since 2.1
+     * @since 0.1.0
      */
     public interface IJSExceptionHandler {
         /**
          * Implement this method to catch JSExceptions
          * @param exception caught exception
-         * @since 2.1
+         * @since 0.1.0
          */
         void handle(JSException exception);
     }
@@ -118,7 +122,7 @@ public class JSContext extends JSObject {
 
     /**
      * Creates a new JavaScript context
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSContext() {
         this(new JSContextGroup());
@@ -126,7 +130,7 @@ public class JSContext extends JSObject {
     /**
      * Creates a new JavaScript context in the context group 'inGroup'.
      * @param inGroup  The context group to create the context in
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSContext(final JSContextGroup inGroup) {
         context = this;
@@ -144,7 +148,7 @@ public class JSContext extends JSObject {
      * Creates a JavaScript context, and defines the global object with interface 'iface'.  This
      * object must implement 'iface'.  The methods in 'iface' will be exposed to the JavaScript environment.
      * @param iface  The interface to expose to JavaScript
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSContext(final Class<?> iface) {
         this(new JSContextGroup(), iface);
@@ -155,7 +159,7 @@ public class JSContext extends JSObject {
      * be exposed to the JavaScript environment.
      * @param inGroup  The context group to create the context in
      * @param iface  The interface to expose to JavaScript
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSContext(final JSContextGroup inGroup, final Class<?> iface) {
         this(inGroup);
@@ -179,7 +183,7 @@ public class JSContext extends JSObject {
      * context will call the 'handle' method on this object.  The calling function will
      * return with an undefined value.
      * @param handler An object that implements 'IJSExceptionHandler'
-     * @since 2.1
+     * @since 0.1.0
      */
     public void setExceptionHandler(IJSExceptionHandler handler) {
         exceptionHandler = handler;
@@ -187,7 +191,7 @@ public class JSContext extends JSObject {
 
     /**
      * Clears a previously set exception handler.
-     * @since 2.1
+     * @since 0.1.0
      */
     public void clearExceptionHandler() {
         exceptionHandler = null;
@@ -197,7 +201,7 @@ public class JSContext extends JSObject {
      * If an exception handler is set, calls the exception handler, otherwise throws
      * the JSException.
      * @param exception The JSException to be thrown
-     * @since 2.1
+     * @since 0.1.0
      */
     public void throwJSException(JSException exception) {
         if (exceptionHandler == null) {
@@ -226,6 +230,7 @@ public class JSContext extends JSObject {
     /**
      * Gets the JavaScriptCore context reference
      * @return  the JavaScriptCore context reference
+     * @since 0.1.0
      */
     public Long ctxRef() {
         return ctx;
@@ -241,7 +246,7 @@ public class JSContext extends JSObject {
      * @param sourceURL  The URI of the source file, only used for reporting in stack trace (optional)
      * @param startingLineNumber  The beginning line number, only used for reporting in stack trace (optional)
      * @return  The return value returned by 'script'
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSValue evaluateScript(final @NonNull String script,
                                   final String sourceURL, final int startingLineNumber) {
@@ -266,7 +271,7 @@ public class JSContext extends JSObject {
      * Executes a the JavaScript code in 'script' in this context
      * @param script  The code to execute
      * @return  The return value returned by 'script'
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSValue evaluateScript(String script) {
         return evaluateScript(script,null,0);
@@ -280,7 +285,7 @@ public class JSContext extends JSObject {
      * local variables in the Java object will stay wrapped around all returns of the same
      * instance.  This is handled by JSObject, and should not need to be called by clients.
      * @param obj  The object with which to associate with this context
-     * @since 1.0
+     * @since 0.1.0
      */
     protected synchronized  void persistObject(JSObject obj) {
         objects.put(obj.valueRef(), new WeakReference<>(obj));
@@ -289,7 +294,7 @@ public class JSContext extends JSObject {
      * Removes a reference to an object in this context.  Should only be used from the 'finalize'
      * object method.  This is handled by JSObject, and should not need to be called by clients.
      * @param obj the JSObject to dereference
-     * @since 1.0
+     * @since 0.1.0
      */
     protected synchronized void finalizeObject(JSObject obj) {
         objects.remove(obj.valueRef());
@@ -299,7 +304,7 @@ public class JSContext extends JSObject {
      * reference.
      * @param objRef the JavaScriptCore object reference
      * @param create whether to create the object if it does not exist
-     * @since 1.0
+     * @since 0.1.0
      * @return The JSObject representing the reference
      */
     protected synchronized JSObject getObjectFromRef(final long objRef,boolean create) {

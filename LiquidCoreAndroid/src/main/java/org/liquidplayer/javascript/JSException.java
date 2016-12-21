@@ -38,7 +38,7 @@ package org.liquidplayer.javascript;
 /**
  *  A JSException is thrown for a number of different reasons, mostly by the JavaScriptCore
  *  library.  The description of the exception is given in the message.
- * @since 1.0
+ * @since 0.1.0
  *
  */
 public class JSException extends RuntimeException {
@@ -49,7 +49,7 @@ public class JSException extends RuntimeException {
     /**
      * Creates a Java exception from a thrown JavaScript exception
      * @param error  The JSValue thrown by the JavaScriptCore engine
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSException(JSValue error) {
         super(new JSError(error).message());
@@ -60,7 +60,7 @@ public class JSException extends RuntimeException {
      * Creates a JavaScriptCore exception from a string message
      * @param ctx  The JSContext in which to create the exception
      * @param message  The exception meessage
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSException(JSContext ctx, final String message) {
         super((message==null) ? "Error" : message);
@@ -74,7 +74,7 @@ public class JSException extends RuntimeException {
     /**
      * Gets the JSValue of the thrown exception
      * @return  the JSValue of the JavaScriptCore exception
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSError getError() {
         return error;
@@ -84,7 +84,7 @@ public class JSException extends RuntimeException {
      * JavaScript error stack trace, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Stack
      * @return stack trace for error
-     * @since 3.0
+     * @since 0.1.0
      */
     public String stack() {
         return (error!=null) ? error.stack() : "undefined";
@@ -94,7 +94,7 @@ public class JSException extends RuntimeException {
      * JavaScript error name, see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/name
      * @return error name
-     * @since 3.0
+     * @since 0.1.0
      */
     public String name() {
         return (error!=null) ? error.name() : "JSError";

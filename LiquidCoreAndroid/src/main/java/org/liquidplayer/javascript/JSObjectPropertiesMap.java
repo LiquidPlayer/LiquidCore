@@ -60,9 +60,9 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
      * </code>
      * @param object The JSObject whose properties will be mapped
      * @param cls    The class of the component Values; must match template
-     * @since 3.0
+     * @since 0.1.0
      */
-    JSObjectPropertiesMap(JSObject object, Class<V> cls) {
+    public JSObjectPropertiesMap(JSObject object, Class<V> cls) {
         super(object);
         mType = cls;
     }
@@ -80,9 +80,9 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
      * @param context  The JSContext in which to create the object
      * @param map      The initial properties to set
      * @param cls      The class of the component Values; must match template
-     * @since 3.0
+     * @since 0.1.0
      */
-    JSObjectPropertiesMap(JSContext context, Map map, Class<V> cls) {
+    public JSObjectPropertiesMap(JSContext context, Map map, Class<V> cls) {
         super(new JSObject(context,map));
         mType = cls;
     }
@@ -96,9 +96,9 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
      * </code>
      * @param context  The JSContext in which to create the object
      * @param cls      The class of the component Values; must match template
-     * @since 3.0
+     * @since 0.1.0
      */
-    JSObjectPropertiesMap(JSContext context, Class<V> cls) {
+    public JSObjectPropertiesMap(JSContext context, Class<V> cls) {
         super(new JSObject(context));
         mType = cls;
     }
@@ -107,6 +107,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#size()
+     * @since 0.1.0
      */
     @Override
     public int size() {
@@ -115,7 +116,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#isEmpty()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean isEmpty() {
@@ -124,7 +125,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#containsKey(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean containsKey(final Object key) {
@@ -133,7 +134,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#containsValue(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public boolean containsValue(final Object value) {
@@ -147,7 +148,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#get(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -159,7 +160,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#put(Object, Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public V put(final String key, final V value) {
@@ -170,7 +171,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#remove(Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public V remove(final Object key) {
@@ -181,7 +182,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#putAll(Map)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public void putAll(final @NonNull Map<? extends String, ? extends V> map) {
@@ -192,7 +193,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#clear()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public void clear()
@@ -204,7 +205,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#keySet()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -215,7 +216,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#values()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public @NonNull
@@ -324,7 +325,7 @@ class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V>
 
     /**
      * @see Map#entrySet()
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     public @NonNull

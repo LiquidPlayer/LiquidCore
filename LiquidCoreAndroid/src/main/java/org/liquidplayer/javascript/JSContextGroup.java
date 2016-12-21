@@ -49,7 +49,7 @@ public class JSContextGroup {
 
     /**
      * Creates a new context group
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSContextGroup() {
         group = create();
@@ -57,7 +57,7 @@ public class JSContextGroup {
     /**
      * Wraps an existing context group
      * @param groupRef  the JavaScriptCore context group reference
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSContextGroup(Long groupRef)
     {
@@ -72,7 +72,7 @@ public class JSContextGroup {
 
     /**
      * Gets the JavaScriptCore context group reference
-     * @since 1.0
+     * @since 0.1.0
      * @return  the JavaScriptCore context group reference
      */
     public Long groupRef() {
@@ -83,7 +83,7 @@ public class JSContextGroup {
      * Checks if two JSContextGroups refer to the same JS context group
      * @param other the other object to compare
      * @return true if refer to same context group, false otherwise
-     * @since 2.2
+     * @since 0.1.0
      */
     @Override
     public boolean equals(Object other) {

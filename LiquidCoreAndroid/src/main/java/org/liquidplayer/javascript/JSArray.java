@@ -53,7 +53,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * Interface containing a map function
-     * @since 3.0
+     * @since 0.1.0
      * @param <T> Parameterized type of array elements
      */
     public interface MapCallback<T> {
@@ -62,7 +62,7 @@ public class JSArray<T> extends JSBaseArray<T> {
          * @param currentValue value to map
          * @param index index in 'array'
          * @param array array being traversed
-         * @since 3.0
+         * @since 0.1.0
          * @return mapped value
          */
         JSValue callback(T currentValue, int index, JSArray<T> array);
@@ -83,7 +83,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param ctx  The JSContext to create the array in
      * @param array  An array of JSValues with which to initialize the JavaScript array object
      * @param cls  The class of the component objects
-     * @since 3.0
+     * @since 0.1.0
      */
     @SuppressWarnings("unused")
     public JSArray(JSContext ctx, JSValue [] array, Class<T> cls) {
@@ -106,7 +106,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * Creates an empty JavaScript array object
      * @param ctx  The JSContext to create the array in
      * @param cls  The class of the component objects
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSArray(JSContext ctx, Class<T> cls) {
         super(ctx,cls);
@@ -127,7 +127,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param array  An array of Java objects with which to initialize the JavaScript array object.  Each
      *               Object will be converted to a JSValue
      * @param cls  The class of the component objects
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSArray(JSContext ctx, Object [] array, Class<T> cls) {
         super(ctx,cls);
@@ -167,7 +167,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param list The Collection of values with which to initialize the JavaScript array object.  Each
      *             object will be converted to a JSValue
      * @param cls  The class of the component objects
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSArray(JSContext ctx, Collection list, Class<T> cls) {
         this(ctx,list.toArray(),cls);
@@ -175,7 +175,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * @see List#add(int, Object)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -192,7 +192,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * @see List#remove(int)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -210,7 +210,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * @see List#subList(int, int)
-     * @since 3.0
+     * @since 0.1.0
      */
     @Override @NonNull
     @SuppressWarnings("unchecked")
@@ -230,7 +230,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param arrayLike Any array-like object to build the array from
      * @param mapFn     A JavaScript function to map each new element of the array
      * @param thiz      The 'this' pointer passed to 'mapFn'
-     * @since 3.0
+     * @since 0.1.0
      * @return          A new JavaScript array
      */
     @SuppressWarnings("unchecked")
@@ -244,7 +244,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param ctx       the JavaScript context in which to create the array
      * @param arrayLike Any array-like object to build the array from
      * @param mapFn     A JavaScript function to map each new element of the array
-     * @since 3.0
+     * @since 0.1.0
      * @return          A new JavaScript array
      */
     @SuppressWarnings("unchecked")
@@ -257,7 +257,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
      * @param ctx       the JavaScript context in which to create the array
      * @param arrayLike Any array-like object to build the array from
-     * @since 3.0
+     * @since 0.1.0
      * @return          A new JavaScript array
      */
     @SuppressWarnings("unchecked")
@@ -271,7 +271,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param ctx       the JavaScript context in which to create the array
      * @param arrayLike Any array-like object to build the array from
      * @param mapFn     A Java function to map each new element of the array
-     * @since 3.0
+     * @since 0.1.0
      * @return          A new JavaScript array
      */
     @SuppressWarnings("unchecked")
@@ -290,7 +290,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.isArray(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray
-     * @since 3.0
+     * @since 0.1.0
      * @param value the value to test
      * @return true if 'value' is an array, false otherwise
      */
@@ -303,7 +303,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.of(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/of
-     * @since 3.0
+     * @since 0.1.0
      * @param ctx    The JSContext in which to create the array
      * @param params Elements to add to the array
      * @return the new JavaScript array
@@ -317,7 +317,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.concat(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/concat
-     * @since 3.0
+     * @since 0.1.0
      * @param params values to concantenate to the array
      * @return a new JSArray
      */
@@ -331,7 +331,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.pop(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/pop
-     * @since 3.0
+     * @since 0.1.0
      * @return the popped element
      */
     @SuppressWarnings("unchecked")
@@ -342,7 +342,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.push(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/push
-     * @since 3.0
+     * @since 0.1.0
      * @param elements  The elements to push on the array
      * @return new size of the mutated array
      */
@@ -354,7 +354,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.shift(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/shift
-     * @since 3.0
+     * @since 0.1.0
      * @return the element shifted off the front of the array
      */
     @SuppressWarnings("unchecked")
@@ -367,7 +367,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.splice(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice
-     * @since 3.0
+     * @since 0.1.0
      * @param start the index to start splicing from (inclusive)
      * @param deleteCount the number of elements to remove
      * @param elements the elements to insert into the array at index 'start'
@@ -398,7 +398,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.unshift(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/unshift
-     * @since 3.0
+     * @since 0.1.0
      * @param elements The values to add to the front of the array
      * @return the new size of the mutated array
      */
@@ -411,7 +411,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * Interface containing a condition test callback function
-     * @since 3.0
+     * @since 0.1.0
      * @param <T> Parameterized type of array elements
      */
     public interface EachBooleanCallback<T> {
@@ -420,7 +420,7 @@ public class JSArray<T> extends JSBaseArray<T> {
          * @param currentValue value to test
          * @param index index in 'array'
          * @param array array being traversed
-         * @since 3.0
+         * @since 0.1.0
          * @return true if condition is met, false otherwise
          */
         boolean callback(T currentValue, int index, JSArray<T> array);
@@ -428,7 +428,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * Interface containing a function to call on each element of an array
-     * @since 3.0
+     * @since 0.1.0
      * @param <T> Parameterized type of array elements
      */
     public interface ForEachCallback<T> {
@@ -437,14 +437,14 @@ public class JSArray<T> extends JSBaseArray<T> {
          * @param currentValue current value in the array
          * @param index index in 'array'
          * @param array array being traversed
-         * @since 3.0
+         * @since 0.1.0
          */
         void callback(T currentValue, int index, JSArray<T> array);
     }
 
     /**
      * Interface containing a reduce function
-     * @since 3.0
+     * @since 0.1.0
      */
     public interface ReduceCallback {
         /**
@@ -453,7 +453,7 @@ public class JSArray<T> extends JSBaseArray<T> {
          * @param currentValue value of mapped item
          * @param index index in 'array'
          * @param array map array being traversed
-         * @since 3.0
+         * @since 0.1.0
          * @return new accumulator value
          */
         JSValue callback(JSValue previousValue, JSValue currentValue, int index,
@@ -462,7 +462,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * Interface containing a compare function callback for sort
-     * @since 3.0
+     * @since 0.1.0
      * @param <T> Parameterized type of array elements
      */
     public interface SortCallback<T> {
@@ -470,7 +470,7 @@ public class JSArray<T> extends JSBaseArray<T> {
          * A function for comparing values in a sort
          * @param a first value
          * @param b second value
-         * @since 3.0
+         * @since 0.1.0
          * @return 0 if values are the same, negative if 'b' comes before 'a', and positive if 'a' comes
          *         before 'b'
          */
@@ -508,7 +508,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * An array entry Iterator
-     * @since 3.0
+     * @since 0.1.0
      * @param <U> Parameterized type of array elements
      */
     public class EntriesIterator<U> extends JSIterator<Map.Entry<Integer,U>> {
@@ -532,7 +532,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.entries(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/entries
-     * @since 3.0
+     * @since 0.1.0
      * @return an entry iterator
      */
     public EntriesIterator<T> entries() {
@@ -542,7 +542,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript: Array.prototype.every(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/every
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      * @return true if every element in the array meets the condition, false otherwise
@@ -553,7 +553,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript: Array.prototype.every(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/every
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @return true if every element in the array meets the condition, false otherwise
      */
@@ -563,7 +563,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript: Array.prototype.every(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/every
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      * @return true if every element in the array meets the condition, false otherwise
      */
@@ -574,7 +574,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.find(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      * @return the first value matching the condition set by the function
@@ -586,7 +586,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.find(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @return the first value matching the condition set by the function
      */
@@ -596,7 +596,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.find(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      * @return the first value matching the condition set by the function
      */
@@ -608,7 +608,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.findIndex(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      * @return the index of the first value matching the condition set by the function
@@ -619,7 +619,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.findIndex(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @return the index of the first value matching the condition set by the function
      */
@@ -629,7 +629,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.findIndex(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      * @return the index of the first value matching the condition set by the function
      */
@@ -640,7 +640,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.forEach(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      */
@@ -650,7 +650,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.forEach(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      */
     public void forEach(JSFunction callback) {
@@ -659,7 +659,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.forEach(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      */
     public void forEach(final ForEachCallback<T> callback) {
@@ -669,7 +669,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.includes(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes
-     * @since 3.0
+     * @since 0.1.0
      * @param element   the value to search for
      * @param fromIndex the index in the array to start searching from
      * @return true if the element exists in the array, false otherwise
@@ -680,7 +680,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.includes(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes
-     * @since 3.0
+     * @since 0.1.0
      * @param element   the value to search for
      * @return true if the element exists in the array, false otherwise
      */
@@ -691,7 +691,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.indexOf(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
-     * @since 3.0
+     * @since 0.1.0
      * @param element   the value to search for
      * @param fromIndex the index in the array to start searching from
      * @return index of the first instance of 'element', -1 if not found
@@ -703,7 +703,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.join(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/join
-     * @since 3.0
+     * @since 0.1.0
      * @param separator the separator to use between values
      * @return a string representation of the joined array
      */
@@ -713,7 +713,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.join(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/join
-     * @since 3.0
+     * @since 0.1.0
      * @return a string representation of the joined array with a comma separator
      */
     public String join() {
@@ -722,7 +722,7 @@ public class JSArray<T> extends JSBaseArray<T> {
 
     /**
      * An array key Iterator
-     * @since 3.0
+     * @since 0.1.0
      */
     public class KeysIterator extends JSIterator<Integer> {
         protected KeysIterator(JSObject iterator) {
@@ -748,7 +748,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.keys(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/keys
-     * @since 3.0
+     * @since 0.1.0
      * @return An array index iterator
      */
     public KeysIterator keys() {
@@ -758,7 +758,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.lastIndexOf(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/lastIndexOf
-     * @since 3.0
+     * @since 0.1.0
      * @param element   the value to search for
      * @param fromIndex the index in the array to start searching from (reverse order)
      * @return index of the last instance of 'element', -1 if not found
@@ -770,7 +770,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduce(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The JavaScript reduce function to call
      * @param initialValue The initial value of the reduction
      * @return A reduction of the mapped array
@@ -781,7 +781,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduce(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The JavaScript reduce function to call
      * @return A reduction of the mapped array
      */
@@ -791,7 +791,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduce(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The Java reduce function to call
      * @param initialValue The initial value of the reduction
      * @return A reduction of the mapped array
@@ -802,7 +802,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduce(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The Java reduce function to call
      * @return A reduction of the mapped array
      */
@@ -813,7 +813,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduceRight(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/ReduceRight
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The JavaScript reduce function to call
      * @param initialValue The initial value of the reduction
      * @return A reduction of the mapped array
@@ -824,7 +824,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduceRight(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/ReduceRight
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The JavaScript reduce function to call
      * @return A reduction of the mapped array
      */
@@ -834,7 +834,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduceRight(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/ReduceRight
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The Java reduce function to call
      * @param initialValue The initial value of the reduction
      * @return A reduction of the mapped array
@@ -845,7 +845,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reduceRight(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/ReduceRight
-     * @since 3.0
+     * @since 0.1.0
      * @param callback  The Java reduce function to call
      * @return A reduction of the mapped array
      */
@@ -856,7 +856,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript: Array.prototype.some(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      * @return true if some element in the array meets the condition, false otherwise
@@ -867,7 +867,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript: Array.prototype.some(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @return true if some element in the array meets the condition, false otherwise
      */
@@ -877,7 +877,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript: Array.prototype.some(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/some
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      * @return true if some element in the array meets the condition, false otherwise
      */
@@ -888,7 +888,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.copyWithin(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/copyWithin
-     * @since 3.0
+     * @since 0.1.0
      * @param target index to copy sequence to
      * @param start  index from which to start copying from
      * @param end    index from which to end copying from
@@ -901,7 +901,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.copyWithin(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/copyWithin
-     * @since 3.0
+     * @since 0.1.0
      * @param target index to copy sequence to
      * @param start  index from which to start copying from
      * @return this (mutable operation)
@@ -912,7 +912,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.copyWithin(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/copyWithin
-     * @since 3.0
+     * @since 0.1.0
      * @param target index to copy sequence to
      * @return this (mutable operation)
      */
@@ -923,7 +923,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.fill(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill
-     * @since 3.0
+     * @since 0.1.0
      * @param value the value to fill
      * @param start the index to start filling
      * @param end   the index (exclusive) to stop filling
@@ -936,7 +936,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.fill(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill
-     * @since 3.0
+     * @since 0.1.0
      * @param value the value to fill
      * @param start the index to start filling
      * @return this (mutable)
@@ -947,7 +947,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.fill(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill
-     * @since 3.0
+     * @since 0.1.0
      * @param value the value to fill
      * @return this (mutable)
      */
@@ -958,7 +958,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.filter(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      * @return a new filtered array
@@ -972,7 +972,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.filter(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @return a new filtered array
      */
@@ -983,7 +983,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.filter(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      * @return a new filtered array
      */
@@ -996,7 +996,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.map(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @param thiz the 'this' value passed to callback
      * @return a new mapped array
@@ -1008,7 +1008,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.map(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the JavaScript function to call on each element
      * @return a new mapped array
      */
@@ -1019,7 +1019,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.map(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java function to call on each element
      * @return a new mapped array
      */
@@ -1036,7 +1036,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.reverse(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reverse
-     * @since 3.0
+     * @since 0.1.0
      * @return this (mutable)
      */
     @SuppressWarnings("unchecked")
@@ -1047,7 +1047,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.slice(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
-     * @since 3.0
+     * @since 0.1.0
      * @param begin the index to begin slicing (inclusive)
      * @param end the index to end slicing (exclusive)
      * @return the new sliced array
@@ -1059,7 +1059,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.slice(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
-     * @since 3.0
+     * @since 0.1.0
      * @param begin the index to begin slicing (inclusive)
      * @return the new sliced array
      */
@@ -1070,7 +1070,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.slice(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
-     * @since 3.0
+     * @since 0.1.0
      * @return the new sliced array (essentially a copy of the original array)
      */
     @SuppressWarnings("unchecked")
@@ -1081,7 +1081,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.sort(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-     * @since 3.0
+     * @since 0.1.0
      * @param compare the JavaScript compare function to use for sorting
      * @return this (mutable)
      */
@@ -1092,7 +1092,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.sort(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-     * @since 3.0
+     * @since 0.1.0
      * @param callback the Java compare function to use for sorting
      * @return this (mutable)
      */
@@ -1109,7 +1109,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     /**
      * JavaScript Array.prototype.sort(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
-     * @since 3.0
+     * @since 0.1.0
      * @return this (mutable)
      */
     @SuppressWarnings("unchecked")

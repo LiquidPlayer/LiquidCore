@@ -43,6 +43,7 @@ import android.support.annotation.NonNull;
 public class JSInt16Array extends JSTypedArray<Short> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
+     * @since 0.1.0
      * @param ctx  the JSContext in which to create the typed array
      * @param length  the length of the array in elements
      */
@@ -52,6 +53,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
 
     /**
      * Creates a new JSInt16Array from the contents of another typed array
+     * @since 0.1.0
      * @param tarr  the typed array from which to create the new array
      */
     public JSInt16Array(JSTypedArray tarr) {
@@ -60,6 +62,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
 
     /**
      * Creates new typed array as if by TypedArray.from()
+     * @since 0.1.0
      * @param ctx  The context in which to create the typed array
      * @param object  The object to create the array from
      */
@@ -69,6 +72,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
 
     /**
      * Creates a typed array from a JSArrayBuffer
+     * @since 0.1.0
      * @param buffer  The JSArrayBuffer to create the typed array from
      * @param byteOffset  The byte offset in the ArrayBuffer to start from
      * @param length  The number of bytes from 'byteOffset' to include in the array
@@ -78,6 +82,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
     }
     /**
      * Creates a typed array from a JSArrayBuffer
+     * @since 0.1.0
      * @param buffer  The JSArrayBuffer to create the typed array from
      * @param byteOffset  The byte offset in the ArrayBuffer to start from
      */
@@ -86,6 +91,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
     }
     /**
      * Creates a typed array from a JSArrayBuffer
+     * @since 0.1.0
      * @param buffer  The JSArrayBuffer to create the typed array from
      */
     public JSInt16Array(JSArrayBuffer buffer) {
@@ -94,6 +100,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
 
     /**
      * Treats an existing value as a typed array
+     * @since 0.1.0
      * @param valueRef  the JavaScriptCore value reference
      * @param ctx  The JSContext of the value
      */
@@ -104,6 +111,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
     /**
      * JavaScript: TypedArray.prototype.subarray(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/subarray
+     * @since 0.1.0
      * @param begin  the element to begin at (inclusive)
      * @param end the element to end at (exclusive)
      * @return the new typed subarray
@@ -114,6 +122,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
     /**
      * JavaScript: TypedArray.prototype.subarray(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/subarray
+     * @since 0.1.0
      * @param begin  the element to begin at (inclusive)
      * @return the new typed subarray
      */

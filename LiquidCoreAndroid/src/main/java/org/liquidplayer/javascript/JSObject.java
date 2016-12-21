@@ -46,18 +46,27 @@ import java.util.Map;
 
 /**
  * A JavaScript object.
- * @since 1.0
+ * @since 0.1.0
  *
  */
 @SuppressWarnings("JniMissingFunction")
 public class JSObject extends JSValue {
 
     @Retention(RetentionPolicy.RUNTIME)
+    /**
+     * Exports a property or function to JS environment
+     */
     public @interface jsexport {
         Class type() default Object.class;
         int attributes() default JSPropertyAttributeNone;
     }
 
+    /**
+     * A JavaScript object property.  A convenience class for declaring properties using
+     * the @jsexport attribute.
+     * @since 0.1.0
+     * @param <T> the type of the property
+     */
     public class Property<T>
     {
         private T temp = null;
@@ -68,6 +77,10 @@ public class JSObject extends JSValue {
         {
         }
 
+        /**
+         * Sets the property
+         * @param v value to set
+         */
         public void set(T v)
         {
             temp = v;
@@ -83,6 +96,10 @@ public class JSObject extends JSValue {
             }
         }
 
+        /**
+         * Gets the property
+         * @return the value of the property
+         */
         @SuppressWarnings("unchecked")
         public T get()
         {
@@ -142,7 +159,7 @@ public class JSObject extends JSValue {
      * </pre>
      *
      * @param ctx The JSContext to create the object in
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSObject(JSContext ctx) {
         context = ctx;
@@ -193,7 +210,7 @@ public class JSObject extends JSValue {
     /**
      * Called only by convenience subclasses.  If you use
      * this, you must set context and valueRef yourself.
-     * @since 3.0
+     * @since 0.1.0
      */
      public JSObject() {
      }
@@ -203,7 +220,7 @@ public class JSObject extends JSValue {
      *
      * @param objRef The JavaScriptCore object reference
      * @param ctx    The JSContext of the reference
-     * @since 1.0
+     * @since 0.1.0
      */
     protected JSObject(final long objRef, JSContext ctx) {
         super(objRef, ctx);
@@ -227,7 +244,7 @@ public class JSObject extends JSValue {
      *
      * @param ctx   The JSContext to create the object in
      * @param iface The Java Interface defining the methods to expose to JavaScript
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSObject(JSContext ctx, final Class<?> iface) {
         context = ctx;
@@ -252,6 +269,7 @@ public class JSObject extends JSValue {
      *
      * @param ctx  The JSContext to create object in
      * @param map  The map containing the properties
+     * @since 0.1.0
      */
     @SuppressWarnings("unchecked")
     public JSObject(JSContext ctx, final Map map) {
@@ -265,7 +283,7 @@ public class JSObject extends JSValue {
      *
      * @param prop The property to test the existence of
      * @return true if the property exists on the object, false otherwise
-     * @since 1.0
+     * @since 0.1.0
      */
     public boolean hasProperty(final String prop) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -284,7 +302,7 @@ public class JSObject extends JSValue {
      *
      * @param prop The name of the property to fetch
      * @return The JSValue of the property, or null if it does not exist
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSValue property(final String prop) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -308,7 +326,7 @@ public class JSObject extends JSValue {
      * @param value      The Java object to set.  The Java object will be converted to a JavaScript object
      *                   automatically.
      * @param attributes And OR'd list of JSProperty constants
-     * @since 1.0
+     * @since 0.1.0
      */
     public void property(final String prop, final Object value, final int attributes) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -336,7 +354,7 @@ public class JSObject extends JSValue {
      * @param prop  The name of the property to set
      * @param value The Java object to set.  The Java object will be converted to a JavaScript object
      *              automatically.
-     * @since 1.0
+     * @since 0.1.0
      */
     public void property(String prop, Object value) {
         property(prop, value, JSPropertyAttributeNone);
@@ -347,7 +365,7 @@ public class JSObject extends JSValue {
      *
      * @param prop The name of the property to delete
      * @return true if the property was deleted, false otherwise
-     * @since 1.0
+     * @since 0.1.0
      */
     public boolean deleteProperty(final String prop) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -369,7 +387,7 @@ public class JSObject extends JSValue {
      *
      * @param index The index of the property
      * @return The JSValue of the property at index 'index'
-     * @since 1.0
+     * @since 0.1.0
      */
     public JSValue propertyAtIndex(final int index) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -391,7 +409,7 @@ public class JSObject extends JSValue {
      *
      * @param index The index of the property to set
      * @param value The Java object to set, will be automatically converted to a JavaScript value
-     * @since 1.0
+     * @since 0.1.0
      */
     public void propertyAtIndex(final int index, final Object value) {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -415,7 +433,7 @@ public class JSObject extends JSValue {
      * Gets the list of set property names on the object
      *
      * @return A string array containing the property names
-     * @since 1.0
+     * @since 0.1.0
      */
     public String[] propertyNames() {
         StringArrayReturnClass runnable = new StringArrayReturnClass() {
@@ -432,7 +450,7 @@ public class JSObject extends JSValue {
      * Determines if the object is a function
      *
      * @return true if the object is a function, false otherwise
-     * @since 1.0
+     * @since 0.1.0
      */
     public boolean isFunction() {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -450,7 +468,7 @@ public class JSObject extends JSValue {
      * Determines if the object is a constructor
      *
      * @return true if the object is a constructor, false otherwise
-     * @since 1.0
+     * @since 0.1.0
      */
     public boolean isConstructor() {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -472,7 +490,7 @@ public class JSObject extends JSValue {
     /**
      * Gets the prototype object, if it exists
      * @return A JSValue referencing the prototype object, or null if none
-     * @since 3.0
+     * @since 0.1.0
      */
     public JSValue prototype() {
         JNIReturnClass runnable = new JNIReturnClass() {
@@ -489,7 +507,7 @@ public class JSObject extends JSValue {
     /**
      * Sets the prototype object
      * @param proto The object defining the function prototypes
-     * @since 3.0
+     * @since 0.1.0
      */
     public void prototype(final JSValue proto) {
         context.sync(new Runnable() {
