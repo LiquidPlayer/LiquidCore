@@ -9,7 +9,7 @@ Version
 -------
 [0.1.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/v0.1.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/v0.1.0)
 
-[![](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
+[![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Version 0.1.0 is currently only suitable for use as an [AndroidJSCore] replacement.
 
