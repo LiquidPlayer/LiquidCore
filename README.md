@@ -29,7 +29,7 @@ LiquidCore provides 3 interfaces to the host app:
 2. Node.js VM API
 3. UI Widgets
 
-## JavaScript API
+## 1. JavaScript API
 
 LiquidCore is built on top of [Node.js], which is in turn built on [V8].  So, the V8 API
 is natively available to any app which includes the LiquidCore library.  In addition to
@@ -122,7 +122,7 @@ This API is currently experimental and is not yet fully supported.  But feel fre
 play with it.
 
 
-## Node.js VM API
+## 2. Node.js VM API
 
 LiquidCore enables app developers to launch virtual Node instances.  These instances
 are isolated from each other and the host app.  Each VM consists of its own process
@@ -133,7 +133,7 @@ spawning have been disabled, and the file system is restricted.
 
 This API is currently experimental and not yet fully supported.
 
-## UI Widgets
+## 3. UI Widgets
 
 Simple UI widgets to aid with micro app development and debugging will be provided.  Currently,
 `NodeConsoleView` is implemented for Android which allows a Node console to be attached
@@ -175,7 +175,7 @@ If you are interested in building the library directly and possibly contributing
 do the following:
 
     % git clone https://github.com/liquidplayer/LiquidCore.git
-    % cd AndroidJSCore/AndroidJSCore
+    % cd LiquidCore/LiquidCoreAndroid
     % echo ndk.dir=$ANDROID_NDK > local.properties
     % echo sdk.dir=$ANDROID_SDK >> local.properties
     % ./gradlew assembleRelease
