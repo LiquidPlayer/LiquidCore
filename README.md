@@ -1,6 +1,21 @@
 LiquidCore
 ==========
 
+The LiquidCore library provides independent, instantiable [Node.js] virtual machines each
+with its own lifecycle, virtual file system, persistent and non-persistent storage,
+and [SQLite] database.
+
+Version
+-------
+[0.1.0]() - Get it through [JitPack]()
+
+[![Release](https://jitpack.io/v/ericwlange/AndroidJSCore.svg)](https://jitpack.io/#ericwlange/AndroidJSCore)
+
+Version 0.1.0 is currently only suitable for use as an [AndroidJSCore] replacement.
+
+LiquidCore and The LiquidPlayer Project
+---------------------------------------
+
 [The LiquidPlayer Project] is an open source mobile micro-app ecosystem and development
 environment built around the JavaScript language.  More on that later.
 
@@ -14,8 +29,8 @@ LiquidCore provides 3 interfaces to the host app:
 2. Node.js VM API
 3. UI Widgets
 
-JavaScript API
---------------
+## JavaScript API
+
 LiquidCore is built on top of [Node.js], which is in turn built on [V8].  So, the V8 API
 is natively available to any app which includes the LiquidCore library.  In addition to
 directly interacting with V8 (a powerful, but incredibly complex API), LiquidCore provides
@@ -106,11 +121,23 @@ JavaScriptCore API can use the V8 backend with little or no modification.
 This API is currently experimental and is not yet fully supported.  But feel free to
 play with it.
 
-Version
--------
-[0.1.0]() - Get it through [JitPack]()
 
-[![Release](https://jitpack.io/v/ericwlange/AndroidJSCore.svg)](https://jitpack.io/#ericwlange/AndroidJSCore)
+## Node.js VM API
+
+LiquidCore enables app developers to launch virtual Node instances.  These instances
+are isolated from each other and the host app.  Each VM consists of its own process
+thread, JavaScript context, virtual file system, and SQLite database.  The full Node.js
+operating environment is available, including file system access, socket-level networking,
+process management, etc.  For security reasons, native extensions and OS-level process
+spawning have been disabled, and the file system is restricted.
+
+This API is currently experimental and not yet fully supported.
+
+## UI Widgets
+
+Simple UI widgets to aid with micro app development and debugging will be provided.  Currently,
+`NodeConsoleView` is implemented for Android which allows a Node console to be attached
+to a `Process`.  This is currently experimental and not yet fully supported.
 
 
 Use LiquidCore in your Android project
@@ -216,3 +243,4 @@ License
 [SQLite]:https://sqlite.org/
 [The LiquidPlayer Project]:https://github.com/LiquidPlayer/
 [React Native]:https://facebook.github.io/react-native/
+[AndroidJSCore]:https://github.com/ericwlange/AndroidJSCore
