@@ -7,9 +7,9 @@ and [SQLite] database.
 
 Version
 -------
-[0.1.0]() - Get it through [JitPack]()
+[0.1.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/v0.1.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/v0.1.0)
 
-[![Release](https://jitpack.io/v/ericwlange/AndroidJSCore.svg)](https://jitpack.io/#ericwlange/AndroidJSCore)
+[![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Version 0.1.0 is currently only suitable for use as an [AndroidJSCore] replacement.
 
@@ -157,7 +157,7 @@ Add it in your root build.gradle at the end of repositories:
 #### Step 2. Add the dependency
 
 	dependencies {
-	        compile 'com.github.liquidplayer:LiquidCore:0.1.0'
+	        compile 'com.github.liquidplayer:LiquidCore:v0.1.0'
 	}
 
 You should be all set!
