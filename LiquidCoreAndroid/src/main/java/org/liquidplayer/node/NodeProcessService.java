@@ -41,7 +41,7 @@ import org.liquidplayer.javascript.JSContext;
 import java.util.HashMap;
 import java.util.Map;
 
-class NodeProcessService extends IntentService implements Process.EventListener {
+public class NodeProcessService extends IntentService implements Process.EventListener {
     public NodeProcessService() {
         super("org.liquidplayer.node.NodeProcessService");
     }

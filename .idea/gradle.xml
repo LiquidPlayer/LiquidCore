@@ -10,7 +10,6 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/LiquidCoreAndroid" />
             <option value="$PROJECT_DIR$/demoapp" />
-            <option value="$PROJECT_DIR$/nodeconsole" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
