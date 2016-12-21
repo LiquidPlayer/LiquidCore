@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * @author <a href="http://code.dblock.org">Daniel Doubrovkine</a>
  */
-public class HtmlAnsiOutputStream extends AnsiOutputStream {
+class HtmlAnsiOutputStream extends AnsiOutputStream {
 
     private boolean concealOn = false;
 
@@ -49,11 +49,11 @@ public class HtmlAnsiOutputStream extends AnsiOutputStream {
     private static final byte[] BYTES_BR = "<br>".getBytes();
     private static final byte[] BYTES_SP = "&nbsp;".getBytes();
 
-    public HtmlAnsiOutputStream(OutputStream os) {
+    HtmlAnsiOutputStream(OutputStream os) {
         super(os);
     }
 
-    private List<String> closingAttributes = new ArrayList<String>();
+    private List<String> closingAttributes = new ArrayList<>();
 
     private void write(String s) throws IOException {
         super.out.write(s.getBytes());

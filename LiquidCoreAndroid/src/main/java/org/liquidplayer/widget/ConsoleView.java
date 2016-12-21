@@ -22,7 +22,7 @@ import org.liquidplayer.node.R;
 
 import java.util.ArrayList;
 
-public class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener {
+class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener {
     public ConsoleView(Context context) {
         this(context, null);
     }

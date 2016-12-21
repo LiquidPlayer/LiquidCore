@@ -36,13 +36,12 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 
-import org.liquidplayer.node.Process;
 import org.liquidplayer.javascript.JSContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class NodeProcessService extends IntentService implements Process.EventListener {
+class NodeProcessService extends IntentService implements Process.EventListener {
     public NodeProcessService() {
         super("org.liquidplayer.node.NodeProcessService");
     }

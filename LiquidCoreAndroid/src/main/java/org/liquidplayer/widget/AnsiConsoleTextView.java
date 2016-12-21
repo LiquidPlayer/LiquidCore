@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
-public class AnsiConsoleTextView extends TextView {
+class AnsiConsoleTextView extends TextView {
     public AnsiConsoleTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         stream = new ConsoleOutputStream(new ByteArrayOutputStream());
