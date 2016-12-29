@@ -180,7 +180,7 @@ do the following:
     % echo sdk.dir=$ANDROID_SDK >> local.properties
     % ./gradlew assembleRelease
 
-Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-0.1.0-release.aar`.  To use it, simply
+Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-v0.1.0-release.aar`.  To use it, simply
 add the following to your app's `build.gradle`:
 
     repositories {
@@ -190,7 +190,7 @@ add the following to your app's `build.gradle`:
     }
 
     dependencies {
-        compile(name:'LiquidCore-0.1.0-release', ext:'aar')
+        compile(name:'LiquidCore-v0.1.0-release', ext:'aar')
     }
     
 ##### Note
@@ -202,8 +202,9 @@ build each library (if you so choose), you can do the following:
 
 ```
 .../LiquidCore/deps/node-6.4.0% ./android-configure /path/to/android/ndk <abi>
+.../LiquidCore/deps/node-6.4.0% make
 ```
-where \<abi\> is one of `arm`, `arm64`, `x86` or `x86_64`
+where `<abi>` is one of `arm`, `arm64`, `x86` or `x86_64`
 
 
 License
