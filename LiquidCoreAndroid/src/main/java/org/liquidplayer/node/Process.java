@@ -392,16 +392,18 @@ public class Process {
      * following structure
      *
      * /
-     * /cache
      * /home
-     * /external
-     *        /cache
-     *        /home
-     * /media [if permissions set]
-     *        /Pictures
-     *        /Movies
-     *        /Downloads
-     *        /... (android standard)
+     * /home/persistent
+     * /home/cache
+     * /home/external
+     * /home/external/persistent
+     * /home/external/cache
+     * /home/media
+     * /home/media/Pictures
+     * /home/media/Movies
+     * /home/media/Ringtones
+     * /home/media/Downloads
+     * /home/media/...
      *
      * Everything else will result in a ENOACES (access denied) error
      */
@@ -418,6 +420,9 @@ public class Process {
 
         @jsexport(attributes = JSPropertyAttributeReadOnly)
         private Property<JSFunction> alias;
+
+        @jsexport
+        private Property<String> cwd;
 
         private String realDir(String dir) {
             return getContext().evaluateScript(
@@ -505,6 +510,8 @@ public class Process {
                 symlink(media, home + "/media");
                 aliases_.get().property("/home/media", media);
             }
+
+            cwd.set("/home");
         }
 
         private void tearDown() {
@@ -542,6 +549,7 @@ public class Process {
             */
 
             fs.set(new JSFunction(ctx, "fs", ""+
+                    "if (!file.startsWith('/')) { file = this.cwd+'/'+file; }" +
                     "try { file = require('path').resolve(file); } catch (e) {}"+
                     "var access = 0;"+
                     "for (var p in this.aliases_) {"+

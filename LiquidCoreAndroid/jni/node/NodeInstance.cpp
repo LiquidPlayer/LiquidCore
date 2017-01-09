@@ -228,10 +228,14 @@ void NodeInstance::Chdir(const FunctionCallbackInfo<Value>& args) {
 
   BufferValue path(args.GetIsolate(), nodedroid::fs_(env, args[0], _FS_ACCESS_RD));
 
+  // Only using uv_chdir to validate path -- the default path should never be used
   int err = uv_chdir(*path);
   if (err) {
     return env->ThrowUVException(err, "uv_chdir");
   }
+
+  // The real default path is held in the filesystem object
+  nodedroid::chdir_(env, args[0]);
 }
 
 std::map<Environment*,NodeInstance*> NodeInstance::instance_map;
@@ -253,19 +257,24 @@ void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
 
 void NodeInstance::Cwd(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-  char buf[PATH_MAX];
+  Local<Value> aliased;
 
-  size_t cwd_len = sizeof(buf);
-  int err = uv_cwd(buf, &cwd_len);
-  if (err) {
-    return env->ThrowUVException(err, "uv_cwd");
+  aliased = nodedroid::cwd_(env);
+  if (aliased->IsUndefined()) {
+      char buf[PATH_MAX];
+
+      size_t cwd_len = sizeof(buf);
+      int err = uv_cwd(buf, &cwd_len);
+      if (err) {
+        return env->ThrowUVException(err, "uv_cwd");
+      }
+
+      Local<String> cwd = String::NewFromUtf8(env->isolate(),
+                                              buf,
+                                              String::kNormalString,
+                                              cwd_len);
+      aliased = nodedroid::alias_(env, cwd);
   }
-
-  Local<String> cwd = String::NewFromUtf8(env->isolate(),
-                                          buf,
-                                          String::kNormalString,
-                                          cwd_len);
-  Local<Value> aliased = nodedroid::alias_(env, cwd);
   args.GetReturnValue().Set(aliased);
 }
 

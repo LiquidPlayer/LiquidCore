@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.liquidplayer.javascript.JSBaseArray;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSObject;
+import org.liquidplayer.javascript.JSValue;
 
 import java.io.File;
 import java.io.InputStream;
@@ -186,4 +187,70 @@ public class FSTest {
 
     }
 
+    /**
+     * https://github.com/LiquidPlayer/LiquidCore/issues/9
+     */
+    @Test
+    public void testChdirCwdMultipleProcesses() throws Exception {
+        final String dir1 = "/home/external/persistent";
+        final String dir2 = "/home/external/cache";
+
+        final String proc1 = "process.chdir('" + dir1 + "');";
+        final String proc2 = "process.chdir('" + dir2 + "');";
+
+        final Semaphore s1 = new Semaphore(0);
+        final Semaphore s2 = new Semaphore(0);
+
+        class Contexts {
+            JSContext c1;
+            JSContext c2;
+        }
+
+        final Contexts contexts = new Contexts();
+
+        Process p1 = new Process(InstrumentationRegistry.getContext(), "_",
+                Process.kMediaAccessPermissionsRW, new Process.EventListener() {
+            @Override
+            public void onProcessStart(Process process, JSContext context) {
+                contexts.c1 = context;
+                process.keepAlive();
+                s1.release();
+            }
+
+            @Override public void onProcessAboutToExit(Process process, int exitCode) {}
+            @Override public void onProcessExit(Process process, int exitCode) {}
+            @Override public void onProcessFailed(Process process, Exception error) {}
+        });
+
+        Process p2 = new Process(InstrumentationRegistry.getContext(), "_",
+                Process.kMediaAccessPermissionsRW, new Process.EventListener() {
+            @Override
+            public void onProcessStart(Process process, JSContext context) {
+                contexts.c2 = context;
+                process.keepAlive();
+                s2.release();
+            }
+
+            @Override public void onProcessAboutToExit(Process process, int exitCode) {}
+            @Override public void onProcessExit(Process process, int exitCode) {}
+            @Override public void onProcessFailed(Process process, Exception error) {}
+        });
+
+        s1.acquire();
+        s2.acquire();
+
+        contexts.c1.evaluateScript(proc1);
+        JSValue v = contexts.c1.evaluateScript("process.cwd()");
+        assertEquals(dir1, v.toString());
+
+        contexts.c2.evaluateScript(proc2);
+        v = contexts.c2.evaluateScript("process.cwd()");
+        assertEquals(dir2, v.toString());
+
+        v = contexts.c1.evaluateScript("process.cwd()");
+        assertEquals(dir1, v.toString());
+
+        p1.letDie();
+        p2.letDie();
+   }
 }

@@ -519,6 +519,44 @@ Local<Value> alias_(Environment *env, Local<Value> path)
     return path;
 }
 
+Local<Value> chdir_(Environment *env, Local<Value> path)
+{
+    HandleScope handle_scope(env->isolate());
+    Context::Scope context_scope(env->context());
+
+    Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
+        String::NewFromUtf8(env->isolate(), "__fs"));
+    Local<Object> globalObj = env->context()->Global();
+    Maybe<bool> result = globalObj->HasPrivate(env->context(), privateKey);
+    if (result.IsJust() && result.FromJust()) {
+      Local<Value> fsVal;
+      if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
+        Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
+        fsObj->Set(env->context(), String::NewFromUtf8(env->isolate(), "cwd"), path);
+      }
+    }
+    return path;
+}
+
+Local<Value> cwd_(Environment *env)
+{
+    HandleScope handle_scope(env->isolate());
+    Context::Scope context_scope(env->context());
+
+    Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
+        String::NewFromUtf8(env->isolate(), "__fs"));
+    Local<Object> globalObj = env->context()->Global();
+    Maybe<bool> result = globalObj->HasPrivate(env->context(), privateKey);
+    if (result.IsJust() && result.FromJust()) {
+      Local<Value> fsVal;
+      if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
+        Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
+        return fsObj->Get(env->context(), String::NewFromUtf8(env->isolate(), "cwd")).ToLocalChecked();
+      }
+    }
+    return Local<Value>::New(env->isolate(),Undefined(env->isolate()));
+}
+
 static void Access(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   HandleScope scope(env->isolate());
