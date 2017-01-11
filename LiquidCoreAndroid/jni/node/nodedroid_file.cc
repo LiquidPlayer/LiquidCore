@@ -524,6 +524,8 @@ Local<Value> chdir_(Environment *env, Local<Value> path)
     HandleScope handle_scope(env->isolate());
     Context::Scope context_scope(env->context());
 
+    path = fs_(env, path, _FS_ACCESS_RD);
+
     Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
         String::NewFromUtf8(env->isolate(), "__fs"));
     Local<Object> globalObj = env->context()->Global();
@@ -551,7 +553,8 @@ Local<Value> cwd_(Environment *env)
       Local<Value> fsVal;
       if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
         Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
-        return fsObj->Get(env->context(), String::NewFromUtf8(env->isolate(), "cwd")).ToLocalChecked();
+        return alias_(env, fsObj->Get(env->context(),
+            String::NewFromUtf8(env->isolate(), "cwd")).ToLocalChecked());
       }
     }
     return Local<Value>::New(env->isolate(),Undefined(env->isolate()));
