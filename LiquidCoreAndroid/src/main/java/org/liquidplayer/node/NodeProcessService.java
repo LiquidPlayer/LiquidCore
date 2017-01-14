@@ -40,25 +40,31 @@ import org.liquidplayer.javascript.JSContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class NodeProcessService extends IntentService implements Process.EventListener {
     public NodeProcessService() {
         super("org.liquidplayer.node.NodeProcessService");
     }
 
+    public static final String kMicroAppInstance = "org.liquidplayer.node.Process";
+    public static final String kMicroAppURI = "org.liquidplayer.node.URI";
+
     static private Map<String,Process> processMap = new HashMap<>();
 
     @Override
     protected void onHandleIntent(Intent workIntent) {
-        String uuid = workIntent.getExtras().getString("org.liquidplayer.node.Process");
+        String uuid = null;
+        String uri = workIntent.getExtras().getString(kMicroAppURI);
 
-        if (processMap.get(uuid) == null) {
-            android.util.Log.d("NodeProcessService", "Creating new Process UUID " + uuid);
+        if (uri != null) {
+            uuid = UUID.randomUUID().toString();
             processMap.put(uuid,
-                    new Process(this, "node_console", Process.kMediaAccessPermissionsRW, this));
+                    new Process(this, uri, Process.kMediaAccessPermissionsRW, this));
         }
 
-        Intent intent = new Intent(uuid);
+        Intent intent = new Intent(uri);
+        intent.putExtra(kMicroAppInstance, uuid);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -68,6 +74,8 @@ public class NodeProcessService extends IntentService implements Process.EventLi
 
     @Override
     public void onProcessStart(Process process, JSContext context) {
+        process.keepAlive();
+        // FIXME: we need to let it die after our first client has had a chance to do something
     }
 
     @Override

@@ -48,13 +48,16 @@
 
 package org.liquidplayer.demoapp;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * This custom object is used to populate the list adapter. It contains a reference
  * to an image, title, and the extra text to be displayed. Furthermore, it keeps track
  * of the current state (collapsed/expanded) of the corresponding item in the list,
  * as well as store the height of the cell in its collapsed state.
  */
-public class ExpandableListItem implements OnSizeChangedListener {
+class ExpandableListItem implements OnSizeChangedListener, Parcelable {
 
     private String mTitle;
     private String mText;
@@ -63,66 +66,129 @@ public class ExpandableListItem implements OnSizeChangedListener {
     private int mCollapsedHeight;
     private int mExpandedHeight;
     private String mFilename = null;
+    private int mProgress;
+    private boolean mIsDownloading;
+    private Object data;
 
-    public ExpandableListItem(String title, String url, int collapsedHeight, String text) {
+    ExpandableListItem(String title, String url, int collapsedHeight, String text) {
         mTitle = title;
         mCollapsedHeight = collapsedHeight;
         mIsExpanded = false;
         mText = text;
         mExpandedHeight = -1;
         mUrl = url;
+        mProgress = 0;
+        mIsDownloading = false;
     }
 
-    public boolean isExpanded() {
-        return mIsExpanded;
+    private ExpandableListItem(Parcel in) {
+        mTitle = in.readString();
+        mText = in.readString();
+        mUrl = in.readString();
+        mIsExpanded = in.readInt() > 0;
+        mCollapsedHeight = in.readInt();
+        mExpandedHeight = in.readInt();
+        mFilename = in.readString();
+        mProgress = in.readInt();
+        mIsDownloading = in.readInt() > 0;
     }
 
-    public void setExpanded(boolean isExpanded) {
-        mIsExpanded = isExpanded;
+    String getUrl() {
+        return mUrl;
     }
-
-    public String getTitle() {
+    String getTitle() {
         return mTitle;
     }
 
-    public int getCollapsedHeight() {
-        return mCollapsedHeight;
+    void setExpanded(boolean isExpanded) {
+        mIsExpanded = isExpanded;
+    }
+    boolean isExpanded() {
+        return mIsExpanded;
     }
 
     public void setCollapsedHeight(int collapsedHeight) {
         mCollapsedHeight = collapsedHeight;
     }
+    int getCollapsedHeight() {
+        return mCollapsedHeight;
+    }
 
     public String getText() {
         return mText;
     }
-
     public void setText(String text) {
         mText = text;
     }
 
-    public String getUrl() {
-        return mUrl;
+    private void setExpandedHeight(int expandedHeight) {
+        mExpandedHeight = expandedHeight;
     }
-
-    public int getExpandedHeight() {
+    int getExpandedHeight() {
         return mExpandedHeight;
     }
 
-    public void setExpandedHeight(int expandedHeight) {
-        mExpandedHeight = expandedHeight;
-    }
-
-    public void setFileName(String fname) {
+    void setFileName(String fname) {
         mFilename = fname;
     }
-
-    public String getFileName() {
+    String getFileName() {
         return mFilename;
     }
+
+    public Object getData() {
+        return data;
+    }
+    public void setData(Object data) {
+        this.data = data;
+    }
+
+    void setProgress(int progress) {
+        mProgress = progress;
+    }
+    int getProgress() {
+        return mProgress;
+    }
+
+    void setDownloading(boolean isDownloading) {
+        mIsDownloading = isDownloading;
+    }
+    boolean isDownloading() {
+        return mIsDownloading;
+    }
+
 
     @Override
     public void onSizeChanged(int newHeight) {
         setExpandedHeight(newHeight);
+    }
+
+    public static final Parcelable.Creator<ExpandableListItem> CREATOR =
+            new Parcelable.Creator<ExpandableListItem>() {
+        public ExpandableListItem createFromParcel(Parcel source) {
+            return new ExpandableListItem(source);
+        }
+
+        public ExpandableListItem[] newArray(int size) {
+            return new ExpandableListItem[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        // hashCode() of this class
+        return hashCode();
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(mTitle);
+        out.writeString(mText);
+        out.writeString(mUrl);
+        out.writeInt(mIsExpanded ? 1 : 0);
+        out.writeInt(mCollapsedHeight);
+        out.writeInt(mExpandedHeight);
+        out.writeString(mFilename);
+        out.writeInt(mProgress);
+        out.writeInt(mIsDownloading ? 1 : 0);
     }
 }

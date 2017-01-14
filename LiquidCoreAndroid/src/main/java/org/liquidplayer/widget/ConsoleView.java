@@ -56,12 +56,10 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
         if (getId() != NO_ID) {
             __bundle = stateBundle.get(getId());
             if (__bundle == null) {
-                android.util.Log.d("state()", "creating new bundle for " + getId());
                 __bundle = new Bundle();
                 stateBundle.append(getId(), __bundle);
             }
         } else {
-            android.util.Log.d("state()", "we ain't got no id");
             __bundle = new Bundle();
         }
         return __bundle;
@@ -149,7 +147,7 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
         new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
-                scrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                //scrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
                 Paint textPaint = consoleTextView.getPaint();
                 int width = Math.round(textPaint.measureText("X") * consoleTextView.getTextScaleX());
@@ -171,8 +169,6 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
     private Handler uiThread = new Handler(Looper.getMainLooper());
 
     private void loadViews() {
-        android.util.Log.d("foo", "loadViews");
-
         inputBox = (EditText) findViewById(R.id.inputBox);
         scrollView = (NestedScrollView) findViewById(R.id.scroll);
 
@@ -216,7 +212,6 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
     @Override
     public void setId(int id) {
         super.setId(id);
-        android.util.Log.d("setId", "Setting id " + id);
         __bundle = null; // invalidate bundle
         updateState();
     }

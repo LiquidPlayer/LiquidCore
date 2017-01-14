@@ -50,13 +50,16 @@ package org.liquidplayer.demoapp;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.telecom.Call;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,12 +80,17 @@ import android.widget.VideoView;
 
 import org.liquidplayer.javascript.JSArray;
 import org.liquidplayer.javascript.JSContext;
-import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
+import org.liquidplayer.node.NodeProcessService;
+import org.liquidplayer.node.Process;
 import org.liquidplayer.widget.NodeConsoleView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Scanner;
 
@@ -92,48 +100,25 @@ import java.util.Scanner;
  */
 class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
 
-    static String webtorrent_js = null;
+    static private String webtorrent_js = null;
 
-    private class CallbackObject extends JSObject implements NodeConsoleView.Listener {
-        CallbackObject(JSContext ctx, ExpandableListItem object,
-                       View convertView, int position, NodeConsoleView consoleView) {
-            super(ctx);
-            this.object = object;
-            this.position = position;
-            this.convertView = convertView;
+    private Uri consoleURI =
+            Uri.parse("android.resource://" + getContext().getPackageName() + "/raw/webtorrent");
 
-            if (webtorrent_js == null) {
-                webtorrent_js = new Scanner(getClass().getClassLoader()
-                        .getResourceAsStream("webtorrent.js"), "UTF-8")
-                        .useDelimiter("\\A").next();
+    private final Handler uiThread = new Handler(Looper.getMainLooper());
+    private static int port = 8080;
 
-            }
+    private class UIObject {
+        ImageButton download;
+        ImageView trash;
+        ProgressBar progressBar;
+        int position;
+        NodeConsoleView consoleView;
 
-            download = (ImageButton) convertView.findViewById(R.id.icon);
-            trash = (ImageView) convertView.findViewById(R.id.trash);
-            progressBar = (ProgressBar) convertView.findViewById(R.id.secondLine);
-
-            uiThread.post(setDownloadPlayButton);
-
-            progressBar.setMax(1000);
-
-            this.consoleView = consoleView;
-        }
-
-        private final ExpandableListItem object;
-        private final ImageButton download;
-        private final ImageView trash;
-        private final ProgressBar progressBar;
-        private final int position;
-        private final NodeConsoleView consoleView;
-        private final View convertView;
-
-        private final Handler uiThread = new Handler(Looper.getMainLooper());
-
-        private Runnable setDownloadPlayButton = new Runnable() {
+        final Runnable setDownloadPlayButton = new Runnable() {
             @Override
             public void run() {
-                if (object.getFileName() != null) {
+                if (mData.get(position).getFileName() != null) {
                     download.setImageResource(Resources.getSystem()
                             .getIdentifier("ic_media_play", "drawable", "android"));
                     download.setAlpha(1f);
@@ -146,12 +131,79 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
                 } else {
                     download.setImageResource(Resources.getSystem()
                             .getIdentifier("stat_sys_download", "drawable", "android"));
-                    download.setAlpha(1f);
-                    download.setEnabled(true);
-                    download.setOnClickListener(downloader);
+
+                    if (mData.get(position).isDownloading()) {
+                        download.setAlpha(0.5f);
+                        download.setEnabled(false);
+                    } else {
+                        download.setAlpha(1f);
+                        download.setEnabled(true);
+                        download.setOnClickListener(downloader);
+                    }
 
                     trash.setAlpha(0.5f);
                     trash.setEnabled(false);
+                }
+            }
+        };
+
+        final View.OnClickListener playVideo = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    final Dialog dialog = new Dialog(CustomArrayAdapter.this.getContext());
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                    dialog.setContentView(R.layout.video_dialog);
+                    dialog.show();
+                    WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                            WindowManager.LayoutParams.WRAP_CONTENT,
+                            WindowManager.LayoutParams.WRAP_CONTENT);
+                    if (dialog.getWindow() != null) {
+                        lp.copyFrom(dialog.getWindow().getAttributes());
+                        dialog.getWindow().setAttributes(lp);
+                    }
+                    File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
+                    if (external != null) {
+                        String path = external.getAbsolutePath() +
+                                "/LiquidPlayer/" + URLEncoder.encode(consoleURI.toString(), "UTF-8")
+                                + "/" + mData.get(position).getFileName();
+                        Uri uriPath = Uri.fromFile(new File(path));
+
+                        VideoView videoView = (VideoView) dialog.findViewById(R.id.video_view);
+                        videoView.setVideoURI(uriPath);
+                        videoView.start();
+                    } else {
+                        android.util.Log.e("playVideo", "No external storage");
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    android.util.Log.e("playVideo", e.toString());
+                }
+            }
+        };
+
+        final View.OnClickListener deleter = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
+                    if (external != null) {
+                        String path = external.getAbsolutePath() +
+                                "/LiquidPlayer/" + URLEncoder.encode(consoleURI.toString(), "UTF-8")
+                                + "/" + mData.get(position).getFileName();
+                        if (!new File(path).delete()) {
+                            android.util.Log.e("deleter", "Failed to delete file " + path);
+                        }
+                    }
+
+                    consoleView.reset();
+                    mData.get(position).setFileName(null);
+                    progressBar.setProgress(0);
+                    mData.get(position).setProgress(0);
+                    trash.setAlpha(0.5f);
+                    trash.setEnabled(false);
+                    setDownloadPlayButton.run();
+                } catch (UnsupportedEncodingException e) {
+                    android.util.Log.e("deleter", e.toString());
                 }
             }
         };
@@ -161,91 +213,97 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
             public void onClick(View view) {
                 download.setAlpha(0.5f);
                 download.setEnabled(false);
-                getContext().evaluateScript("process.chdir('/home/external/persistent')");
-                getContext().property("process").toObject().property("argv", new String[]{
-                        "node", "webtorrent.js", "-p", "" + (8080 + position), "download",
-                        object.getUrl()
-                });
-                getContext().evaluateScript(webtorrent_js);
+                LocalBroadcastManager.getInstance(CustomArrayAdapter.this.getContext()).
+                    registerReceiver(
+                        new BroadcastReceiver() {
+                            @Override
+                            public void onReceive(Context context, Intent intent) {
+                                final String instanceId = intent.getExtras().getString(
+                                        NodeProcessService.kMicroAppInstance);
+                                Process process = NodeProcessService.getProcess(instanceId);
+                                process.addEventListener(new Process.EventListener() {
+                                    @Override
+                                    public void onProcessStart(Process process, JSContext ctx) {
+                                        consoleView.attach(instanceId);
+                                        process.removeEventListener(this);
+                                        new CallbackObject(ctx, position);
+                                    }
+                                    @Override public void onProcessAboutToExit(Process p, int x) {}
+                                    @Override public void onProcessExit(Process p, int x) {}
+                                    @Override public void onProcessFailed(Process p, Exception x) {}
+                                });
+                                LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
+                            }
+                        },
+                        new IntentFilter(consoleURI.toString())
+                    );
+
+                Intent serviceIntent = new Intent(CustomArrayAdapter.this.getContext(),
+                        NodeProcessService.class);
+                serviceIntent.putExtra(NodeProcessService.kMicroAppURI, consoleURI.toString());
+                CustomArrayAdapter.this.getContext().startService(serviceIntent);
             }
         };
+    }
 
-        private View.OnClickListener playVideo = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                final Dialog dialog = new Dialog(CustomArrayAdapter.this.getContext());
-                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                dialog.setContentView(R.layout.video_dialog);
-                dialog.show();
-                WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.WRAP_CONTENT);
-                lp.copyFrom(dialog.getWindow().getAttributes());
-                dialog.getWindow().setAttributes(lp);
-                File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
-                String path = external.getAbsolutePath() +
-                        "/LiquidPlayer/node_console/" + object.getFileName();
-                Uri uriPath = Uri.fromFile(new File(path));
+    private class CallbackObject extends JSObject {
+        private final int position;
 
-                VideoView videoView = (VideoView) dialog.findViewById(R.id.video_view);
-                videoView.setVideoURI(uriPath);
-                videoView.start();
-            }
-        };
-
-        private View.OnClickListener deleter = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                File external = CustomArrayAdapter.this.getContext().getExternalFilesDir(null);
-                String path = external.getAbsolutePath() +
-                        "/LiquidPlayer/node_console/" + object.getFileName();
-                new File(path).delete();
-                getContext().evaluateScript("global.callbackObject={onTorrentDone:function(){}, onDraw:function(){}};");
-                consoleView.reset();
-                object.setFileName(null);
-                progressBar.setProgress(0);
-                trash.setAlpha(0.5f);
-                trash.setEnabled(false);
-                download.setImageResource(Resources.getSystem()
-                        .getIdentifier("stat_sys_download", "drawable", "android"));
-                download.setAlpha(0.5f);
-                download.setEnabled(false);
-
-                consoleView.setListener(CallbackObject.this);
-            }
-        };
-
-        @Override
-        public void onJSReady(final JSContext ctx) {
-            ctx.property("callbackObject",
-                    new CallbackObject(ctx,object,convertView,position,consoleView));
+        CallbackObject(JSContext ctx, int position) {
+            super(ctx);
+            this.position = position;
+            ctx.property("callbackObject", this);
+            ctx.evaluateScript(
+                    "process.chdir('/home/external/persistent')");
+            ctx.property("process").toObject().property("argv",
+                    new String[] {
+                            "node", "webtorrent.js", "-p",
+                            "" + (++port), "download",
+                            mData.get(position).getUrl()
+                    }
+            );
+            mData.get(position).setDownloading(true);
+            ctx.evaluateScript(webtorrent_js);
         }
 
+        @SuppressWarnings("unused")
         @JSObject.jsexport
         void onTorrentDone(JSObject torrent) {
-            android.util.Log.d("torrent", "onTorrentDone");
+            mData.get(position).setDownloading(false);
             if (torrent.property("files").isArray() && torrent.property("length").toNumber() > 0) {
+                final UIObject uiObject = (UIObject) mData.get(position).getData();
                 @SuppressWarnings("unchecked")
                 JSObject file =
                     ((JSArray<JSValue>) torrent.property("files").toJSArray()).get(0).toObject();
                 String fileName = file.property("path").toString();
-                android.util.Log.d("torrent", "file = " + fileName);
-                object.setFileName(fileName);
-                uiThread.post(setDownloadPlayButton);
+                mData.get(position).setFileName(fileName);
+                getContext().evaluateScript("global.callbackObject={onTorrentDone:function(){},"+
+                        "onDraw:function(){}};");
+                uiObject.consoleView.detach();
+                uiThread.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        uiObject.progressBar.setProgress(1000);
+                        mData.get(position).setProgress(1000);
+                        uiObject.setDownloadPlayButton.run();
+                    }
+                });
             }
         }
 
+        @SuppressWarnings("unused")
         @JSObject.jsexport
         void onDraw(JSObject torrent) {
             final double progress = torrent.property("progress").toNumber();
+            final UIObject uiObject = (UIObject) mData.get(position).getData();
             uiThread.post(new Runnable() {
                 @Override
                 public void run() {
-                    progressBar.setProgress((int) (progress * 1000));
-            }
+                    uiObject.progressBar.setProgress((int) (progress * 1000));
+                    mData.get(position).setProgress((int) (progress * 1000));
+                }
             });
         }
-
     }
 
     private List<ExpandableListItem> mData;
@@ -271,7 +329,6 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
     public @NonNull View getView(final int position, View convertView, @NonNull ViewGroup parent) {
 
         final ExpandableListItem object = mData.get(position);
-
         int id = position==0 ? R.id.console1 : position==1 ? R.id.console2 : R.id.console3;
         if(convertView == null) {
             LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
@@ -283,61 +340,80 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
                     (AbsListView.LayoutParams.MATCH_PARENT, object.getCollapsedHeight());
             linearLayout.setLayoutParams(linearLayoutParams);
 
-            TextView titleView = (TextView) convertView.findViewById(R.id.firstLine);
-
-            ImageView consoleButton = (ImageView) convertView.findViewById(R.id.console);
-            final View itemView = convertView;
-            consoleButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (object.isExpanded()) {
-                        mListView.collapseView(itemView);
-                    } else {
-                        mListView.expandView(itemView);
-                    }
-                }
-            });
-
-            titleView.setText(object.getTitle());
-
             convertView.setLayoutParams(new ListView.LayoutParams(
                     AbsListView.LayoutParams.MATCH_PARENT,
                     AbsListView.LayoutParams.WRAP_CONTENT));
 
-            ExpandingLayout expandingLayout = (ExpandingLayout) convertView.findViewById(R.id
-                    .expanding_layout);
             final LinearLayout ll = (LinearLayout) convertView.findViewById(R.id.fragment);
             ll.setId(ViewStub.generateViewId());
 
-            final NodeConsoleView consoleView = new NodeConsoleView(getContext());
+            NodeConsoleView consoleView = new NodeConsoleView(getContext());
             consoleView.setId(id);
             consoleView.setLayoutParams(
                     new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
                             (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300,
                                     getContext().getResources().getDisplayMetrics())));
-            consoleView.setListener(new NodeConsoleView.Listener() {
-                @Override
-                public void onJSReady(final JSContext ctx) {
-                    ctx.property("callbackObject",
-                            new CallbackObject(ctx,object,itemView,position,consoleView));
 
-                    final JSFunction log = ctx.property("console").toObject()
-                            .property("log").toFunction();
-                    log.call(null, "all set up");
+            if (webtorrent_js == null) {
+                try {
+                    InputStream is = getContext().getContentResolver().openInputStream(consoleURI);
+                    if (is == null) {
+                        throw new FileNotFoundException();
+                    }
+                    webtorrent_js = new Scanner(is, "UTF-8").useDelimiter("\\A").next();
+                } catch (FileNotFoundException e) {
+                    android.util.Log.e("webtorrent_js", e.toString());
                 }
-            });
+
+            }
 
             ll.addView(consoleView);
-
-            expandingLayout.setExpandedHeight(object.getExpandedHeight());
-            expandingLayout.setSizeChangedListener(object);
-
-            if (!object.isExpanded()) {
-                expandingLayout.setVisibility(View.GONE);
-            } else {
-                expandingLayout.setVisibility(View.VISIBLE);
-            }
         }
+
+        UIObject uiObject = new UIObject();
+
+        uiObject.position = position;
+        uiObject.consoleView = (NodeConsoleView) convertView.findViewById(id);
+        uiObject.download = (ImageButton) convertView.findViewById(R.id.icon);
+        uiObject.trash = (ImageView) convertView.findViewById(R.id.trash);
+        uiObject.progressBar = (ProgressBar) convertView.findViewById(R.id.secondLine);
+
+        mData.get(position).setData(uiObject);
+
+        TextView titleView = (TextView) convertView.findViewById(R.id.firstLine);
+
+        ImageView consoleButton = (ImageView) convertView.findViewById(R.id.console);
+        final View itemView = convertView;
+        consoleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (object.isExpanded()) {
+                    mListView.collapseView(itemView);
+                } else {
+                    mListView.expandView(itemView);
+                }
+            }
+        });
+
+        titleView.setText(object.getTitle());
+
+        ExpandingLayout expandingLayout = (ExpandingLayout) convertView.findViewById(R.id
+                .expanding_layout);
+
+        uiObject.progressBar.setMax(1000);
+        uiObject.progressBar.setProgress(object.getProgress());
+
+        uiObject.setDownloadPlayButton.run();
+
+        expandingLayout.setExpandedHeight(object.getExpandedHeight());
+        expandingLayout.setSizeChangedListener(object);
+
+        if (!object.isExpanded()) {
+            expandingLayout.setVisibility(View.GONE);
+        } else {
+            expandingLayout.setVisibility(View.VISIBLE);
+        }
+
         return convertView;
     }
 
