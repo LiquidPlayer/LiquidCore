@@ -12,9 +12,10 @@ import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.service.MicroService;
+import org.liquidplayer.service.Surface;
 
 public class NodeConsoleView extends ConsoleView
-    implements Process.EventListener, JSContext.IJSExceptionHandler {
+    implements Process.EventListener, JSContext.IJSExceptionHandler, Surface {
 
     public NodeConsoleView(Context context) {
         this(context, null);
@@ -55,6 +56,7 @@ public class NodeConsoleView extends ConsoleView
         }
     }
 
+    @Override
     public void attach(MicroService service) {
         do_attach(service.getId());
         resize(columns, rows);
@@ -74,6 +76,7 @@ public class NodeConsoleView extends ConsoleView
         }
     }
 
+    @Override
     public void detach() {
         if (state().getString("uuid") != null) {
             if (process != null) {
