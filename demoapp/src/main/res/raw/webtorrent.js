@@ -327,7 +327,7 @@ function runDownload (torrentId) {
         torrent.numPeers,
         getRuntime()
       )
-      callbackObject.onTorrentDone(torrent);
+      LiquidEvents.emit("torrent_done", { files: torrent.files } );
     }
     torrentDone()
   })
@@ -608,7 +608,7 @@ function drawTorrent (torrent) {
       linesRemaining -= 1
     }
 
-    callbackObject.onDraw(torrent);
+    LiquidEvents.emit("draw",{progress: torrent.progress});
   }
 }
 

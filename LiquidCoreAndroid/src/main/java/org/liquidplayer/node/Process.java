@@ -272,7 +272,7 @@ public class Process {
                     };
                     new JSFunction(context, "__onExit", new String[]{"exitFunc"},
                             "process.on('exit',exitFunc);" +
-                                    "process.chdir('/home');", null, 0).call(null, onExit);
+                            "process.chdir('/home');", null, 0).call(null, onExit);
 
                     // intercept stdout and stderr
                     JSObject stdout =

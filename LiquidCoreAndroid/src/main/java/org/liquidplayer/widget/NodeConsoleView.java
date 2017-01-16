@@ -10,8 +10,8 @@ import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
-import org.liquidplayer.node.NodeProcessService;
 import org.liquidplayer.node.Process;
+import org.liquidplayer.service.MicroService;
 
 public class NodeConsoleView extends ConsoleView
     implements Process.EventListener, JSContext.IJSExceptionHandler {
@@ -55,18 +55,23 @@ public class NodeConsoleView extends ConsoleView
         }
     }
 
-    public void attach(final String nodeProcessId) {
-        do_attach(nodeProcessId);
+    public void attach(MicroService service) {
+        do_attach(service.getId());
         resize(columns, rows);
     }
 
-    private void do_attach(final String nodeProcessId) {
-        if (state().getString("uuid") != null && !state().getString("uuid").equals(nodeProcessId)) {
+    private void do_attach(final String serviceId) {
+        if (state().getString("uuid") != null && !serviceId.equals(state().getString("uuid"))) {
             detach();
         }
-        state().putString("uuid", nodeProcessId);
-        process = NodeProcessService.getProcess(nodeProcessId);
-        process.addEventListener(NodeConsoleView.this);
+        if (state().getString("uuid") == null) {
+            state().putString("uuid", serviceId);
+            MicroService service = MicroService.getService(serviceId);
+            if (service != null) {
+                process = service.getProcess();
+                process.addEventListener(NodeConsoleView.this);
+            }
+        }
     }
 
     public void detach() {
@@ -176,13 +181,13 @@ public class NodeConsoleView extends ConsoleView
     @Override
     public void onProcessAboutToExit(Process process, int exitCode) {
         consoleTextView.println("\u001B[31mProcess about to exit with code " + exitCode);
-        android.util.Log.e("onProcessAboutToExit", "Process about to exit with code " + exitCode);
+        android.util.Log.i("onProcessAboutToExit", "Process about to exit with code " + exitCode);
         detach();
     }
 
     @Override
     public void onProcessExit(Process process, int exitCode) {
-        android.util.Log.d("onProcessExit", "exiting");
+        android.util.Log.i("onProcessExit", "exiting");
         consoleTextView.println("\u001B[31mProcess exited with code " + exitCode);
         this.process = null;
     }

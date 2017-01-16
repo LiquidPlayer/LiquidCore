@@ -70,11 +70,10 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
     private boolean mIsDownloading;
     private Object data;
 
-    ExpandableListItem(String title, String url, int collapsedHeight, String text) {
+    ExpandableListItem(String title, String url, int collapsedHeight) {
         mTitle = title;
         mCollapsedHeight = collapsedHeight;
         mIsExpanded = false;
-        mText = text;
         mExpandedHeight = -1;
         mUrl = url;
         mProgress = 0;
@@ -83,7 +82,6 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
 
     private ExpandableListItem(Parcel in) {
         mTitle = in.readString();
-        mText = in.readString();
         mUrl = in.readString();
         mIsExpanded = in.readInt() > 0;
         mCollapsedHeight = in.readInt();
@@ -112,13 +110,6 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
     }
     int getCollapsedHeight() {
         return mCollapsedHeight;
-    }
-
-    public String getText() {
-        return mText;
-    }
-    public void setText(String text) {
-        mText = text;
     }
 
     private void setExpandedHeight(int expandedHeight) {
@@ -182,7 +173,6 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeString(mTitle);
-        out.writeString(mText);
         out.writeString(mUrl);
         out.writeInt(mIsExpanded ? 1 : 0);
         out.writeInt(mCollapsedHeight);

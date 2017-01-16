@@ -67,20 +67,17 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             values = new ArrayList<>();
             values.add(new ExpandableListItem(
-                    "Housefull 3 Official Trailer",
-                    "magnet:?xt=urn:btih:2bdffd7dbf03e63b1ee2cf1c6580b49d720ac331&dn=Housefull%203%20Official%20Trailer%20with%20Subtitle%20Akshay%20Kumar%20Riteish%20Deshmukh%20Abhishek%20Bachchan&tr=http://opentrackr.org:1337/announce&tr=udp://mgtracker.org:6969/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.opentrackr.org:1337/announce",
-                    CELL_DEFAULT_HEIGHT,
-                    getResources().getString(R.string.short_lorem_ipsum)));
+                    "The Elder Scrolls V Skyrim Trailer (2011)",
+                    "magnet:?xt=urn:btih:617bb9d8a4449881e3d6018b177240f6db34364e&dn=The%20Elder%20Scrolls%20V%20Skyrim%20Trailer%20(2011)&tr=http://opentrackr.org:1337/announce&tr=udp://mgtracker.org:6969/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.pirateparty.gr:6969/announce",
+                    CELL_DEFAULT_HEIGHT));
             values.add(new ExpandableListItem(
-                    "Now You See Me 2 Official Trailer 1 (2016)",
-                    "magnet:?xt=urn:btih:1027d40cde958bb7ad78a9980a2df9aab43b8a06&dn=Now%20You%20See%20Me%202%20Official%20Trailer%201%20(2016)%201080p%20mp4&tr=http://opentrackr.org:1337/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://tracker.zer0day.to:1337/announce",
-                    CELL_DEFAULT_HEIGHT,
-                    getResources().getString(R.string.medium_lorem_ipsum)));
+                    "New Mumiya (2017) Trailer Dub",
+                    "magnet:?xt=urn:btih:bdce8abb6e16c2a1cb6ad2f049ccaa9fd64650e6&dn=New%20Mumiya%20(2017)%20Trailer%20Dub&tr=http://opentrackr.org:1337/announce&tr=http://p4p.arenabg.com:1337/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.zer0day.to:1337/announce",
+                    CELL_DEFAULT_HEIGHT));
             values.add(new ExpandableListItem(
-                    "Sausage Party Official Trailer",
-                    "magnet:?xt=urn:btih:502425a36a992da16b445e138cf0094cd3cce880&dn=Sausage%20Party%20Official%20Trailer&tr=http://retracker.krs-ix.ru/announce&tr=http://tracker.dler.org:6969/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.mg64.net:6881/announce&tr=udp://tracker.piratepublic.com:1337/announce",
-                    CELL_DEFAULT_HEIGHT,
-                    getResources().getString(R.string.long_lorem_ipsum)));
+                    "Alien Covenant Official Trailer",
+                    "magnet:?xt=urn:btih:dc9d6c9d914602c9ec849ef5ad48c3e050432ddd&dn=Alien%20Covenant%20Official%20Trailer&tr=http://opentrackr.org:1337/announce&tr=http://p4p.arenabg.com:1337/announce&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.pirateparty.gr:6969/announce",
+                    CELL_DEFAULT_HEIGHT));
         } else {
             values = savedInstanceState.getParcelableArrayList("list");
         }
