@@ -1,4 +1,36 @@
-package org.liquidplayer.widget;
+//
+// ConsoleSurfaceView.java
+//
+// LiquidPlayer project
+// https://github.com/LiquidPlayer
+//
+// Created by Eric Lange
+//
+/*
+ Copyright (c) 2016 Eric Lange. All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+package org.liquidplayer.surfaces;
 
 import android.content.Context;
 import android.os.Handler;
@@ -14,18 +46,28 @@ import org.liquidplayer.node.Process;
 import org.liquidplayer.service.MicroService;
 import org.liquidplayer.service.Surface;
 
-public class NodeConsoleView extends ConsoleView
+/**
+ * A ConsoleSurface is a node.js ANSI text console.  ConsoleSurface operates by manipulating
+ * the 'process' object in node.  It captures output written to stdin and stdout as well as
+ * traps and displays any JavaScript exceptions.
+ *
+ * So long as the underlying MicroService is still running, ConsoleSurface can inject javascript
+ * into a running process through a command line.
+ *
+ * ConsoleSurface is intended to be used mostly for debugging.
+ */
+public class ConsoleSurface extends ConsoleView
     implements Process.EventListener, JSContext.IJSExceptionHandler, Surface {
 
-    public NodeConsoleView(Context context) {
+    public ConsoleSurface(Context context) {
         this(context, null);
     }
 
-    public NodeConsoleView(Context context, AttributeSet attrs) {
+    public ConsoleSurface(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public NodeConsoleView(Context context, AttributeSet attrs, int defStyle) {
+    public ConsoleSurface(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
@@ -56,6 +98,14 @@ public class NodeConsoleView extends ConsoleView
         }
     }
 
+    /**
+     * ConsoleSurface is somewhat unusal for Surfaces.  It can be attached and detached at any
+     * time during the MicroService lifecycle, as it dynamically overrides stdin, stdout and
+     * handles exceptions.  There is no special interface required on the JavaScript side since
+     * it operates purely on standard streams.  Therefore, no setup is required before
+     * running the service.
+     * @param service  The MicroService to attach
+     */
     @Override
     public void attach(MicroService service) {
         do_attach(service.getId());
@@ -71,7 +121,7 @@ public class NodeConsoleView extends ConsoleView
             MicroService service = MicroService.getService(serviceId);
             if (service != null) {
                 process = service.getProcess();
-                process.addEventListener(NodeConsoleView.this);
+                process.addEventListener(ConsoleSurface.this);
             }
         }
     }

@@ -46,17 +46,24 @@ import org.liquidplayer.node.Process;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 
@@ -140,10 +147,11 @@ public class MicroService implements Process.EventListener {
     private ServiceExitListener exitListener;
     private ServiceErrorListener errorListener;
     private final URI serviceURI;
+    private String serviceId;
     private final Context androidCtx;
     private final String uuid;
     private String [] argv;
-    private String code;
+    private String module;
     private JSObject emitter;
     private JSFunction safeStringify;
     private boolean started = false;
@@ -161,6 +169,12 @@ public class MicroService implements Process.EventListener {
     public MicroService(Context ctx, URI serviceURI, ServiceStartListener start,
                         ServiceErrorListener error, ServiceExitListener exit) {
         this.serviceURI = serviceURI;
+        try {
+            this.serviceId = URLEncoder.encode(
+                serviceURI.toString().substring(0,serviceURI.toString().lastIndexOf('/')), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            android.util.Log.e("MicrosService", e.toString());
+        }
         this.startListener = start;
         this.exitListener = exit;
         this.errorListener = error;
@@ -336,7 +350,8 @@ public class MicroService implements Process.EventListener {
         if (started) throw new ServiceAlreadyStartedError();
         started = true;
         this.argv = argv;
-        new Thread(startAsync).run();
+        process = new Process(androidCtx, serviceId, Process.kMediaAccessPermissionsRW,
+                MicroService.this);
     }
 
     /**
@@ -346,51 +361,72 @@ public class MicroService implements Process.EventListener {
      */
     public File getSharedPath() {
         File external = androidCtx.getExternalFilesDir(null);
-        try {
-            if (external != null) {
-                String path = external.getAbsolutePath() +
-                        "/LiquidPlayer/" + URLEncoder.encode(serviceURI.toString(), "UTF-8");
-                return new File(path);
-            }
-        } catch (UnsupportedEncodingException e) {
-            android.util.Log.e("getSharedPath", e.toString());
+        if (external != null) {
+            String path = external.getAbsolutePath() + "/LiquidPlayer/" + serviceId;
+            return new File(path);
         }
         return null;
     }
 
-    private Runnable startAsync = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                String scheme = serviceURI.getScheme();
-                InputStream in;
-                if ("http".equals(scheme) || "https".equals(scheme)) {
-                    URL url = serviceURI.toURL();
-                    URLConnection connection = url.openConnection();
-                    connection.setReadTimeout(10000);
-                    if (connection.getHeaderField("Content-Encoding")!=null &&
-                            connection.getHeaderField("Content-Encoding").equals("gzip")){
-                        in = new GZIPInputStream(connection.getInputStream());
-                    } else {
-                        in = connection.getInputStream();
-                    }
-                    in.close();
-                } else {
-                    in = androidCtx.getContentResolver()
-                            .openInputStream(Uri.parse(serviceURI.toString()));
-                }
-                if (in == null) {
-                    throw new FileNotFoundException();
-                }
-                code = new Scanner(in, "UTF-8").useDelimiter("\\A").next();
-                in.close();
-                process = new Process(androidCtx, serviceURI.toString(),
-                        Process.kMediaAccessPermissionsRW, MicroService.this);
-            } catch (Exception e) {
-                onProcessFailed(null,e);
-            }
+    private File getModulesPath() {
+        final String suffix = "/__org.liquidplayer.node__/_" + serviceId;
+        String modules = androidCtx.getFilesDir().getAbsolutePath() + suffix + "/modules";
+        return new File(modules);
+    }
+
+    private void fetchService() throws IOException {
+        // See if the file already exists
+        File modules = getModulesPath();
+        if (modules == null) {
+            throw new FileNotFoundException();
         }
-    };
+
+        String path = serviceURI.getPath();
+        MicroService.this.module = path.substring(path.lastIndexOf('/') + 1);
+        File module = new File(getModulesPath().getAbsolutePath() + "/" +
+            MicroService.this.module);
+        long lastModified = module.lastModified();
+
+        String scheme = serviceURI.getScheme();
+        InputStream in = null;
+        if ("http".equals(scheme) || "https".equals(scheme)) {
+            URL url = serviceURI.toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setReadTimeout(10000);
+            if (lastModified > 0) {
+                SimpleDateFormat sdf =
+                        new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss", Locale.US);
+                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                connection.setRequestProperty("If-Modified-Since",
+                        sdf.format(new Date(lastModified)) + " GMT");
+                connection.setRequestProperty("Accept-Encoding", "gzip");
+            }
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                if (connection.getHeaderField("Content-Encoding") != null &&
+                        connection.getHeaderField("Content-Encoding").equals("gzip")) {
+                    in = new GZIPInputStream(connection.getInputStream());
+                } else {
+                    in = connection.getInputStream();
+                }
+            } else if (responseCode != 304) { // 304 just means the file has not changed
+                throw new FileNotFoundException();
+            }
+        } else {
+            in = androidCtx.getContentResolver().openInputStream(Uri.parse(serviceURI.toString()));
+        }
+        if (in != null) {
+            // Write file to /home/modules
+            OutputStream out = new FileOutputStream(module);
+            byte[] buf = new byte[16 * 1024];
+            int len;
+            while((len=in.read(buf))>0){
+                out.write(buf,0,len);
+            }
+            out.close();
+            in.close();
+        }
+    }
 
     @Override
     public void onProcessStart(Process process, JSContext context) {
@@ -401,21 +437,29 @@ public class MicroService implements Process.EventListener {
         );
         emitter = context.property("LiquidEvents").toObject();
 
-        // Notify host that service is ready to accept event listeners
-        if (startListener != null) {
-            startListener.onStart(this);
-            startListener = null;
+        try {
+            fetchService();
+
+            // Notify host that service is ready to accept event listeners
+            if (startListener != null) {
+                startListener.onStart(this);
+                startListener = null;
+            }
+
+            // Construct process.argv
+            ArrayList<String> args = new ArrayList<>();
+            args.add("node");
+            args.add("/home/modules/" + module);
+            args.addAll(Arrays.asList(argv));
+            context.property("process").toObject().property("argv", args);
+
+            // Execute code
+            final String script =
+                    "eval(String(require('fs').readFileSync('/home/modules/" + module + "')))";
+            context.evaluateScript(script);
+        } catch (IOException e) {
+            onProcessFailed(null, e);
         }
-
-        // Construct process.argv
-        ArrayList<String> args = new ArrayList<>();
-        args.add("node");
-        args.add(serviceURI.toString());
-        args.addAll(Arrays.asList(argv));
-        context.property("process").toObject().property("argv", args);
-
-        // Execute code
-        context.evaluateScript(code);
     }
 
     static private Map<String,MicroService> serviceMap = new HashMap<>();
@@ -467,7 +511,9 @@ public class MicroService implements Process.EventListener {
         for (Map.Entry<String,MicroService> entry : serviceMap.entrySet()) {
             if (entry.getValue() == this) {
                 serviceMap.remove(entry.getKey());
-                process.removeEventListener(this);
+                if (process != null) {
+                    process.removeEventListener(this);
+                }
                 break;
             }
         }

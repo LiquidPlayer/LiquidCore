@@ -78,7 +78,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.liquidplayer.service.MicroService;
-import org.liquidplayer.widget.NodeConsoleView;
+import org.liquidplayer.surfaces.ConsoleSurface;
 
 import java.io.File;
 import java.net.URI;
@@ -101,7 +101,7 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
         ImageView trash;
         ProgressBar progressBar;
         int position;
-        NodeConsoleView consoleView;
+        ConsoleSurface consoleView;
 
         final Runnable setDownloadPlayButton = new Runnable() {
             @Override
@@ -306,7 +306,7 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
             final LinearLayout ll = (LinearLayout) convertView.findViewById(R.id.fragment);
             ll.setId(ViewStub.generateViewId());
 
-            NodeConsoleView consoleView = new NodeConsoleView(getContext());
+            ConsoleSurface consoleView = new ConsoleSurface(getContext());
             consoleView.setId(id);
             consoleView.setLayoutParams(
                     new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
@@ -319,7 +319,7 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
         UIObject uiObject = new UIObject();
 
         uiObject.position = position;
-        uiObject.consoleView = (NodeConsoleView) convertView.findViewById(id);
+        uiObject.consoleView = (ConsoleSurface) convertView.findViewById(id);
         uiObject.download = (ImageButton) convertView.findViewById(R.id.icon);
         uiObject.trash = (ImageView) convertView.findViewById(R.id.trash);
         uiObject.progressBar = (ProgressBar) convertView.findViewById(R.id.secondLine);

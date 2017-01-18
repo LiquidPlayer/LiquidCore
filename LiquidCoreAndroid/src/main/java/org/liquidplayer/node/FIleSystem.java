@@ -41,8 +41,6 @@ import org.liquidplayer.javascript.JSObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -54,6 +52,7 @@ import java.util.UUID;
  *
  * /
  * /home
+ * /home/modules
  * /home/persistent
  * /home/cache
  * /home/external
@@ -142,6 +141,12 @@ class FileSystem extends JSObject {
         symlink(persistent, home + "/persistent");
         aliases_.get().property("/home/persistent", persistent);
 
+        String modules = mkdir(androidCtx.getFilesDir().getAbsolutePath() +
+                suffix + "/modules");
+        symlink(modules, home + "/modules");
+        aliases_.get().property("/home/modules", modules);
+        access_ .get().property("/home/modules", Process.kMediaAccessPermissionsRead);
+
         new File(home + "/external").mkdirs();
         if (androidCtx.getExternalCacheDir()!=null) {
             String externalCache = mkdir(androidCtx.getExternalCacheDir().getAbsolutePath() +
@@ -188,11 +193,7 @@ class FileSystem extends JSObject {
                String uniqueID, int mediaPermissionsMask) {
         super(ctx);
         this.androidCtx = androidCtx;
-        try {
-            this.uniqueID = URLEncoder.encode(uniqueID, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            android.util.Log.e("FileSystem", e.toString());
-        }
+        this.uniqueID = uniqueID;
 
         aliases_.set(new JSObject(ctx));
         access_ .set(new JSObject(ctx));

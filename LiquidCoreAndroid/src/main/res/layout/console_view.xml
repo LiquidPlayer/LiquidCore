@@ -53,7 +53,7 @@
             android:layout_height="match_parent"
             android:id="@+id/scroll">
 
-            <org.liquidplayer.widget.AnsiConsoleTextView
+            <org.liquidplayer.surfaces.AnsiConsoleTextView
                 android:layout_width="match_parent" android:layout_height="match_parent"
                 android:fontFamily="monospace" android:textSize="12sp"
                 android:layout_margin="16dp" android:id="@+id/console_text" />
