@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'jacoco'
+apply plugin: 'com.github.dcendents.android-maven'
 
 android {
     compileSdkVersion 25
@@ -7,18 +9,22 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 1
-        versionName "1.0"
-
+        versionCode 2
+        versionName "0.2.0"
+        setProperty("archivesBaseName", "LiquidConsoleSurface-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
     }
     buildTypes {
+        debug {
+            testCoverageEnabled = true
+            minifyEnabled false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    sourceSets { main { jniLibs.srcDirs 'libs' } }
 }
 
 dependencies {
@@ -30,3 +36,32 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile project(':LiquidCoreAndroid')
 }
+
+// build a jar with source files
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    failOnError  false
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.compile
+}
+
+// build a jar with javadoc
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+
+apply plugin: 'com.github.dcendents.android-maven'
+
+group='com.github.liquidplayer'

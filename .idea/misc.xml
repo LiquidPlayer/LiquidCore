@@ -4,7 +4,7 @@
     <entry_points version="2.0" />
   </component>
   <component name="JavadocGenerationManager">
-    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../LiquidPlayer.github.io/LiquidCoreAndroid" />
+    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../LiquidPlayer.github.io/ConsoleSurface" />
     <option name="OPTION_SCOPE" value="public" />
     <option name="OPTION_HIERARCHY" value="true" />
     <option name="OPTION_NAVIGATOR" value="true" />
