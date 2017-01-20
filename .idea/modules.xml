@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/ConsoleSurface/ConsoleSurface.iml" filepath="$PROJECT_DIR$/ConsoleSurface/ConsoleSurface.iml" />
       <module fileurl="file://$PROJECT_DIR$/LiquidCore.iml" filepath="$PROJECT_DIR$/LiquidCore.iml" />
       <module fileurl="file://$PROJECT_DIR$/LiquidCoreAndroid/LiquidCoreAndroid.iml" filepath="$PROJECT_DIR$/LiquidCoreAndroid/LiquidCoreAndroid.iml" />
       <module fileurl="file://$PROJECT_DIR$/demoapp/demoapp.iml" filepath="$PROJECT_DIR$/demoapp/demoapp.iml" />

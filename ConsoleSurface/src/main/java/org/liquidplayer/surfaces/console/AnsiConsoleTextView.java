@@ -30,7 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.liquidplayer.surfaces;
+package org.liquidplayer.surfaces.console;
 
 import android.content.Context;
 import android.os.Handler;

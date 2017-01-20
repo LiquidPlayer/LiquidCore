@@ -30,7 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.liquidplayer.surfaces;
+package org.liquidplayer.surfaces.console;
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -49,8 +49,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import org.liquidplayer.node.R;
 
 import java.util.ArrayList;
 
@@ -85,7 +83,7 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
     private Bundle __bundle = null;
     protected Bundle state() {
         if (__bundle != null) return __bundle;
-        if (getId() != NO_ID) {
+        if (getId() != View.NO_ID) {
             __bundle = stateBundle.get(getId());
             if (__bundle == null) {
                 __bundle = new Bundle();
@@ -121,7 +119,7 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
     }
 
     public void reset() {
-        if (getId() != NO_ID) {
+        if (getId() != View.NO_ID) {
             stateBundle.remove(getId());
         }
         __bundle = null;

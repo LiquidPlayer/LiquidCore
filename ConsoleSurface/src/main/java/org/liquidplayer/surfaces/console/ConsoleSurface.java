@@ -30,7 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.liquidplayer.surfaces;
+package org.liquidplayer.surfaces.console;
 
 import android.content.Context;
 import android.os.Handler;
@@ -48,7 +48,7 @@ import org.liquidplayer.service.Surface;
 
 /**
  * A ConsoleSurface is a node.js ANSI text console.  ConsoleSurface operates by manipulating
- * the 'process' object in node.  It captures output written to stdin and stdout as well as
+ * the 'process' object in node.  It captures output written to stdout and stderr as well as
  * traps and displays any JavaScript exceptions.
  *
  * So long as the underlying MicroService is still running, ConsoleSurface can inject javascript
@@ -100,7 +100,7 @@ public class ConsoleSurface extends ConsoleView
 
     /**
      * ConsoleSurface is somewhat unusal for Surfaces.  It can be attached and detached at any
-     * time during the MicroService lifecycle, as it dynamically overrides stdin, stdout and
+     * time during the MicroService lifecycle, as it dynamically overrides stderr, stdout and
      * handles exceptions.  There is no special interface required on the JavaScript side since
      * it operates purely on standard streams.  Therefore, no setup is required before
      * running the service.

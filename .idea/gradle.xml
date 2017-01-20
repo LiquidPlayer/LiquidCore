@@ -9,6 +9,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/ConsoleSurface" />
             <option value="$PROJECT_DIR$/LiquidCoreAndroid" />
             <option value="$PROJECT_DIR$/demoapp" />
           </set>

@@ -19,7 +19,7 @@
  * Copyright (C) 2016, Eric Lange.  All Rights Reserved.
  */
 
-package org.liquidplayer.surfaces;
+package org.liquidplayer.surfaces.console;
 
 import java.io.IOException;
 import java.io.OutputStream;
