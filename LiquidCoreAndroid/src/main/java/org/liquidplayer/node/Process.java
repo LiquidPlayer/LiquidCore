@@ -271,8 +271,20 @@ public class Process {
                         }
                     };
                     new JSFunction(context, "__onExit", new String[]{"exitFunc"},
-                            "process.on('exit',exitFunc);" +
-                            "process.chdir('/home');", null, 0).call(null, onExit);
+                            "process.on('exit',exitFunc);", null, 0).call(null, onExit);
+
+                    // set unhandled exception handler
+                    JSFunction onUncaughtException =
+                            new JSFunction(context, "onUncaughtException") {
+                        @SuppressWarnings("unused")
+                        public void onUncaughtException(JSObject error) {
+                            android.util.Log.d("Unhandled", "There is an unhandled exception!");
+                            context.evaluateScript("process.exit(process.exitCode || -1)");
+                        }
+                    };
+                    new JSFunction(context, "__onUncaughtException", new String[]{"handleFunc"},
+                            "process.on('uncaughtException',handleFunc);",
+                                    null, 0).call(null, onUncaughtException);
 
                     // intercept stdout and stderr
                     JSObject stdout =

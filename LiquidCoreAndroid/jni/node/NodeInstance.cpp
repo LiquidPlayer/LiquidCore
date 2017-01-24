@@ -257,6 +257,38 @@ void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
   instance->exit_code = (int) args[0]->Int32Value();
 }
 
+void NodeInstance::Abort(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+
+  __android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "abort called");
+
+  NodeInstance *instance;
+
+  ContextGroup::Mutex()->lock();
+  instance = instance_map[env];
+  ContextGroup::Mutex()->unlock();
+
+  WaitForInspectorDisconnect(Environment::GetCurrent(args));
+  uv_stop(env->event_loop());
+  instance->didExit = true;
+}
+
+void NodeInstance::Kill(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+
+  __android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "kill called");
+
+  if (args.Length() != 2) {
+    return env->ThrowError("Bad argument.");
+  }
+
+  int pid = args[0]->Int32Value();
+  int sig = args[1]->Int32Value();
+  int err = uv_kill(pid, sig);
+  args.GetReturnValue().Set(err);
+}
+
+
 void NodeInstance::Cwd(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   Local<Value> aliased;
@@ -372,8 +404,10 @@ int NodeInstance::StartNodeInstance(void* arg) {
       // Remove process.dlopen().  Nothing good can come of it in this environment.
       process->Delete(env->context(), String::NewFromUtf8(isolate, "dlopen"));
 
-      // Override exit() so it doesn't nuke the app
+      // Override exit() and abort() so they don't nuke the app
       env->SetMethod(process, "reallyExit", Exit);
+      env->SetMethod(process, "abort", Abort);
+      env->SetMethod(process, "_kill", Kill);
 
       instance_map[env] = this;
 
