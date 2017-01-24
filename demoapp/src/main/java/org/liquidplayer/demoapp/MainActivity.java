@@ -32,7 +32,12 @@
 */
 package org.liquidplayer.demoapp;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -41,7 +46,7 @@ import android.view.MenuItem;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
+    private static final int PERMISSIONS_REQUEST_WRITE_STORAGE = 54321;
 
     ArrayList<ExpandableListItem> values;
 
@@ -53,16 +58,15 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         final int CELL_DEFAULT_HEIGHT = 200;
-        /*
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-        */
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMISSIONS_REQUEST_WRITE_STORAGE);
+        }
 
         if (savedInstanceState == null) {
             values = new ArrayList<>();
@@ -87,6 +91,24 @@ public class MainActivity extends AppCompatActivity {
                 values, listView);
         listView.setAdapter(adapter);
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_WRITE_STORAGE: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    android.util.Log.d("RequestPermission", "Granted!");
+                } else {
+                    android.util.Log.d("RequestPermission", "Denied :(");
+                }
+                break;
+            }
+        }
+    }
+
 
     @Override
     public void onSaveInstanceState(Bundle outState) {

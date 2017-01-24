@@ -62,7 +62,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
@@ -352,20 +351,6 @@ public class MicroService implements Process.EventListener {
         this.argv = argv;
         process = new Process(androidCtx, serviceId, Process.kMediaAccessPermissionsRW,
                 MicroService.this);
-    }
-
-    /**
-     * Gets the shared external file system path.  In JavaScript, this is accessed by
-     * /home/external/persistent.  This method returns the actual path accessible by Java.
-     * @return  The shared file path
-     */
-    public File getSharedPath() {
-        File external = androidCtx.getExternalFilesDir(null);
-        if (external != null) {
-            String path = external.getAbsolutePath() + "/LiquidPlayer/" + serviceId;
-            return new File(path);
-        }
-        return null;
     }
 
     private File getModulesPath() {

@@ -111,11 +111,11 @@ public class FSTest {
     @Test
     public void testFileSystem1() throws Exception {
         Context context = InstrumentationRegistry.getContext();
-        String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__/persistent";
+        String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__/local";
 
         final String script = "" +
                 "var fs = require('fs');" +
-                "process.chdir('persistent');" +
+                "process.chdir('local');" +
                 "fs.writeFile('test.txt', 'Hello, World!', function(err) {" +
                 "   if(err) {" +
                 "       return console.log(err);" +
@@ -192,8 +192,8 @@ public class FSTest {
      */
     @Test
     public void testChdirCwdMultipleProcesses() throws Exception {
-        final String dir1 = "/home/external/persistent";
-        final String dir2 = "/home/external/cache";
+        final String dir1 = "/home/local";
+        final String dir2 = "/home/cache";
 
         final String proc1 = "process.chdir('" + dir1 + "');";
         final String proc2 = "process.chdir('" + dir2 + "');";

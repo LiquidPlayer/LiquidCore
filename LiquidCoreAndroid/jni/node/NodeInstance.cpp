@@ -243,6 +243,8 @@ std::map<Environment*,NodeInstance*> NodeInstance::instance_map;
 void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
+  __android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "exit(%d) called", (int) args[0]->Int32Value());
+
   NodeInstance *instance;
 
   ContextGroup::Mutex()->lock();

@@ -53,6 +53,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -91,7 +92,7 @@ import java.util.List;
 class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
 
     private URI consoleURI =
-            URI.create("android.resource://" + getContext().getPackageName() + "/raw/webtorrent");
+            URI.create("android.resource://"+ getContext().getPackageName()+ "/raw/webtorrent_cli");
 
     private final Handler uiThread = new Handler(Looper.getMainLooper());
     private static int port = 8080;
@@ -217,8 +218,11 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
                                             (UIObject) mData.get(position).getData();
                                     try {
                                         JSONArray files = torrent.getJSONArray("files");
-                                        String fileName = service.getSharedPath().getAbsolutePath()
-                                                + "/" + files.getJSONObject(0).getString("path");
+                                        String fileName =
+                                                Environment.getExternalStoragePublicDirectory(
+                                                        Environment.DIRECTORY_MOVIES)
+                                                .getAbsolutePath() + "/" +
+                                                        files.getJSONObject(0).getString("path");
                                         mData.get(position).setFileName(fileName);
                                         service.removeEventListener("torrent_done", this);
                                         service.removeEventListener("draw", drawListener);
@@ -259,7 +263,7 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
                         }
                     }
                 )
-                .start("-o", "/home/external/persistent", "-p", "" + (++port),
+                .start("-o", "/home/public/media/Movies", "-p", "" + (++port),
                         "download", mData.get(position).getUrl());
             }
         };
@@ -286,7 +290,6 @@ class CustomArrayAdapter extends ArrayAdapter<ExpandableListItem> {
      */
     @Override
     public @NonNull View getView(final int position, View convertView, @NonNull ViewGroup parent) {
-
         final ExpandableListItem object = mData.get(position);
         int id = position==0 ? R.id.console1 : position==1 ? R.id.console2 : R.id.console3;
         if(convertView == null) {
