@@ -474,18 +474,22 @@ Local<Value> fs_(Environment *env, Local<Value> path, int req_access)
                                 *p);
           return rc;
         }
-
         Local<Object> test = fsObj->Get(env->context(), String::NewFromUtf8(env->isolate(), "fs"))
             .ToLocalChecked()->ToObject(env->context()).ToLocalChecked();
         MaybeLocal<Value> tuple = test->CallAsFunction(env->context(), fsObj, 1, &rc);
-        access = (int) tuple.ToLocalChecked()->ToObject(env->context()).ToLocalChecked()
+        if (tuple.IsEmpty()) {
+            access = 0;
+        } else {
+          access = (int) tuple.ToLocalChecked()->ToObject(env->context()).ToLocalChecked()
             ->Get(env->context(), 0).ToLocalChecked()
             ->ToNumber(env->context()).ToLocalChecked()->Value();
-        rc = tuple.ToLocalChecked()->ToObject(env->context()).ToLocalChecked()
+          rc = tuple.ToLocalChecked()->ToObject(env->context()).ToLocalChecked()
             ->Get(env->context(), 1).ToLocalChecked();
+        }
 
         if ((req_access & access) != req_access) {
             env->ThrowError("access denied (EACCES)");
+            return Local<Value>::New(env->isolate(),Undefined(env->isolate()));
         }
         return rc;
       }
@@ -525,16 +529,19 @@ Local<Value> chdir_(Environment *env, Local<Value> path)
     Context::Scope context_scope(env->context());
 
     path = fs_(env, path, _FS_ACCESS_RD);
+    if (!path->IsUndefined()) {
+      String::Utf8Value str(path);
 
-    Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
+      Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
         String::NewFromUtf8(env->isolate(), "__fs"));
-    Local<Object> globalObj = env->context()->Global();
-    Maybe<bool> result = globalObj->HasPrivate(env->context(), privateKey);
-    if (result.IsJust() && result.FromJust()) {
-      Local<Value> fsVal;
-      if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
-        Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
-        fsObj->Set(env->context(), String::NewFromUtf8(env->isolate(), "cwd"), path);
+      Local<Object> globalObj = env->context()->Global();
+      Maybe<bool> result = globalObj->HasPrivate(env->context(), privateKey);
+      if (result.IsJust() && result.FromJust()) {
+        Local<Value> fsVal;
+        if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
+          Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
+          fsObj->Set(env->context(), String::NewFromUtf8(env->isolate(), "cwd"), path);
+        }
       }
     }
     return path;
@@ -569,15 +576,20 @@ static void Access(const FunctionCallbackInfo<Value>& args) {
   if (!args[1]->IsInt32())
     return TYPE_ERROR("mode must be an integer");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
-  ASSERT_PATH(path)
 
-  int mode = static_cast<int>(args[1]->Int32Value());
+  if (*path != nullptr) {
+      int mode = static_cast<int>(args[1]->Int32Value());
 
-  if (args[2]->IsObject()) {
-    ASYNC_CALL(access, args[2], UTF8, *path, mode);
-  } else {
-    SYNC_CALL(access, *path, *path, mode);
+      if (args[2]->IsObject()) {
+        ASYNC_CALL(access, args[2], UTF8, *path, mode);
+      } else {
+        SYNC_CALL(access, *path, *path, mode);
+      }
   }
 }
 
@@ -787,15 +799,20 @@ static void Stat(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
-  ASSERT_PATH(path)
 
-  if (args[1]->IsObject()) {
-    ASYNC_CALL(stat, args[1], UTF8, *path)
-  } else {
-    SYNC_CALL(stat, *path, *path)
-    args.GetReturnValue().Set(
-        nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
+  if (*path != nullptr) {
+      if (args[1]->IsObject()) {
+        ASYNC_CALL(stat, args[1], UTF8, *path)
+      } else {
+        SYNC_CALL(stat, *path, *path)
+        args.GetReturnValue().Set(
+            nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
+      }
   }
 }
 
@@ -805,15 +822,20 @@ static void LStat(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
-  ASSERT_PATH(path)
 
-  if (args[1]->IsObject()) {
-    ASYNC_CALL(lstat, args[1], UTF8, *path)
-  } else {
-    SYNC_CALL(lstat, *path, *path)
-    args.GetReturnValue().Set(
-        nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
+  if (*path != nullptr) {
+      if (args[1]->IsObject()) {
+        ASYNC_CALL(lstat, args[1], UTF8, *path)
+      } else {
+        SYNC_CALL(lstat, *path, *path)
+        args.GetReturnValue().Set(
+            nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
+      }
   }
 }
 
@@ -845,10 +867,14 @@ static void Symlink(const FunctionCallbackInfo<Value>& args) {
   if (len < 2)
     return TYPE_ERROR("src path required");
 
+  {
+    BufferValue target(env->isolate(), args[0]);
+    ASSERT_PATH(target)
+    BufferValue path(env->isolate(), args[1]);
+    ASSERT_PATH(path)
+  }
   BufferValue target(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(target)
   BufferValue path(env->isolate(), fs_(env, args[1], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
   int flags = 0;
 
@@ -863,10 +889,12 @@ static void Symlink(const FunctionCallbackInfo<Value>& args) {
     }
   }
 
-  if (args[3]->IsObject()) {
-    ASYNC_DEST_CALL(symlink, args[3], *path, UTF8, *target, *path, flags)
-  } else {
-    SYNC_DEST_CALL(symlink, *target, *path, *target, *path, flags)
+  if (*path != nullptr && *target != nullptr) {
+      if (args[3]->IsObject()) {
+        ASYNC_DEST_CALL(symlink, args[3], *path, UTF8, *target, *path, flags)
+      } else {
+        SYNC_DEST_CALL(symlink, *target, *path, *target, *path, flags)
+      }
   }
 }
 
@@ -879,16 +907,21 @@ static void Link(const FunctionCallbackInfo<Value>& args) {
   if (len < 2)
     return TYPE_ERROR("dest path required");
 
+  {
+    BufferValue src(env->isolate(), args[0]);
+    ASSERT_PATH(src)
+    BufferValue dest(env->isolate(), args[1]);
+    ASSERT_PATH(dest)
+  }
   BufferValue src(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(src)
-
   BufferValue dest(env->isolate(), fs_(env, args[1], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(dest)
 
-  if (args[2]->IsObject()) {
-    ASYNC_DEST_CALL(link, args[2], *dest, UTF8, *src, *dest)
-  } else {
-    SYNC_DEST_CALL(link, *src, *dest, *src, *dest)
+  if (*src != nullptr && *dest != nullptr) {
+      if (args[2]->IsObject()) {
+        ASYNC_DEST_CALL(link, args[2], *dest, UTF8, *src, *dest)
+      } else {
+        SYNC_DEST_CALL(link, *src, *dest, *src, *dest)
+      }
   }
 }
 
@@ -900,8 +933,11 @@ static void ReadLink(const FunctionCallbackInfo<Value>& args) {
   if (argc < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
-  ASSERT_PATH(path)
 
   const enum encoding encoding = ParseEncoding(env->isolate(), args[1], UTF8);
 
@@ -909,22 +945,24 @@ static void ReadLink(const FunctionCallbackInfo<Value>& args) {
   if (argc == 3)
     callback = args[2];
 
-  if (callback->IsObject()) {
-    ASYNC_CALL(readlink, callback, encoding, *path)
-  } else {
-    SYNC_CALL(readlink, *path, *path)
-    const char* link_path = static_cast<const char*>(SYNC_REQ.ptr);
-    Local<Value> rc = StringBytes::Encode(env->isolate(),
-                                          link_path,
-                                          encoding);
-    if (rc.IsEmpty()) {
-      return env->ThrowUVException(UV_EINVAL,
-                                   "readlink",
-                                   "Invalid character encoding for link",
-                                   *path);
-    }
-    rc = alias_(env, rc);
-    args.GetReturnValue().Set(rc);
+  if (*path != nullptr) {
+      if (callback->IsObject()) {
+        ASYNC_CALL(readlink, callback, encoding, *path)
+      } else {
+        SYNC_CALL(readlink, *path, *path)
+        const char* link_path = static_cast<const char*>(SYNC_REQ.ptr);
+        Local<Value> rc = StringBytes::Encode(env->isolate(),
+                                              link_path,
+                                              encoding);
+        if (rc.IsEmpty()) {
+          return env->ThrowUVException(UV_EINVAL,
+                                       "readlink",
+                                       "Invalid character encoding for link",
+                                       *path);
+        }
+        rc = alias_(env, rc);
+        args.GetReturnValue().Set(rc);
+      }
   }
 }
 
@@ -937,15 +975,21 @@ static void Rename(const FunctionCallbackInfo<Value>& args) {
   if (len < 2)
     return TYPE_ERROR("new path required");
 
+  {
+    BufferValue old_path(env->isolate(), args[0]);
+    ASSERT_PATH(old_path)
+    BufferValue new_path(env->isolate(), args[1]);
+    ASSERT_PATH(new_path)
+  }
   BufferValue old_path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(old_path)
   BufferValue new_path(env->isolate(), fs_(env, args[1], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(new_path)
 
-  if (args[2]->IsObject()) {
-    ASYNC_DEST_CALL(rename, args[2], *new_path, UTF8, *old_path, *new_path)
-  } else {
-    SYNC_DEST_CALL(rename, *old_path, *new_path, *old_path, *new_path)
+  if (*old_path != nullptr && *new_path != nullptr) {
+      if (args[2]->IsObject()) {
+        ASYNC_DEST_CALL(rename, args[2], *new_path, UTF8, *old_path, *new_path)
+      } else {
+        SYNC_DEST_CALL(rename, *old_path, *new_path, *old_path, *new_path)
+      }
   }
 }
 
@@ -1018,13 +1062,18 @@ static void Unlink(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
-  if (args[1]->IsObject()) {
-    ASYNC_CALL(unlink, args[1], UTF8, *path)
-  } else {
-    SYNC_CALL(unlink, *path, *path)
+  if (*path != nullptr) {
+      if (args[1]->IsObject()) {
+        ASYNC_CALL(unlink, args[1], UTF8, *path)
+      } else {
+        SYNC_CALL(unlink, *path, *path)
+      }
   }
 }
 
@@ -1034,13 +1083,18 @@ static void RMDir(const FunctionCallbackInfo<Value>& args) {
   if (args.Length() < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
-  if (args[1]->IsObject()) {
-    ASYNC_CALL(rmdir, args[1], UTF8, *path)
-  } else {
-    SYNC_CALL(rmdir, *path, *path)
+  if (*path != nullptr) {
+      if (args[1]->IsObject()) {
+        ASYNC_CALL(rmdir, args[1], UTF8, *path)
+      } else {
+        SYNC_CALL(rmdir, *path, *path)
+      }
   }
 }
 
@@ -1052,15 +1106,20 @@ static void MKDir(const FunctionCallbackInfo<Value>& args) {
   if (!args[1]->IsInt32())
     return TYPE_ERROR("mode must be an integer");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
   int mode = static_cast<int>(args[1]->Int32Value());
 
-  if (args[2]->IsObject()) {
-    ASYNC_CALL(mkdir, args[2], UTF8, *path, mode)
-  } else {
-    SYNC_CALL(mkdir, *path, *path, mode)
+  if (*path != nullptr) {
+      if (args[2]->IsObject()) {
+        ASYNC_CALL(mkdir, args[2], UTF8, *path, mode)
+      } else {
+        SYNC_CALL(mkdir, *path, *path, mode)
+      }
   }
 }
 
@@ -1072,8 +1131,11 @@ static void RealPath(const FunctionCallbackInfo<Value>& args) {
   if (argc < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
-  ASSERT_PATH(path)
 
   const enum encoding encoding = ParseEncoding(env->isolate(), args[1], UTF8);
 
@@ -1081,22 +1143,24 @@ static void RealPath(const FunctionCallbackInfo<Value>& args) {
   if (argc == 3)
     callback = args[2];
 
-  if (callback->IsObject()) {
-    ASYNC_CALL(realpath, callback, encoding, *path);
-  } else {
-    SYNC_CALL(realpath, *path, *path);
-    const char* link_path = static_cast<const char*>(SYNC_REQ.ptr);
-    Local<Value> rc = StringBytes::Encode(env->isolate(),
-                                          link_path,
-                                          encoding);
-    if (rc.IsEmpty()) {
-      return env->ThrowUVException(UV_EINVAL,
-                                   "realpath",
-                                   "Invalid character encoding for path",
-                                   *path);
-    }
-    rc = alias_(env, rc);
-    args.GetReturnValue().Set(rc);
+  if (*path != nullptr) {
+      if (callback->IsObject()) {
+        ASYNC_CALL(realpath, callback, encoding, *path);
+      } else {
+        SYNC_CALL(realpath, *path, *path);
+        const char* link_path = static_cast<const char*>(SYNC_REQ.ptr);
+        Local<Value> rc = StringBytes::Encode(env->isolate(),
+                                              link_path,
+                                              encoding);
+        if (rc.IsEmpty()) {
+          return env->ThrowUVException(UV_EINVAL,
+                                       "realpath",
+                                       "Invalid character encoding for path",
+                                       *path);
+        }
+        rc = alias_(env, rc);
+        args.GetReturnValue().Set(rc);
+      }
   }
 }
 
@@ -1108,8 +1172,11 @@ static void ReadDir(const FunctionCallbackInfo<Value>& args) {
   if (argc < 1)
     return TYPE_ERROR("path required");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
-  ASSERT_PATH(path)
 
   const enum encoding encoding = ParseEncoding(env->isolate(), args[1], UTF8);
 
@@ -1117,51 +1184,53 @@ static void ReadDir(const FunctionCallbackInfo<Value>& args) {
   if (argc == 3)
     callback = args[2];
 
-  if (callback->IsObject()) {
-    ASYNC_CALL(scandir, callback, encoding, *path, 0 /*flags*/)
-  } else {
-    SYNC_CALL(scandir, *path, *path, 0 /*flags*/)
+  if (*path != nullptr) {
+      if (callback->IsObject()) {
+        ASYNC_CALL(scandir, callback, encoding, *path, 0 /*flags*/)
+      } else {
+        SYNC_CALL(scandir, *path, *path, 0 /*flags*/)
 
-    CHECK_GE(SYNC_REQ.result, 0);
-    int r;
-    Local<Array> names = Array::New(env->isolate(), 0);
-    Local<Function> fn = env->push_values_to_array_function();
-    Local<Value> name_v[NODE_PUSH_VAL_TO_ARRAY_MAX];
-    size_t name_idx = 0;
+        CHECK_GE(SYNC_REQ.result, 0);
+        int r;
+        Local<Array> names = Array::New(env->isolate(), 0);
+        Local<Function> fn = env->push_values_to_array_function();
+        Local<Value> name_v[NODE_PUSH_VAL_TO_ARRAY_MAX];
+        size_t name_idx = 0;
 
-    for (int i = 0; ; i++) {
-      uv_dirent_t ent;
+        for (int i = 0; ; i++) {
+          uv_dirent_t ent;
 
-      r = uv_fs_scandir_next(&SYNC_REQ, &ent);
-      if (r == UV_EOF)
-        break;
-      if (r != 0)
-        return env->ThrowUVException(r, "readdir", "", *path);
+          r = uv_fs_scandir_next(&SYNC_REQ, &ent);
+          if (r == UV_EOF)
+            break;
+          if (r != 0)
+            return env->ThrowUVException(r, "readdir", "", *path);
 
-      Local<Value> filename = StringBytes::Encode(env->isolate(),
-                                                  ent.name,
-                                                  encoding);
-      if (filename.IsEmpty()) {
-        return env->ThrowUVException(UV_EINVAL,
-                                     "readdir",
-                                     "Invalid character encoding for filename",
-                                     *path);
+          Local<Value> filename = StringBytes::Encode(env->isolate(),
+                                                      ent.name,
+                                                      encoding);
+          if (filename.IsEmpty()) {
+            return env->ThrowUVException(UV_EINVAL,
+                                         "readdir",
+                                         "Invalid character encoding for filename",
+                                         *path);
+          }
+
+          name_v[name_idx++] = filename;
+
+          if (name_idx >= arraysize(name_v)) {
+            fn->Call(env->context(), names, name_idx, name_v)
+                .ToLocalChecked();
+            name_idx = 0;
+          }
+        }
+
+        if (name_idx > 0) {
+          fn->Call(env->context(), names, name_idx, name_v).ToLocalChecked();
+        }
+
+        args.GetReturnValue().Set(names);
       }
-
-      name_v[name_idx++] = filename;
-
-      if (name_idx >= arraysize(name_v)) {
-        fn->Call(env->context(), names, name_idx, name_v)
-            .ToLocalChecked();
-        name_idx = 0;
-      }
-    }
-
-    if (name_idx > 0) {
-      fn->Call(env->context(), names, name_idx, name_v).ToLocalChecked();
-    }
-
-    args.GetReturnValue().Set(names);
   }
 }
 
@@ -1186,16 +1255,21 @@ static void Open(const FunctionCallbackInfo<Value>& args) {
                    (flags&O_ACCMODE) == O_WRONLY ? _FS_ACCESS_WR :
                    (flags&O_ACCMODE) == O_RDONLY ? _FS_ACCESS_RD : _FS_ACCESS_NONE;
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], req_access));
-  ASSERT_PATH(path)
 
   int mode = static_cast<int>(args[2]->Int32Value());
 
-  if (args[3]->IsObject()) {
-    ASYNC_CALL(open, args[3], UTF8, *path, flags, mode)
-  } else {
-    SYNC_CALL(open, *path, *path, flags, mode)
-    args.GetReturnValue().Set(SYNC_RESULT);
+  if (*path != nullptr) {
+      if (args[3]->IsObject()) {
+        ASYNC_CALL(open, args[3], UTF8, *path, flags, mode)
+      } else {
+        SYNC_CALL(open, *path, *path, flags, mode)
+        args.GetReturnValue().Set(SYNC_RESULT);
+      }
   }
 
 }
@@ -1437,15 +1511,20 @@ static void Chmod(const FunctionCallbackInfo<Value>& args) {
   if (!args[1]->IsInt32())
     return TYPE_ERROR("mode must be an integer");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
   int mode = static_cast<int>(args[1]->Int32Value());
 
-  if (args[2]->IsObject()) {
-    ASYNC_CALL(chmod, args[2], UTF8, *path, mode);
-  } else {
-    SYNC_CALL(chmod, *path, *path, mode);
+  if (*path != nullptr) {
+      if (args[2]->IsObject()) {
+        ASYNC_CALL(chmod, args[2], UTF8, *path, mode);
+      } else {
+        SYNC_CALL(chmod, *path, *path, mode);
+      }
   }
 }
 
@@ -1492,16 +1571,21 @@ static void Chown(const FunctionCallbackInfo<Value>& args) {
   if (!args[2]->IsUint32())
     return TYPE_ERROR("gid must be an unsigned int");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
   uv_uid_t uid = static_cast<uv_uid_t>(args[1]->Uint32Value());
   uv_gid_t gid = static_cast<uv_gid_t>(args[2]->Uint32Value());
 
-  if (args[3]->IsObject()) {
-    ASYNC_CALL(chown, args[3], UTF8, *path, uid, gid);
-  } else {
-    SYNC_CALL(chown, *path, *path, uid, gid);
+  if (*path != nullptr) {
+      if (args[3]->IsObject()) {
+        ASYNC_CALL(chown, args[3], UTF8, *path, uid, gid);
+      } else {
+        SYNC_CALL(chown, *path, *path, uid, gid);
+      }
   }
 }
 
@@ -1553,16 +1637,21 @@ static void UTimes(const FunctionCallbackInfo<Value>& args) {
   if (!args[2]->IsNumber())
     return TYPE_ERROR("mtime must be a number");
 
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
-  ASSERT_PATH(path)
 
   const double atime = static_cast<double>(args[1]->NumberValue());
   const double mtime = static_cast<double>(args[2]->NumberValue());
 
-  if (args[3]->IsObject()) {
-    ASYNC_CALL(utime, args[3], UTF8, *path, atime, mtime);
-  } else {
-    SYNC_CALL(utime, *path, *path, atime, mtime);
+  if (*path != nullptr) {
+      if (args[3]->IsObject()) {
+        ASYNC_CALL(utime, args[3], UTF8, *path, atime, mtime);
+      } else {
+        SYNC_CALL(utime, *path, *path, atime, mtime);
+      }
   }
 }
 
@@ -1599,7 +1688,7 @@ static void Mkdtemp(const FunctionCallbackInfo<Value>& args) {
 
   CHECK_GE(args.Length(), 2);
 
-  BufferValue tmpl(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD|_FS_ACCESS_WR));
+  BufferValue tmpl(env->isolate(), args[0]);
   if (*tmpl == nullptr)
     return TYPE_ERROR("template must be a string or Buffer");
 

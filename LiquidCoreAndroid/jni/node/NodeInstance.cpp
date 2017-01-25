@@ -229,13 +229,15 @@ void NodeInstance::Chdir(const FunctionCallbackInfo<Value>& args) {
   BufferValue path(args.GetIsolate(), nodedroid::fs_(env, args[0], _FS_ACCESS_RD));
 
   // Only using uv_chdir to validate path -- the default path should never be used
-  int err = uv_chdir(*path);
-  if (err) {
-    return env->ThrowUVException(err, "uv_chdir");
-  }
+  if (*path) {
+      int err = uv_chdir(*path);
+      if (err) {
+        return env->ThrowUVException(err, "uv_chdir");
+      }
 
-  // The real default path is held in the filesystem object
-  nodedroid::chdir_(env, args[0]);
+      // The real default path is held in the filesystem object
+      nodedroid::chdir_(env, args[0]);
+  }
 }
 
 std::map<Environment*,NodeInstance*> NodeInstance::instance_map;

@@ -46,7 +46,7 @@ import org.liquidplayer.javascript.JSObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -153,7 +153,8 @@ class FileSystem extends JSObject {
     private Property<String> cwd;
 
     private final Context androidCtx;
-    private String uniqueID;
+    private final String uniqueID;
+    private final String sessionID;
 
     private String realDir(String dir) {
         return getContext().evaluateScript(
@@ -166,26 +167,27 @@ class FileSystem extends JSObject {
         }
         return realDir(dir);
     }
-    private List<String> toclean = new ArrayList<>();
     private void symlink(String target, String linkpath) {
         getContext().evaluateScript(
                 "(function(){require('fs').symlinkSync('" + target + "','" + linkpath +"');})()"
         );
     }
-    private boolean isSymlink(File file) {
+    static private boolean isSymlink(File file) {
         try {
-            return file.getCanonicalFile().equals(file.getAbsoluteFile());
+            return !file.getCanonicalFile().equals(file.getAbsoluteFile());
         } catch (IOException e) {
             return true;
         }
     }
-    private void deleteRecursive(File fileOrDirectory) {
+    static private void deleteRecursive(File fileOrDirectory) {
         if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory))
-            for (File child : fileOrDirectory.listFiles())
+            for (File child : fileOrDirectory.listFiles()) {
                 deleteRecursive(child);
+            }
 
         if (!fileOrDirectory.delete()) {
-            android.util.Log.d("nodedroid", "Failed to delete directory");
+            android.util.Log.e("deleteRecursive",
+                    "Failed to delete " +fileOrDirectory.getAbsolutePath());
         }
     }
     private void linkMedia(String type, String dir, String home, int mediaPermissionsMask) {
@@ -201,13 +203,11 @@ class FileSystem extends JSObject {
 
     private void setUp(int mediaPermissionsMask) {
         final String suffix = "/__org.liquidplayer.node__/_" + uniqueID;
-        String random = "" + UUID.randomUUID();
-        String sessionSuffix = suffix + "/" + random;
+        String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
 
         // Set up /home (read-only)
-        String home  = mkdir(androidCtx.getFilesDir().getAbsolutePath() +
+        String home  = mkdir(androidCtx.getCacheDir().getAbsolutePath() +
                 sessionSuffix + "/home");
-        toclean.add(home);
         aliases_.get().property("/home", home);
         access_ .get().property("/home", Process.kMediaAccessPermissionsRead);
 
@@ -221,7 +221,6 @@ class FileSystem extends JSObject {
         // Set up /home/temp (read/write)
         String temp = mkdir(androidCtx.getCacheDir().getAbsolutePath() +
                 sessionSuffix + "/temp");
-        toclean.add(temp);
         symlink(temp, home + "/temp");
         aliases_.get().property("/home/temp", temp);
         access_ .get().property("/home/temp", Process.kMediaAccessPermissionsRW);
@@ -296,9 +295,32 @@ class FileSystem extends JSObject {
         cwd.set("/home");
     }
 
-    private void tearDown() {
-        for (String dir : toclean) {
-            deleteRecursive(new File(dir));
+    private static final Object sessionMutex = new Object();
+    private static final ArrayList<String> activeSessions = new ArrayList<>();
+
+    private static void uninstallSession(Context ctx, String sessionID) {
+        String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
+
+        File session = new File(ctx.getCacheDir().getAbsolutePath() + sessionSuffix);
+        android.util.Log.d("sessionWatchdog", "deleting session " + session);
+
+        deleteRecursive(session);
+    }
+
+    // FIXME: Need to implement space quota -- call this to uninstall a local service
+    static void uninstallLocal(Context ctx, String serviceID) {
+        final String suffix = "/__org.liquidplayer.node__/_" + serviceID;
+
+        deleteRecursive(new File(ctx.getCacheDir().getAbsolutePath() + suffix));
+        deleteRecursive(new File(ctx.getFilesDir().getAbsolutePath() + suffix));
+    }
+
+    // FIXME: Need to implement space quota -- call this to uninstall a global service
+    static void uninstallGlobal(Context ctx, String serviceID) {
+        File external = ctx.getExternalFilesDir(null);
+        if (external != null) {
+            String externalPersistent = external.getAbsolutePath() + "/LiquidPlayer/" + serviceID;
+            deleteRecursive(new File(externalPersistent));
         }
     }
 
@@ -306,7 +328,15 @@ class FileSystem extends JSObject {
                String uniqueID, int mediaPermissionsMask) {
         super(ctx);
         this.androidCtx = androidCtx;
+
+        // Clean any dead sessions
+        sessionWatchdog(androidCtx);
+
         this.uniqueID = uniqueID;
+        sessionID = UUID.randomUUID().toString();
+        synchronized (sessionMutex) {
+            activeSessions.add(sessionID);
+        }
 
         aliases_.set(new JSObject(ctx));
         access_ .set(new JSObject(ctx));
@@ -315,18 +345,21 @@ class FileSystem extends JSObject {
 
         fs.set(new JSFunction(ctx, "fs", ""+
                 "if (!file.startsWith('/')) { file = this.cwd+'/'+file; }" +
-                "try { file = require('path').resolve(file); } catch (e) {}"+
+                "console.log('fs_( ' + file + ' )');"+
+                "try { file = require('path').resolve(file); } catch (e) {console.log(e);}"+
+                "console.log('fs_( ' + file + ' )');"+
                 "var access = 0;"+
-                "for (var p in this.aliases_) {"+
-                "    if (file.startsWith(this.aliases_[p] + '/')) {"+
-                "        file = p + '/' + file.substring(this.aliases_[p].length + 1);"+
+                "var keys = Object.keys(this.aliases_).sort().reverse();"+
+                "for (var p=0; p<keys.length; p++) {"+
+                "    if (file.startsWith(this.aliases_[keys[p]] + '/')) {"+
+                "        file = keys[p] + '/' + file.substring(this.aliases_[keys[p]].length + 1);"+
                 "        break;"+
-                "    } else if (file == this.aliases_[p]) {"+
-                "        file = p;"+
+                "    } else if (file == this.aliases_[keys[p]]) {"+
+                "        file = keys[p];"+
                 "        break;"+
                 "    }"+
                 "}"+
-                "var keys = Object.keys(this.access_).sort().reverse();"+
+                "keys = Object.keys(this.access_).sort().reverse();"+
                 "for (var p=0; p<keys.length; p++) {"+
                 "    if (file.startsWith(keys[p] + '/') || keys[p]==file) {"+
                 "        access = this.access_[keys[p]];"+
@@ -334,15 +367,17 @@ class FileSystem extends JSObject {
                 "    }"+
                 "}"+
                 "var newfile = file;"+
-                "for (var p in this.aliases_) {"+
-                "    if (file.startsWith(p + '/')) {"+
-                "        newfile = this.aliases_[p] + '/' + file.substring(p.length + 1);"+
+                "var keys = Object.keys(this.aliases_).sort().reverse();"+
+                "for (var p=0; p<keys.length; p++) {"+
+                "    if (file.startsWith(keys[p] + '/')) {"+
+                "        newfile = this.aliases_[keys[p]] + '/' + file.substring(keys[p].length + 1);"+
                 "        break;"+
-                "    } else if (file == p) {"+
-                "        newfile = this.aliases_[p];"+
+                "    } else if (file == keys[p]) {"+
+                "        newfile = this.aliases_[keys[p]];"+
                 "        break;"+
                 "    }"+
                 "}"+
+                "console.log('['+access+','+newfile+']');"+
                 "return [access,newfile];",
                 "file"));
 
@@ -361,7 +396,44 @@ class FileSystem extends JSObject {
 
     }
 
+    private static long lastSessionBark = 0L;
+    // Don't clean constantly; wait 5 minutes at least between cleanings
+    private static final long SESSION_WATCHDOG_TIMER = 5 * 60 * 1000;
+    private static void sessionWatchdog(Context ctx) {
+        final String sessionsSuffix = "/__org.liquidplayer.node__/sessions";
+
+        if (new Date().getTime() - lastSessionBark > SESSION_WATCHDOG_TIMER) {
+            File sessions = new File(ctx.getCacheDir().getAbsolutePath() + sessionsSuffix);
+            File[] files = sessions.listFiles();
+            if (files != null) {
+                for (File session : files) {
+                    boolean isActive;
+                    synchronized (sessionMutex) {
+                        isActive = activeSessions.contains(session.getName());
+                    }
+                    if (!isActive) {
+                        uninstallSession(ctx, session.getName());
+                    }
+                }
+            }
+            lastSessionBark = new Date().getTime();
+        }
+    }
+
+    @Override
+    public void finalize() throws Throwable {
+        super.finalize();
+        cleanUp();
+    }
+
     void cleanUp() {
-        tearDown();
+        boolean needClean;
+        synchronized (sessionMutex) {
+            needClean = activeSessions.contains(sessionID);
+            activeSessions.remove(sessionID);
+        }
+        if (needClean) {
+            uninstallSession(androidCtx, sessionID);
+        }
     }
 }
