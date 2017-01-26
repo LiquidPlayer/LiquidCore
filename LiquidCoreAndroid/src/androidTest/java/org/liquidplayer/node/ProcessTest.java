@@ -155,6 +155,41 @@ public class ProcessTest {
         assertTrue(true);
     }
 
+    @Test
+    public void testForceExit() throws Exception {
+        final Semaphore semaphore = new Semaphore(0);
+
+        new Process(InstrumentationRegistry.getContext(),"forceExitTest",
+                Process.kMediaAccessPermissionsRW,new Process.EventListener() {
+            @Override
+            public void onProcessStart(final Process process, final JSContext context) {
+                context.evaluateScript("setInterval(function(){console.log('tick');},1000);");
+                context.evaluateScript("setTimeout(function(){process.exit(2);},500);");
+            }
+
+            @Override
+            public void onProcessExit(Process process, int exitCode) {
+                assertEquals(2, exitCode);
+                semaphore.release();
+            }
+
+            @Override
+            public void onProcessAboutToExit(Process process, int exitCode) {}
+
+            @Override
+            public void onProcessFailed(Process process, Exception error) {
+
+            }
+        });
+
+        // Hang out here until the process finishes
+        semaphore.acquire();
+
+        Process.uninstall(InstrumentationRegistry.getContext(), "forceExitTest",
+                Process.UninstallScope.Global);
+
+    }
+
     @org.junit.After
     public void shutDown() {
         Runtime.getRuntime().gc();

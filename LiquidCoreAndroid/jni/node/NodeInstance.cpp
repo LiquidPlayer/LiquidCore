@@ -254,7 +254,12 @@ void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
   ContextGroup::Mutex()->unlock();
 
   WaitForInspectorDisconnect(Environment::GetCurrent(args));
+
+  uv_walk(env->event_loop(), [](uv_handle_t* h, void* arg) {
+    uv_unref(h);
+  }, nullptr);
   uv_stop(env->event_loop());
+
   instance->didExit = true;
   instance->exit_code = (int) args[0]->Int32Value();
 }
@@ -271,10 +276,16 @@ void NodeInstance::Abort(const FunctionCallbackInfo<Value>& args) {
   ContextGroup::Mutex()->unlock();
 
   WaitForInspectorDisconnect(Environment::GetCurrent(args));
+
+  uv_walk(env->event_loop(), [](uv_handle_t* h, void* arg) {
+    uv_unref(h);
+  }, nullptr);
   uv_stop(env->event_loop());
+
   instance->didExit = true;
 }
 
+// FIXME: Not sure if we should allow clients to do this
 void NodeInstance::Kill(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
@@ -464,10 +475,6 @@ int NodeInstance::StartNodeInstance(void* arg) {
       do {
         PumpMessageLoop(isolate);
         more = uv_run(env->event_loop(), UV_RUN_ONCE);
-        if (didExit) {
-            uv_stop(env->event_loop());
-            more = false;
-        }
 
         if (more == false) {
           PumpMessageLoop(isolate);
