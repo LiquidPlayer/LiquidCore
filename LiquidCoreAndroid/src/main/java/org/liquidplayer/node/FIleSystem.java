@@ -307,7 +307,6 @@ class FileSystem extends JSObject {
         deleteRecursive(session);
     }
 
-    // FIXME: Need to implement space quota -- call this to uninstall a local service
     static void uninstallLocal(Context ctx, String serviceID) {
         final String suffix = "/__org.liquidplayer.node__/_" + serviceID;
 
@@ -315,7 +314,6 @@ class FileSystem extends JSObject {
         deleteRecursive(new File(ctx.getFilesDir().getAbsolutePath() + suffix));
     }
 
-    // FIXME: Need to implement space quota -- call this to uninstall a global service
     static void uninstallGlobal(Context ctx, String serviceID) {
         File external = ctx.getExternalFilesDir(null);
         if (external != null) {
@@ -345,9 +343,7 @@ class FileSystem extends JSObject {
 
         fs.set(new JSFunction(ctx, "fs", ""+
                 "if (!file.startsWith('/')) { file = this.cwd+'/'+file; }" +
-                "console.log('fs_( ' + file + ' )');"+
                 "try { file = require('path').resolve(file); } catch (e) {console.log(e);}"+
-                "console.log('fs_( ' + file + ' )');"+
                 "var access = 0;"+
                 "var keys = Object.keys(this.aliases_).sort().reverse();"+
                 "for (var p=0; p<keys.length; p++) {"+
@@ -359,35 +355,34 @@ class FileSystem extends JSObject {
                 "        break;"+
                 "    }"+
                 "}"+
-                "keys = Object.keys(this.access_).sort().reverse();"+
-                "for (var p=0; p<keys.length; p++) {"+
-                "    if (file.startsWith(keys[p] + '/') || keys[p]==file) {"+
-                "        access = this.access_[keys[p]];"+
+                "var acckeys = Object.keys(this.access_).sort().reverse();"+
+                "for (var p=0; p<acckeys.length; p++) {"+
+                "    if (file.startsWith(acckeys[p] + '/') || acckeys[p]==file) {"+
+                "        access = this.access_[acckeys[p]];"+
                 "        break;"+
                 "    }"+
                 "}"+
                 "var newfile = file;"+
-                "var keys = Object.keys(this.aliases_).sort().reverse();"+
                 "for (var p=0; p<keys.length; p++) {"+
                 "    if (file.startsWith(keys[p] + '/')) {"+
-                "        newfile = this.aliases_[keys[p]] + '/' + file.substring(keys[p].length + 1);"+
+                "        newfile = this.aliases_[keys[p]] +'/'+file.substring(keys[p].length + 1);"+
                 "        break;"+
                 "    } else if (file == keys[p]) {"+
                 "        newfile = this.aliases_[keys[p]];"+
                 "        break;"+
                 "    }"+
                 "}"+
-                "console.log('['+access+','+newfile+']');"+
                 "return [access,newfile];",
                 "file"));
 
         alias.set(new JSFunction(ctx, "alias", ""+
-                "for (var p in this.aliases_) {"+
-                "   if (file.startsWith(this.aliases_[p] + '/')) {"+
-                "       file = p + '/' + file.substring(this.aliases_[p].length + 1);"+
+                "var keys = Object.keys(this.aliases_).sort().reverse();"+
+                "for (var p=0; p<keys.length; p++) {"+
+                "   if (file.startsWith(this.aliases_[keys[p]] + '/')) {"+
+                "       file = keys[p] + '/' + file.substring(this.aliases_[keys[p]].length + 1);"+
                 "       break;"+
-                "   } else if (file == this.aliases_[p]) {"+
-                "       file = p;"+
+                "   } else if (file == this.aliases_[keys[p]]) {"+
+                "       file = keys[p];"+
                 "       break;"+
                 "   }"+
                 "}"+

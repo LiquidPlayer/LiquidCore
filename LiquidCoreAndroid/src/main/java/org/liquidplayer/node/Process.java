@@ -212,6 +212,29 @@ public class Process {
         }
     }
 
+    /**
+     * Determines the scope of an uninstallation.  A Local uninstallation will only clear
+     * data and files related to instances on this host.  A Global uninstallation wiil
+     * clear also public data shared between hosts.
+     */
+    public enum UninstallScope {
+        Local,
+        Global
+    }
+
+    /**
+     * Uninstalls a given process class identified by it uniqueID
+     * @param ctx The Android context
+     * @param uniqueID The id of the process class
+     * @param scope scope in which to uninstall the process class
+     */
+    public static void uninstall(Context ctx, String uniqueID, UninstallScope scope) {
+        FileSystem.uninstallLocal(ctx, uniqueID);
+        if (scope == UninstallScope.Global) {
+            FileSystem.uninstallGlobal(ctx, uniqueID);
+        }
+    }
+
     /** -- private methods -- **/
 
     private synchronized void eventOnStart(JSContext ctx) {

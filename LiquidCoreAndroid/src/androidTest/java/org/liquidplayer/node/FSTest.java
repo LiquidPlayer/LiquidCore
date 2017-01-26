@@ -33,6 +33,7 @@
 package org.liquidplayer.node;
 
 import android.content.Context;
+import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
@@ -159,7 +160,25 @@ public class FSTest {
 
         String content = new Scanner(new File(dirx + "/test.txt")).useDelimiter("\\Z").next();
         assertEquals("Hello, World!", content);
-        assertTrue(new File(dirx + "/test.txt").delete());
+
+        assertTrue(new File(dirx + "/test.txt").exists());
+        assertTrue(new File(dirx).exists());
+        assertTrue(new File(context.getFilesDir() + "/__org.liquidplayer.node__/__").exists());
+        assertTrue(new File(context.getCacheDir() + "/__org.liquidplayer.node__/__").exists());
+        File external = context.getExternalFilesDir(null);
+        if (external != null) {
+            assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_").exists());
+        }
+
+        Process.uninstall(context, "_", Process.UninstallScope.Local);
+
+        assertFalse(new File(dirx + "/test.txt").exists());
+        assertFalse(new File(dirx).exists());
+        assertFalse(new File(context.getFilesDir() + "/__org.liquidplayer.node__/__").exists());
+        assertFalse(new File(context.getCacheDir() + "/__org.liquidplayer.node__/__").exists());
+        if (external != null) {
+            assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_").exists());
+        }
     }
 
     @Test
@@ -185,6 +204,7 @@ public class FSTest {
             }
         }).processCompleted.acquire();
 
+        Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
     }
 
     /**
@@ -252,5 +272,54 @@ public class FSTest {
 
         p1.letDie();
         p2.letDie();
-   }
+
+        Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
+    }
+
+    @Test
+    public void testGlobalUninstall() throws Exception {
+        final String script = "" +
+                "var fs = require('fs');" +
+                "process.chdir('public');" +
+                "fs.writeFile('data/test.txt', 'Hello, World!', function(err) {" +
+                "   if(err) {" +
+                "       return console.log(err);" +
+                "   }" +
+                "   console.log('/home/public/data/test.txt was saved!');" +
+                "});" +
+                "fs.writeFile('media/Downloads/test2.txt', 'Hello, World!', function(err) {" +
+                "   if(err) {" +
+                "       return console.log(err);" +
+                "   }" +
+                "   console.log('/home/public/media/Downloads/test2.txt was saved!');" +
+                "});" +
+                "";
+        new Script(script, new OnDone() {
+            @Override
+            public void onDone(JSContext ctx) {
+            }
+        }).processCompleted.acquire();
+
+        File external = InstrumentationRegistry.getContext().getExternalFilesDir(null);
+        if (external != null) {
+            assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_").exists());
+            assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_/test.txt").exists());
+        }
+
+        File media = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        if (media != null) {
+            assertTrue(new File(media.getAbsolutePath() + "/test2.txt").exists());
+        }
+
+        Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Global);
+
+        if (external != null) {
+            assertFalse(new File(external.getAbsolutePath() + "/LiquidPlayer/_").exists());
+            assertFalse(new File(external.getAbsolutePath() + "/LiquidPlayer/_/test.txt").exists());
+        }
+        if (media != null) {
+            assertTrue(new File(media.getAbsolutePath() + "/test2.txt").exists());
+            assertTrue(new File(media.getAbsolutePath() + "/test2.txt").delete());
+        }
+    }
 }
