@@ -353,6 +353,23 @@ public class MicroService implements Process.EventListener {
                 MicroService.this);
     }
 
+    /**
+     * Uninstalls the MicroService from this host, and removes any global data associated with the
+     * service
+     * @param ctx The Android context
+     * @param serviceURI The URI of the service (should be the same URI that the service was started
+     *                   with)
+     */
+    public static void uninstall(Context ctx, URI serviceURI) {
+        try {
+            String serviceId = URLEncoder.encode(
+                serviceURI.toString().substring(0,serviceURI.toString().lastIndexOf('/')), "UTF-8");
+            Process.uninstall(ctx,serviceId, Process.UninstallScope.Global);
+        } catch (UnsupportedEncodingException e) {
+            android.util.Log.e("MicrosService", e.toString());
+        }
+    }
+
     private File getModulesPath() {
         final String suffix = "/__org.liquidplayer.node__/_" + serviceId;
         String modules = androidCtx.getFilesDir().getAbsolutePath() + suffix + "/modules";

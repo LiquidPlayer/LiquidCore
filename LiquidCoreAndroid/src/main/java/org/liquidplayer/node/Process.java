@@ -36,6 +36,7 @@ import android.content.Context;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
+import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
@@ -248,6 +249,11 @@ public class Process {
             listener.onProcessAboutToExit(this, Long.valueOf(code).intValue());
         }
     }
+    private synchronized void eventOnProcessFailed(Exception e) {
+        for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
+            listener.onProcessFailed(this, e);
+        }
+    }
 
     private boolean notifiedExit = false;
     private void eventOnExit(long code) {
@@ -302,6 +308,7 @@ public class Process {
                         @SuppressWarnings("unused")
                         public void onUncaughtException(JSObject error) {
                             android.util.Log.d("Unhandled", "There is an unhandled exception!");
+                            eventOnProcessFailed(new JSException(error));
                             context.evaluateScript("process.exit(process.exitCode || -1)");
                         }
                     };

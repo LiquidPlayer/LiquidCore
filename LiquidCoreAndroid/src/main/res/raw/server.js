@@ -4,8 +4,6 @@ var fs = require('fs')
 var path = require('path')
 var baseDirectory = '/home/local'
 
-var port = 9615
-
 // Create a file to serve
 
 var source = "LiquidEvents.emit('msg',{msg: 'Hello, World!'})"
@@ -19,7 +17,7 @@ fs.writeFile('/home/local/hello.js',
    }
 )
 
-http.createServer(function (request, response) {
+var server = http.createServer(function (request, response) {
    try {
      var requestUrl = url.parse(request.url)
 
@@ -37,6 +35,10 @@ http.createServer(function (request, response) {
      response.end()
      console.log(e.stack)
    }
-}).listen(port)
+})
 
-console.log("listening on port "+port)
+server.on('listening',function() {
+    console.log("listening on port "+server.address().port)
+    LiquidEvents.emit('listening', {port: server.address().port})
+})
+server.listen()
