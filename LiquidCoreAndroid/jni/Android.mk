@@ -55,9 +55,13 @@ LOCAL_SRC_FILES := common.cpp \
                    JNI/JSContext.cpp \
                    JNI/JSValue.cpp \
                    JNI/JSObject.cpp \
+                   ../../deps/sqlite-autoconf-3150000/sqlite3.c \
                    node/NodeInstance.cpp \
                    node/nodedroid_file.cc \
                    node/process_wrap.cc \
+                   ../../deps/node-sqlite3/src/database.cc \
+                   ../../deps/node-sqlite3/src/node_sqlite3.cc \
+                   ../../deps/node-sqlite3/src/statement.cc \
                    JSC/JSC_JSValue.cpp \
                    JSC/JSC_JSString.cpp \
                    JSC/JSC_JSContext.cpp \
@@ -70,7 +74,6 @@ LOCAL_SRC_FILES := common.cpp \
                    androidTest/Node.cpp \
                    androidTest/NodeList.cpp \
                    androidTest/minidom.cpp
-
 
 LOCAL_SHARED_LIBRARIES := libnode
 
@@ -89,7 +92,14 @@ DEFS_Release := \
 	-DHTTP_PARSER_STRICT=0 \
 	-D_LARGEFILE_SOURCE \
 	-D_FILE_OFFSET_BITS=64 \
-	-D_GLIBCXX_USE_C99_MATH
+	-D_GLIBCXX_USE_C99_MATH \
+    -D_REENTRANT=1 \
+    -DSQLITE_THREADSAFE=1 \
+    -DSQLITE_ENABLE_FTS3 \
+    -DSQLITE_ENABLE_FTS4 \
+    -DSQLITE_ENABLE_FTS5 \
+    -DSQLITE_ENABLE_JSON1 \
+    -DSQLITE_ENABLE_RTREE
 
 CFLAGS_Release := \
     -Wall \
@@ -108,7 +118,7 @@ CFLAGS_CC_Release := \
 	-fno-exceptions \
 	-std=gnu++0x
 
-LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
+LOCAL_CFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/v8 \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/v8/include \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/uv/include \
@@ -117,7 +127,13 @@ LOCAL_CPPFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
     -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/http_parser \
     -I$(LOCAL_PATH)/../../deps/JavaScriptCore/include \
     -I$(LOCAL_PATH)/../../deps/utfcpp \
-    $(DEFS_Release) $(CFLAGS_Release) $(CFLAGS_CC_Release)
+    -I$(LOCAL_PATH)/../../deps/sqlite-autoconf-3150000 \
+    -I$(LOCAL_PATH)/../../deps/nan-2.5.1 \
+    -I$(LOCAL_PATH)/node \
+    $(DEFS_Release) $(CFLAGS_Release)
+
+LOCAL_CPPFLAGS := $(LOCAL_CFLAGS) $(CFLAGS_CC_Release)
+
 LOCAL_LDFLAGS := -llog -lm -ldl
 
 include $(BUILD_SHARED_LIBRARY)

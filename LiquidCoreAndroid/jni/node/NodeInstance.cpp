@@ -58,6 +58,7 @@
 NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewGlobalRef(thiz);
+
     node_main_thread = new std::thread(node_main_task,reinterpret_cast<void*>(this));
 }
 
@@ -76,6 +77,8 @@ void NodeInstance::spawnedThread()
 {
     enum { kMaxArgs = 64 };
     char cmd[60];
+
+    setenv("NODE_PATH", "/home/node_modules", true);
     if (m_jvm) {
         strcpy(cmd, "node -e global.__nodedroid_onLoad();");
     } else {

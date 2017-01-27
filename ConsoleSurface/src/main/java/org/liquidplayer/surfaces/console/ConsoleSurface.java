@@ -33,9 +33,11 @@
 package org.liquidplayer.surfaces.console;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.widget.Toast;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSException;
@@ -45,6 +47,8 @@ import org.liquidplayer.javascript.JSValue;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.service.MicroService;
 import org.liquidplayer.service.Surface;
+
+import java.net.URI;
 
 /**
  * A ConsoleSurface is a node.js ANSI text console.  ConsoleSurface operates by manipulating
@@ -69,6 +73,45 @@ public class ConsoleSurface extends ConsoleView
 
     public ConsoleSurface(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        String uri_ = null;
+        TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs,
+                R.styleable.ConsoleSurface,
+                0, 0);
+        try {
+            uri_ = a.getString(R.styleable.ConsoleSurface_URI);
+        } finally {
+            a.recycle();
+        }
+
+        final String uri = uri_;
+        if (uri != null) {
+            new MicroService(getContext(), URI.create(uri), new MicroService.ServiceStartListener(){
+                @Override
+                public void onStart(MicroService service) {
+                    attach(service);
+                }
+            },
+            new MicroService.ServiceErrorListener() {
+                @Override
+                public void onError(MicroService service, Exception e) {
+                    detach();
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getContext(),"Failed to start service at " + uri,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            },
+            new MicroService.ServiceExitListener() {
+                @Override
+                public void onExit(MicroService service) {
+                    detach();
+                }
+            }).start();
+        }
     }
 
     @Override

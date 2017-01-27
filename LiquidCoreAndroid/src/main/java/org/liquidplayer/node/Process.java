@@ -126,6 +126,9 @@ public class Process {
     public Process(Context androidContext, String uniqueID, int mediaAccessMask,
                    EventListener listener) {
         addEventListener(listener);
+
+        new Modules(androidContext).setUpNodeModules();
+
         processRef = start();
         androidCtx = androidContext;
         this.uniqueID = uniqueID;

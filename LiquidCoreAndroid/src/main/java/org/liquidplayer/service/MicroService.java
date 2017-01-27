@@ -370,24 +370,26 @@ public class MicroService implements Process.EventListener {
         }
     }
 
-    private File getModulesPath() {
+    private File getModulePath() {
         final String suffix = "/__org.liquidplayer.node__/_" + serviceId;
-        String modules = androidCtx.getFilesDir().getAbsolutePath() + suffix + "/modules";
+        String modules = androidCtx.getFilesDir().getAbsolutePath() + suffix + "/module";
         return new File(modules);
     }
 
     private void fetchService() throws IOException {
         // See if the file already exists
-        File modules = getModulesPath();
+        File modules = getModulePath();
         if (modules == null) {
             throw new FileNotFoundException();
         }
 
         String path = serviceURI.getPath();
-        MicroService.this.module = path.substring(path.lastIndexOf('/') + 1);
-        File module = new File(getModulesPath().getAbsolutePath() + "/" +
-            MicroService.this.module);
-        long lastModified = module.lastModified();
+        module = path.substring(path.lastIndexOf('/') + 1);
+        if (!module.endsWith(".js")) {
+            module = module + ".js";
+        }
+        File moduleF = new File(getModulePath().getAbsolutePath() + "/" + module);
+        long lastModified = moduleF.lastModified();
 
         String scheme = serviceURI.getScheme();
         InputStream in = null;
@@ -418,8 +420,8 @@ public class MicroService implements Process.EventListener {
             in = androidCtx.getContentResolver().openInputStream(Uri.parse(serviceURI.toString()));
         }
         if (in != null) {
-            // Write file to /home/modules
-            OutputStream out = new FileOutputStream(module);
+            // Write file to /home/module
+            OutputStream out = new FileOutputStream(moduleF);
             byte[] buf = new byte[16 * 1024];
             int len;
             while((len=in.read(buf))>0){
@@ -451,13 +453,13 @@ public class MicroService implements Process.EventListener {
             // Construct process.argv
             ArrayList<String> args = new ArrayList<>();
             args.add("node");
-            args.add("/home/modules/" + module);
+            args.add("/home/module/" + module);
             args.addAll(Arrays.asList(argv));
             context.property("process").toObject().property("argv", args);
 
             // Execute code
             final String script =
-                    "eval(String(require('fs').readFileSync('/home/modules/" + module + "')))";
+                    "eval(String(require('fs').readFileSync('/home/module/" + module + "')))";
             context.evaluateScript(script);
         } catch (IOException e) {
             onProcessFailed(null, e);

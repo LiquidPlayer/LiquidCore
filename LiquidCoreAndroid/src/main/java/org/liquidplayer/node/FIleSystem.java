@@ -56,7 +56,7 @@ import java.util.UUID;
  *
  * home
  *  |
- *  +--- modules
+ *  +--- module
  *  |
  *  +--- temp
  *  |
@@ -82,9 +82,9 @@ import java.util.UUID;
  *
  * Read-only directory which acts only as a holding bin for other directories
  *
- * /home/modules
+ * /home/module
  *
- * Read-only directory.  Contains downloaded javascript modules for the given MicroService.  As
+ * Read-only directory.  Contains downloaded javascript module for the given MicroService.  As
  * these files change on the server, they will be updated and cached here.
  *
  * /home/temp
@@ -179,7 +179,7 @@ class FileSystem extends JSObject {
             return true;
         }
     }
-    static private void deleteRecursive(File fileOrDirectory) {
+    static void deleteRecursive(File fileOrDirectory) {
         if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory))
             for (File child : fileOrDirectory.listFiles()) {
                 deleteRecursive(child);
@@ -211,12 +211,12 @@ class FileSystem extends JSObject {
         aliases_.get().property("/home", home);
         access_ .get().property("/home", Process.kMediaAccessPermissionsRead);
 
-        // Set up /home/modules (read-only)
-        String modules = mkdir(androidCtx.getFilesDir().getAbsolutePath() +
-                suffix + "/modules");
-        symlink(modules, home + "/modules");
-        aliases_.get().property("/home/modules", modules);
-        access_ .get().property("/home/modules", Process.kMediaAccessPermissionsRead);
+        // Set up /home/module (read-only)
+        String module = mkdir(androidCtx.getFilesDir().getAbsolutePath() +
+                suffix + "/module");
+        symlink(module, home + "/module");
+        aliases_.get().property("/home/module", module);
+        access_ .get().property("/home/module", Process.kMediaAccessPermissionsRead);
 
         // Set up /home/temp (read/write)
         String temp = mkdir(androidCtx.getCacheDir().getAbsolutePath() +
@@ -238,6 +238,11 @@ class FileSystem extends JSObject {
         symlink(local, home + "/local");
         aliases_.get().property("/home/local", local);
         access_ .get().property("/home/local", Process.kMediaAccessPermissionsRW);
+
+        // Permit access to node_modules
+        aliases_.get().property("/home/node_modules", androidCtx.getFilesDir().getAbsolutePath() +
+                "/__org.liquidplayer.node__/node_modules");
+        access_ .get().property("/home/node_modules", Process.kMediaAccessPermissionsRead);
 
         String state = Environment.getExternalStorageState();
         if (!Environment.MEDIA_MOUNTED.equals(state)){

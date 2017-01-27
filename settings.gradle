@@ -1,1 +1,1 @@
-include ':LiquidCoreAndroid', ':demoapp', ':ConsoleSurface'
+include ':LiquidCoreAndroid', ':demoapp', ':ConsoleSurface', ':consoleapp'

@@ -103,6 +103,7 @@ private:
     bool use_debug_agent = false;
     bool didExit = false;
     int  exit_code = 0;
+    std::string node_modules_dir;
 
     JavaVM *m_jvm = nullptr;
     jobject m_JavaThis = nullptr;
