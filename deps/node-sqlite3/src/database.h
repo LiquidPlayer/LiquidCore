@@ -10,6 +10,7 @@
 #include <nan.h>
 
 #include "async.h"
+#include <map>
 
 using namespace v8;
 
@@ -20,14 +21,17 @@ class Database;
 
 class Database : public Nan::ObjectWrap {
 public:
-    static Nan::Persistent<FunctionTemplate> constructor_template;
     static NAN_MODULE_INIT(Init);
+    static std::map<v8::Isolate *, Nan::Persistent<FunctionTemplate> *> constructor_templates;
 
     static inline bool HasInstance(Local<Value> val) {
         Nan::HandleScope scope;
+        Nan::Persistent<FunctionTemplate> *constructor_template =
+            constructor_templates[v8::Isolate::GetCurrent()];
+        if (!constructor_template) return false;
         if (!val->IsObject()) return false;
         Local<Object> obj = val.As<Object>();
-        return Nan::New(constructor_template)->HasInstance(obj);
+        return Nan::New(*constructor_template)->HasInstance(obj);
     }
 
     struct Baton {

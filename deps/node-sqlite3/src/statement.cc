@@ -11,8 +11,6 @@
 
 using namespace node_sqlite3;
 
-Nan::Persistent<FunctionTemplate> Statement::constructor_template;
-
 NAN_MODULE_INIT(Statement::Init) {
     Nan::HandleScope scope;
 
@@ -29,7 +27,6 @@ NAN_MODULE_INIT(Statement::Init) {
     Nan::SetPrototypeMethod(t, "reset", Reset);
     Nan::SetPrototypeMethod(t, "finalize", Finalize);
 
-    constructor_template.Reset(t);
     Nan::Set(target, Nan::New("Statement").ToLocalChecked(),
         Nan::GetFunction(t).ToLocalChecked());
 }
@@ -604,8 +601,7 @@ void Statement::Work_BeginEach(Baton* baton) {
     // Only create the Async object when we're actually going into
     // the event loop. This prevents dangling events.
     EachBaton* each_baton = static_cast<EachBaton*>(baton);
-    each_baton->async = new Async(each_baton->stmt, reinterpret_cast<uv_async_cb>(AsyncEach),
-        baton->loop);
+    each_baton->async = new Async(each_baton->stmt, reinterpret_cast<uv_async_cb>(AsyncEach), baton->loop);
     each_baton->async->item_cb.Reset(each_baton->callback);
     each_baton->async->completed_cb.Reset(each_baton->completed);
 

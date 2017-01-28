@@ -10,10 +10,14 @@
 
 using namespace node_sqlite3;
 
-Nan::Persistent<FunctionTemplate> Database::constructor_template;
+std::map<v8::Isolate *, Nan::Persistent<FunctionTemplate> *> Database::constructor_templates;
 
 NAN_MODULE_INIT(Database::Init) {
     Nan::HandleScope scope;
+
+    Nan::Persistent<FunctionTemplate> *constructor_template =
+        new Nan::Persistent<FunctionTemplate>();
+    constructor_templates[v8::Isolate::GetCurrent()] = constructor_template;
 
     Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
@@ -31,7 +35,7 @@ NAN_MODULE_INIT(Database::Init) {
 
     NODE_SET_GETTER(t, "open", OpenGetter);
 
-    constructor_template.Reset(t);
+    constructor_template->Reset(t);
 
     Nan::Set(target, Nan::New("Database").ToLocalChecked(),
         Nan::GetFunction(t).ToLocalChecked());
@@ -119,14 +123,24 @@ NAN_METHOD(Database::New) {
     }
 
     REQUIRE_ARGUMENT_STRING(0, filename);
-    Nan::Utf8String *use_fn = &filename;
-    bool free_it = false;
-    if (strcmp(*filename,"") && strcmp(*filename,":memory:")) {
+    const char *use_fn = *filename;
+    std::string dealiased;
+    if (strcmp(use_fn,"") && strcmp(*filename,":memory:")) {
         Local<Value> fn = nodedroid::fs_(env, info[0], _FS_ACCESS_RD | _FS_ACCESS_WR);
-        use_fn = new Nan::Utf8String(fn);
-        free_it = true;
+        Nan::Utf8String aliased(fn);
+        if (*aliased) {
+            std::string aliased_(*aliased);
+            size_t found = aliased_.find_last_of("/");
+            std::string path = aliased_.substr(0,found);
+            std::string file = aliased_.substr(found+1);
+            fn = nodedroid::fs_(env, String::NewFromUtf8(info.GetIsolate(),path.c_str()),
+                _FS_ACCESS_NONE);
+            Nan::Utf8String dealiased_path(fn);
+            dealiased = std::string(*dealiased_path) + "/" + file;
+            use_fn = dealiased.c_str();
+        }
     }
-    if (**use_fn) {
+    if (use_fn) {
         int pos = 1;
 
         int mode;
@@ -145,23 +159,16 @@ NAN_METHOD(Database::New) {
         db->Wrap(info.This());
 
 
-        /*
-        info.This()->ForceSet(Nan::New("filename").ToLocalChecked(), info[0].As<String>(), ReadOnly);
-        info.This()->ForceSet(Nan::New("mode").ToLocalChecked(), Nan::New(mode), ReadOnly);
-        */
         info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
             Nan::New("filename").ToLocalChecked(), info[0].As<String>(), ReadOnly);
         info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
             Nan::New("mode").ToLocalChecked(), Nan::New(mode), ReadOnly);
 
         // Start opening the database.
-        OpenBaton* baton = new OpenBaton(db, callback, *filename, mode, env->event_loop());
+        OpenBaton* baton = new OpenBaton(db, callback, use_fn, mode, env->event_loop());
         Work_BeginOpen(baton);
 
         info.GetReturnValue().Set(info.This());
-    }
-    if (free_it) {
-        delete use_fn;
     }
 }
 
@@ -174,6 +181,8 @@ void Database::Work_BeginOpen(Baton* baton) {
 void Database::Work_Open(uv_work_t* req) {
     OpenBaton* baton = static_cast<OpenBaton*>(req->data);
     Database* db = baton->db;
+
+    __android_log_print(ANDROID_LOG_DEBUG,"Work_Open","attempting to open: %s", baton->filename.c_str());
 
     baton->status = sqlite3_open_v2(
         baton->filename.c_str(),

@@ -56,6 +56,8 @@ import java.util.UUID;
  *
  * home
  *  |
+ *  +--- node_modules
+ *  |
  *  +--- module
  *  |
  *  +--- temp
@@ -82,27 +84,33 @@ import java.util.UUID;
  *
  * Read-only directory which acts only as a holding bin for other directories
  *
+ * /home/node_modules
+ *
+ * Read-only directory containing included node modules.  These modules can be loaded using
+ * 'require()'.  These modules are in addition to the standard built-in modules.  Currently, only
+ * sqlite3 is included.
+ *
  * /home/module
  *
- * Read-only directory.  Contains downloaded javascript module for the given MicroService.  As
+ * Read-only directory.  Contains downloaded javascript code for the MicroService.  As
  * these files change on the server, they will be updated and cached here.
  *
  * /home/temp
  *
- * Read-write directory.  This directory is private to a single instance of the MicroService.
+ * Read/write directory.  This directory is private to a single instance of the MicroService.
  * The contents of this directory live only as long as the underlying Node.js process is active.
  * This directory is appropriate only for very short-lived temporary files.
  *
  * /home/cache
  *
- * Read-write directory.  This directory is available to all instances of the same MicroService
+ * Read/write directory.  This directory is available to all instances of the same MicroService
  * running on the same local host.  The host, in this case, is the host app which uses an instance
  * of the LiquidCore library.  Files in this directory will be deleted on an as-needed basis
  * as they age and/or a memory space quota is breaching.
  *
  * /home/local
  *
- * Read-write directory.  This directory is the persistent storage for a MicroService and is shared
+ * Read/write directory.  This directory is the persistent storage for a MicroService and is shared
  * amongst all instances of the same MicroService running on the same local host.  All content in
  * this directory will persist so long as the MicroService is present on the host.  This directory
  * will only be cleared when the MicroService is "uninstalled".  Uninstallation happens for
@@ -116,7 +124,7 @@ import java.util.UUID;
  *
  * /home/public/data
  *
- * Read-write directory for MicroService-specific data.  This directory is shared between all
+ * Read/write directory for MicroService-specific data.  This directory is shared between all
  * instances of a MicroService on all hosts (local or not).  Its contents are publicly available for
  * any app to access, though its true location on external media is a bit obscured.  This directory
  * persists so long as a MicroService exists on any host.  If a MicroService is uninstalled from
@@ -240,8 +248,10 @@ class FileSystem extends JSObject {
         access_ .get().property("/home/local", Process.kMediaAccessPermissionsRW);
 
         // Permit access to node_modules
-        aliases_.get().property("/home/node_modules", androidCtx.getFilesDir().getAbsolutePath() +
-                "/__org.liquidplayer.node__/node_modules");
+        String node_modules = androidCtx.getFilesDir().getAbsolutePath() +
+                "/__org.liquidplayer.node__/node_modules";
+        symlink(node_modules, home + "/node_modules");
+        aliases_.get().property("/home/node_modules", node_modules);
         access_ .get().property("/home/node_modules", Process.kMediaAccessPermissionsRead);
 
         String state = Environment.getExternalStorageState();

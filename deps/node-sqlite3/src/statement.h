@@ -73,8 +73,6 @@ typedef Row Parameters;
 
 class Statement : public Nan::ObjectWrap {
 public:
-    static Nan::Persistent<FunctionTemplate> constructor_template;
-
     static NAN_MODULE_INIT(Init);
     static NAN_METHOD(New);
 
