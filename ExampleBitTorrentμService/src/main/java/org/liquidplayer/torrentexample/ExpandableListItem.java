@@ -46,7 +46,7 @@
  * limitations under the License.
  */
 
-package org.liquidplayer.demoapp;
+package org.liquidplayer.torrentexample;
 
 import android.os.Parcel;
 import android.os.Parcelable;

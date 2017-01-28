@@ -1,4 +1,4 @@
-package org.liquidplayer.demoapp;
+package org.liquidplayer.torrentexample;
 
 import org.junit.Test;
 

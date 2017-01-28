@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.liquidplayer.demoapp;
+package org.liquidplayer.torrentexample;
 
 /**
  * A listener used to update the list data object when the corresponding expanding

@@ -80,7 +80,7 @@
 
     </RelativeLayout>
 
-    <org.liquidplayer.demoapp.ExpandingLayout
+    <org.liquidplayer.torrentexample.ExpandingLayout
         android:id="@+id/expanding_layout"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
@@ -95,6 +95,6 @@
 
         </LinearLayout>
 
-    </org.liquidplayer.demoapp.ExpandingLayout>
+    </org.liquidplayer.torrentexample.ExpandingLayout>
 
 </LinearLayout>

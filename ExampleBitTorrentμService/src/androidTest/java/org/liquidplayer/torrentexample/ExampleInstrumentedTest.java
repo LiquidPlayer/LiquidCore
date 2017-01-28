@@ -1,4 +1,4 @@
-package org.liquidplayer.demoapp;
+package org.liquidplayer.torrentexample;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
