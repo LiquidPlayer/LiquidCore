@@ -15,6 +15,7 @@ std::map<v8::Isolate *, Nan::Persistent<FunctionTemplate> *> Database::construct
 NAN_MODULE_INIT(Database::Init) {
     Nan::HandleScope scope;
 
+    // FIXME: This will result in a memory leak as we are never freeing the handles
     Nan::Persistent<FunctionTemplate> *constructor_template =
         new Nan::Persistent<FunctionTemplate>();
     constructor_templates[v8::Isolate::GetCurrent()] = constructor_template;
