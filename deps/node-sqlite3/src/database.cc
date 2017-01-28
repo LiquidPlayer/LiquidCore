@@ -651,6 +651,12 @@ void Database::Work_Wait(Baton* baton) {
 NAN_METHOD(Database::LoadExtension) {
     Database* db = Nan::ObjectWrap::Unwrap<Database>(info.This());
 
+    // Disabling extension loading for LiquidCore -- nothing good can come of this
+
+    return Nan::ThrowTypeError(
+        "LoadExtension disabled for LiquidCore due to security and compatibility reasons");
+
+    /*
     REQUIRE_ARGUMENT_STRING(0, filename);
     OPTIONAL_ARGUMENT_FUNCTION(1, callback);
 
@@ -660,6 +666,7 @@ NAN_METHOD(Database::LoadExtension) {
     db->Schedule(Work_BeginLoadExtension, baton, true);
 
     info.GetReturnValue().Set(info.This());
+    */
 }
 
 void Database::Work_BeginLoadExtension(Baton* baton) {

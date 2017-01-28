@@ -17,7 +17,7 @@ public class Sqlite3Test {
         int count;
     }
 
-    final static URI testURI = URI.create("android.resource://" +
+    private final static URI testURI = URI.create("android.resource://" +
             InstrumentationRegistry.getContext().getPackageName() +"/raw/sqlite3test");
 
     private void testDatabase(final String fname) throws Exception {
