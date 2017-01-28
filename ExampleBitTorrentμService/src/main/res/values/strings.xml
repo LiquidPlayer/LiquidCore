@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Demo App</string>
+    <string name="app_name">BitTorrent MicroService Example</string>
     <string name="action_settings">Settings</string>
 
 </resources>

@@ -1,1 +1,1 @@
-include ':LiquidCoreAndroid', ':demoapp', ':ConsoleSurface', ':consoleapp'
+include ':LiquidCoreAndroid', ':ExampleBitTorrentμService', ':ConsoleSurface', ':ExampleNodeConsole'

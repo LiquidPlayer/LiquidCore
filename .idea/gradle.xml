@@ -10,9 +10,9 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/ConsoleSurface" />
+            <option value="$PROJECT_DIR$/ExampleBitTorrentμService" />
+            <option value="$PROJECT_DIR$/ExampleNodeConsole" />
             <option value="$PROJECT_DIR$/LiquidCoreAndroid" />
-            <option value="$PROJECT_DIR$/consoleapp" />
-            <option value="$PROJECT_DIR$/demoapp" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
