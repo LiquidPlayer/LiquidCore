@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="surfaces">
+        <item>.console.ConsoleSurface</item>
+    </string-array>
+</resources>

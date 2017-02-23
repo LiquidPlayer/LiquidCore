@@ -13,7 +13,7 @@ function test(fname) {
 
       db.each("SELECT rowid AS id, info FROM lorem", function(err, row) {
           console.log(row.id + ": " + row.info);
-          LiquidEvents.emit('count', row);
+          LiquidCore.emit('count', row);
       });
     });
 
@@ -21,9 +21,9 @@ function test(fname) {
 }
 
 var i = setInterval(function(){},500);
-LiquidEvents.once('test', function(o) {
+LiquidCore.once('test', function(o) {
     test(o.fname);
     clearInterval(i);
 });
 
-LiquidEvents.emit('ready',{});
+LiquidCore.emit('ready',{});

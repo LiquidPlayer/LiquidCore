@@ -69,6 +69,12 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
     private int mProgress;
     private boolean mIsDownloading;
     private Object data;
+    private String mServiceId;
+
+    /**
+     * This is a hack I am not proud of, but I am not sure how else to solve it
+     */
+    private ItemView currentView;
 
     ExpandableListItem(String title, String url, int collapsedHeight) {
         mTitle = title;
@@ -78,6 +84,7 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
         mUrl = url;
         mProgress = 0;
         mIsDownloading = false;
+        mServiceId = null;
     }
 
     private ExpandableListItem(Parcel in) {
@@ -89,6 +96,7 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
         mFilename = in.readString();
         mProgress = in.readInt();
         mIsDownloading = in.readInt() > 0;
+        mServiceId = in.readString();
     }
 
     String getUrl() {
@@ -126,6 +134,13 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
         return mFilename;
     }
 
+    void setServiceId(String id) {
+        mServiceId = id;
+    }
+    String getServiceId() {
+        return mServiceId;
+    }
+
     public Object getData() {
         return data;
     }
@@ -147,6 +162,12 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
         return mIsDownloading;
     }
 
+    void setCurrentView(ItemView currentView) {
+        this.currentView = currentView;
+    }
+    ItemView getCurrentView() {
+        return currentView;
+    }
 
     @Override
     public void onSizeChanged(int newHeight) {
@@ -180,5 +201,6 @@ class ExpandableListItem implements OnSizeChangedListener, Parcelable {
         out.writeString(mFilename);
         out.writeInt(mProgress);
         out.writeInt(mIsDownloading ? 1 : 0);
+        out.writeString(mServiceId);
     }
 }

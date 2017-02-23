@@ -164,9 +164,7 @@ public class Process {
      * @param listener the listener interface object to remove
      */
     public synchronized void removeEventListener(EventListener listener) {
-        android.util.Log.d("removeEventListener", "There were " + listeners.size() + " listeners");
         listeners.remove(listener);
-        android.util.Log.d("removeEventListener", "There are now " + listeners.size() + " listeners");
     }
 
     /**
@@ -218,7 +216,7 @@ public class Process {
 
     /**
      * Determines the scope of an uninstallation.  A Local uninstallation will only clear
-     * data and files related to instances on this host.  A Global uninstallation wiil
+     * data and files related to instances on this host.  A Global uninstallation will
      * clear also public data shared between hosts.
      */
     public enum UninstallScope {
@@ -227,7 +225,7 @@ public class Process {
     }
 
     /**
-     * Uninstalls a given process class identified by it uniqueID
+     * Uninstalls a given process class identified by its uniqueID
      * @param ctx The Android context
      * @param uniqueID The id of the process class
      * @param scope scope in which to uninstall the process class
@@ -311,6 +309,8 @@ public class Process {
                         @SuppressWarnings("unused")
                         public void onUncaughtException(JSObject error) {
                             android.util.Log.d("Unhandled", "There is an unhandled exception!");
+                            android.util.Log.d("Unhandled", error.toString());
+                            android.util.Log.d("Unhandled", error.property("stack").toString());
                             eventOnProcessFailed(new JSException(error));
                             context.evaluateScript("process.exit(process.exitCode || -1)");
                         }
@@ -391,6 +391,7 @@ public class Process {
             if (handleRef == 0 && !isDefunct) {
                 handleRef = Process.this.keepAlive(ctxRef());
             }
+            count++;
         }
 
         public void async(Runnable runnable) {
@@ -398,9 +399,10 @@ public class Process {
         }
 
         void letDie() {
-            if (handleRef != 0 && !isDefunct) {
+            if (--count < 1 && handleRef != 0 && !isDefunct) {
                 Process.this.letDie(handleRef);
                 handleRef = 0L;
+                count = 0;
             }
         }
 
@@ -413,6 +415,7 @@ public class Process {
         }
 
         private long handleRef = 0L;
+        private int count = 0;
     }
 
     /* Native JNI functions */

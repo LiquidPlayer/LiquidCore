@@ -35,6 +35,7 @@ package org.liquidplayer.torrentexample;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_WRITE_STORAGE = 54321;
 
     ArrayList<ExpandableListItem> values;
+    CustomArrayAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,8 +89,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         final ExpandingListView listView = (ExpandingListView) findViewById(R.id.list_view);
-        final CustomArrayAdapter adapter = new CustomArrayAdapter(this, R.layout.list_item,
-                values, listView);
+        adapter = new CustomArrayAdapter(this, values, listView);
         listView.setAdapter(adapter);
     }
 

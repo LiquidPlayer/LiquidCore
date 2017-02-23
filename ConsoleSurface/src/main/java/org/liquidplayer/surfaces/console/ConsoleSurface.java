@@ -33,11 +33,11 @@
 package org.liquidplayer.surfaces.console;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.widget.Toast;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSException;
@@ -48,7 +48,7 @@ import org.liquidplayer.node.Process;
 import org.liquidplayer.service.MicroService;
 import org.liquidplayer.service.Surface;
 
-import java.net.URI;
+import java.util.HashMap;
 
 /**
  * A ConsoleSurface is a node.js ANSI text console.  ConsoleSurface operates by manipulating
@@ -60,8 +60,9 @@ import java.net.URI;
  *
  * ConsoleSurface is intended to be used mostly for debugging.
  */
-public class ConsoleSurface extends ConsoleView
-    implements Process.EventListener, JSContext.IJSExceptionHandler, Surface {
+public class ConsoleSurface extends ConsoleView implements Surface {
+
+    public static String SURFACE_VERSION = BuildConfig.VERSION_NAME;
 
     public ConsoleSurface(Context context) {
         this(context, null);
@@ -73,58 +74,10 @@ public class ConsoleSurface extends ConsoleView
 
     public ConsoleSurface(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        String uri_ = null;
-        TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs,
-                R.styleable.ConsoleSurface,
-                0, 0);
-        try {
-            uri_ = a.getString(R.styleable.ConsoleSurface_URI);
-        } finally {
-            a.recycle();
-        }
-
-        final String uri = uri_;
-        if (uri != null) {
-            new MicroService(getContext(), URI.create(uri), new MicroService.ServiceStartListener(){
-                @Override
-                public void onStart(MicroService service) {
-                    attach(service);
-                }
-            },
-            new MicroService.ServiceErrorListener() {
-                @Override
-                public void onError(MicroService service, Exception e) {
-                    detach();
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getContext(),"Failed to start service at " + uri,
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
-                }
-            },
-            new MicroService.ServiceExitListener() {
-                @Override
-                public void onExit(MicroService service) {
-                    detach();
-                }
-            }).start();
-        }
+        setSaveEnabled(true);
     }
 
-    @Override
-    protected void updateState() {
-        super.updateState();
-
-    }
-
-    private Process process = null;
-    private JSContext js = null;
-    private JSFunction console_log = null;
-    private boolean processedException = false;
-    private int columns = 0, rows = 0;
+    private ConsoleSession session = null;
 
     @Override
     public void reset() {
@@ -134,10 +87,8 @@ public class ConsoleSurface extends ConsoleView
 
     @Override
     protected void resize(int columns, int rows) {
-        this.columns = columns;
-        this.rows = rows;
-        if (state().getString("uuid") != null) {
-            do_attach(state().getString("uuid"));
+        if (session != null) {
+            session.resize(columns,rows);
         }
     }
 
@@ -150,152 +101,268 @@ public class ConsoleSurface extends ConsoleView
      * @param service  The MicroService to attach
      */
     @Override
-    public void attach(MicroService service) {
-        do_attach(service.getId());
-        resize(columns, rows);
-    }
-
-    private void do_attach(final String serviceId) {
-        if (state().getString("uuid") != null && !serviceId.equals(state().getString("uuid"))) {
-            detach();
-        }
-        if (state().getString("uuid") == null) {
-            state().putString("uuid", serviceId);
-            MicroService service = MicroService.getService(serviceId);
-            if (service != null) {
-                process = service.getProcess();
-                process.addEventListener(ConsoleSurface.this);
-            }
-        }
+    public void attach(MicroService service, Runnable onAttached) {
+        session = ConsoleSession.newSession(service, onAttached);
+        session.setCurrentView(this);
+        uuid = service.getId();
     }
 
     @Override
     public void detach() {
-        if (state().getString("uuid") != null) {
-            if (process != null) {
+        if (session != null) {
+            session.detach();
+        }
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                inputBox.setEnabled(false);
+                inputBox.setClickable(false);
+                inputBox.setAlpha(0.5f);
+                setButtonEnabled(downHistory,false);
+                setButtonEnabled(upHistory,false);
+            }
+        });
+    }
+
+    @Override
+    protected void processCommand(final String cmd) {
+        if (session != null) {
+            session.processCommand(cmd);
+        }
+    }
+
+    /* -- parcelable privates -- */
+    private String uuid;
+
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Parcelable superState = super.onSaveInstanceState();
+        SavedState ss = new SavedState(superState);
+        ss.uuid = uuid;
+        if (session != null) {
+            session.removeCurrentView(this);
+        }
+        session = null;
+        return ss;
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        SavedState ss = (SavedState) state;
+        super.onRestoreInstanceState(ss.getSuperState());
+        uuid = ss.uuid;
+        session = ConsoleSession.getSessionFromServiceId(uuid);
+    }
+
+    static class SavedState extends BaseSavedState {
+        String uuid;
+
+        SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        private SavedState(Parcel in) {
+            super(in);
+            uuid = in.readString();
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            super.writeToParcel(out, flags);
+            out.writeString(uuid);
+        }
+
+        public static final Parcelable.Creator<SavedState> CREATOR
+                = new Parcelable.Creator<SavedState>() {
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+    }
+
+    private static class ConsoleSession implements Process.EventListener,
+            JSContext.IJSExceptionHandler {
+
+        static ConsoleSession newSession(MicroService service, Runnable onAttached) {
+            ConsoleSession session = new ConsoleSession(service,onAttached);
+            sessionMap.put(service.getId(), session);
+            return session;
+        }
+
+        static ConsoleSession getSessionFromServiceId(String id) {
+            return sessionMap.get(id);
+        }
+
+        private static HashMap<String,ConsoleSession> sessionMap = new HashMap<>();
+
+        private ConsoleSession(MicroService service, Runnable onAttached) {
+            this.onAttached = onAttached;
+            if (service != null) {
+                process = service.getProcess();
+                process.addEventListener(this);
+                uuid = service.getId();
+            }
+        }
+
+        void detach() {
+            if (js != null && process.isActive()) {
                 JSObject stdout =
                         js.property("process").toObject().property("stdout").toObject();
                 JSObject stderr =
                         js.property("process").toObject().property("stderr").toObject();
                 teardownStream(stdout);
                 teardownStream(stderr);
-
-                console_log = null;
-                js = null;
-                process.removeEventListener(this);
-                process = null;
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                    @Override
-                    public void run() {
-                        inputBox.setEnabled(false);
-                        inputBox.setClickable(false);
-                        inputBox.setAlpha(0.5f);
-                        setButtonEnabled(downHistory,false);
-                        setButtonEnabled(upHistory,false);
-                    }
-                });
             }
-            state().remove("uuid");
+
+            console_log = null;
+            js = null;
+            process.removeEventListener(this);
+            if (uuid != null) {
+                sessionMap.remove(uuid);
+            }
         }
-    }
 
-    @Override
-    protected void processCommand(final String cmd) {
-        processedException = false;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                JSValue output = js.evaluateScript(cmd);
-                if (!processedException && console_log != null) {
-                    console_log.call(null, output);
+        void setCurrentView(ConsoleSurface view) {
+            currentView = view;
+        }
+
+        void removeCurrentView(ConsoleSurface view) {
+            if (currentView == view) currentView = null;
+        }
+
+        void processCommand(final String cmd) {
+            processedException = false;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    JSValue output = js.evaluateScript(cmd);
+                    if (!processedException && console_log != null) {
+                        console_log.call(null, output);
+                    }
                 }
+            }).start();
+        }
+
+        void resize(int columns, int rows) {
+            this.columns = columns;
+            this.rows = rows;
+        }
+
+        private interface StreamCallback {
+            void callback(String string);
+        }
+        private void setupStream(final JSObject stream, final StreamCallback callback) {
+            stream.property("write", new JSFunction(stream.getContext(), "write") {
+                @SuppressWarnings("unused")
+                public void write(final String string) {
+                    callback.callback(string);
+                }
+            });
+            stream.property("clearScreenDown", new JSFunction(stream.getContext(),"clearScreenDown",
+                    "this.write('\\x1b[0J');"));
+            stream.property("moveCursor", new JSFunction(stream.getContext(),"moveCursor",
+                    "var out = ''; c = c || 0; r = r || 0;" +
+                            "if (c>0) out += '\\x1b['+c+'C'; else if (c<0) out+='\\x1b['+(-c)+'D';"+
+                            "if (r>0) out += '\\x1b['+r+'B'; else if (r<0) out+='\\x1b['+(-r)+'A';"+
+                            "this.write(out);",
+                    "c", "r"));
+            stream.property("rows", rows);
+            stream.property("columns", columns);
+        }
+        private void teardownStream(final JSObject stream) {
+            // FIXME: restore previous function
+            stream.property("write", new JSFunction(js));
+            stream.deleteProperty("clearScreenDown");
+            stream.deleteProperty("moveCursor");
+        }
+
+        @Override
+        public void onProcessStart(Process process, JSContext context) {
+            js = context;
+            js.setExceptionHandler(this);
+            console_log = js.property("console").toObject().property("log").toFunction();
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    if (currentView != null) {
+                        currentView.inputBox.setEnabled(true);
+                    }
+                }
+            });
+
+            JSObject stdout =
+                    js.property("process").toObject().property("stdout").toObject();
+            JSObject stderr =
+                    js.property("process").toObject().property("stderr").toObject();
+            setupStream(stdout, new StreamCallback() {
+                @Override
+                public void callback(String string) {
+                    if (currentView != null) {
+                        currentView.consoleTextView.print(string);
+                    }
+                }
+            });
+            setupStream(stderr, new StreamCallback() {
+                @Override
+                public void callback(String string) {
+                    // Make it red!
+                    string = "\u001b[31m" + string;
+                    if (currentView != null) {
+                        currentView.consoleTextView.print(string);
+                    }
+                    android.util.Log.e("stderr", string);
+                }
+            });
+            if (onAttached != null) {
+                onAttached.run();
+                onAttached = null;
             }
-        }).start();
-    }
+        }
 
-    private interface StreamCallback {
-        void callback(String string);
-    }
-    private void setupStream(final JSObject stream, final StreamCallback callback) {
-        stream.property("write", new JSFunction(stream.getContext(), "write") {
-            @SuppressWarnings("unused")
-            public void write(final String string) {
-                callback.callback(string);
+        @Override
+        public void onProcessAboutToExit(Process process, int exitCode) {
+            if (currentView != null) {
+                currentView.consoleTextView.println(
+                        "\u001B[31mProcess about to exit with code " + exitCode);
             }
-        });
-        stream.property("clearScreenDown", new JSFunction(stream.getContext(),"clearScreenDown",
-                "this.write('\\x1b[0J');"));
-        stream.property("moveCursor", new JSFunction(stream.getContext(),"moveCursor",
-                "var out = ''; c = c || 0; r = r || 0;" +
-                        "if (c>0) out += '\\x1b['+c+'C'; else if (c<0) out+='\\x1b['+(-c)+'D';"+
-                        "if (r>0) out += '\\x1b['+r+'B'; else if (r<0) out+='\\x1b['+(-r)+'A';"+
-                        "this.write(out);",
-                "c", "r"));
-        stream.property("rows", rows);
-        stream.property("columns", columns);
-    }
-    private void teardownStream(final JSObject stream) {
-        // FIXME: restore previous function
-        stream.property("write", new JSFunction(js));
-        stream.deleteProperty("clearScreenDown");
-        stream.deleteProperty("moveCursor");
-    }
+            android.util.Log.i("onProcessAboutToExit", "Process about to exit with code "+exitCode);
+            detach();
+        }
 
-    @Override
-    public void onProcessStart(Process process, JSContext context) {
-        js = context;
-        js.setExceptionHandler(this);
-        console_log = js.property("console").toObject().property("log").toFunction();
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                inputBox.setEnabled(true);
+        @Override
+        public void onProcessExit(Process process, int exitCode) {
+            android.util.Log.i("onProcessExit", "exiting");
+            if (currentView != null) {
+                currentView.consoleTextView.println("\u001B[31mProcess exited with code "+exitCode);
             }
-        });
+            this.process = null;
+        }
 
-        JSObject stdout =
-                js.property("process").toObject().property("stdout").toObject();
-        JSObject stderr =
-                js.property("process").toObject().property("stderr").toObject();
-        setupStream(stdout, new StreamCallback() {
-            @Override
-            public void callback(String string) {
-                consoleTextView.print(string);
+        @Override
+        public void onProcessFailed(Process process, Exception error) {
+
+        }
+
+        @Override
+        public void handle(final JSException e) {
+            processedException = true;
+            if (currentView != null) {
+                currentView.consoleTextView.println("\u001b[31m" + e.stack());
             }
-        });
-        setupStream(stderr, new StreamCallback() {
-            @Override
-            public void callback(String string) {
-                // Make it red!
-                string = "\u001b[31m" + string;
-                consoleTextView.print(string);
-                android.util.Log.e("stderr", string);
-            }
-        });
+        }
+
+        private Process process = null;
+        private JSContext js = null;
+        private JSFunction console_log = null;
+        private Runnable onAttached = null;
+        private ConsoleSurface currentView = null;
+        private boolean processedException = false;
+        private int columns = 0, rows = 0;
+        private String uuid = null;
     }
 
-    @Override
-    public void onProcessAboutToExit(Process process, int exitCode) {
-        consoleTextView.println("\u001B[31mProcess about to exit with code " + exitCode);
-        android.util.Log.i("onProcessAboutToExit", "Process about to exit with code " + exitCode);
-        detach();
-    }
-
-    @Override
-    public void onProcessExit(Process process, int exitCode) {
-        android.util.Log.i("onProcessExit", "exiting");
-        consoleTextView.println("\u001B[31mProcess exited with code " + exitCode);
-        this.process = null;
-    }
-
-    @Override
-    public void onProcessFailed(Process process, Exception error) {
-
-    }
-
-    @Override
-    public void handle(final JSException e) {
-        processedException = true;
-        consoleTextView.println("\u001b[31m" + e.stack());
-    }
 }

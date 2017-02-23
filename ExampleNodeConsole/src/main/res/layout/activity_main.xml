@@ -11,8 +11,11 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="org.liquidplayer.consoleapp.MainActivity">
 
-    <org.liquidplayer.surfaces.console.ConsoleSurface
+    <org.liquidplayer.service.LiquidView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        custom:URI="android.resource://org.liquidplayer.consoleapp/raw/start" />
+        android:id="@+id/liquidview"
+        custom:liquidcore.URI="android.resource://org.liquidplayer.consoleapp/raw/start"
+        custom:liquidcore.surface="@array/surfaces"
+    />
 </RelativeLayout>

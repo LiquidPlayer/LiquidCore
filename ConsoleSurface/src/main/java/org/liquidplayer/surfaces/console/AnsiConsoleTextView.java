@@ -75,6 +75,14 @@ class AnsiConsoleTextView extends TextView {
 
     private final ConsoleOutputStream stream;
 
+    public void setDisplayText(CharSequence text) {
+        if (stream != null) {
+            stream.displayText = text;
+            setText(text);
+            stream.index = stream.displayText.length();
+        }
+    }
+
     private class ConsoleOutputStream extends HtmlAnsiOutputStream {
 
         ConsoleOutputStream(ByteArrayOutputStream byteArrayOutputStream) {
@@ -207,7 +215,8 @@ class AnsiConsoleTextView extends TextView {
             synchronized (lock) {
                 switch(eraseOption) {
                     case ERASE_SCREEN_TO_END:
-                        displayText = displayText.subSequence(0,index);
+                        displayText = displayText.subSequence(0,
+                                Math.min(index,displayText.length()));
                         break;
                     case ERASE_SCREEN_TO_BEGINING:
                         // FIXME

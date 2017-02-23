@@ -6,7 +6,7 @@ var baseDirectory = '/home/local'
 
 // Create a file to serve
 
-var source = "LiquidEvents.emit('msg',{msg: 'Hello, World!'})"
+var source = "LiquidCore.emit('msg',{msg: 'Hello, World!'})"
 
 fs.writeFile('/home/local/hello.js',
    source,
@@ -39,6 +39,6 @@ var server = http.createServer(function (request, response) {
 
 server.on('listening',function() {
     console.log("listening on port "+server.address().port)
-    LiquidEvents.emit('listening', {port: server.address().port})
+    LiquidCore.emit('listening', {port: server.address().port})
 })
 server.listen()

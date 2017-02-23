@@ -42,7 +42,7 @@ public interface Surface {
      * to the MicroService before the JavaScript is executed.
      * @param service  The MicroService to attach
      */
-    void attach(MicroService service);
+    void attach(MicroService service, Runnable onAttached);
 
     /**
      * Detaches any currently attached MicroService.  The Surface may then be ready to be discarded

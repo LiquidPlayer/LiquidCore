@@ -7,11 +7,6 @@
     <application
         android:allowBackup="true"
         android:supportsRtl="true">
-
-        <activity
-            android:name=".FileSystem$PermissionHelper$PermissionRequestActivity" >
-        </activity>
-
     </application>
 
 </manifest>

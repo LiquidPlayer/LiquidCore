@@ -11,6 +11,5 @@
     </declare-styleable>
 
     <declare-styleable name="ConsoleSurface">
-        <attr name="URI" format="string" />
     </declare-styleable>
 </resources>

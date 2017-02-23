@@ -135,10 +135,11 @@ function server() {
                     match_api(agent.info, manifest.configs[i].api) &&
                     match_info(agent.bindings, manifest.configs[i].bindings) &&
                     match_surfaces(agent.surfaces, manifest.configs[i].surfaces)) {
+                    
                     return {
                         file : manifest.configs[i].file,
                         bindings : manifest.configs[i].bindings,
-                        transforms : manifest.configs[i].transforms
+                        transforms : manifest.configs[i].transforms,
                     }
                 }
             }
@@ -147,7 +148,7 @@ function server() {
     }
 
     function compile(fileObj, lastUpdate) {
-        lastUpdate = lastUpdate ? Date.parse(lastUpdate).getTime() : 0
+        lastUpdate = lastUpdate ? Date.parse(lastUpdate) : 0
         if (!fileObj || !fileObj.file || typeof fileObj.file !== 'string') return
     
         try {
@@ -162,6 +163,10 @@ function server() {
             try {
                 var ostat = fs.lstatSync(outfile)
                 if (ostat.isFile() && Date.parse(ostat.mtime) > Date.parse(stat.mtime)) {
+                    if (lastUpdate > Date.parse(ostat.mtime)) {
+                        console.log(outfile + ' is up-to-date')
+                        return 304
+                    }
                     console.log('using cached ' + outfile)
                     return fs.createReadStream(outfile)
                 }
@@ -193,7 +198,8 @@ function server() {
                 ignoreMissing : true,
                 noParse: noParse,
                 extensions: [ '.js' ],
-                entries: fileObj.file
+                entries: fileObj.file,
+                browserField: false
             })
         
             for (var i=0; fileObj.transforms && i < fileObj.transforms.length; i++) {
@@ -228,6 +234,12 @@ function server() {
                 console.log(agent)
                 fileStream = compile(parse_manifest(agent,manifest),
                     request.headers['if-modified-since'])
+                if (fileStream === 304) {
+                    response.writeHead(304)
+                    response.end()
+                    console.log("Sending 304")
+                    return
+                }
             } else {
                 fileStream = fs.createReadStream(fsPath)
             }

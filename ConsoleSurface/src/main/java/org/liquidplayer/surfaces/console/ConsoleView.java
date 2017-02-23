@@ -34,12 +34,13 @@ package org.liquidplayer.surfaces.console;
 
 import android.content.Context;
 import android.graphics.Paint;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.widget.NestedScrollView;
+import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -51,6 +52,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener {
     public ConsoleView(Context context) {
@@ -64,6 +66,12 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
     public ConsoleView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         LayoutInflater.from(context).inflate(R.layout.console_view, this);
+    }
+
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
         loadViews();
     }
 
@@ -79,21 +87,6 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
     protected ImageButton downHistory;
     protected AnsiConsoleTextView consoleTextView;
 
-    static private SparseArray<Bundle> stateBundle = new SparseArray<>();
-    private Bundle __bundle = null;
-    protected Bundle state() {
-        if (__bundle != null) return __bundle;
-        if (getId() != View.NO_ID) {
-            __bundle = stateBundle.get(getId());
-            if (__bundle == null) {
-                __bundle = new Bundle();
-                stateBundle.append(getId(), __bundle);
-            }
-        } else {
-            __bundle = new Bundle();
-        }
-        return __bundle;
-    }
     private void setInputBoxText(final CharSequence text) {
         uiThread.post(new Runnable() {
             @Override
@@ -101,29 +94,22 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
                 inputBox.setText(text);
             }
         });
-        state().putCharSequence("inputBox", text);
     }
-    private int getItem() {
-        return state().getInt("item", 0);
+    private void setConsoleText(final CharSequence text) {
+        uiThread.post(new Runnable() {
+            @Override
+            public void run() {
+                consoleTextView.setDisplayText(text);
+            }
+        });
     }
-    private void setItem(int item) {
-        state().putInt("item", item);
-    }
-    private ArrayList<String> history() {
-        ArrayList<String> history = state().getStringArrayList("history");
-        if (history == null) {
-            history = new ArrayList<>();
-            state().putStringArrayList("history", history);
-        }
-        return history;
-    }
-
     public void reset() {
         if (getId() != View.NO_ID) {
-            stateBundle.remove(getId());
+            history.clear();
+            item = 0;
+            setInputBoxText("");
+            setConsoleText("");
         }
-        __bundle = null;
-        updateState();
     }
 
     private EditText.OnEditorActionListener onEditorAction = new TextView.OnEditorActionListener() {
@@ -223,27 +209,7 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
         consoleTextView.addListener(this);
         // FIXME: Don't forget to removeListener on shutdown
 
-        updateState();
-
         uiThread.post(scrollToBottom);
-    }
-
-    protected void updateState() {
-        CharSequence text = state().getCharSequence("inputBox","");
-        if (text != null) {
-            setInputBoxText(text);
-        }
-        text = state().getCharSequence("textView","");
-        if (text != null) {
-            consoleTextView.setText(text);
-        }
-    }
-
-    @Override
-    public void setId(int id) {
-        super.setId(id);
-        __bundle = null; // invalidate bundle
-        updateState();
     }
 
     @Override
@@ -255,8 +221,6 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
         int delta = bottom - (sy + sh);
 
         scrollView.smoothScrollBy(0, delta);
-
-        state().putCharSequence("textView", consoleTextView.getText());
     }
 
     protected void setButtonEnabled(ImageButton button, boolean enable) {
@@ -267,9 +231,8 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
 
     private void upHistory() {
         if (upHistory.isEnabled()) {
-            int item = getItem() - 1;
-            setItem(item);
-            setInputBoxText(history().get(item));
+            item--;
+            setInputBoxText(history.get(item));
             if (item == 0) {
                 setButtonEnabled(upHistory, false);
             }
@@ -280,13 +243,12 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
 
     private void downHistory() {
         if (downHistory.isEnabled()) {
-            int item = getItem() + 1;
-            setItem(item);
-            if (item >= history().size()) {
+            item++;
+            if (item >= history.size()) {
                 setButtonEnabled(downHistory, false);
                 setInputBoxText("");
             } else {
-                setInputBoxText(history().get(item));
+                setInputBoxText(history.get(item));
             }
             setButtonEnabled(upHistory, true);
             inputBox.setSelection(inputBox.getText().length());
@@ -298,11 +260,77 @@ class ConsoleView extends RelativeLayout implements AnsiConsoleTextView.Listener
 
         consoleTextView.println("\u001b[30;1m> " + cmd);
         setInputBoxText("");
-        history().add(cmd);
-        setItem(history().size());
+        history.add(cmd);
+        item = history.size();
         setButtonEnabled(upHistory,true);
         setButtonEnabled(downHistory,false);
 
         processCommand(cmd);
     }
+
+    /* -- parcelable privates -- */
+    private int item = 0;
+    private ArrayList<String> history = new ArrayList<>();
+
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Parcelable superState = super.onSaveInstanceState();
+        SavedState ss = new SavedState(superState);
+        ss.textView = consoleTextView.getText();
+        if (ss.inputBox != null)
+            setInputBoxText(ss.inputBox);
+        ss.item = item;
+        ss.history = history;
+        return ss;
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        SavedState ss = (SavedState) state;
+        super.onRestoreInstanceState(ss.getSuperState());
+        setConsoleText(ss.textView);
+        inputBox.setText(ss.inputBox);
+        item = ss.item;
+        history = new ArrayList<>(ss.history);
+    }
+
+    static class SavedState extends BaseSavedState {
+        private CharSequence textView;
+        private CharSequence inputBox;
+        private int item;
+        private List<String> history;
+
+        SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        private SavedState(Parcel in) {
+            super(in);
+            textView = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
+            inputBox = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
+            item = in.readInt();
+            in.readStringList(history);
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            super.writeToParcel(out, flags);
+            TextUtils.writeToParcel(textView,out,flags);
+            TextUtils.writeToParcel(inputBox,out,flags);
+            out.writeInt(item);
+            out.writeStringList(history);
+        }
+
+        public static final Parcelable.Creator<SavedState> CREATOR
+                = new Parcelable.Creator<SavedState>() {
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+    }
+
 }

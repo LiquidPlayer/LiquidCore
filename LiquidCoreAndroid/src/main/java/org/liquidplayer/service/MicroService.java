@@ -34,6 +34,7 @@ package org.liquidplayer.service;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,6 +43,7 @@ import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSON;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
+import org.liquidplayer.node.BuildConfig;
 import org.liquidplayer.node.Process;
 
 import java.io.File;
@@ -81,7 +83,7 @@ public class MicroService implements Process.EventListener {
      */
     public interface EventListener {
         /**
-         * Called asynchronously when the MicroService javascript code calls 'LiquidEvents.emit()'
+         * Called asynchronously when the MicroService javascript code calls 'LiquidCore.emit()'
          * @param service  The MicroService which emitted the event
          * @param event  The event id
          * @param payload  A JSON data object emitted by the MicroService
@@ -156,6 +158,19 @@ public class MicroService implements Process.EventListener {
     private boolean started = false;
     private Process process;
 
+    static class AvailableSurface {
+        Class<? extends Surface> cls;
+        String version;
+        AvailableSurface(Class <? extends Surface> cls, String version) {
+            this.cls = cls;
+            this.version = version;
+        }
+    }
+    private AvailableSurface [] availableSurfaces = new AvailableSurface[0];
+    void setAvailableSurfaces(AvailableSurface[] availableSurfaces) {
+        this.availableSurfaces = availableSurfaces;
+    }
+
     /**
      * Creates a new instance of the MicroService referenced by serviceURI
      * @param ctx  The android context of this app
@@ -217,10 +232,10 @@ public class MicroService implements Process.EventListener {
             new HashMap<>();
 
     /**
-     * Adds an event listener for an event triggered by 'LiquidEvents.emit(event, payload)' in
+     * Adds an event listener for an event triggered by 'LiquidCore.emit(event, payload)' in
      * JavaScript.  Example:<br/>
      * <code>
-     *     LiquidEvents.emit('my_event', { stringData: 'foo', bar : 6 });<br/>
+     *     LiquidCore.emit('my_event', { stringData: 'foo', bar : 6 });<br/>
      * </code>
      * This will trigger the 'listener' added here, with the JavaScript object represented as a
      * JSONObject payload.
@@ -315,7 +330,7 @@ public class MicroService implements Process.EventListener {
      * Emits an event that can be received by the JavaScript code, if the MicroService has
      * registered a listener.  Example:<br/>
      * <code>
-     *     LiquidEvents.on('my_event', function(payload) {<br/>
+     *     LiquidCore.on('my_event', function(payload) {<br/>
      *        // Do something with the payload data<br/>
      *        console.log(payload.hello);<br/>
      *     });<br/>
@@ -342,8 +357,8 @@ public class MicroService implements Process.EventListener {
      * the service URI (if not cached), set the arguments in `process.argv` and execute the script.
      * @param argv  The list of arguments to sent to the MicroService.  This is similar to running
      *              node from a command line. The first two arguments will be the application (node)
-     *              followed by the code reference (service URI).  'argv' arguments will then be
-     *              appended in process.argv[1:]
+     *              followed by the local module code (/home/module/[service.js].  'argv' arguments
+     *              will then be appended in process.argv[2:]
      */
     public synchronized void start(String ... argv) {
         if (started) throw new ServiceAlreadyStartedError();
@@ -376,6 +391,13 @@ public class MicroService implements Process.EventListener {
         return new File(modules);
     }
 
+    // FIXME: We want to use the symlinked version so that we are only capturing those modules exposed to this service
+    private File getNodeModulesPath() {
+        String node_modules = androidCtx.getFilesDir().getAbsolutePath() +
+                "/__org.liquidplayer.node__/node_modules";
+        return new File(node_modules);
+    }
+
     private void fetchService() throws IOException {
         // See if the file already exists
         File modules = getModulePath();
@@ -403,8 +425,38 @@ public class MicroService implements Process.EventListener {
                 sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
                 connection.setRequestProperty("If-Modified-Since",
                         sdf.format(new Date(lastModified)) + " GMT");
-                connection.setRequestProperty("Accept-Encoding", "gzip");
             }
+            connection.setRequestProperty("Accept-Encoding", "gzip");
+            String version = BuildConfig.VERSION_NAME;
+            String info = "Android; API " + Build.VERSION.SDK_INT;
+            String bindings = "";
+            for (File binding : getNodeModulesPath().listFiles()) {
+                if (binding.isDirectory()) {
+                    if (!"".equals(bindings)) {
+                        bindings += "; ";
+                    }
+                    bindings += binding.getName();
+                }
+            }
+            String surfaces = "";
+            for (AvailableSurface surface : availableSurfaces) {
+                if (!"".equals(surfaces)) {
+                    surfaces += "; ";
+                }
+                surfaces += surface.cls.getCanonicalName();
+                if (surface.version != null) {
+                    surfaces += "/" + surface.version;
+                }
+            }
+            String userAgent = "LiquidCore/" + version + " (" + info + ")";
+            if (!"".equals(surfaces)) {
+                userAgent += " Surface (" + surfaces + ")";
+            }
+            if (!"".equals(bindings)) {
+                userAgent += " Binding (" + bindings + ")";
+            }
+            android.util.Log.d("MicroService", "User-Agent : " + userAgent);
+            connection.setRequestProperty("User-Agent", userAgent);
             int responseCode = connection.getResponseCode();
             if (responseCode == 200) {
                 if (connection.getHeaderField("Content-Encoding") != null &&
@@ -434,12 +486,12 @@ public class MicroService implements Process.EventListener {
 
     @Override
     public void onProcessStart(Process process, JSContext context) {
-        // Create LiquidEvents EventEmitter
+        // Create LiquidCore EventEmitter
         context.evaluateScript(
-                "class LiquidEvents_ extends require('events') {}\n" +
-                "var LiquidEvents = new LiquidEvents_();"
+                "class LiquidCore_ extends require('events') {}\n" +
+                "var LiquidCore = new LiquidCore_();"
         );
-        emitter = context.property("LiquidEvents").toObject();
+        emitter = context.property("LiquidCore").toObject();
 
         try {
             fetchService();
@@ -454,7 +506,9 @@ public class MicroService implements Process.EventListener {
             ArrayList<String> args = new ArrayList<>();
             args.add("node");
             args.add("/home/module/" + module);
-            args.addAll(Arrays.asList(argv));
+            if (argv != null) {
+                args.addAll(Arrays.asList(argv));
+            }
             context.property("process").toObject().property("argv", args);
 
             // Execute code
