@@ -24,6 +24,15 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * LiquidView exposes a MicroService through a UI.  A MicroService attaches to a UI
+ * in JavaScript by calling <code>LiquidCore.attach(surface, callback)</code> where
+ * 'surface' is a string representing the Surface class
+ * (e.g. 'org.liquidplayer.surfaces.console.ConsoleSurface') and 'callback' is a
+ * callback function which accepts an 'error' parameter.  If 'error' is undefined, then the
+ * Surface was attached correctly and is ready for use.  Otherwise, 'error' is a descriptive
+ * error message.
+ */
 public class LiquidView extends RelativeLayout {
 
     public LiquidView(Context context) {
@@ -188,6 +197,13 @@ public class LiquidView extends RelativeLayout {
 
     private ArrayList<MicroService.ServiceStartListener> startListeners = new ArrayList<>();
 
+    /**
+     * Starts a MicroService asynchronously.  In XML layout, this can be auto-started using
+     * the "custom:liquidcore.URI" and "custom:liquidcore.argv" attributes.
+     * @param uri  The MicroService URI
+     * @param argv Optional arguments loaded into process.argv[2:]
+     * @return the MicroService
+     */
     public MicroService start(final URI uri, String ... argv) {
         if (getId() == View.NO_ID) {
             setId(View.generateViewId());
@@ -270,6 +286,12 @@ public class LiquidView extends RelativeLayout {
         return null;
     }
 
+    /**
+     * Makes a Surface available to the MicroService.  Must be called prior to start().  In XML
+     * layout, an array of available surfaces can be provided using the "custom:liquidcore.surface"
+     * attribute.
+     * @param cls The Surface class to enable
+     */
     public void enableSurface(Class<? extends Surface> cls) {
         try {
             Field f = cls.getDeclaredField("SURFACE_VERSION");
