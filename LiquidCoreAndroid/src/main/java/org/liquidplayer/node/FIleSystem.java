@@ -42,6 +42,7 @@ import android.support.v4.content.ContextCompat;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
+import org.liquidplayer.javascript.JSValue;
 
 import java.io.File;
 import java.io.IOException;
@@ -165,9 +166,11 @@ class FileSystem extends JSObject {
     private final String sessionID;
 
     private String realDir(String dir) {
-        return getContext().evaluateScript(
-                "(function(){return require('fs').realpathSync('" + dir + "');})()"
-        ).toString();
+        JSValue v = getContext().evaluateScript(
+                "(function(){try {return require('fs').realpathSync('" + dir + "');}catch(e){}})()"
+        );
+        if (v.isUndefined() || v.isNull()) return null;
+        return v.toString();
     }
     private String mkdir(String dir) {
         if (new File(dir).mkdirs()) {
@@ -204,9 +207,11 @@ class FileSystem extends JSObject {
             android.util.Log.i("linkMedia", "Created external directory " + external);
         }
         String media = realDir(external.getAbsolutePath());
-        symlink(media, home + "/public/media/" + dir);
-        aliases_.get().property("/home/public/media/" + dir, media);
-        access_.get().property("/home/public/media/" + dir, mediaPermissionsMask);
+        if (media != null) {
+            symlink(media, home + "/public/media/" + dir);
+            aliases_.get().property("/home/public/media/" + dir, media);
+            access_.get().property("/home/public/media/" + dir, mediaPermissionsMask);
+        }
     }
 
     private void setUp(int mediaPermissionsMask) {
