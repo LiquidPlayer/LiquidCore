@@ -236,7 +236,7 @@ License
 [NDK]:http://developer.android.com/ndk/index.html
 [latest release]:https://github.com/ericwlange/AndroidJSCore/releases
 [webkit]:https://webkit.org/
-[Javadocs]:https://liquidplayer.github.io/LiquidCoreAndroid/
+[Javadocs]:https://liquidplayer.github.io/LiquidCoreAndroid/v0.1.0/
 [JavaScriptCore]:https://developer.apple.com/reference/javascriptcore
 [JavaScriptCore framework]:https://www.bignerdranch.com/blog/javascriptcore-example/
 [V8]:https://developers.google.com/v8/
