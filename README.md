@@ -673,7 +673,7 @@ LiquidCore_ {
   _events: {},
   _eventsCount: 0,
   _maxListeners: undefined,
-  availableSurfaces: { 'org.liquidplayer.surfaces.console.ConsoleSurface': 0.2.0 },
+  availableSurfaces: { 'org.liquidplayer.surfaces.console.ConsoleSurface': '0.2.0' },
   attach: [Function: attach_],
   detach: [Function: detach_] }
 ```
