@@ -51,7 +51,7 @@ import java.util.Set;
  * A JSObject shadow class which implements the Java Map interface.  Convenient
  * for setting/getting/iterating properties.
  */
-class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V> {
+public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<String, V> {
     /**
      * Creates a new Map object which operates on object 'object' and assumes type 'cls'.
      * Example:
