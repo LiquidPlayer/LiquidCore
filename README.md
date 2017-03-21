@@ -338,7 +338,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.1:v0.2.1'
+    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.1'
 }
 
 ```
@@ -609,7 +609,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.1:v0.2.1'
+    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.1'
 }
 
 ```
