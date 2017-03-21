@@ -685,7 +685,7 @@ Type `LiquidCore.detach()` in your console and Poof! Your surface is gone.  If y
 device, a new instance will be launched and reattached.  Type `process.exit()`
 and the same thing happens.
 
-Of course it is possible to use a [`LiquidView`](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.0/org/liquidplayer/service/LiquidView.html) programmatically and dynamically set its available surfaces
+Of course it is possible to use a [`LiquidView`](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.1/org/liquidplayer/service/LiquidView.html) programmatically and dynamically set its available surfaces
 and URI.
 
 That pretty much covers the basics of what LiquidCore does!
