@@ -13,7 +13,7 @@ Version
 
 Javadocs
 --------
-[Version 0.2.1](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.0/)
+[Version 0.2.1](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.1/)
 
 # Table of Contents
 
