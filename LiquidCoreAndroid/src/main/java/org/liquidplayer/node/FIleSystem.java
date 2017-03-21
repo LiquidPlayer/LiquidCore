@@ -183,22 +183,32 @@ class FileSystem extends JSObject {
                 "(function(){require('fs').symlinkSync('" + target + "','" + linkpath +"');})()"
         );
     }
-    static private boolean isSymlink(File file) {
-        try {
-            return !file.getCanonicalFile().equals(file.getAbsoluteFile());
-        } catch (IOException e) {
-            return true;
+    private static boolean isSymlink(File file) throws IOException {
+        if (file == null)
+            throw new NullPointerException("File must not be null");
+        File canon;
+        if (file.getParent() == null) {
+            canon = file;
+        } else {
+            File canonDir = file.getParentFile().getCanonicalFile();
+            canon = new File(canonDir, file.getName());
         }
+        return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
     }
     static void deleteRecursive(File fileOrDirectory) {
-        if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory))
-            for (File child : fileOrDirectory.listFiles()) {
-                deleteRecursive(child);
+        try {
+            if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory)) {
+                for (File child : fileOrDirectory.listFiles()) {
+                    deleteRecursive(child);
+                }
             }
+        } catch (IOException e) {
+            android.util.Log.e("deleteRecursive", e.getMessage());
+        }
 
         if (!fileOrDirectory.delete()) {
             android.util.Log.e("deleteRecursive",
-                    "Failed to delete " +fileOrDirectory.getAbsolutePath());
+                    "Failed to delete " + fileOrDirectory.getAbsolutePath());
         }
     }
     private void linkMedia(String type, String dir, String home, int mediaPermissionsMask) {

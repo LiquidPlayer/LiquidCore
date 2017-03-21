@@ -40,6 +40,8 @@ import android.os.Looper;
 
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.*;
@@ -212,6 +214,62 @@ public class JSContextTest {
             new JSValue(context);
         }
         assertTrue(true);
+    }
+
+    class ContextTest {
+
+        Semaphore semaphore = new Semaphore(0);
+
+        private JSContext thisContext;
+
+        void createContext() {
+
+            JSContext context = new JSContext();
+            context.setExceptionHandler(new JSExceptionHandler());
+
+            try {
+                thisContext = context;
+
+                try {
+                    // onMessage.toFunction().call();
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            catch (Exception ioe) {
+                ioe.printStackTrace();
+            }
+        }
+
+        void callFunction() {
+
+            new Thread() {
+                @Override
+                public void run() {
+                    android.util.Log.d("Issue18", "THREAD TEST 1 ");
+                    android.util.Log.d("Issue18", "THREAD TEST " + thisContext);
+                    semaphore.release();
+                }
+            }.start();
+
+        }
+
+        class JSExceptionHandler implements JSContext.IJSExceptionHandler {
+            @Override
+            public void handle(JSException exception) {
+                android.util.Log.e("Issue18", "Exception: " + exception.toString());
+            }
+        }
+
+    }
+
+    @Test
+    public void Issue18Test() throws Exception {
+        ContextTest contextTest = new ContextTest();
+        contextTest.createContext();
+        contextTest.callFunction();
+        contextTest.semaphore.acquire();
     }
 
     @org.junit.After

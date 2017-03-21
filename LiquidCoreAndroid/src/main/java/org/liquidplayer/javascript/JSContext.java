@@ -204,7 +204,6 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      */
     public void throwJSException(JSException exception) {
-        android.util.Log.e("Stack", exception.getError().property("stack").toString());
         if (exceptionHandler == null) {
             throw exception;
         } else {
