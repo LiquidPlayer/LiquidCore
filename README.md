@@ -7,13 +7,13 @@ LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.2.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/v0.2.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/v0.2.0)
+[0.2.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/v0.2.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/v0.2.1)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.2.0](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.0/)
+[Version 0.2.1](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.0/)
 
 # Table of Contents
 
@@ -208,7 +208,7 @@ Then, install the LiquidCore server (aptly named _LiquidServer_) from the repo. 
 
 ```
 $ (cd $PATH_TO_LIQUIDCORE_REPO/LiquidServer; npm pack)
-$ npm install -g $PATH_TO_LIQUIDCORE_REPO/LiquidServer/liquidserver-0.2.0.tgz
+$ npm install -g $PATH_TO_LIQUIDCORE_REPO/LiquidServer/liquidserver-0.2.1.tgz
 ```
 
 Now let's create a micro service.  Create a file in the `~/helloworld` directory called `service.js` and fill it with the following contents:
@@ -338,7 +338,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.0'
+    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.1:v0.2.1'
 }
 
 ```
@@ -609,7 +609,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.0'
+    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.1:v0.2.1'
 }
 
 ```
@@ -673,7 +673,7 @@ LiquidCore_ {
   _events: {},
   _eventsCount: 0,
   _maxListeners: undefined,
-  availableSurfaces: { 'org.liquidplayer.surfaces.console.ConsoleSurface': '0.2.0' },
+  availableSurfaces: { 'org.liquidplayer.surfaces.console.ConsoleSurface': '0.2.1' },
   attach: [Function: attach_],
   detach: [Function: detach_] }
 ```
@@ -702,7 +702,7 @@ do the following:
     % echo sdk.dir=$ANDROID_SDK >> local.properties
     % ./gradlew assembleRelease
 
-Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-v0.2.0-release.aar`.  To use it, simply
+Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-v0.2.1-release.aar`.  To use it, simply
 add the following to your app's `build.gradle`:
 
     repositories {
@@ -712,7 +712,7 @@ add the following to your app's `build.gradle`:
     }
 
     dependencies {
-        compile(name:'LiquidCore-v0.2.0-release', ext:'aar')
+        compile(name:'LiquidCore-v0.2.1-release', ext:'aar')
     }
     
 ##### Note
