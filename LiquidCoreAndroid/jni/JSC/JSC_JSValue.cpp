@@ -136,12 +136,12 @@ JS_EXPORT bool JSValueIsObjectOfClass(JSContextRef ctx, JSValueRef value, JSClas
         MaybeLocal<Object> obj = value_->ToObject(context);
         if (!obj.IsEmpty()) {
             Local<Object> o = obj.ToLocalChecked();
-            if (o->InternalFieldCount() > 0) {
-                v = ((JSClassRef)o->GetAlignedPointerFromInternalField(0)) == jsClass;
+            if (o->InternalFieldCount() > INSTANCE_OBJECT_CLASS) {
+                v = ((JSClassRef)o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS)) == jsClass;
             } else if (o->GetPrototype()->IsObject()) {
                 Local<Object> proto = o->GetPrototype()->ToObject(context).ToLocalChecked();
                 if (proto->InternalFieldCount() > 0) {
-                    v = ((JSClassRef)proto->GetAlignedPointerFromInternalField(0)) == jsClass;
+                    v = ((JSClassRef)proto->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS)) == jsClass;
                 }
             }
         }

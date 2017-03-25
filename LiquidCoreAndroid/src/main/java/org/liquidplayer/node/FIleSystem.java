@@ -197,7 +197,8 @@ class FileSystem extends JSObject {
     }
     static void deleteRecursive(File fileOrDirectory) {
         try {
-            if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory)) {
+            if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory) &&
+                    fileOrDirectory.listFiles() != null) {
                 for (File child : fileOrDirectory.listFiles()) {
                     deleteRecursive(child);
                 }

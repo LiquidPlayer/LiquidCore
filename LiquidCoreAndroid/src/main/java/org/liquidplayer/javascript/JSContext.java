@@ -36,11 +36,10 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
+import android.support.v4.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -277,7 +276,8 @@ public class JSContext extends JSObject {
         return evaluateScript(script,null,0);
     }
 
-    private Map<Long,WeakReference<JSObject>> objects = new HashMap<>();
+    private final LongSparseArray<WeakReference<JSObject>> objects = new LongSparseArray<>();
+    private final Object objectsMutex = new Object();
 
     /**
      * Keeps a reference to an object in this context.  This is used so that only one
@@ -287,8 +287,10 @@ public class JSContext extends JSObject {
      * @param obj  The object with which to associate with this context
      * @since 0.1.0
      */
-    protected synchronized  void persistObject(JSObject obj) {
-        objects.put(obj.valueRef(), new WeakReference<>(obj));
+    protected void persistObject(JSObject obj) {
+        synchronized (objectsMutex) {
+            objects.put(obj.valueRef(), new WeakReference<>(obj));
+        }
     }
     /**
      * Removes a reference to an object in this context.  Should only be used from the 'finalize'
@@ -296,8 +298,10 @@ public class JSContext extends JSObject {
      * @param obj the JSObject to dereference
      * @since 0.1.0
      */
-    protected synchronized void finalizeObject(JSObject obj) {
-        objects.remove(obj.valueRef());
+    protected void finalizeObject(JSObject obj) {
+        synchronized (objectsMutex) {
+            objects.remove(obj.valueRef());
+        }
     }
     /**
      * Reuses a stored reference to a JavaScript object if it exists, otherwise, it creates the
@@ -307,12 +311,15 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      * @return The JSObject representing the reference
      */
-    protected synchronized JSObject getObjectFromRef(final long objRef,boolean create) {
+    protected JSObject getObjectFromRef(final long objRef,boolean create) {
         if (objRef == valueRef()) {
             unprotect(context.ctxRef(),objRef);
             return this;
         }
-        WeakReference<JSObject> wr = objects.get(objRef);
+        WeakReference<JSObject> wr;
+        synchronized (objectsMutex) {
+            wr = objects.get(objRef);
+        }
         JSObject obj = null;
         if (wr != null) {
             obj = wr.get();
@@ -334,7 +341,7 @@ public class JSContext extends JSObject {
         }
         return obj;
     }
-    protected synchronized JSObject getObjectFromRef(long objRef) {
+    protected JSObject getObjectFromRef(long objRef) {
         return getObjectFromRef(objRef,true);
     }
 

@@ -37,11 +37,16 @@ package org.liquidplayer.javascript;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
+import android.util.SparseArray;
 
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.*;
@@ -216,30 +221,29 @@ public class JSContextTest {
         assertTrue(true);
     }
 
-    class ContextTest {
+    private class ContextTest {
 
         Semaphore semaphore = new Semaphore(0);
 
         private JSContext thisContext;
+        private final Map<Integer,JSContext> contextMap =
+                Collections.synchronizedMap(new HashMap<Integer,JSContext>());
+        private final Object mutex = new Object();
+
+        ContextTest() {
+        }
 
         void createContext() {
 
             JSContext context = new JSContext();
-            context.setExceptionHandler(new JSExceptionHandler());
-
-            try {
-                thisContext = context;
-
-                try {
-                    // onMessage.toFunction().call();
+            context.setExceptionHandler(new JSExceptionHandler() {
+                @Override
+                public void handle(JSException exception) {
+                    Log.e("Issue18", exception.getMessage());
                 }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            catch (Exception ioe) {
-                ioe.printStackTrace();
-            }
+            });
+
+            thisContext = context;
         }
 
         void callFunction() {
@@ -253,6 +257,39 @@ public class JSContextTest {
                 }
             }.start();
 
+        }
+
+        public void createContext(int id) {
+
+            JSContext context = new JSContext();
+            context.setExceptionHandler(new JSExceptionHandler());
+
+            try {
+                synchronized (mutex) {
+                    contextMap.put(id, context);
+                }
+
+            }
+            catch (Exception ioe) {
+                ioe.printStackTrace();
+            }
+        }
+
+
+        public void callFunction(final int id) {
+
+            ExecutorService service = Executors.newSingleThreadExecutor();
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (mutex) {
+                        JSContext context = contextMap.get(id);
+                        Log.d("Thread", "context : " + context.toString());
+                    }
+                    semaphore.release();
+                }
+            };
+            service.execute(runnable);
         }
 
         class JSExceptionHandler implements JSContext.IJSExceptionHandler {
@@ -270,17 +307,16 @@ public class JSContextTest {
         contextTest.createContext();
         contextTest.callFunction();
         contextTest.semaphore.acquire();
+
+        ContextTest contextTest2 = new ContextTest();
+        contextTest2.createContext(12);
+        for(int i =0; i < 10; i++) {
+            contextTest2.callFunction(12);
+        }
+        contextTest2.semaphore.acquire();
     }
 
     @org.junit.After
     public void shutDown() {
-/*
-        Runtime.getRuntime().gc();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-        }
-*/
     }
 }

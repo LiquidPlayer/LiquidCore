@@ -60,6 +60,8 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -228,8 +230,9 @@ public class MicroService implements Process.EventListener {
         this(ctx,serviceURI,null);
     }
 
-    private HashMap<String, HashMap<EventListener, JSFunction>> listeners =
-            new HashMap<>();
+    private final Map<String, Map<EventListener, JSFunction>> listeners =
+            Collections.synchronizedMap(new HashMap<String,Map<EventListener,JSFunction>>());
+    private final Object listenersMutex = new Object();
 
     /**
      * Adds an event listener for an event triggered by 'LiquidCore.emit(event, payload)' in
@@ -276,12 +279,14 @@ public class MicroService implements Process.EventListener {
                             new JSONObject(safeStringify.call(null,value).toString()));
                 }
             };
-            HashMap<EventListener, JSFunction> eventMap = listeners.get(event);
-            if (eventMap == null) {
-                eventMap = new HashMap<>();
-                listeners.put(event, eventMap);
+            synchronized (listenersMutex) {
+                Map<EventListener, JSFunction> eventMap = listeners.get(event);
+                if (eventMap == null) {
+                    eventMap = Collections.synchronizedMap(new HashMap<EventListener,JSFunction>());
+                    listeners.put(event, eventMap);
+                }
+                eventMap.put(listener, jsListener);
             }
-            eventMap.put(listener,jsListener);
             emitter.property("on").toFunction().call(emitter,event,jsListener);
         }
     }
@@ -311,13 +316,19 @@ public class MicroService implements Process.EventListener {
      * @param listener  The listener to unregister
      */
     public void removeEventListener(String event, final EventListener listener) {
-        HashMap<EventListener, JSFunction> eventMap = listeners.get(event);
+        Map<EventListener, JSFunction> eventMap;
+        synchronized (listenersMutex) {
+            eventMap = listeners.get(event);
+        }
         if (eventMap != null) {
-            JSFunction func = eventMap.get(listener);
-            if (func != null) {
-                eventMap.remove(listener);
-                if (eventMap.size() == 0) {
-                    listeners.remove(event);
+            JSFunction func;
+            synchronized (listenersMutex) {
+                func = eventMap.get(listener);
+                if (func != null) {
+                    eventMap.remove(listener);
+                    if (eventMap.size() == 0) {
+                        listeners.remove(event);
+                    }
                 }
             }
             if (emitter != null) {
@@ -520,7 +531,9 @@ public class MicroService implements Process.EventListener {
         }
     }
 
-    static private Map<String,MicroService> serviceMap = new HashMap<>();
+    static final private Map<String,MicroService> serviceMap =
+            Collections.synchronizedMap(new HashMap<String,MicroService>());
+    static final private Object serviceMapMutex = new Object();
 
     @Override
     public void onProcessAboutToExit(Process process, int exitCode) {
@@ -530,11 +543,13 @@ public class MicroService implements Process.EventListener {
         exitListener = null;
         errorListener = null;
         emitter = null;
-        for (Map.Entry<String,MicroService> entry : serviceMap.entrySet()) {
-            if (entry.getValue() == this) {
-                serviceMap.remove(entry.getKey());
-                process.removeEventListener(this);
-                break;
+        synchronized (serviceMapMutex) {
+            for (Map.Entry<String, MicroService> entry : serviceMap.entrySet()) {
+                if (entry.getValue() == this) {
+                    serviceMap.remove(entry.getKey());
+                    process.removeEventListener(this);
+                    break;
+                }
             }
         }
         this.process = null;
@@ -548,11 +563,13 @@ public class MicroService implements Process.EventListener {
         exitListener = null;
         errorListener = null;
         emitter = null;
-        for (Map.Entry<String,MicroService> entry : serviceMap.entrySet()) {
-            if (entry.getValue() == this) {
-                serviceMap.remove(entry.getKey());
-                process.removeEventListener(this);
-                break;
+        synchronized (serviceMapMutex) {
+            for (Map.Entry<String, MicroService> entry : serviceMap.entrySet()) {
+                if (entry.getValue() == this) {
+                    serviceMap.remove(entry.getKey());
+                    process.removeEventListener(this);
+                    break;
+                }
             }
         }
         this.process = null;
@@ -566,13 +583,15 @@ public class MicroService implements Process.EventListener {
         exitListener = null;
         errorListener = null;
         emitter = null;
-        for (Map.Entry<String,MicroService> entry : serviceMap.entrySet()) {
-            if (entry.getValue() == this) {
-                serviceMap.remove(entry.getKey());
-                if (process != null) {
-                    process.removeEventListener(this);
+        synchronized (serviceMapMutex) {
+            for (Map.Entry<String, MicroService> entry : serviceMap.entrySet()) {
+                if (entry.getValue() == this) {
+                    serviceMap.remove(entry.getKey());
+                    if (process != null) {
+                        process.removeEventListener(this);
+                    }
+                    break;
                 }
-                break;
             }
         }
         this.process = null;
@@ -585,7 +604,9 @@ public class MicroService implements Process.EventListener {
      * @return  The associated MicroService or null if no such service is active
      */
     public static MicroService getService(String id) {
-        return serviceMap.get(id);
+        synchronized (serviceMapMutex) {
+            return serviceMap.get(id);
+        }
     }
 
 }

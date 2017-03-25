@@ -38,6 +38,17 @@
 #include <vector>
 #include <string>
 
+#define OBJECT_DATA_DEFINITION   0
+#define OBJECT_DATA_CONTEXT      1
+#define OBJECT_DATA_FIELDS       2
+
+#define FUNCTION_DATA_CLASS      2
+#define FUNCTION_DATA_FIELDS     3
+
+#define INSTANCE_OBJECT_CLASS    0
+#define INSTANCE_OBJECT_JSOBJECT 1
+#define INSTANCE_OBJECT_FIELDS   2
+
 #define OpaqueJSContextGroup            ContextGroup
 #define OpaqueJSPropertyNameAccumulator std::list<JSStringRef>
 #define OpaqueJSPropertyNameArray       OpaqueJSValue
@@ -143,9 +154,10 @@ class OpaqueJSValue {
                         o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()?\
                         o->GetPrototype()->ToObject(context).ToLocalChecked() : \
                         o;
-                    if (o->InternalFieldCount() > 1) {
+                    if (o->InternalFieldCount() > INSTANCE_OBJECT_JSOBJECT) {
                         out=
-                         reinterpret_cast<OpaqueJSValue*>(o->GetAlignedPointerFromInternalField(1));
+                            reinterpret_cast<OpaqueJSValue*>(
+                                o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_JSOBJECT));
                         out->Retain();
                     }
                 }
@@ -162,11 +174,21 @@ class OpaqueJSValue {
             return new OpaqueJSValue(context, local);
         }
         virtual ~OpaqueJSValue() {
-            const_cast<OpaqueJSContext *>(m_ctx)->MarkCollected(this);
-            if (value) {
-                value->release();
-            }
-            weak.Reset();
+            V8_ISOLATE(m_ctx->Context()->Group(), isolate)
+                Local<Value> v = L();
+                if (*v && v->IsObject()) {
+                    Local<v8::Context> context = m_ctx->Context()->Value();
+                    Local<Object> o = v->ToObject(context).ToLocalChecked();
+                    if (o->InternalFieldCount() > INSTANCE_OBJECT_JSOBJECT) {
+                        o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_JSOBJECT, nullptr);
+                    }
+                }
+                const_cast<OpaqueJSContext *>(m_ctx)->MarkCollected(this);
+                if (value) {
+                    value->release();
+                }
+                weak.Reset();
+            V8_UNLOCK()
         }
 
         Local<Value> L() const {
