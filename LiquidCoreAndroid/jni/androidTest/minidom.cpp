@@ -80,14 +80,11 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_minidom(JNIEnv*
         free(exceptionUTF8);
         JSStringRelease(exceptionIString);
     }
-    printf("About to call JSStringRelease(script)");
     JSStringRelease(script);
 
     globalObject = 0;
-    printf("About to call JSGlobalContextRelease(context)");
     JSGlobalContextRelease(context);
 
-    printf("About to call ReleaseStringUTFChars");
     env->ReleaseStringUTFChars(minidom_js, scriptUTF8);
 
     printf("PASS: Program exited normally.\n");
