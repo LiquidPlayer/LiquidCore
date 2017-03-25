@@ -13,7 +13,7 @@ Version
 
 Javadocs
 --------
-[Version 0.2.1](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.0/)
+[Version 0.2.1](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.1/)
 
 # Table of Contents
 
@@ -338,7 +338,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.1:v0.2.1'
+    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.1'
 }
 
 ```
@@ -609,7 +609,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.1:v0.2.1'
+    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.1'
 }
 
 ```
@@ -685,7 +685,7 @@ Type `LiquidCore.detach()` in your console and Poof! Your surface is gone.  If y
 device, a new instance will be launched and reattached.  Type `process.exit()`
 and the same thing happens.
 
-Of course it is possible to use a [`LiquidView`](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.0/org/liquidplayer/service/LiquidView.html) programmatically and dynamically set its available surfaces
+Of course it is possible to use a [`LiquidView`](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.1/org/liquidplayer/service/LiquidView.html) programmatically and dynamically set its available surfaces
 and URI.
 
 That pretty much covers the basics of what LiquidCore does!
