@@ -204,11 +204,9 @@ $ mkdir ~/helloworld
 $ cd ~/helloworld
 ```
 
-Then, install the LiquidCore server (aptly named _LiquidServer_) from the repo.  In the very near future, LiquidServer will be officially released as an `npm` module, but for now you will need to install it from the repo.
-
+Then, install the LiquidCore server (aptly named _LiquidServer_) from `npm`:
 ```
-$ (cd $PATH_TO_LIQUIDCORE_REPO/LiquidServer; npm pack)
-$ npm install -g $PATH_TO_LIQUIDCORE_REPO/LiquidServer/liquidserver-0.2.1.tgz
+$ npm install -g liquidserver
 ```
 
 Now let's create a micro service.  Create a file in the `~/helloworld` directory called `service.js` and fill it with the following contents:
