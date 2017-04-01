@@ -191,7 +191,6 @@ Everything else will result in an `ENOACES` (access denied) error.
 
 * A recent version of [Node.js] -- 6.4 or newer
 * [Android Studio]
-* A clone of the LiquidCore repo (this will eventually not be necessary, but we're early days)
 
 (You can find all the code below in a complete example project [here](https://github.com/LiquidPlayer/Examples/tree/master/HelloWorld) if you get stuck).
 
