@@ -333,7 +333,7 @@ class FileSystem extends JSObject {
         String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
 
         File session = new File(ctx.getCacheDir().getAbsolutePath() + sessionSuffix);
-        android.util.Log.d("sessionWatchdog", "deleting session " + session);
+        android.util.Log.i("sessionWatchdog", "deleting session " + session);
 
         deleteRecursive(session);
     }

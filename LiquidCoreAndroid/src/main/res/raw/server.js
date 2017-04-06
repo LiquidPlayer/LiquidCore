@@ -6,7 +6,61 @@ var baseDirectory = '/home/local'
 
 // Create a file to serve
 
-var source = "LiquidCore.emit('msg',{msg: 'Hello, World!'})"
+var source = function () {
+  /*
+    setInterval(function(){},1000)
+
+    LiquidCore.on('js_msg', (msg) => {
+        if ('Hallo die Weld!' === msg.msg) {
+            LiquidCore.emit('null')
+        } else {
+            LiquidCore.emit('null', 'fail')
+        }
+    })
+
+    LiquidCore.on('js_null', (msg) => {
+        if (msg === undefined) {
+            LiquidCore.emit('number', 5.2)
+        } else {
+            LiquidCore.emit('number', 0)
+        }
+    })
+
+    LiquidCore.on('js_number', (msg) => {
+        if (msg === 2.5) {
+            LiquidCore.emit('string','foo')
+        } else {
+            LiquidCore.emit('string', 'fail')
+        }
+    })
+
+    LiquidCore.on('js_string', (msg) => {
+        if (msg === 'bar') {
+            LiquidCore.emit('boolean', true)
+        } else {
+            LiquidCore.emit('boolean', false)
+        }
+    })
+
+    LiquidCore.on('js_boolean', (msg) => {
+        if (msg === false) {
+            LiquidCore.emit('array',[1,'two',true,{str:'bar'}])
+        } else {
+            LiquidCore.emit('array',[0])
+        }
+    })
+
+    LiquidCore.on('js_array', (msg) => {
+        if (msg[0] === 5) {
+            process.exit(0)
+        } else {
+            process.exit(1)
+        }
+    })
+
+    LiquidCore.emit('msg',{msg: 'Hello, World!'})
+  */
+  }.toString().split(/\n/).slice(2, -2).join('\n')
 
 fs.writeFile('/home/local/hello.js',
    source,

@@ -9,9 +9,6 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/ConsoleSurface" />
-            <option value="$PROJECT_DIR$/ExampleBitTorrentμService" />
-            <option value="$PROJECT_DIR$/ExampleNodeConsole" />
             <option value="$PROJECT_DIR$/LiquidCoreAndroid" />
           </set>
         </option>

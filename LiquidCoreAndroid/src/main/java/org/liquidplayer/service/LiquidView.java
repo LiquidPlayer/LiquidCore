@@ -63,8 +63,14 @@ public class LiquidView extends RelativeLayout {
                 argv = getResources()
                         .getStringArray(a.getResourceId(R.styleable.LiquidView_liquidcore_argv, 0));
             if (a.hasValue(R.styleable.LiquidView_liquidcore_surface)) {
-                String [] surfaces = getResources().getStringArray(
-                        a.getResourceId(R.styleable.LiquidView_liquidcore_surface, 0));
+                String [] surfaces;
+                String s = a.getString(R.styleable.LiquidView_liquidcore_surface);
+                if (s != null) {
+                    surfaces = new String[] {s};
+                } else {
+                    surfaces = getResources().getStringArray(
+                            a.getResourceId(R.styleable.LiquidView_liquidcore_surface, 0));
+                }
                 for (String surface : surfaces) {
                     if (surface.startsWith(".")) surface = "org.liquidplayer.surfaces" + surface;
                     try {

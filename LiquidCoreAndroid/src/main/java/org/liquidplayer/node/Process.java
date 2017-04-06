@@ -261,7 +261,7 @@ public class Process {
         exitCode = code;
         if (!notifiedExit) {
             notifiedExit = true;
-            for (EventListener listener : listeners) {
+            for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
                 listener.onProcessExit(this, Long.valueOf(code).intValue());
             }
             if (fs != null) fs.cleanUp();

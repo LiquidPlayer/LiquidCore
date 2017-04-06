@@ -36,6 +36,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.liquidplayer.javascript.JSContext;
@@ -120,8 +121,9 @@ public class MicroService implements Process.EventListener {
          * mutually exclusive with the ServiceErrorListener.  Only one of either the exit listener
          * or error listener will be called from any MicroService.
          * @param service  The MicroService which is shutting down
+         * @param exitCode The code returned by the Node.js process
          */
-        void onExit(MicroService service);
+        void onExit(MicroService service, Integer exitCode);
     }
 
     /**
@@ -275,8 +277,20 @@ public class MicroService implements Process.EventListener {
             JSFunction jsListener = new JSFunction(emitter.getContext(), "on") {
                 @SuppressWarnings("unused")
                 public void on(JSValue value) throws JSONException {
-                    listener.onEvent(MicroService.this, event,
-                            new JSONObject(safeStringify.call(null,value).toString()));
+                    JSONObject o = null;
+                    if (value != null && !value.isNull() && !value.isUndefined()) {
+                        if (value.isArray()) {
+                            JSONArray a = new JSONArray(safeStringify.call(null, value).toString());
+                            o = new JSONObject();
+                            o.put("_", a);
+                        } else if (value.isObject()) {
+                            o = new JSONObject(safeStringify.call(null,value).toString());
+                        } else {
+                            o = new JSONObject();
+                            o.put("_", value.toString());
+                        }
+                    }
+                    listener.onEvent(MicroService.this, event, o);
                 }
             };
             synchronized (listenersMutex) {
@@ -357,7 +371,178 @@ public class MicroService implements Process.EventListener {
      */
     public void emit(String event, JSONObject payload) {
         if (emitter != null) {
-            JSValue o = JSON.parse(emitter.getContext(), payload.toString());
+            JSValue o = null;
+            if (payload != null) {
+                o = JSON.parse(emitter.getContext(), payload.toString());
+            } else {
+                o = new JSValue(emitter.getContext());
+            }
+            emitter.property("emit").toFunction().call(emitter, event, o);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function() {<br/>
+     *        console.log('Received my_event');<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event");<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     */
+    public void emit(String event) {
+        emit(event, (JSONObject) null);
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event", 5);<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, Integer v) {
+        if (emitter != null) {
+            emitter.property("emit").toFunction().call(emitter, event, v);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event", 5L);<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, Long v) {
+        if (emitter != null) {
+            emitter.property("emit").toFunction().call(emitter, event, v);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event", 5.2f);<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, Float v) {
+        if (emitter != null) {
+            emitter.property("emit").toFunction().call(emitter, event, v);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event", 15.6);<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, Double v) {
+        if (emitter != null) {
+            emitter.property("emit").toFunction().call(emitter, event, v);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event", "foo");<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, String v) {
+        if (emitter != null) {
+            emitter.property("emit").toFunction().call(emitter, event, v);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     myService.emit("my_event", true);<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, Boolean v) {
+        if (emitter != null) {
+            emitter.property("emit").toFunction().call(emitter, event, v);
+        }
+    }
+    /**
+     * Emits an event that can be received by the JavaScript code, if the MicroService has
+     * registered a listener.  Example:<br/>
+     * <code>
+     *     LiquidCore.on('my_event', function(val) {<br/>
+     *        console.log('Received: ' + val);<br/>
+     *     });<br/>
+     * </code><br/>
+     * On the Java side:<br/>
+     * <code>
+     *     JSONArray a = new JSONArray();
+     *     a.put(0);
+     *     a.put("two");
+     *     myService.emit("my_event", a);<br/>
+     * </code><br/>
+     * @param event  The event to trigger
+     * @param v value to send
+     */
+    public void emit(String event, JSONArray v) {
+        if (emitter != null) {
+            JSValue o = null;
+            if (v != null) {
+                o = JSON.parse(emitter.getContext(), v.toString());
+            } else {
+                o = new JSValue(emitter.getContext());
+            }
             emitter.property("emit").toFunction().call(emitter, event, o);
         }
     }
@@ -538,7 +723,7 @@ public class MicroService implements Process.EventListener {
     @Override
     public void onProcessAboutToExit(Process process, int exitCode) {
         if (exitListener != null) {
-            exitListener.onExit(this);
+            exitListener.onExit(this, exitCode);
         }
         exitListener = null;
         errorListener = null;
@@ -558,7 +743,7 @@ public class MicroService implements Process.EventListener {
     @Override
     public void onProcessExit(Process process, int exitCode) {
         if (exitListener != null) {
-            exitListener.onExit(this);
+            exitListener.onExit(this, exitCode);
         }
         exitListener = null;
         errorListener = null;
