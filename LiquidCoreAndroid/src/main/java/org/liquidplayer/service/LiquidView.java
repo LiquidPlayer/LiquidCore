@@ -2,6 +2,7 @@ package org.liquidplayer.service;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcel;
@@ -23,6 +24,7 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * LiquidView exposes a MicroService through a UI.  A MicroService attaches to a UI
@@ -72,7 +74,7 @@ public class LiquidView extends RelativeLayout {
                             a.getResourceId(R.styleable.LiquidView_liquidcore_surface, 0));
                 }
                 for (String surface : surfaces) {
-                    if (surface.startsWith(".")) surface = "org.liquidplayer.surfaces" + surface;
+                    if (surface.startsWith(".")) surface = "org.liquidplayer.surface" + surface;
                     try {
                         enableSurface((Class<? extends Surface>)
                                 getClass().getClassLoader().loadClass(surface));
@@ -98,6 +100,31 @@ public class LiquidView extends RelativeLayout {
         }
     }
 
+    private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
+
+    /**
+     * Generate a value suitable for use in {@link #setId(int)}.
+     * This value will not collide with ID values generated at build time by aapt for R.id.
+     *
+     * @return a generated ID value
+     */
+    private static int generateViewIdCommon() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            return generateViewId();
+        } else {
+            for (; ; ) {
+                final int result = sNextGeneratedId.get();
+                // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
+                int newValue = result + 1;
+                if (newValue > 0x00FFFFFF) newValue = 1; // Roll over to 1, not 0.
+                if (sNextGeneratedId.compareAndSet(result, newValue)) {
+                    return result;
+                }
+            }
+        }
+    }
+
+
     private void attach(final String surface, final JSFunction callback) {
         final MicroService service = MicroService.getService(serviceId);
         try {
@@ -119,7 +146,7 @@ public class LiquidView extends RelativeLayout {
             }
             final Class<? extends Surface> cls = clss;
             if (surfaceId == View.NO_ID)
-                surfaceId = View.generateViewId();
+                surfaceId = generateViewIdCommon();
             canonicalSurface = surface;
             service.getProcess().keepAlive();
             new Handler(Looper.getMainLooper()).post(new Runnable() {
@@ -212,7 +239,7 @@ public class LiquidView extends RelativeLayout {
      */
     public MicroService start(final URI uri, String ... argv) {
         if (getId() == View.NO_ID) {
-            setId(View.generateViewId());
+            setId(generateViewIdCommon());
         }
         if (uri != null) {
             if (surfaceNames == null) {
