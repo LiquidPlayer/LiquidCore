@@ -9,6 +9,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.RelativeLayout;
@@ -65,13 +66,14 @@ public class LiquidView extends RelativeLayout {
                 argv = getResources()
                         .getStringArray(a.getResourceId(R.styleable.LiquidView_liquidcore_argv, 0));
             if (a.hasValue(R.styleable.LiquidView_liquidcore_surface)) {
-                String [] surfaces;
-                String s = a.getString(R.styleable.LiquidView_liquidcore_surface);
-                if (s != null) {
+                String [] surfaces = new String[] {};
+                final TypedValue v = a.peekValue(R.styleable.LiquidView_liquidcore_surface);
+                if (v != null && v.type == TypedValue.TYPE_STRING) {
+                    String s = a.getString(R.styleable.LiquidView_liquidcore_surface);
                     surfaces = new String[] {s};
                 } else {
                     surfaces = getResources().getStringArray(
-                            a.getResourceId(R.styleable.LiquidView_liquidcore_surface, 0));
+                            a.getResourceId(R.styleable.LiquidView_liquidcore_surfaces, 0));
                 }
                 for (String surface : surfaces) {
                     if (surface.startsWith(".")) surface = "org.liquidplayer.surface" + surface;
