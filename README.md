@@ -185,7 +185,23 @@ Read or read/write directory (depending on permissions given by the host) for kn
 
 Everything else will result in an `ENOACES` (access denied) error.
 
-### A "Hallo, die Weld!" Example
+
+## The Micro App
+
+There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
+
+As of 0.2.1, there is only one surface so far: the [**`ConsoleSurface`**](https://github.com/LiquidPlayer/ConsoleSurface).  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  This isn't the most interesting surface, but it is an obvious first step.  A major improvement is being slated for 0.3.0, with the launch of a **`ReactNativeSurface`**.  At this point, you will be able to drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework.  There are other surfaces under consideration, including:
+
+* **`WebSurface`** - a `WebView` front-end where a micro service can write to the DOM
+* **`CardSurface`** - a limited feature set suitable for driving card-like UI elements in a list
+* **`OpenGLSurface`** - an [OpenGL](https://www.opengl.org/) canvas
+
+Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
+
+But for now, we just have a console.  See the [ConsoleSurface](https://github.com/LiquidPlayer/ConsoleSurface) project for a tutorial on how to use it.
+
+
+### "Hallo, die Weld!" Micro Service Tutorial
 
 #### Prerequisites
 
@@ -518,174 +534,6 @@ You will need to clear the server cache, so simply delete the `.lib` directory:
 
 And then restart the server.  Now when you navigate to `http://localhost:8080/bn.js`, you will see that the code has been minified in order to save space.  The manifest file can do a bunch of things, but we'll save that for later as it is still in its infancy.
 
-## The Micro App
-
-There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
-
-As of 0.2.0, there is only one surface so far: the **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  This isn't the most interesting surface, but it is an obvious first step.  A major improvement is being slated for 0.3.0, with the launch of a **`ReactNativeSurface`**.  At this point, you will be able to drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework.  There are other surfaces under consideration, including:
-
-* **`WebSurface`** - a `WebView` front-end where a micro service can write to the DOM
-* **`CardSurface`** - a limited feature set suitable for driving card-like UI elements in a list
-* **`OpenGLSurface`** - an [OpenGL](https://www.opengl.org/) canvas
-
-Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
-
-But for now, we just have a console.  Let's take a look at how to use it.
-
-### Hello, Console!
-
-(All of the code for this example can be found [here](https://github.com/LiquidPlayer/Examples/tree/master/HelloConsole).)
-
-Start by creating a new micro service, named `console.js` just like we did for the _Hallo, die Weld!_ example above, and fill it with the following:
-
-```javascript
-// This will keep the process alive until an explicit process.exit() call
-setInterval(function(){},1000)
-
-// This will attempt to attach to a ConsoleSurface
-LiquidCore.attach('org.liquidplayer.surfaces.console.ConsoleSurface', (error) => {
-    console.log("Hello, Console!")
-    if (error) {
-        console.error(error)
-    }
-})
-```
-
-Okay, so here's what happening.  We are once again setting in indefinite timer so that the
-process stays alive until we decide to kill it.  After that, we are requesting to attach to a
-surface with `LiquidCore.attach(surface, callback)`.  The _surface_ parameter is the canonical
-name of the surface (`org.liquidplayer.surfaces.console.ConsoleSurface` is so far the only
-choice) and _callback_ is a callback function that takes an error as its argument.  We are using
-the arrow function (`=>`) notation here.  ES6 is for real and it's time to get used to it.  If you
-want to use old-timey `function(error) { ... }` notation, that's ok too.
-
-Once the surface has attached, which we'll know when our callback is called (with an undefined error),
-then the surface is ready to use.  If _error_ is not undefined, then something went wrong and the _error_
-parameter will be the thrown exception.
-
-Don't forget our manifest file, `console.manifest`:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "console.js"
-       }
-   ]
-}
-```
-
-Run the server again and make sure you can navigate to the file correctly.
-
-Now, let's create another host app.  We'll do exactly as we did above, only we will change the name:
-
-1. In Android Studio, create a new project by selecting `File -> New Project ...`
-2. Fill out the basics and press `Next` (Application Name: `HelloConsole`, Company Domain: `liquidplayer.org`, Package name: `org.liquidplayer.examples.helloconsole`)
-3. Fill in the Target Devices information.  Select API 17 as the minimum and click `Next`
-4. Select `Empty Activity` and then `Next`
-5. The default options are ok.  Click `Finish`
-
-As before, make sure you link the LiquidCore library.  Go to your **root-level `build.grade`**
-file and add the `jitpack` dependency:
-
-```
-...
-
-allprojects {
-    repositories {
-        jcenter()
-        maven { url 'https://jitpack.io' }
-    }
-}
-
-...
-```
-
-Then, add the LiquidCore library to your **app's `build.gradle`**:
-
-```
-dependencies {
-    ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.1'
-}
-
-```
-
-Test it in the emulator (or on a device) to make sure all went to plan.  You should have your
-"Hello World!" screen.
-
-We need to create a list of allowed surfaces.  For this, we will create an array resource.  Right-click
-on `res/values` and click `New -> Values resource file`.  Set the filename as `arrays` and leave the rest
-alone.  Click `OK`.  Fill that file with:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string-array name="surfaces">
-        <item>.console.ConsoleSurface</item>
-    </string-array>
-</resources>
-```
-
-This is a clunky Android thing.  We want to reference an array of surfaces, so we have to do it in
-a separate resource file (eye roll).
-
-Now, open the `res/layout/activity_main.xml` file.  We are going to make one simple change and then be done.  Change the file to the following, but replace the IP address with _your_ server:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    xmlns:custom="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/activity_main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="org.liquidplayer.examples.helloconsole.MainActivity">
-
-    <org.liquidplayer.service.LiquidView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/liquidview"
-        custom:liquidcore.URI="http://192.168.1.152:8080/console.js"
-        custom:liquidcore.surface="@array/surfaces"
-        />
-</RelativeLayout>
-```
-
-Now restart the app.  You should see a fully functional Node.js console.  Try typing `process.versions` and you will see the versions of the various libraries.
-
-LiquidCore provides a `LiquidView` Android view widget.  This provides the container in which surfaces can
-be attached.  You must specify which surfaces you want to make available to the micro app.  This gives hosts
-ownership over what level of control they want to give to micro apps, which will be necessary as more
-elaborate surfaces become available.
-
-In your console, type `LiquidCore` and press enter.  You should see:
-```javascript
-LiquidCore_ {
-  domain: null,
-  _events: {},
-  _eventsCount: 0,
-  _maxListeners: undefined,
-  availableSurfaces: { 'org.liquidplayer.surfaces.console.ConsoleSurface': '0.2.1' },
-  attach: [Function: attach_],
-  detach: [Function: detach_] }
-```
-
-The `availableSurfaces` object will show the same set of surfaces that were enabled in the XML.  This way,
-micro apps know what surfaces they can use.
-
-Type `LiquidCore.detach()` in your console and Poof! Your surface is gone.  If you rotate the
-device, a new instance will be launched and reattached.  Type `process.exit()`
-and the same thing happens.
-
-Of course it is possible to use a [`LiquidView`](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.1/org/liquidplayer/service/LiquidView.html) programmatically and dynamically set its available surfaces
-and URI.
-
-That pretty much covers the basics of what LiquidCore does!
 
 Building the LiquidCore Android library
 ---------------------------------------
