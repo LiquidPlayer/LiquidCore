@@ -238,8 +238,6 @@ setInterval(function() {}, 1000)
 LiquidCore.on( 'ping', function() {
     // When we get the ping from the host, respond with "Hallo, die Weld!"
     // and then exit.
-    // Note that the payload of the event is an object.  At the moment,
-    // this _must_ be an object.  Eventually it may be more relaxed.
     LiquidCore.emit( 'pong', { message: 'Hallo, die Weld!' } )
     process.exit(0)
 })
