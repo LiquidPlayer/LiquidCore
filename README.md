@@ -7,13 +7,13 @@ LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.2.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/v0.2.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/v0.2.1)
+[0.2.2](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.2.2) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.2.2)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.2.1](https://liquidplayer.github.io/LiquidCoreAndroid/v0.2.1/)
+[Version 0.2.2](https://liquidplayer.github.io/LiquidCoreAndroid/0.2.2/)
 
 # Table of Contents
 
@@ -245,7 +245,7 @@ LiquidCore.on( 'ping', function() {
 })
 
 // Ok, we are all set up.  Let the host know we are ready to talk
-LiquidCore.emit( 'ready', {} ) // Again, the object is a must at the moment
+LiquidCore.emit( 'ready' )
 ```
 
 Next, let's set up a manifest file.  Don't worry too much about this right
@@ -351,7 +351,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer.LiquidCore:LiquidConsoleSurface-0.2.0:v0.2.1'
+    compile 'com.github.LiquidPlayer.LiquidCore:0.2.2'
 }
 
 ```
@@ -399,8 +399,7 @@ public class MainActivity extends AppCompatActivity {
         final EventListener readyListener = new EventListener() {
             @Override
             public void onEvent(MicroService service, String event, JSONObject payload) {
-                JSONObject obj = new JSONObject();
-                service.emit("ping", obj);
+                service.emit("ping");
             }
         };
 
@@ -479,7 +478,7 @@ LiquidCore.on( 'ping', function() {
     process.exit(0)
 })
 
-LiquidCore.emit( 'ready', {} )
+LiquidCore.emit( 'ready' )
 ```
 
 We will now be using the [BigNumber] module.  Be sure to install it first:
@@ -547,7 +546,7 @@ do the following:
     % echo sdk.dir=$ANDROID_SDK >> local.properties
     % ./gradlew assembleRelease
 
-Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-v0.2.1-release.aar`.  To use it, simply
+Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-release.aar`.  To use it, simply
 add the following to your app's `build.gradle`:
 
     repositories {
@@ -557,7 +556,7 @@ add the following to your app's `build.gradle`:
     }
 
     dependencies {
-        compile(name:'LiquidCore-v0.2.1-release', ext:'aar')
+        compile(name:'LiquidCore-release', ext:'aar')
     }
     
 ##### Note
