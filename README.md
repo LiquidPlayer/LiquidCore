@@ -285,7 +285,7 @@ You can leave that running or restart it later.  Now we need to create a host ap
 
 1. In Android Studio, create a new project by selecting `File -> New Project ...`
 2. Fill out the basics and press `Next` (Application Name: `HelloWorld`, Company Domain: `liquidplayer.org`, Package name: `org.liquidplayer.examples.helloworld`)
-3. Fill in the Target Devices information.  Select API 17 as the minimum and click `Next`
+3. Fill in the Target Devices information.  The defaults are fine.  Click `Next`
 4. Select `Empty Activity` and then `Next`
 5. The default options are ok.  Click `Finish`
 
