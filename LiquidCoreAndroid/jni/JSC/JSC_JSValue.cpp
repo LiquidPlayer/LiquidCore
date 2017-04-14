@@ -140,7 +140,7 @@ JS_EXPORT bool JSValueIsObjectOfClass(JSContextRef ctx, JSValueRef value, JSClas
                 v = ((JSClassRef)o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS)) == jsClass;
             } else if (o->GetPrototype()->IsObject()) {
                 Local<Object> proto = o->GetPrototype()->ToObject(context).ToLocalChecked();
-                if (proto->InternalFieldCount() > 0) {
+                if (proto->InternalFieldCount() > INSTANCE_OBJECT_CLASS) {
                     v = ((JSClassRef)proto->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS)) == jsClass;
                 }
             }

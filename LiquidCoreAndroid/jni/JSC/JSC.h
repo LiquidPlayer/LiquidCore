@@ -38,16 +38,20 @@
 #include <vector>
 #include <string>
 
-#define OBJECT_DATA_DEFINITION   0
-#define OBJECT_DATA_CONTEXT      1
-#define OBJECT_DATA_FIELDS       2
+/* Reserve position 0 -- node uses it for some objects */
 
-#define FUNCTION_DATA_CLASS      2
-#define FUNCTION_DATA_FIELDS     3
+#define OBJECT_DATA_RESERVED     (0)
+#define OBJECT_DATA_DEFINITION   (1)
+#define OBJECT_DATA_CONTEXT      (2)
+#define OBJECT_DATA_FIELDS       (3)
 
-#define INSTANCE_OBJECT_CLASS    0
-#define INSTANCE_OBJECT_JSOBJECT 1
-#define INSTANCE_OBJECT_FIELDS   2
+#define FUNCTION_DATA_CLASS      (OBJECT_DATA_FIELDS)
+#define FUNCTION_DATA_FIELDS     (OBJECT_DATA_FIELDS + 1)
+
+#define INSTANCE_OBJECT_RESERVED (0)
+#define INSTANCE_OBJECT_CLASS    (1)
+#define INSTANCE_OBJECT_JSOBJECT (2)
+#define INSTANCE_OBJECT_FIELDS   (3)
 
 #define OpaqueJSContextGroup            ContextGroup
 #define OpaqueJSPropertyNameAccumulator std::list<JSStringRef>
@@ -55,8 +59,10 @@
 
 #include "JavaScriptCore/JavaScript.h"
 
+#ifndef ASSERT
 #define ASSERT(x) if(!(x)) \
     __android_log_assert("conditional", "ASSERT FAILED", "%s(%d) : %s", __FILE__, __LINE__, #x);
+#endif
 
 class OpaqueJSContext : public Retainer {
     public:
@@ -151,7 +157,8 @@ class OpaqueJSValue {
                     Local<Object> o = v->ToObject(context).ToLocalChecked();
                     o = o->StrictEquals(context->Global()) && \
                         !o->GetPrototype()->ToObject(context).IsEmpty() && \
-                        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()?\
+                        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()>
+                            INSTANCE_OBJECT_JSOBJECT ?
                         o->GetPrototype()->ToObject(context).ToLocalChecked() : \
                         o;
                     if (o->InternalFieldCount() > INSTANCE_OBJECT_JSOBJECT) {
@@ -180,7 +187,17 @@ class OpaqueJSValue {
                     Local<v8::Context> context = m_ctx->Context()->Value();
                     Local<Object> o = v->ToObject(context).ToLocalChecked();
                     if (o->InternalFieldCount() > INSTANCE_OBJECT_JSOBJECT) {
+                        OpaqueJSClass* clazz =
+                            reinterpret_cast<OpaqueJSClass*>(o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS));
+                        clazz->release();
+                        o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_CLASS, nullptr);
                         o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_JSOBJECT, nullptr);
+                        /* Note: A weak callback will only retain the first two internal fields
+                         * But the first one is reserved.  So we will null out the second one.
+                         * I am intentionally not using the macro here to ensure that we always
+                         * zero out position one, even if the indices move later.
+                         */
+                        o->SetAlignedPointerInInternalField(1, nullptr);
                     }
                 }
                 const_cast<OpaqueJSContext *>(m_ctx)->MarkCollected(this);

@@ -279,7 +279,7 @@ public class Process {
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
     @SuppressWarnings("unused") // called from native code
-    private void onNodeStarted(final long mainContext, long ctxGroupRef) {
+    private void onNodeStarted(final long mainContext, long ctxGroupRef, long ctxRef) {
         final ProcessContext ctx = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef));
         jscontext = new WeakReference<>(ctx);
         isActive = true;
@@ -312,7 +312,8 @@ public class Process {
                             android.util.Log.d("Unhandled", error.toString());
                             android.util.Log.d("Unhandled", error.property("stack").toString());
                             eventOnProcessFailed(new JSException(error));
-                            context.evaluateScript("process.exit(process.exitCode || -1)");
+                            context.evaluateScript(
+                                    "process.exit(process.exitCode === undefined ? -1 : process.exitCode)");
                         }
                     };
                     new JSFunction(context, "__onUncaughtException", new String[]{"handleFunc"},

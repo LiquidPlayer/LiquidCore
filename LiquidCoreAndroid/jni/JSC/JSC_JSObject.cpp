@@ -54,7 +54,7 @@
 #define TO_REAL_GLOBAL(o) \
     o = o->StrictEquals(context->Global()) && \
         !o->GetPrototype()->ToObject(context).IsEmpty() && \
-        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount() ? \
+        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()>INSTANCE_OBJECT_JSOBJECT ? \
         o->GetPrototype()->ToObject(context).ToLocalChecked() : \
         o;
 
@@ -180,11 +180,11 @@ void OpaqueJSClass::HasInstanceFunctionCallHandler(const FunctionCallbackInfo< V
         TempJSValue value;
         TempJSValue possibleInstance(ctxRef_, info[0]);
 
-        if (obj_->InternalFieldCount() > OBJECT_DATA_FIELDS && info[0]->IsObject() &&
+        if (obj_->InternalFieldCount() > FUNCTION_DATA_CLASS && info[0]->IsObject() &&
             obj_->GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS)) {
 
             JSClassRef ctor = (JSClassRef)obj_-> GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS);
-            if (info[0].As<Object>()->InternalFieldCount() > 0) {
+            if (info[0].As<Object>()->InternalFieldCount() > INSTANCE_OBJECT_CLASS) {
                 JSClassRef inst =
                     (JSClassRef) info[0].As<Object>()->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS);
                 bool has = false;
@@ -421,8 +421,6 @@ void OpaqueJSClass::ProtoPropertyGetter(Local< String > property,
                         weak,
                         [](const WeakCallbackInfo<UniquePersistent<Object>>& info) {
 
-                        //JSContext* ctx = reinterpret_cast<JSContext*>(info.GetInternalField(1));
-                        //ctx->release();
                         info.GetParameter()->Reset();
                         delete info.GetParameter();
                     }, v8::WeakCallbackType::kInternalFields);
@@ -452,6 +450,8 @@ void OpaqueJSClass::ProtoPropertyGetter(Local< String > property,
 void OpaqueJSClass::NamedPropertySetter(Local< String > property, Local< Value > value,
     const PropertyCallbackInfo< Value > &info)
 {
+    String::Utf8Value const str(property);
+
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
         TempException exception(nullptr);
         TempJSValue thisObject(ctxRef_, info.This());
@@ -752,7 +752,7 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
                     Local<String> error = String::NewFromUtf8(isolate, "Bad constructor");
                     exception.Set(ctxRef_, Exception::Error(error));
                 }
-            } else if (info.IsConstructCall() && obj_->InternalFieldCount() > OBJECT_DATA_FIELDS &&
+            } else if (info.IsConstructCall() && obj_->InternalFieldCount() > FUNCTION_DATA_CLASS &&
                 obj_->GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS)) {
                 value.Set(
                     JSObjectMake(ctxRef_, (JSClassRef)obj_->GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS),
@@ -788,9 +788,15 @@ void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& i
     OpaqueJSClass* clazz = reinterpret_cast<OpaqueJSClass*>(info.GetInternalField(INSTANCE_OBJECT_CLASS));
     JSObjectRef objRef =
         reinterpret_cast<JSObjectRef>(info.GetInternalField(INSTANCE_OBJECT_JSOBJECT));
-    if (objRef && !objRef->HasFinalized()) {
+    /* Note: A weak callback will only retain the first two internal fields
+     * But the first one is reserved.  So we will have nulled out the second one in the
+     * OpaqueJSValue destructor.
+     * I am intentionally not using the macro here to ensure that we always
+     * read position one, even if the indices move later.
+     */
+    if ((info.GetInternalField(1) != nullptr) && objRef && !objRef->HasFinalized()) {
         objRef->SetFinalized();
-        const JSClassDefinition *definition = clazz->m_definition;
+        const JSClassDefinition *definition = clazz ? clazz->m_definition : nullptr;
         while (definition) {
             if (definition->finalize) {
                 definition->finalize(objRef);
@@ -798,7 +804,6 @@ void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& i
             definition = definition->parentClass ? definition->parentClass->m_definition : nullptr;
         }
     }
-    clazz->release();
     info.GetParameter()->Reset();
     delete info.GetParameter();
 }
@@ -896,9 +901,9 @@ JSObjectRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance
             weak,
             Finalize,
             v8::WeakCallbackType::kInternalFields);
-        retain();
 
         instance->SetAlignedPointerInInternalField(INSTANCE_OBJECT_CLASS,this);
+        retain();
         instance->SetAlignedPointerInInternalField(INSTANCE_OBJECT_JSOBJECT,(void*)retObj);
         retObj->SetPrivateData(privateData);
 

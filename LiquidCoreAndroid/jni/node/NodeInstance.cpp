@@ -55,6 +55,8 @@
 #include "node_lttng.h"
 #endif
 
+#include "JSC/JSC.h"
+
 NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewGlobalRef(thiz);
@@ -359,7 +361,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
   int exit_code = 1;
   ContextGroup *group = nullptr;
 
-  auto notify_start = [&] (JSContext *java_node_context) {
+  auto notify_start = [&] (JSContext *java_node_context, JSContextRef ctxRef) {
       JNIEnv *jenv;
       int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
       if (getEnvStat == JNI_EDETACHED) {
@@ -369,7 +371,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
       jclass cls = jenv->GetObjectClass(m_JavaThis);
       jmethodID mid;
       do {
-        mid = jenv->GetMethodID(cls,"onNodeStarted","(JJ)V");
+        mid = jenv->GetMethodID(cls,"onNodeStarted","(JJJ)V");
         if (!jenv->ExceptionCheck()) break;
         jenv->ExceptionClear();
         jclass super = jenv->GetSuperclass(cls);
@@ -386,7 +388,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
       jenv->DeleteLocalRef(cls);
 
       jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context),
-        reinterpret_cast<jlong>(group));
+        reinterpret_cast<jlong>(group), reinterpret_cast<jlong>(ctxRef));
 
       if (getEnvStat == JNI_EDETACHED) {
           m_jvm->DetachCurrentThread();
@@ -404,11 +406,29 @@ int NodeInstance::StartNodeInstance(void* arg) {
   {
     Isolate::Scope isolate_scope(isolate);
     HandleScope handle_scope(isolate);
-    Local<Context> context = Context::New(isolate);
+
+    group = new ContextGroup(isolate, instance_data->event_loop());
+
+    JSGlobalContextRef ctxRef = nullptr;
+    JSClassRef globalClass = nullptr;
+    {
+      JSClassDefinition definition = kJSClassDefinitionEmpty;
+      definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
+      globalClass = JSClassCreate(&definition);
+      ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
+    }
+
+    JSClassRelease(globalClass);
+
+    //Local<Context> context = Context::New(isolate);
+    JSContext *java_node_context;
+    java_node_context = const_cast<JSContext*>(ctxRef->Context());
+    java_node_context->retain();
+    Local<Context> context = java_node_context->Value();
+
     Environment* env = CreateEnvironment(isolate, context, instance_data);
     array_buffer_allocator->set_env(env);
     Context::Scope context_scope(context);
-
     {
       ContextGroup::Mutex()->lock();
 
@@ -454,24 +474,24 @@ int NodeInstance::StartNodeInstance(void* arg) {
       ContextGroup::Mutex()->unlock();
     }
 
-    JSContext *java_node_context;
     {
       SealHandleScope seal(isolate);
 
+/*
       // call back Java via JNI and pass on the context
       {
         ContextGroup::Mutex()->lock();
         Isolate::Scope isolate_scope_(isolate);
         HandleScope handle_scope_(isolate);
 
-        group = new ContextGroup(isolate, env->event_loop());
-        java_node_context = new JSContext(group, context);
+//        group = new ContextGroup(isolate, env->event_loop());
+//        java_node_context = new JSContext(group, context);
         ContextGroup::Mutex()->unlock();
       }
-
-      java_node_context->retain();
+*/
       if (m_jvm) {
-        notify_start(java_node_context);
+        java_node_context->retain();
+        notify_start(java_node_context, ctxRef);
       }
 
       bool more;
@@ -504,6 +524,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
         exit_code = this->exit_code;
       }
 
+      JSGlobalContextRelease(ctxRef);
       java_node_context->SetDefunct();
       int count = java_node_context->release();
       ASSERT_EQ(count,0);
