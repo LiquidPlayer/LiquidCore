@@ -59,9 +59,10 @@
 
 #include "JavaScriptCore/JavaScript.h"
 
-#ifndef ASSERT
-#define ASSERT(x) if(!(x)) \
+#define ASSERTJSC(x) if(!(x)) \
     __android_log_assert("conditional", "ASSERT FAILED", "%s(%d) : %s", __FILE__, __LINE__, #x);
+#ifndef ASSERT
+#define ASSERT ASSERTJSC
 #endif
 
 class OpaqueJSContext : public Retainer {
@@ -109,7 +110,8 @@ class OpaqueJSClass : public Retainer {
         virtual ~OpaqueJSClass();
         virtual const JSClassDefinition * Definition() { return m_definition; }
 
-        virtual Local<ObjectTemplate> NewTemplate(Local<Object> *data);
+        virtual void NewTemplate(Local<Context> context, Local<Object> *data,
+            Local<ObjectTemplate> *templ);
         virtual JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance,
             Local<Object> data, void *privateData);
 
@@ -242,7 +244,7 @@ class OpaqueJSValue {
         }
         virtual int Release(bool cleanOnZero=true) {
             int count = --m_count;
-            ASSERT(count >= 0)
+            ASSERTJSC(count >= 0)
             if (cleanOnZero) {
                 Clean();
             }

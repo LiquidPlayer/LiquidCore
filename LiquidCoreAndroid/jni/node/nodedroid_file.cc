@@ -68,8 +68,10 @@
 namespace nodedroid {
 
 using v8::Array;
+using v8::ArrayBuffer;
 using v8::Context;
 using v8::EscapableHandleScope;
+using v8::Float64Array;
 using v8::Function;
 using v8::FunctionCallbackInfo;
 using v8::FunctionTemplate;
@@ -193,7 +195,7 @@ static inline bool IsInt64(double x) {
 
 static void After(uv_fs_t *req) {
   FSReqWrap* req_wrap = static_cast<FSReqWrap*>(req->data);
-  CHECK_EQ(&req_wrap->req_, req);
+  CHECK_EQ(req_wrap->req(), req);
   req_wrap->ReleaseEarly();  // Free memory that's no longer used now.
 
   Environment* env = req_wrap->env();
@@ -379,7 +381,7 @@ static void After(uv_fs_t *req) {
 
   req_wrap->MakeCallback(env->oncomplete_string(), argc, argv);
 
-  uv_fs_req_cleanup(&req_wrap->req_);
+  uv_fs_req_cleanup(req_wrap->req());
   req_wrap->Dispose();
 }
 
@@ -396,18 +398,18 @@ class fs_req_wrap {
 };
 
 
-#define ASYNC_DEST_CALL(func, req, dest, encoding, ...)                       \
+#define ASYNC_DEST_CALL(func, request, dest, encoding, ...)                   \
   Environment* env = Environment::GetCurrent(args);                           \
-  CHECK(req->IsObject());                                                     \
-  FSReqWrap* req_wrap = FSReqWrap::New(env, req.As<Object>(),                 \
+  CHECK(request->IsObject());                                                 \
+  FSReqWrap* req_wrap = FSReqWrap::New(env, request.As<Object>(),             \
                                        #func, dest, encoding);                \
   int err = uv_fs_ ## func(env->event_loop(),                                 \
-                           &req_wrap->req_,                                   \
+                           req_wrap->req(),                                   \
                            __VA_ARGS__,                                       \
                            After);                                            \
   req_wrap->Dispatched();                                                     \
   if (err < 0) {                                                              \
-    uv_fs_t* uv_req = &req_wrap->req_;                                        \
+    uv_fs_t* uv_req = req_wrap->req();                                        \
     uv_req->result = err;                                                     \
     uv_req->path = nullptr;                                                   \
     After(uv_req);                                                            \
@@ -453,13 +455,27 @@ Local<Value> fs_(Environment *env, Local<Value> path, int req_access)
       Local<Value> fsVal;
       if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
         Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
+
+        Local<Value> cwd = fsObj->Get(String::NewFromUtf8(env->isolate(), "cwd"));
+        BufferValue c(env->isolate(), cwd);
+        char fullp[strlen(*c) + strlen(*p) + 8];
+
+        const char *pth = *p;
+        while (*pth == ' ' || *pth == '\t') pth++;
+        if (*pth != '/') {
+            strcpy(fullp, *c);
+            strcpy(fullp + strlen(*c), "/");
+            strcpy(fullp + strlen(*c) + 1, pth);
+            pth = fullp;
+        }
+
         fs_req_wrap req_wrap;
         env->PrintSyncTrace();
         int err = uv_fs_realpath(env->event_loop(),
-                             &req_wrap.req, *p, nullptr);
+                             &req_wrap.req, pth, nullptr);
         const char* link_path;
-        if (err < 0) {
-            link_path = *p;
+        if (err != 0) {
+            link_path = pth;
         } else {
             link_path = static_cast<const char*>(SYNC_REQ.ptr);
         }
@@ -471,7 +487,7 @@ Local<Value> fs_(Environment *env, Local<Value> path, int req_access)
           env->ThrowUVException(UV_EINVAL,
                                 "realpath",
                                 "Invalid character encoding for path",
-                                *p);
+                                pth);
           return rc;
         }
         Local<Object> test = fsObj->Get(env->context(), String::NewFromUtf8(env->isolate(), "fs"))
@@ -627,21 +643,19 @@ Local<Value> BuildStatsObject(Environment* env, const uv_stat_t* s) {
   //     crash();
   //   }
   //
-  // We need to check the return value of Integer::New() and Date::New()
+  // We need to check the return value of Number::New() and Date::New()
   // and make sure that we bail out when V8 returns an empty handle.
 
-  // Integers.
+  // Unsigned integers. It does not actually seem to be specified whether
+  // uid and gid are unsigned or not, but in practice they are unsigned,
+  // and Node’s (F)Chown functions do check their arguments for unsignedness.
 #define X(name)                                                               \
-  Local<Value> name = Integer::New(env->isolate(), s->st_##name);             \
+  Local<Value> name = Integer::NewFromUnsigned(env->isolate(), s->st_##name); \
   if (name.IsEmpty())                                                         \
-    return handle_scope.Escape(Local<Object>());                              \
+    return Local<Object>();                                                   \
 
-  X(dev)
-  X(mode)
-  X(nlink)
   X(uid)
   X(gid)
-  X(rdev)
 # if defined(__POSIX__)
   X(blksize)
 # else
@@ -649,12 +663,24 @@ Local<Value> BuildStatsObject(Environment* env, const uv_stat_t* s) {
 # endif
 #undef X
 
+  // Integers.
+#define X(name)                                                               \
+  Local<Value> name = Integer::New(env->isolate(), s->st_##name);             \
+  if (name.IsEmpty())                                                         \
+    return Local<Object>();                                                   \
+
+  X(dev)
+  X(mode)
+  X(nlink)
+  X(rdev)
+#undef X
+
   // Numbers.
 #define X(name)                                                               \
   Local<Value> name = Number::New(env->isolate(),                             \
                                   static_cast<double>(s->st_##name));         \
   if (name.IsEmpty())                                                         \
-    return handle_scope.Escape(Local<Object>());                              \
+    return Local<Object>();                                                   \
 
   X(ino)
   X(size)
@@ -673,7 +699,7 @@ Local<Value> BuildStatsObject(Environment* env, const uv_stat_t* s) {
         (static_cast<double>(s->st_##name.tv_nsec / 1000000)));               \
                                                                               \
   if (name##_msec.IsEmpty())                                                  \
-    return handle_scope.Escape(Local<Object>());                              \
+    return Local<Object>();                                                   \
 
   X(atim)
   X(mtim)
@@ -710,6 +736,37 @@ Local<Value> BuildStatsObject(Environment* env, const uv_stat_t* s) {
     return handle_scope.Escape(Local<Object>());
 
   return handle_scope.Escape(stats);
+}
+
+void FillStatsArray(double* fields, const uv_stat_t* s) {
+  fields[0] = s->st_dev;
+  fields[1] = s->st_mode;
+  fields[2] = s->st_nlink;
+  fields[3] = s->st_uid;
+  fields[4] = s->st_gid;
+  fields[5] = s->st_rdev;
+#if defined(__POSIX__)
+  fields[6] = s->st_blksize;
+#else
+  fields[6] = -1;
+#endif
+  fields[7] = s->st_ino;
+  fields[8] = s->st_size;
+#if defined(__POSIX__)
+  fields[9] = s->st_blocks;
+#else
+  fields[9] = -1;
+#endif
+  // Dates.
+#define X(idx, name)                                                          \
+  fields[idx] = (static_cast<double>(s->st_##name.tv_sec) * 1000) +           \
+                (static_cast<double>(s->st_##name.tv_nsec / 1000000));        \
+
+  X(10, atim)
+  X(11, mtim)
+  X(12, ctim)
+  X(13, birthtim)
+#undef X
 }
 
 // Used to speed up module loading.  Returns the contents of the file as
@@ -806,13 +863,16 @@ static void Stat(const FunctionCallbackInfo<Value>& args) {
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
 
   if (*path != nullptr) {
-      if (args[1]->IsObject()) {
-        ASYNC_CALL(stat, args[1], UTF8, *path)
-      } else {
-        SYNC_CALL(stat, *path, *path)
-        args.GetReturnValue().Set(
-            nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
-      }
+    if (args[1]->IsFloat64Array()) {
+      Local<Float64Array> array = args[1].As<Float64Array>();
+      CHECK_EQ(array->Length(), 14);
+      Local<ArrayBuffer> ab = array->Buffer();
+      double* fields = static_cast<double*>(ab->GetContents().Data());
+      SYNC_CALL(stat, *path, *path)
+      FillStatsArray(fields, static_cast<const uv_stat_t*>(SYNC_REQ.ptr));
+    } else if (args[1]->IsObject()) {
+      ASYNC_CALL(stat, args[1], UTF8, *path)
+    }
   }
 }
 
@@ -829,13 +889,16 @@ static void LStat(const FunctionCallbackInfo<Value>& args) {
   BufferValue path(env->isolate(), fs_(env, args[0], _FS_ACCESS_RD));
 
   if (*path != nullptr) {
-      if (args[1]->IsObject()) {
-        ASYNC_CALL(lstat, args[1], UTF8, *path)
-      } else {
-        SYNC_CALL(lstat, *path, *path)
-        args.GetReturnValue().Set(
-            nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
-      }
+    if (args[1]->IsFloat64Array()) {
+      Local<Float64Array> array = args[1].As<Float64Array>();
+      CHECK_EQ(array->Length(), 14);
+      Local<ArrayBuffer> ab = array->Buffer();
+      double* fields = static_cast<double*>(ab->GetContents().Data());
+      SYNC_CALL(lstat, *path, *path)
+      FillStatsArray(fields, static_cast<const uv_stat_t*>(SYNC_REQ.ptr));
+    } else if (args[1]->IsObject()) {
+      ASYNC_CALL(lstat, args[1], UTF8, *path)
+    }
   }
 }
 
@@ -849,12 +912,15 @@ static void FStat(const FunctionCallbackInfo<Value>& args) {
 
   int fd = args[0]->Int32Value();
 
-  if (args[1]->IsObject()) {
-    ASYNC_CALL(fstat, args[1], UTF8, fd)
-  } else {
+  if (args[1]->IsFloat64Array()) {
+    Local<Float64Array> array = args[1].As<Float64Array>();
+    CHECK_EQ(array->Length(), 14);
+    Local<ArrayBuffer> ab = array->Buffer();
+    double* fields = static_cast<double*>(ab->GetContents().Data());
     SYNC_CALL(fstat, 0, fd)
-    args.GetReturnValue().Set(
-        nodedroid::BuildStatsObject(env, static_cast<const uv_stat_t*>(SYNC_REQ.ptr)));
+    FillStatsArray(fields, static_cast<const uv_stat_t*>(SYNC_REQ.ptr));
+  } else if (args[1]->IsObject()) {
+    ASYNC_CALL(fstat, args[1], UTF8, fd)
   }
 }
 
@@ -1418,7 +1484,7 @@ static void WriteString(const FunctionCallbackInfo<Value>& args) {
   FSReqWrap* req_wrap =
       FSReqWrap::New(env, req.As<Object>(), "write", buf, UTF8, ownership);
   int err = uv_fs_write(env->event_loop(),
-                        &req_wrap->req_,
+                        req_wrap->req(),
                         fd,
                         &uvbuf,
                         1,
@@ -1426,7 +1492,7 @@ static void WriteString(const FunctionCallbackInfo<Value>& args) {
                         After);
   req_wrap->Dispatched();
   if (err < 0) {
-    uv_fs_t* uv_req = &req_wrap->req_;
+    uv_fs_t* uv_req = req_wrap->req();
     uv_req->result = err;
     uv_req->path = nullptr;
     After(uv_req);

@@ -1,0 +1,16 @@
+# Copyright 2014 the V8 project authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+[
+['byteorder == big', {
+  # TODO(mips-team): Fix Wasm for big-endian.
+  'WasmModuleVerifyTest*': [SKIP],
+  'WasmFunctionVerifyTest*': [SKIP],
+  'WasmDecoderTest.TableSwitch*': [SKIP],
+  'WasmDecoderTest.AllLoadMemCombinations': [SKIP],
+  'AstDecoderTest.AllLoadMemCombinations': [SKIP],
+  'AstDecoderTest.AllStoreMemCombinations': [SKIP],
+  'Bytecodes.DecodeBytecodeAndOperands': [SKIP],
+}],  # 'byteorder == big'
+]

@@ -60,59 +60,69 @@ JSContext::JSContext(ContextGroup* isolate, Local<Context> val) {
 }
 
 JSContext::~JSContext() {
-    if (!m_isDefunct)
-        m_context.Reset();
+    SetDefunct();
     m_isolate->release();
 };
 
 void JSContext::SetDefunct() {
-    m_isDefunct = true;
-    while (m_value_set.size() > 0) {
-        std::set<JSValue<v8::Value>*>::iterator it = m_value_set.begin();
-        (*it)->release();
-    }
+    if (!m_isDefunct) {
+        m_isDefunct = true;
 
-    while (m_object_set.size() > 0) {
-        std::set<JSValue<v8::Object>*>::iterator it = m_object_set.begin();
-        (*it)->release();
-    }
+        m_set_mutex.lock();
+        while (m_value_set.size() > 0) {
+            std::set<JSValue<v8::Value>*>::iterator it = m_value_set.begin();
+            (*it)->release();
+        }
 
-    while (m_array_set.size() > 0) {
-        std::set<JSValue<v8::Array>*>::iterator it = m_array_set.begin();
-        (*it)->release();
-    }
+        while (m_object_set.size() > 0) {
+            std::set<JSValue<v8::Object>*>::iterator it = m_object_set.begin();
+            (*it)->release();
+        }
 
-    m_context.Reset();
+        while (m_array_set.size() > 0) {
+            std::set<JSValue<v8::Array>*>::iterator it = m_array_set.begin();
+            (*it)->release();
+        }
+        m_set_mutex.unlock();
+
+        m_context.Reset();
+    }
 }
 
 void JSContext::retain(JSValue<v8::Value>* value) {
-    Retainer::retain();
+    m_set_mutex.lock();
     m_value_set.insert(value);
+    m_set_mutex.unlock();
 }
 
 void JSContext::release(JSValue<v8::Value>* value) {
+    m_set_mutex.lock();
     m_value_set.erase(value);
-    Retainer::release();
+    m_set_mutex.unlock();
 }
 
 void JSContext::retain(JSValue<v8::Object>* value) {
-    Retainer::retain();
+    m_set_mutex.lock();
     m_object_set.insert(value);
+    m_set_mutex.unlock();
 }
 
 void JSContext::release(JSValue<v8::Object>* value) {
+    m_set_mutex.lock();
     m_object_set.erase(value);
-    Retainer::release();
+    m_set_mutex.unlock();
 }
 
 void JSContext::retain(JSValue<v8::Array>* value) {
-    Retainer::retain();
+    m_set_mutex.lock();
     m_array_set.insert(value);
+    m_set_mutex.unlock();
 }
 
 void JSContext::release(JSValue<v8::Array>* value) {
+    m_set_mutex.lock();
     m_array_set.erase(value);
-    Retainer::release();
+    m_set_mutex.unlock();
 }
 
 JSValue<Object>* JSContext::Global() {
@@ -181,7 +191,13 @@ ContextGroup::ContextGroup() {
     m_async_handle = nullptr;
 
     s_isolate_map[m_isolate] = this;
+    m_gc_callbacks.clear();
     //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+
+    V8_ISOLATE(this,isolate)
+        m_default_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate,
+            Context::New(isolate));
+    V8_UNLOCK()
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
@@ -192,7 +208,23 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
     m_async_handle = nullptr;
 
     s_isolate_map[m_isolate] = this;
+    m_gc_callbacks.clear();
     //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+
+    {
+        Isolate::Scope isolate_scope_(m_isolate);
+        HandleScope handle_scope_(m_isolate);
+
+        m_default_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate,
+            Context::New(isolate));
+    }
+}
+
+void ContextGroup::SetDefaultContext(Local<Context> context)
+{
+    m_default_context.Reset();
+    m_default_context = Persistent<Context,CopyablePersistentTraits<Context>>(context->GetIsolate(),
+        context);
 }
 
 void ContextGroup::callback(uv_async_t* handle) {
@@ -277,7 +309,7 @@ void ContextGroup::UnregisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void
 
         if ((*it)->cb == cb && (*it)->data == data) {
             delete (*it);
-            m_gc_callbacks.erase(it);
+            //m_gc_callbacks.erase(it);
         }
     }
 }
@@ -292,9 +324,18 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags) {
     }
 }
 
+void ContextGroup::Clean() {
+    if (!m_manage_isolate) {
+        Isolate::Scope isolate_scope_(m_isolate);
+        HandleScope handle_scope_(m_isolate);
+        m_default_context.Reset();
+    }
+}
+
 ContextGroup::~ContextGroup() {
     //Not really necessary at this point
     //m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
+
     s_isolate_map.erase(m_isolate);
     if (m_manage_isolate) {
         auto dispose = [](Isolate *isolate) {

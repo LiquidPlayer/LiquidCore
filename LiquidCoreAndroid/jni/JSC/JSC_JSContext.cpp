@@ -47,11 +47,21 @@ OpaqueJSContext::~OpaqueJSContext()
         //isolate->RequestGarbageCollectionForTesting(Isolate::kFullGarbageCollection);
 
         m_gc_lock.lock();
-        for (const auto& v : m_collection) {
+
+        // First, look for all values that have a zero reference and clean them
+        auto iterator = m_collection.begin();
+        while (iterator != m_collection.end()) {
+            const auto& v = *iterator;
+            ++iterator;
             v->Clean(true);
         }
-        for (const auto& v : m_collection) {
-            while (const_cast<OpaqueJSValue *>(v)->Release()) {};
+
+        // Then, release everything that has a reference count > 0
+        bool isEmpty =  m_collection.empty();
+        while (!isEmpty) {
+            const auto& v = m_collection.front();
+            const_cast<OpaqueJSValue *>(v)->Release();
+            isEmpty =  m_collection.empty();
         }
         m_gc_lock.unlock();
 
@@ -59,7 +69,6 @@ OpaqueJSContext::~OpaqueJSContext()
 
         int count = m_context->release();
     V8_UNLOCK();
-
 }
 
 void OpaqueJSContext::MarkForCollection(JSValueRef value)
@@ -147,7 +156,8 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
         V8_ISOLATE((ContextGroup*)group,isolate)
             if (globalObjectClass) {
                 Local<Object> data;
-                Local<ObjectTemplate> templ = globalObjectClass->NewTemplate(&data);
+                Local<ObjectTemplate> templ;
+                globalObjectClass->NewTemplate(group_->DefaultContext(), &data, &templ);
                 Local<Context> context = Context::New(isolate, nullptr, templ);
                 {
                     Context::Scope context_scope_(context);

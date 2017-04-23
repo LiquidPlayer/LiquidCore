@@ -134,9 +134,6 @@ void NodeInstance::spawnedThread()
             m_jvm->DetachCurrentThread();
         }
     }
-
-    // Commit suicide
-    //delete this;
 }
 
 void NodeInstance::node_main_task(void *inst) {
@@ -145,14 +142,6 @@ void NodeInstance::node_main_task(void *inst) {
 
 void NodeInstance::PumpMessageLoop(Isolate* isolate) {
     v8::platform::PumpMessageLoop(ContextGroup::Platform(), isolate);
-}
-
-bool NodeInstance::StartInspector(Environment *env, int port, bool wait) {
-#if HAVE_INSPECTOR
-    return env->inspector_agent()->Start(ContextGroup::Platform(), port, wait);
-#else
-    return true;
-#endif  // HAVE_INSPECTOR
 }
 
 void NodeInstance::WaitForInspectorDisconnect(Environment* env) {
@@ -426,6 +415,8 @@ int NodeInstance::StartNodeInstance(void* arg) {
     java_node_context->retain();
     Local<Context> context = java_node_context->Value();
 
+    group->SetDefaultContext(context);
+
     Environment* env = CreateEnvironment(isolate, context, instance_data);
     array_buffer_allocator->set_env(env);
     Context::Scope context_scope(context);
@@ -453,7 +444,10 @@ int NodeInstance::StartNodeInstance(void* arg) {
       // Start debug agent when argv has --debug
       /*
       if (instance_data->use_debug_agent()) {
-        StartDebug(env, debug_wait_connect);
+        const char* path = instance_data->argc() > 1
+                           ? instance_data->argv()[1]
+                           : nullptr;
+        StartDebug(env, path, debug_wait_connect);
         if (use_inspector && !debugger_running) {
           exit(12);
         }
@@ -553,15 +547,24 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
   CHECK_NE(isolate, nullptr);
 
+  group->Clean();
+  int count = group->release();
+
   isolate->Dispose();
   isolate = nullptr;
-
-  int count = group->release();
-  ASSERT_EQ(count,0);
 
   delete array_buffer_allocator;
 
   return exit_code;
+}
+
+// Look up environment variable unless running as setuid root.
+inline const char* secure_getenv(const char* key) {
+#ifndef _WIN32
+  if (getuid() != geteuid() || getgid() != getegid())
+    return nullptr;
+#endif
+  return getenv(key);
 }
 
 int NodeInstance::Start(int argc, char *argv[]) {
@@ -577,6 +580,8 @@ int NodeInstance::Start(int argc, char *argv[]) {
   Init(&argc, const_cast<const char**>(argv), &exec_argc, &exec_argv);
 
 #if HAVE_OPENSSL
+  if (const char* extra = secure_getenv("NODE_EXTRA_CA_CERTS"))
+    crypto::UseExtraCaCerts(extra);
 #ifdef NODE_FIPS_MODE
   // In the case of FIPS builds we should make sure
   // the random source is properly initialized first.

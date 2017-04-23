@@ -271,7 +271,9 @@ class FileSystem extends JSObject {
         access_ .get().property("/home/node_modules", Process.kMediaAccessPermissionsRead);
 
         String state = Environment.getExternalStorageState();
-        if (!Environment.MEDIA_MOUNTED.equals(state)){
+        if (!Environment.MEDIA_MOUNTED.equals(state) &&
+                !Environment.MEDIA_MOUNTED_READ_ONLY.equals(state) &&
+                !Environment.MEDIA_SHARED.equals(state)){
             android.util.Log.w("FileSystem", "Warning: external storage is unavailable");
         } else {
             if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state) &&
@@ -373,7 +375,7 @@ class FileSystem extends JSObject {
         setUp(mediaPermissionsMask);
 
         fs.set(new JSFunction(ctx, "fs", ""+
-                "if (!file.startsWith('/')) { file = this.cwd+'/'+file; }" +
+                "if (!file.startsWith('/')) { file = ''+this.cwd+'/'+file; }" +
                 "try { file = require('path').resolve(file); } catch (e) {console.log(e);}"+
                 "var access = 0;"+
                 "var keys = Object.keys(this.aliases_).sort().reverse();"+

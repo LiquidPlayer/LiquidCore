@@ -39,6 +39,7 @@ import android.support.test.InstrumentationRegistry;
 import org.junit.Test;
 import org.liquidplayer.javascript.JSBaseArray;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
 
@@ -71,6 +72,12 @@ public class FSTest {
         @Override
         public void onProcessStart(final Process proc, final JSContext ctx) {
             context = ctx;
+            context.setExceptionHandler(new JSContext.IJSExceptionHandler() {
+                @Override
+                public void handle(JSException exception) {
+                    android.util.Log.e("ProcessException", exception.stack());
+                }
+            });
             context.evaluateScript(script);
         }
 
@@ -116,7 +123,9 @@ public class FSTest {
 
         final String script = "" +
                 "var fs = require('fs');" +
-                "process.chdir('local');" +
+                "console.log('Did we get this far1?');" +
+                "process.chdir('./local');" +
+                "console.log('Did we get this far?');" +
                 "fs.writeFile('test.txt', 'Hello, World!', function(err) {" +
                 "   if(err) {" +
                 "       return console.log(err);" +
@@ -306,9 +315,15 @@ public class FSTest {
             assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_/test.txt").exists());
         }
 
-        File media = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        if (media != null) {
-            assertTrue(new File(media.getAbsolutePath() + "/test2.txt").exists());
+        File media = null;
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state) ||
+                Environment.MEDIA_SHARED.equals(state)){
+            media = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (media != null) {
+                assertTrue(new File(media.getAbsolutePath() + "/test2.txt").exists());
+            }
         }
 
         Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Global);

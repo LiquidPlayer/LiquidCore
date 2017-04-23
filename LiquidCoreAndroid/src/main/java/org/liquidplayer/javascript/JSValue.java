@@ -171,13 +171,15 @@ public class JSValue {
         }
     }
 
+    /*
     @Override
     protected void finalize() throws Throwable {
         if (!context.isDefunct) {
-            unprotect();
+            //unprotect();
         }
         super.finalize();
     }
+    */
 
     /* Testers */
     /**

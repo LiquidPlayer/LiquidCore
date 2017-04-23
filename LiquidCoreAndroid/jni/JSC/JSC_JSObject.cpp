@@ -832,19 +832,22 @@ bool OpaqueJSClass::IsConstructor()
     return false;
 }
 
-Local<ObjectTemplate> OpaqueJSClass::NewTemplate(Local<Object> *data)
+void OpaqueJSClass::NewTemplate(Local<Context> context, Local<Object> *data,
+    Local<ObjectTemplate> *object)
 {
     Isolate *isolate = Isolate::GetCurrent();
-    Local<Context> temp = Context::New(isolate);
 
-    Local<ObjectTemplate> object = ObjectTemplate::New(isolate);
+    Context::Scope context_scope_(context);
+
+    *object = ObjectTemplate::New(isolate);
 
     // Create data object
     Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
     templ->SetInternalFieldCount(OBJECT_DATA_FIELDS);
-    *data = templ->NewInstance(temp).ToLocalChecked();
+    *data = templ->NewInstance(context).ToLocalChecked();
     (*data)->SetAlignedPointerInInternalField(OBJECT_DATA_DEFINITION,(void*)m_definition);
     (*data)->SetAlignedPointerInInternalField(OBJECT_DATA_CONTEXT,nullptr);
+
     UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, *data);
     weak->SetWeak<UniquePersistent<Object>>(
         weak,
@@ -854,7 +857,7 @@ Local<ObjectTemplate> OpaqueJSClass::NewTemplate(Local<Object> *data)
         delete info.GetParameter();
     }, v8::WeakCallbackType::kInternalFields);
 
-    object->SetNamedPropertyHandler(
+    (*object)->SetNamedPropertyHandler(
         NamedPropertyGetter,
         NamedPropertySetter,
         NamedPropertyQuerier,
@@ -862,7 +865,7 @@ Local<ObjectTemplate> OpaqueJSClass::NewTemplate(Local<Object> *data)
         NamedPropertyEnumerator,
         *data);
 
-    object->SetIndexedPropertyHandler(
+    (*object)->SetIndexedPropertyHandler(
         IndexedPropertyGetter,
         IndexedPropertySetter,
         IndexedPropertyQuerier,
@@ -871,12 +874,12 @@ Local<ObjectTemplate> OpaqueJSClass::NewTemplate(Local<Object> *data)
         *data);
 
     if (IsFunction() || IsConstructor()) {
-        object->SetCallAsFunctionHandler(CallAsFunction, *data);
+        (*object)->SetCallAsFunctionHandler(CallAsFunction, *data);
     }
 
-    object->SetInternalFieldCount(INSTANCE_OBJECT_FIELDS);
+    (*object)->SetInternalFieldCount(INSTANCE_OBJECT_FIELDS);
 
-    return object;
+//    return object;
 }
 
 JSObjectRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance,
@@ -1020,7 +1023,8 @@ JS_EXPORT JSObjectRef JSObjectMake(JSContextRef ctx, JSClassRef jsClass, void* d
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         if (jsClass) {
             Local<Object> payload;
-            Local<ObjectTemplate> templ = jsClass->NewTemplate(&payload);
+            Local<ObjectTemplate> templ;
+            jsClass->NewTemplate(context,&payload,&templ);
             Local<Object> instance = templ->NewInstance(context).ToLocalChecked();
             value = jsClass->InitInstance(ctx, instance, payload, data);
         } else {

@@ -118,13 +118,13 @@ CFLAGS_CC_Release := \
 	-fno-exceptions \
 	-std=gnu++0x
 
-LOCAL_CFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.4.0/src \
-    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/v8 \
-    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/v8/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/uv/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/cares/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/openssl/openssl/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.4.0/deps/http_parser \
+LOCAL_CFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.10.2/src \
+    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/v8 \
+    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/v8/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/uv/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/cares/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/openssl/openssl/include \
+    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/http_parser \
     -I$(LOCAL_PATH)/../../deps/JavaScriptCore/include \
     -I$(LOCAL_PATH)/../../deps/utfcpp \
     -I$(LOCAL_PATH)/../../deps/sqlite-autoconf-3150000 \

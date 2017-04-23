@@ -44,7 +44,7 @@ public class JSC {
         JSContext.dummy();
     }
 
-    JSContextGroup group = null;
+    private JSContextGroup group = null;
 
     JSC(JSContextGroup group) {
         this.group = group;

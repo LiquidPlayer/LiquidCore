@@ -40,6 +40,7 @@ import android.support.v4.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -173,7 +174,12 @@ public class JSContext extends JSObject {
     protected void finalize() throws Throwable {
         super.finalize();
         if (!isDefunct) {
-            release(ctx);
+            async(new Runnable() {
+                  @Override
+                  public void run() {
+                      release(ctx);
+                  }
+            });
         }
     }
 
