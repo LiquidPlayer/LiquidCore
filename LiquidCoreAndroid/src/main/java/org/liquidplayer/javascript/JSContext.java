@@ -174,7 +174,7 @@ public class JSContext extends JSObject {
     protected void finalize() throws Throwable {
         super.finalize();
         if (!isDefunct) {
-            async(new Runnable() {
+            sync(new Runnable() {
                   @Override
                   public void run() {
                       release(ctx);
