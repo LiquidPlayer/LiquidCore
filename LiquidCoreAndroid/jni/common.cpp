@@ -193,11 +193,6 @@ ContextGroup::ContextGroup() {
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
     //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
-
-    V8_ISOLATE(this,isolate)
-        m_default_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate,
-            Context::New(isolate));
-    V8_UNLOCK()
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
@@ -210,21 +205,6 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
     //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
-
-    {
-        Isolate::Scope isolate_scope_(m_isolate);
-        HandleScope handle_scope_(m_isolate);
-
-        m_default_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate,
-            Context::New(isolate));
-    }
-}
-
-void ContextGroup::SetDefaultContext(Local<Context> context)
-{
-    m_default_context.Reset();
-    m_default_context = Persistent<Context,CopyablePersistentTraits<Context>>(context->GetIsolate(),
-        context);
 }
 
 void ContextGroup::callback(uv_async_t* handle) {
@@ -301,34 +281,24 @@ void ContextGroup::RegisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void*)
 }
 
 void ContextGroup::UnregisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void*), void *data) {
-    for (
-        std::list<struct GCCallback*>::iterator it=m_gc_callbacks.begin();
-        it!=m_gc_callbacks.end();
-        ++it
-    ) {
+    auto it = m_gc_callbacks.begin();
 
-        if ((*it)->cb == cb && (*it)->data == data) {
-            delete (*it);
-            //m_gc_callbacks.erase(it);
+    while (it != m_gc_callbacks.end()) {
+        const auto& item = *it;
+        ++it;
+        if (item->cb == cb && item->data == data) {
+            m_gc_callbacks.remove(item);
         }
     }
 }
 
 void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags) {
-    for (
-        std::list<struct GCCallback*>::iterator it=m_gc_callbacks.begin();
-        it!=m_gc_callbacks.end();
-        ++it
-    ) {
-        (*it)->cb(type, flags, (*it)->data);
-    }
-}
+    auto it = m_gc_callbacks.begin();
 
-void ContextGroup::Clean() {
-    if (!m_manage_isolate) {
-        Isolate::Scope isolate_scope_(m_isolate);
-        HandleScope handle_scope_(m_isolate);
-        m_default_context.Reset();
+    while (it != m_gc_callbacks.end()) {
+        const auto& item = *it;
+        ++it;
+        item->cb(type, flags, item->data);
     }
 }
 

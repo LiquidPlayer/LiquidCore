@@ -65,7 +65,7 @@ OpaqueJSContext::~OpaqueJSContext()
         }
         m_gc_lock.unlock();
 
-        ASSERT(m_collection.empty());
+        ASSERTJSC(m_collection.empty());
 
         int count = m_context->release();
     V8_UNLOCK();
@@ -73,7 +73,7 @@ OpaqueJSContext::~OpaqueJSContext()
 
 void OpaqueJSContext::MarkForCollection(JSValueRef value)
 {
-    ASSERT(value->Context() == this);
+    ASSERTJSC(value->Context() == this);
     m_gc_lock.lock();
     m_collection.push_back(value);
     m_gc_lock.unlock();
@@ -81,7 +81,7 @@ void OpaqueJSContext::MarkForCollection(JSValueRef value)
 
 void OpaqueJSContext::MarkCollected(JSValueRef value)
 {
-    ASSERT(value->Context() == this);
+    ASSERTJSC(value->Context() == this);
     m_gc_lock.lock();
     m_collection.remove(value);
     m_gc_lock.unlock();
@@ -127,7 +127,7 @@ class GlobalContextGroup : public ContextGroup
         }
         virtual int release() {
             return --m_count;
-            ASSERT(m_count >= 0);
+            ASSERTJSC(m_count >= 0);
         }
 };
 
@@ -138,70 +138,60 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreate(JSClassRef globalObjectClass)
     return (JSGlobalContextRef)ctx;
 }
 
+static void setUpConsoleLog(JSGlobalContextRef ctx) {
+    // Apparently JavaScriptCore implements console.log out of the box.  V8 doesn't.
+    V8_ISOLATE_CTX(ctx->Context(), isolate, context)
+        Local<Object> global =
+            context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
+        Local<Object> console = Object::New(isolate);
+        Local<Object> Symbol =
+            context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject();
+        Local<Value> toStringTag = Symbol->Get(String::NewFromUtf8(isolate, "toStringTag"));
+        Local<Object> consolePrototype = Object::New(isolate);
+        consolePrototype->Set(context, toStringTag, String::NewFromUtf8(isolate, "Console"));
+        console->SetPrototype(context, consolePrototype);
+        global->DefineOwnProperty(context, String::NewFromUtf8(isolate, "console"), console,
+            v8::DontEnum);
+        Local<FunctionTemplate> logt = FunctionTemplate::New(isolate,
+            [](const FunctionCallbackInfo< Value > &info) {
+                Isolate::Scope isolate_scope_(info.GetIsolate());
+                HandleScope handle_scope_(info.GetIsolate());
+
+                String::Utf8Value str(info[0]->ToString(info.GetIsolate()));
+                __android_log_print(ANDROID_LOG_INFO, "[JSC] console.log", "%s", *str);
+            }
+        );
+        console->Set(context, String::NewFromUtf8(isolate, "log"),
+            logt->GetFunction(context).ToLocalChecked());
+    V8_UNLOCK()
+}
+
 JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef group,
     JSClassRef globalObjectClass)
 {
     JSGlobalContextRef ctx;
-    bool created = false;
 
     if (!group) {
         if (!globalContextGroup) {
             globalContextGroup = new GlobalContextGroup();
-            created = true;
         }
         group = globalContextGroup;
     }
+    const_cast<ContextGroup*>(group)->retain();
 
-    {
-        V8_ISOLATE((ContextGroup*)group,isolate)
-            if (globalObjectClass) {
-                Local<Object> data;
-                Local<ObjectTemplate> templ;
-                globalObjectClass->NewTemplate(group_->DefaultContext(), &data, &templ);
-                Local<Context> context = Context::New(isolate, nullptr, templ);
-                {
-                    Context::Scope context_scope_(context);
-                    Local<Object> global =
-                        context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
-                    ctx = new OpaqueJSContext(new JSContext((ContextGroup*)group, context));
-                    TempJSValue value(globalObjectClass->InitInstance(ctx, global, data, nullptr));
-                }
-            } else {
-                ctx = new OpaqueJSContext(
-                    new JSContext((ContextGroup*)group, Context::New(isolate)));
-            }
+    V8_ISOLATE((ContextGroup*)group, isolate)
 
-            // Apparently JavaScriptCore implements console.log out of the box.  V8 doesn't.
-            Local<Context> context = ctx->Context()->Value();
-            Context::Scope context_scope_(context);
-            Local<Object> global =
-                context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
-            Local<Object> console = Object::New(isolate);
-            Local<Object> Symbol =
-                context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject();
-            Local<Value> toStringTag = Symbol->Get(String::NewFromUtf8(isolate, "toStringTag"));
-            Local<Object> consolePrototype = Object::New(isolate);
-            consolePrototype->Set(context, toStringTag, String::NewFromUtf8(isolate, "Console"));
-            console->SetPrototype(context, consolePrototype);
-            global->DefineOwnProperty(context, String::NewFromUtf8(isolate, "console"), console,
-                v8::DontEnum);
-            Local<FunctionTemplate> logt = FunctionTemplate::New(isolate,
-                [](const FunctionCallbackInfo< Value > &info) {
-                    Isolate::Scope isolate_scope_(info.GetIsolate());
-                    HandleScope handle_scope_(info.GetIsolate());
+        if (globalObjectClass) {
+            ctx = globalObjectClass->NewContext(group);
+        } else {
+            ctx = new OpaqueJSContext(
+                new JSContext((ContextGroup*)group, Context::New(isolate)));
+        }
 
-                    String::Utf8Value str(info[0]->ToString(info.GetIsolate()));
-                    __android_log_print(ANDROID_LOG_INFO, "[JSC] console.log", "%s", *str);
-                }
-            );
-            console->Set(context, String::NewFromUtf8(isolate, "log"),
-                logt->GetFunction(context).ToLocalChecked());
+        setUpConsoleLog(ctx);
 
-        V8_UNLOCK()
-    }
-
-    if (created)
         ((ContextGroup*)group)->release();
+    V8_UNLOCK()
 
     return ctx;
 }

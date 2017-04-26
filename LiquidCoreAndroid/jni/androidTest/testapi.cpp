@@ -1002,6 +1002,9 @@ bool assertTrue(bool value, const char* message)
         else
             fprintf(stderr, "assertTrue failed.\n");
         failed = 1;
+    } else {
+        if (message)
+            fprintf(stderr, "PASS: '%s'\n", message);
     }
     return value;
 }

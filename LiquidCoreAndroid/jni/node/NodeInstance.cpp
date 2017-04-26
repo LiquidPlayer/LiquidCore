@@ -415,8 +415,6 @@ int NodeInstance::StartNodeInstance(void* arg) {
     java_node_context->retain();
     Local<Context> context = java_node_context->Value();
 
-    group->SetDefaultContext(context);
-
     Environment* env = CreateEnvironment(isolate, context, instance_data);
     array_buffer_allocator->set_env(env);
     Context::Scope context_scope(context);
@@ -547,7 +545,6 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
   CHECK_NE(isolate, nullptr);
 
-  group->Clean();
   int count = group->release();
 
   isolate->Dispose();

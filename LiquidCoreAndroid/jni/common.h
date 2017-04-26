@@ -123,7 +123,6 @@ public:
     ContextGroup();
     ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
 
-    virtual void Clean();
     virtual Isolate* isolate() {
         return m_isolate;
     }
@@ -143,10 +142,6 @@ public:
             m_lock.unlock();
         }
     }
-    virtual Local<Context> DefaultContext() {
-        return Local<Context>::New(isolate(), m_default_context);
-    }
-    virtual void SetDefaultContext(Local<Context> context);
 
     virtual void sync(std::function<void()> runnable);
     virtual void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
@@ -185,8 +180,6 @@ private:
         void *data;
     };
     std::list<struct GCCallback *> m_gc_callbacks;
-
-    Persistent<Context, CopyablePersistentTraits<Context>> m_default_context;
 
 public:
     uv_async_t *m_async_handle;
@@ -247,10 +240,10 @@ private:
             Context::Scope context_scope_(Ctx);
 
 #define V8_UNLOCK() \
+            group_->Unlock(); \
         }; \
         if (group_->Loop()) { group_->sync(runnable_); } \
-        else runnable_(); \
-        group_->Unlock();
+        else runnable_();
 
 template <typename T>
 class JSValue : public Retainer {

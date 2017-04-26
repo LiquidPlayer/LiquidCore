@@ -44,11 +44,9 @@
 #define V8_ISOLATE_CALLBACK(info,isolate,context,definition) \
     Isolate::Scope isolate_scope_(info.GetIsolate()); \
     HandleScope handle_scope_(info.GetIsolate()); \
-    Local<Object> obj_ = info.Data()->ToObject(); \
-    const JSClassDefinition *definition = \
-        (JSClassDefinition*) obj_->GetAlignedPointerFromInternalField(OBJECT_DATA_DEFINITION);\
-    if (nullptr == info.Data()->ToObject()->GetAlignedPointerFromInternalField(OBJECT_DATA_CONTEXT)) return; \
-    JSContextRef ctxRef_ = (JSContextRef)obj_->GetAlignedPointerFromInternalField(OBJECT_DATA_CONTEXT); \
+    const JSClassDefinition *definition = ObjectData::Get(info.Data())->Definition();\
+    if (nullptr == ObjectData::Get(info.Data())->Context()) return; \
+    JSContextRef ctxRef_ = ObjectData::Get(info.Data())->Context(); \
     V8_ISOLATE_CTX(ctxRef_->Context(),isolate,context)
 
 #define TO_REAL_GLOBAL(o) \
@@ -59,6 +57,79 @@
         o;
 
 #define CTX(ctx)     ((ctx)->Context())
+
+class ObjectData {
+    public:
+        static Local<Value> New(const JSClassDefinition *def = nullptr, JSContextRef ctx = nullptr,
+                               JSClassRef cls = nullptr) {
+
+            Isolate *isolate = Isolate::GetCurrent();
+
+            ObjectData *od = new ObjectData(def, ctx, cls);
+            char ptr[32];
+            sprintf(ptr, "%p", od);
+            Local<String> data =
+                String::NewFromUtf8(isolate, ptr, NewStringType::kNormal).ToLocalChecked();
+
+            UniquePersistent<Value> m_weak = UniquePersistent<Value>(isolate, data);
+            m_weak.SetWeak<ObjectData>(
+                od,
+                [](const WeakCallbackInfo<ObjectData>& info) {
+
+                delete info.GetParameter();
+            }, v8::WeakCallbackType::kParameter);
+
+            return data;
+        }
+        static ObjectData* Get(Local<Value> value) {
+            String::Utf8Value const str(value);
+            unsigned long n = strtoul(*str, NULL, 16);
+            return (ObjectData*) n;
+        }
+        void SetContext(JSContextRef ctx) {
+            m_context = ctx;
+        }
+        void SetName(Local<Value> name) {
+            String::Utf8Value const str(name);
+            m_name = (char *) malloc(strlen(*str) + 1);
+            strcpy(m_name, *str);
+        }
+        void SetFunc(Local<Object> func) {
+            Isolate *isolate = Isolate::GetCurrent();
+
+            m_func = Persistent<Object,CopyablePersistentTraits<Object>>(isolate, func);
+        }
+        const JSClassDefinition *Definition() { return m_definition; }
+        JSContextRef       Context() { return m_context; }
+        JSClassRef         Class() { return m_class; }
+        const char *       Name() { return m_name; }
+        Local<Object>      Func() { return Local<Object>::New(Isolate::GetCurrent(), m_func); }
+
+        virtual ~ObjectData() {
+            if (m_name) free(m_name);
+            m_name = nullptr;
+
+            if (m_class) {
+                m_class->release();
+            }
+
+            m_func.Reset();
+        }
+
+    private:
+        ObjectData(const JSClassDefinition *def, JSContextRef ctx, JSClassRef cls) :
+            m_definition(def), m_context(ctx), m_class(cls), m_name(nullptr) {
+
+            if (cls) cls->retain();
+        }
+
+        const JSClassDefinition*m_definition;
+        JSContextRef            m_context;
+        JSClassRef              m_class;
+        UniquePersistent<Value> m_weak;
+        char *                  m_name;
+        Persistent<Object, CopyablePersistentTraits<Object>> m_func;
+};
 
 OpaqueJSClass::OpaqueJSClass(const JSClassDefinition *definition)
 {
@@ -82,15 +153,14 @@ OpaqueJSClass::~OpaqueJSClass()
 void OpaqueJSClass::StaticFunctionCallHandler(const FunctionCallbackInfo< Value > &info)
 {
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
-        String::Utf8Value const
-            str(obj_->Get(context, String::NewFromUtf8(isolate, "name")).ToLocalChecked());
+        const char *str = ObjectData::Get(info.Data())->Name();
 
         JSValueRef arguments[info.Length()];
         for (int i=0; i<info.Length(); i++) {
             arguments[i] = OpaqueJSValue::New(ctxRef_, info[i]);
         }
-        TempJSValue function(ctxRef_, obj_->Get(context,
-            String::NewFromUtf8(isolate, "func")).ToLocalChecked());
+        TempJSValue function(ctxRef_, ObjectData::Get(info.Data())->Func());
+
         TempJSValue thisObject(ctxRef_, info.This());
 
         TempException exception(nullptr);
@@ -101,7 +171,7 @@ void OpaqueJSClass::StaticFunctionCallHandler(const FunctionCallbackInfo< Value 
                 definition->staticFunctions && definition->staticFunctions[i].name;
                 i++) {
 
-                if (!strcmp(definition->staticFunctions[i].name, *str) &&
+                if (!strcmp(definition->staticFunctions[i].name, str) &&
                     definition->staticFunctions[i].callAsFunction) {
 
                     value.Set(definition->staticFunctions[i].callAsFunction(
@@ -180,10 +250,9 @@ void OpaqueJSClass::HasInstanceFunctionCallHandler(const FunctionCallbackInfo< V
         TempJSValue value;
         TempJSValue possibleInstance(ctxRef_, info[0]);
 
-        if (obj_->InternalFieldCount() > FUNCTION_DATA_CLASS && info[0]->IsObject() &&
-            obj_->GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS)) {
+        if (ObjectData::Get(info.Data())->Class() && info[0]->IsObject()) {
 
-            JSClassRef ctor = (JSClassRef)obj_-> GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS);
+            JSClassRef ctor = ObjectData::Get(info.Data())->Class();
             if (info[0].As<Object>()->InternalFieldCount() > INSTANCE_OBJECT_CLASS) {
                 JSClassRef inst =
                     (JSClassRef) info[0].As<Object>()->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS);
@@ -409,26 +478,13 @@ void OpaqueJSClass::ProtoPropertyGetter(Local< String > property,
                 if (!strcmp(definition->staticFunctions[i].name, *str) &&
                     definition->staticFunctions[i].callAsFunction) {
 
-                    Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
-                    templ->SetInternalFieldCount(OBJECT_DATA_FIELDS);
-                    Local<Object> data = templ->NewInstance(context).ToLocalChecked();
-                    data->SetAlignedPointerInInternalField(OBJECT_DATA_DEFINITION,(void*)definition);
-                    data->SetAlignedPointerInInternalField(OBJECT_DATA_CONTEXT,(void*)ctxRef_);
-                    data->Set(context, String::NewFromUtf8(isolate, "name"), property);
-                    //context_->retain();
-                    UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, data);
-                    weak->SetWeak<UniquePersistent<Object>>(
-                        weak,
-                        [](const WeakCallbackInfo<UniquePersistent<Object>>& info) {
-
-                        info.GetParameter()->Reset();
-                        delete info.GetParameter();
-                    }, v8::WeakCallbackType::kInternalFields);
+                    Local<Value> data = ObjectData::New(definition, ctxRef_);
+                    ObjectData::Get(data)->SetName(property);
 
                     Local<FunctionTemplate> ftempl =
                         FunctionTemplate::New(isolate, StaticFunctionCallHandler, data);
                     Local<Function> func = ftempl->GetFunction();
-                    data->Set(context, String::NewFromUtf8(isolate, "func"), func);
+                    ObjectData::Get(data)->SetFunc(func);
                     value.Set(ctxRef_, func);
                 }
             }
@@ -734,8 +790,7 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
         for (int i=0; i<info.Length(); i++) {
             arguments[i] = OpaqueJSValue::New(ctxRef_, info[i]);
         }
-        TempJSValue function(ctxRef_, obj_->Get(context,
-            String::NewFromUtf8(isolate, "func")).ToLocalChecked());
+        TempJSValue function(ctxRef_, ObjectData::Get(info.Data())->Func());
         TempJSValue thisObject(ctxRef_, info.This());
 
         TempJSValue value;
@@ -752,11 +807,9 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
                     Local<String> error = String::NewFromUtf8(isolate, "Bad constructor");
                     exception.Set(ctxRef_, Exception::Error(error));
                 }
-            } else if (info.IsConstructCall() && obj_->InternalFieldCount() > FUNCTION_DATA_CLASS &&
-                obj_->GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS)) {
+            } else if (info.IsConstructCall() && ObjectData::Get(info.Data())->Class()) {
                 value.Set(
-                    JSObjectMake(ctxRef_, (JSClassRef)obj_->GetAlignedPointerFromInternalField(FUNCTION_DATA_CLASS),
-                        nullptr));
+                    JSObjectMake(ctxRef_, ObjectData::Get(info.Data())->Class(), nullptr));
             } else if (!info.IsConstructCall() && definition->callAsFunction) {
                 value.Set(definition->callAsFunction(
                     ctxRef_,
@@ -832,30 +885,60 @@ bool OpaqueJSClass::IsConstructor()
     return false;
 }
 
-void OpaqueJSClass::NewTemplate(Local<Context> context, Local<Object> *data,
+JSGlobalContextRef OpaqueJSClass::NewContext(JSContextGroupRef group) {
+    JSGlobalContextRef ctx = nullptr;
+
+    V8_ISOLATE((ContextGroup*)group, isolate)
+        Local<Value> data = ObjectData::New(m_definition);
+
+        Local<ObjectTemplate> object = ObjectTemplate::New(isolate);
+
+        object->SetNamedPropertyHandler(
+            NamedPropertyGetter,
+            NamedPropertySetter,
+            NamedPropertyQuerier,
+            NamedPropertyDeleter,
+            NamedPropertyEnumerator,
+            data);
+
+        object->SetIndexedPropertyHandler(
+            IndexedPropertyGetter,
+            IndexedPropertySetter,
+            IndexedPropertyQuerier,
+            IndexedPropertyDeleter,
+            IndexedPropertyEnumerator,
+            data);
+
+        if (IsFunction() || IsConstructor()) {
+            object->SetCallAsFunctionHandler(CallAsFunction, data);
+        }
+
+        object->SetInternalFieldCount(INSTANCE_OBJECT_FIELDS);
+
+        Local<Context> context = Context::New(isolate, nullptr, object);
+        {
+            Context::Scope context_scope_(context);
+            Local<Object> global =
+                context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
+            ctx = new OpaqueJSContext(new JSContext((ContextGroup*)group, context));
+            TempJSValue value(InitInstance(ctx, global, data, nullptr));
+        }
+    V8_UNLOCK()
+
+    return ctx;
+}
+
+void OpaqueJSClass::NewTemplate(Local<Context> context, Local<Value> *data,
     Local<ObjectTemplate> *object)
 {
-    Isolate *isolate = Isolate::GetCurrent();
+    Isolate *isolate = context->GetIsolate();
 
     Context::Scope context_scope_(context);
 
     *object = ObjectTemplate::New(isolate);
 
     // Create data object
-    Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
-    templ->SetInternalFieldCount(OBJECT_DATA_FIELDS);
-    *data = templ->NewInstance(context).ToLocalChecked();
-    (*data)->SetAlignedPointerInInternalField(OBJECT_DATA_DEFINITION,(void*)m_definition);
-    (*data)->SetAlignedPointerInInternalField(OBJECT_DATA_CONTEXT,nullptr);
-
-    UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, *data);
-    weak->SetWeak<UniquePersistent<Object>>(
-        weak,
-        [](const WeakCallbackInfo<UniquePersistent<Object>>& info) {
-
-        info.GetParameter()->Reset();
-        delete info.GetParameter();
-    }, v8::WeakCallbackType::kInternalFields);
+    *data = ObjectData::New(m_definition);
 
     (*object)->SetNamedPropertyHandler(
         NamedPropertyGetter,
@@ -878,20 +961,18 @@ void OpaqueJSClass::NewTemplate(Local<Context> context, Local<Object> *data,
     }
 
     (*object)->SetInternalFieldCount(INSTANCE_OBJECT_FIELDS);
-
-//    return object;
 }
 
 JSObjectRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance,
-    Local<Object> data, void *privateData)
+    Local<Value> data, void *privateData)
 {
     JSObjectRef retObj;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        data->SetAlignedPointerInInternalField(OBJECT_DATA_CONTEXT,(void*)ctx);
+        ObjectData::Get(data)->SetContext(ctx);
 
         if (IsFunction() || IsConstructor()) {
-            data->Set(CTX(ctx)->Value(), String::NewFromUtf8(isolate, "func"), instance);
+            ObjectData::Get(data)->SetFunc(instance);
         }
         if (IsFunction()) {
             retObj = OpaqueJSValue::New(ctx, instance.As<Function>(), m_definition);
@@ -1022,9 +1103,9 @@ JS_EXPORT JSObjectRef JSObjectMake(JSContextRef ctx, JSClassRef jsClass, void* d
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
         if (jsClass) {
-            Local<Object> payload;
+            Local<Value> payload;
             Local<ObjectTemplate> templ;
-            jsClass->NewTemplate(context,&payload,&templ);
+            jsClass->NewTemplate(context, &payload, &templ);
             Local<Object> instance = templ->NewInstance(context).ToLocalChecked();
             value = jsClass->InitInstance(ctx, instance, payload, data);
         } else {
@@ -1040,23 +1121,7 @@ static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefi
 {
     JSObjectRef obj;
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        Local<ObjectTemplate> templ = ObjectTemplate::New(isolate);
-        templ->SetInternalFieldCount(FUNCTION_DATA_FIELDS);
-        Local<Object> data = templ->NewInstance(context).ToLocalChecked();
-        data->SetAlignedPointerInInternalField(OBJECT_DATA_DEFINITION,definition);
-        data->SetAlignedPointerInInternalField(OBJECT_DATA_CONTEXT,(void*)ctx);
-        data->SetAlignedPointerInInternalField(FUNCTION_DATA_CLASS,(void*)jsClass);
-        UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, data);
-        weak->SetWeak<UniquePersistent<Object>>(
-            weak,
-            [](const WeakCallbackInfo<UniquePersistent<Object>>& info) {
-
-            JSClassDefinition *definition =
-                reinterpret_cast<JSClassDefinition*>(info.GetInternalField(OBJECT_DATA_DEFINITION));
-            delete definition;
-            info.GetParameter()->Reset();
-            delete info.GetParameter();
-        }, v8::WeakCallbackType::kInternalFields);
+        Local<Value> data = ObjectData::New(definition, ctx, jsClass);
 
         Local<Object> func;
 
@@ -1086,7 +1151,7 @@ static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefi
             func->SetPrototype(context, prototype);
         }
 
-        data->Set(context, String::NewFromUtf8(isolate, "func"), func);
+        ObjectData::Get(data)->SetFunc(func);
 
         obj = OpaqueJSValue::New(ctx, func);
     V8_UNLOCK()

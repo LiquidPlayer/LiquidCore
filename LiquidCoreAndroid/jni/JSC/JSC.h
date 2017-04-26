@@ -40,14 +40,6 @@
 
 /* Reserve position 0 -- node uses it for some objects */
 
-#define OBJECT_DATA_RESERVED     (0)
-#define OBJECT_DATA_DEFINITION   (1)
-#define OBJECT_DATA_CONTEXT      (2)
-#define OBJECT_DATA_FIELDS       (3)
-
-#define FUNCTION_DATA_CLASS      (OBJECT_DATA_FIELDS)
-#define FUNCTION_DATA_FIELDS     (OBJECT_DATA_FIELDS + 1)
-
 #define INSTANCE_OBJECT_RESERVED (0)
 #define INSTANCE_OBJECT_CLASS    (1)
 #define INSTANCE_OBJECT_JSOBJECT (2)
@@ -110,10 +102,11 @@ class OpaqueJSClass : public Retainer {
         virtual ~OpaqueJSClass();
         virtual const JSClassDefinition * Definition() { return m_definition; }
 
-        virtual void NewTemplate(Local<Context> context, Local<Object> *data,
+        virtual void NewTemplate(Local<Context> context, Local<Value> *data,
             Local<ObjectTemplate> *templ);
+        virtual JSGlobalContextRef NewContext(JSContextGroupRef group);
         virtual JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance,
-            Local<Object> data, void *privateData);
+            Local<Value> data, void *privateData);
 
         static void CallAsFunction(const FunctionCallbackInfo< Value > &);
         static void HasInstanceFunctionCallHandler(const FunctionCallbackInfo< Value > &);
@@ -178,7 +171,7 @@ class OpaqueJSValue {
         }
         static OpaqueJSValue* New(JSContextRef context, const char *s)
         {
-            ASSERT(s);
+            ASSERTJSC(s);
             Local<String> local = String::NewFromUtf8(context->Context()->isolate(),s);
             return new OpaqueJSValue(context, local);
         }
@@ -316,19 +309,19 @@ class TempJSValue {
             m_value = nullptr;
         }
         void Set(JSContextRef context, Local<Value> v) {
-            ASSERT(m_value==nullptr)
+            ASSERTJSC(m_value==nullptr)
             m_value = OpaqueJSValue::New(context,v);
             const_cast<OpaqueJSValue *>(m_value)->Retain();
             m_didSet = true;
         }
         void Set(JSContextRef context, const char *s) {
-            ASSERT(m_value==nullptr)
+            ASSERTJSC(m_value==nullptr)
             m_value = OpaqueJSValue::New(context,s);
             const_cast<OpaqueJSValue *>(m_value)->Retain();
             m_didSet = true;
         }
         void Set(JSValueRef v) {
-            ASSERT(m_value==nullptr)
+            ASSERTJSC(m_value==nullptr)
             m_value = v;
             if (v) {
                 const_cast<OpaqueJSValue *>(m_value)->Retain();
@@ -364,7 +357,7 @@ class TempException : public TempJSValue {
             m_value = nullptr;
         }
         void Reset() {
-            ASSERT(false);
+            ASSERTJSC(false);
         }
         JSValueRef* operator&() { return &m_value; }
 
