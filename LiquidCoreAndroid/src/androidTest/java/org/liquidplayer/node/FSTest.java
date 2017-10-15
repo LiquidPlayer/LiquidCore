@@ -289,19 +289,27 @@ public class FSTest {
     public void testGlobalUninstall() throws Exception {
         final String script = "" +
                 "var fs = require('fs');" +
-                "process.chdir('public');" +
-                "fs.writeFile('data/test.txt', 'Hello, World!', function(err) {" +
-                "   if(err) {" +
-                "       return console.log(err);" +
-                "   }" +
-                "   console.log('/home/public/data/test.txt was saved!');" +
-                "});" +
-                "fs.writeFile('media/Downloads/test2.txt', 'Hello, World!', function(err) {" +
-                "   if(err) {" +
-                "       return console.log(err);" +
-                "   }" +
-                "   console.log('/home/public/media/Downloads/test2.txt was saved!');" +
-                "});" +
+                "var external = true;" +
+                "try {" +
+                "   process.chdir('public');" +
+                "} catch (e) {" +
+                "   console.log('no external storage');" +
+                "   external = false;" +
+                "}" +
+                "if (external) {" +
+                "   fs.writeFile('data/test.txt', 'Hello, World!', function(err) {" +
+                "      if(err) {" +
+                "          return console.log(err);" +
+                "      }" +
+                "      console.log('/home/public/data/test.txt was saved!');" +
+                "   });" +
+                "   fs.writeFile('media/Downloads/test2.txt', 'Hello, World!', function(err) {" +
+                "      if(err) {" +
+                "         return console.log(err);" +
+                "      }" +
+                "      console.log('/home/public/media/Downloads/test2.txt was saved!');" +
+                "   });" +
+                "}" +
                 "";
         new Script(script, new OnDone() {
             @Override

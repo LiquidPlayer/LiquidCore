@@ -144,7 +144,7 @@ public class Process {
             listeners.add(listener);
         }
         if (isActive()) {
-            jscontext.get().async(new Runnable() {
+            jscontext.get().sync(new Runnable() {
                 @Override
                 public void run() {
                     if (isActive()) {
@@ -183,7 +183,7 @@ public class Process {
      */
     public void exit(final int exitc) {
         if (isActive()) {
-            jscontext.get().async(new Runnable() {
+            jscontext.get().sync(new Runnable() {
                 @Override
                 public void run() {
                     if (isActive()) {
@@ -395,8 +395,8 @@ public class Process {
             count++;
         }
 
-        public void async(Runnable runnable) {
-            super.async(runnable);
+        public void sync(Runnable runnable) {
+            super.sync(runnable);
         }
 
         void letDie() {

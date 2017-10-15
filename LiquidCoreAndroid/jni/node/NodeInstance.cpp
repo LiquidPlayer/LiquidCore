@@ -348,7 +348,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
   params.array_buffer_allocator = array_buffer_allocator;
   Isolate* isolate = Isolate::New(params);
   int exit_code = 1;
-  ContextGroup *group = nullptr;
+  OpaqueJSContextGroup *group = nullptr;
 
   auto notify_start = [&] (JSContext *java_node_context, JSContextRef ctxRef) {
       JNIEnv *jenv;
@@ -376,6 +376,9 @@ int NodeInstance::StartNodeInstance(void* arg) {
       } while (true);
       jenv->DeleteLocalRef(cls);
 
+      group->retain();
+      // FIXME: We should also retain context here for consistency and have Java release
+
       jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context),
         reinterpret_cast<jlong>(group), reinterpret_cast<jlong>(ctxRef));
 
@@ -396,7 +399,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
     Isolate::Scope isolate_scope(isolate);
     HandleScope handle_scope(isolate);
 
-    group = new ContextGroup(isolate, instance_data->event_loop());
+    group = new OpaqueJSContextGroup(isolate, instance_data->event_loop());
 
     JSGlobalContextRef ctxRef = nullptr;
     JSClassRef globalClass = nullptr;
@@ -409,7 +412,6 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
     JSClassRelease(globalClass);
 
-    //Local<Context> context = Context::New(isolate);
     JSContext *java_node_context;
     java_node_context = const_cast<JSContext*>(ctxRef->Context());
     java_node_context->retain();
@@ -469,20 +471,8 @@ int NodeInstance::StartNodeInstance(void* arg) {
     {
       SealHandleScope seal(isolate);
 
-/*
-      // call back Java via JNI and pass on the context
-      {
-        ContextGroup::Mutex()->lock();
-        Isolate::Scope isolate_scope_(isolate);
-        HandleScope handle_scope_(isolate);
-
-//        group = new ContextGroup(isolate, env->event_loop());
-//        java_node_context = new JSContext(group, context);
-        ContextGroup::Mutex()->unlock();
-      }
-*/
       if (m_jvm) {
-        java_node_context->retain();
+        //java_node_context->retain();
         notify_start(java_node_context, ctxRef);
       }
 
@@ -519,7 +509,9 @@ int NodeInstance::StartNodeInstance(void* arg) {
       JSGlobalContextRelease(ctxRef);
       java_node_context->SetDefunct();
       int count = java_node_context->release();
-      ASSERT_EQ(count,0);
+      if (count != 0) {
+        __android_log_assert("FAIL", "ASSERT FAILED", "context count = %d", count);
+      }
 
       WaitForInspectorDisconnect(env);
 #if defined(LEAK_SANITIZER)
@@ -545,7 +537,13 @@ int NodeInstance::StartNodeInstance(void* arg) {
 
   CHECK_NE(isolate, nullptr);
 
+  group->retain();
+  JSContextGroupRelease(group);
+
   int count = group->release();
+  if (count != 0) {
+    __android_log_assert("FAIL", "ASSERT FAILED", "group count = %d", count);
+  }
 
   isolate->Dispose();
   isolate = nullptr;

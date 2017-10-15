@@ -62,7 +62,8 @@ public class JSContext extends JSObject {
     }
 
     protected void sync(final Runnable runnable) {
-        if (!isThreadSpecific || (android.os.Process.myTid() == mContextThreadTid)) {
+        if (!contextGroup.hasDedicatedThread() ||
+                (android.os.Process.myTid() == mContextThreadTid)) {
             runnable.run();
         } else {
             final Semaphore sempahore = new Semaphore(0);
@@ -75,13 +76,6 @@ public class JSContext extends JSObject {
             };
             runInContextGroup(contextGroup.groupRef(),syncRunner);
             sempahore.acquireUninterruptibly();
-        }
-    }
-    protected void async(final Runnable runnable) {
-        if (!isThreadSpecific) {
-            runnable.run();
-        } else {
-            runInContextGroup(contextGroup.groupRef(), runnable);
         }
     }
 
@@ -109,12 +103,10 @@ public class JSContext extends JSObject {
 
     protected Long ctx;
     private IJSExceptionHandler exceptionHandler;
-    private boolean isThreadSpecific = false;
 
     protected JSContext(long ctxHandle, JSContextGroup group) {
         context = this;
         contextGroup = group;
-        isThreadSpecific = true;
         ctx = ctxHandle;
         valueRef = getGlobalObject(ctx);
         addJSExports();
@@ -173,13 +165,9 @@ public class JSContext extends JSObject {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        if (!isDefunct) {
-            sync(new Runnable() {
-                  @Override
-                  public void run() {
-                      release(ctx);
-                  }
-            });
+        /* Let the dedicated thread handle object destruction. */
+        if (!contextGroup.hasDedicatedThread()) {
+            release(ctx);
         }
     }
 

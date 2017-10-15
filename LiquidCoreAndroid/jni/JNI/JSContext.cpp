@@ -99,6 +99,11 @@ NATIVE(JSContextGroup,void,release) (PARAMS,jlong group) {
     isolate->release();
 }
 
+NATIVE(JSContextGroup,jboolean,isManaged) (PARAMS, jlong ctxGroup) {
+    ContextGroup *group = reinterpret_cast<ContextGroup*>(ctxGroup);
+    return group && group->Loop();
+}
+
 NATIVE(JSContext,jlong,create) (PARAMS) {
     long out;
     ContextGroup *group = new ContextGroup();

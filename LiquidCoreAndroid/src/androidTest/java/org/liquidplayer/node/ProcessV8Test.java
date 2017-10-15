@@ -70,6 +70,7 @@ public class ProcessV8Test {
     private JSContext context = null;
     private Process process = null;
     private Semaphore processCompleted;
+    private Boolean released = false;
 
     @Before
     public void setUp() throws Exception {
@@ -84,20 +85,25 @@ public class ProcessV8Test {
                 process = proc;
                 // Don't let the process die before we run the test
                 process.keepAlive();
+                released = true;
                 processStarted.release();
             }
 
             @Override
             public void onProcessExit(Process process, int exitCode) {
+                assertTrue(released);
                 processCompleted.release();
             }
 
             @Override
-            public void onProcessAboutToExit(Process process, int exitCode) {}
+            public void onProcessAboutToExit(Process process, int exitCode) {
+                assertTrue(released);
+            }
 
             @Override
             public void onProcessFailed(Process process, Exception error) {
-
+                assertTrue(released);
+                assertTrue(false);
             }
         });
 

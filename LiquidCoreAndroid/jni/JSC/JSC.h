@@ -45,7 +45,6 @@
 #define INSTANCE_OBJECT_JSOBJECT (2)
 #define INSTANCE_OBJECT_FIELDS   (3)
 
-#define OpaqueJSContextGroup            ContextGroup
 #define OpaqueJSPropertyNameAccumulator std::list<JSStringRef>
 #define OpaqueJSPropertyNameArray       OpaqueJSValue
 
@@ -56,6 +55,26 @@
 #ifndef ASSERT
 #define ASSERT ASSERTJSC
 #endif
+
+class OpaqueJSContext;
+
+class OpaqueJSContextGroup : public ContextGroup {
+    public:
+        OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop);
+        OpaqueJSContextGroup();
+        virtual ~OpaqueJSContextGroup();
+
+        void AssociateContext(const OpaqueJSContext *ctx);
+        void DisassociateContext(const OpaqueJSContext *ctx);
+
+        void Retain();
+        void Release();
+
+    private:
+        int m_jsc_count;
+        std::list<const OpaqueJSContext *> m_associatedContexts;
+        std::mutex m_mutex;
+};
 
 class OpaqueJSContext : public Retainer {
     public:

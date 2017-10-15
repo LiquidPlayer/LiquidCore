@@ -171,15 +171,11 @@ public class JSValue {
         }
     }
 
-    /*
     @Override
     protected void finalize() throws Throwable {
-        if (!context.isDefunct) {
-            //unprotect();
-        }
         super.finalize();
+        //unprotect();
     }
-    */
 
     /* Testers */
     /**
@@ -588,9 +584,10 @@ public class JSValue {
         return valueRef;
     }
 
+    /*
     protected void unprotect() {
         if (isProtected && !context.isDefunct) {
-            context.async(new Runnable() {
+            context.sync(new Runnable() {
                 @Override
                 public void run() {
                     // Test once again that the context hasn't gone defunct.  There is possibly a
@@ -605,6 +602,7 @@ public class JSValue {
         isProtected = false;
     }
     private boolean isProtected = true;
+    */
 
     /* Native functions */
     protected native boolean isUndefined(long ctxRef, long valueRef);

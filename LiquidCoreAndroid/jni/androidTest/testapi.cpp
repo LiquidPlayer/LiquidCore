@@ -1253,9 +1253,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
     } else
         printf("PASS: returned null when accessing character pointer of a null String.\n");
 
-    /*
-    JSStringRef emptyString = JSStringCreateWithCFString(CFSTR(""));
-    */
     JSStringRef emptyString = JSStringCreateWithUTF8CString("");
     characters = JSStringGetCharactersPtr(emptyString);
     if (!characters) {
@@ -1315,27 +1312,12 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
         printf("PASS: Set private property.\n");
     aStackRef = 0;
     exception = NULL;
-    /*
-    if (JSObjectGetProperty(context, myObject, privatePropertyName, NULL) != aHeapRef) {
-        printf("FAIL: Could not retrieve private property.\n");
-        failed = 1;
-    } else
-        printf("PASS: Retrieved private property.\n");
-    */
     JSValueRef RetrievedObject = JSObjectGetProperty(context, myObject, privatePropertyName, NULL);
     if (!JSValueIsStrictEqual(context, RetrievedObject, aHeapRef)) {
         printf("FAIL: Could not retrieve private property.\n");
         failed = 1;
     } else
         printf("PASS: Retrieved private property.\n");
-
-    /*
-    if (JSObjectGetProperty(context, aHeapRef, privatePropertyName, NULL)) {
-        printf("FAIL: JSObjectGetPrivateProperty should return NULL when called on a non-API object.\n");
-        failed = 1;
-    } else
-        printf("PASS: JSObjectGetPrivateProperty return NULL.\n");
-    */
 
     JSGarbageCollect(context);
 
@@ -1826,7 +1808,6 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
 
     // Test for an infinite prototype chain that used to be created. This test
     // passes if the call to JSObjectHasProperty() does not hang.
-
     JSClassDefinition prototypeLoopClassDefinition = kJSClassDefinitionEmpty;
     prototypeLoopClassDefinition.staticFunctions = globalObject_staticFunctions;
     JSClassRef prototypeLoopClass = JSClassCreate(&prototypeLoopClassDefinition);

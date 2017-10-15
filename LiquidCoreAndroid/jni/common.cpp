@@ -192,7 +192,7 @@ ContextGroup::ContextGroup() {
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
-    //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
@@ -204,7 +204,7 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop) {
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
-    //m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
 void ContextGroup::callback(uv_async_t* handle) {
@@ -288,6 +288,7 @@ void ContextGroup::UnregisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void
         ++it;
         if (item->cb == cb && item->data == data) {
             m_gc_callbacks.remove(item);
+            delete item;
         }
     }
 }
@@ -303,35 +304,11 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags) {
 }
 
 ContextGroup::~ContextGroup() {
-    //Not really necessary at this point
-    //m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
+    m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
 
     s_isolate_map.erase(m_isolate);
     if (m_manage_isolate) {
-        auto dispose = [](Isolate *isolate) {
-            // This is a hack to deal with the following failure message from V8
-            // when executed during the Java finalizer (sometimes):
-            // #
-            // # Fatal error in v8::Isolate::Dispose()
-            // # Disposing the isolate that is entered by a thread.
-            // #
-            // The only way to make this not occur is to (1) make sure we have entered
-            // an isolate (in this case, we are creating a temp one) and (2)
-            // execute outside of the finalizer thread.  I get why (1) is necessary
-            // (see code for v8::Isolate::TearDown() in deps/v8/src/isolate.cc), but
-            // I am confused as to why (2) is required.
-            Isolate::CreateParams params;
-            params.array_buffer_allocator = &s_allocator;
-            Isolate *temp_isolate = Isolate::New(params);
-            {
-                temp_isolate->Enter();
-                isolate->Dispose();
-                temp_isolate->Exit();
-            }
-            temp_isolate->Dispose();
-            dispose_v8();
-        };
-        std::thread(dispose, m_isolate).detach();
+        m_isolate->Dispose();
     } else {
         dispose_v8();
     }

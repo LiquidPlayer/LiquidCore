@@ -53,6 +53,7 @@ public class JSContextGroup {
      */
     public JSContextGroup() {
         group = create();
+        hasDedicatedThread = false;
     }
     /**
      * Wraps an existing context group
@@ -62,12 +63,34 @@ public class JSContextGroup {
     public JSContextGroup(Long groupRef)
     {
         group = groupRef;
+        hasDedicatedThread = isManaged(group);
+        /* If the entire JSContextGroup is running in a dedicated thread, then let
+         * that thread handle lifecycle.  Release here instead of in finalizer, which may
+         * only get called after the thread is killed or possibly deadlock.
+         */
+        if (hasDedicatedThread) {
+            release(group);
+        }
     }
 
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        release(group);
+        /* If we are not managed by a single thread, we can release this group during
+         * finalization.  It is unsafe to do so if running in a managed thread.  We will let
+         * the native code handle that.
+         */
+        if (!hasDedicatedThread) {
+            release(group);
+        }
+    }
+
+    /**
+     * Determines if the ContextGroup is being managed by a single thread (i.e. Node)
+     * @return true if managed by a single thread, false otherwise
+     */
+    boolean hasDedicatedThread() {
+        return hasDedicatedThread;
     }
 
     /**
@@ -96,4 +119,7 @@ public class JSContextGroup {
 
     protected native long create();
     protected native static void release(long group);
+    protected native boolean isManaged(long group);
+
+    private boolean hasDedicatedThread = false;
 }

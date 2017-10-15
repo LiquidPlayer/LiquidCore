@@ -69,9 +69,14 @@ public:
     }
 
     virtual int release() {
-        if (--m_count == 0)
+        int count = --m_count;
+        if (count == 0) {
+            m_count = -1;
             delete this;
-        return m_count;
+        } else if (count < 0) {
+            __android_log_assert("FAIL", "ASSERT FAILED", "Attempting to release dead object");
+        }
+        return count;
     }
 
 protected:

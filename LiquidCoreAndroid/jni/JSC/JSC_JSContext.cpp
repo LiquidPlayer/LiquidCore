@@ -32,13 +32,65 @@
 */
 #include "JSC.h"
 
+OpaqueJSContextGroup::OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop) :
+    ContextGroup(isolate, event_loop), m_jsc_count(1)
+{
+
+}
+
+OpaqueJSContextGroup::OpaqueJSContextGroup() : ContextGroup(), m_jsc_count(1)
+{
+
+}
+
+OpaqueJSContextGroup::~OpaqueJSContextGroup()
+{
+}
+
+void OpaqueJSContextGroup::AssociateContext(const OpaqueJSContext *ctx)
+{
+    m_mutex.lock();
+    m_associatedContexts.push_back(ctx);
+    m_mutex.unlock();
+}
+
+void OpaqueJSContextGroup::DisassociateContext(const OpaqueJSContext *ctx)
+{
+    m_mutex.lock();
+    m_associatedContexts.remove(ctx);
+    m_mutex.unlock();
+}
+
+void OpaqueJSContextGroup::Retain()
+{
+    m_jsc_count ++;
+}
+
+void OpaqueJSContextGroup::Release()
+{
+    if (--m_jsc_count == 0) {
+        m_mutex.lock();
+        while (!m_associatedContexts.empty()) {
+            JSGlobalContextRef ctx = const_cast<JSGlobalContextRef>(m_associatedContexts.front());
+            m_mutex.unlock();
+            JSGlobalContextRelease(ctx);
+            m_mutex.lock();
+        }
+        m_mutex.unlock();
+        release();
+    }
+}
+
 OpaqueJSContext::OpaqueJSContext(JSContext *ctx) : m_context(ctx)
 {
     ctx->Group()->RegisterGCCallback(StaticGCCallback, this);
+    static_cast<OpaqueJSContextGroup *>(ctx->Group())->AssociateContext(this);
 }
 
 OpaqueJSContext::~OpaqueJSContext()
 {
+    static_cast<OpaqueJSContextGroup *>(m_context->Group())->DisassociateContext(this);
+
     V8_ISOLATE(m_context->Group(), isolate);
         m_context->Group()->UnregisterGCCallback(StaticGCCallback, this);
 
@@ -101,27 +153,27 @@ void OpaqueJSContext::ForceGC()
 
 JS_EXPORT JSContextGroupRef JSContextGroupCreate()
 {
-    const ContextGroup *group = new ContextGroup();
+    JSContextGroupRef group = new OpaqueJSContextGroup();
     return group;
 }
 
 JS_EXPORT JSContextGroupRef JSContextGroupRetain(JSContextGroupRef group)
 {
-    const_cast<ContextGroup*>(group)->retain();
+    const_cast<OpaqueJSContextGroup*>(group)->Retain();
     return group;
 }
 
 JS_EXPORT void JSContextGroupRelease(JSContextGroupRef group)
 {
-    ((ContextGroup*)group)->release();
+    const_cast<OpaqueJSContextGroup*>(group)->Release();
 }
 
 static JSContextGroupRef globalContextGroup = nullptr;
 
-class GlobalContextGroup : public ContextGroup
+class GlobalContextGroup : public OpaqueJSContextGroup
 {
     public:
-        GlobalContextGroup() : ContextGroup() {}
+        GlobalContextGroup() : OpaqueJSContextGroup() {}
         virtual ~GlobalContextGroup() {
             globalContextGroup = nullptr;
         }
@@ -177,7 +229,7 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
         }
         group = globalContextGroup;
     }
-    const_cast<ContextGroup*>(group)->retain();
+    const_cast<OpaqueJSContextGroup*>(group)->retain();
 
     V8_ISOLATE((ContextGroup*)group, isolate)
 
@@ -204,7 +256,7 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextRetain(JSGlobalContextRef ctx)
 
 JS_EXPORT void JSGlobalContextRelease(JSGlobalContextRef ctx)
 {
-    ctx->release();
+    int count = ctx->release();
 }
 
 JS_EXPORT JSObjectRef JSContextGetGlobalObject(JSContextRef ctx)
@@ -223,7 +275,7 @@ JS_EXPORT JSObjectRef JSContextGetGlobalObject(JSContextRef ctx)
 
 JS_EXPORT JSContextGroupRef JSContextGetGroup(JSContextRef ctx)
 {
-    return ctx->Context()->Group();
+    return static_cast<JSContextGroupRef>(ctx->Context()->Group());
 }
 
 JS_EXPORT JSGlobalContextRef JSContextGetGlobalContext(JSContextRef ctx)

@@ -451,7 +451,7 @@ class FileSystem extends JSObject {
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        cleanUp();
+        //cleanUp();
     }
 
     void cleanUp() {
