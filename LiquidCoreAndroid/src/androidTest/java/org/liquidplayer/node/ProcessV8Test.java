@@ -379,6 +379,11 @@ public class ProcessV8Test {
         new JSObjectTest().testJSObjectTesters(context);
     }
 
+    @org.junit.Test
+    public void issue31Test() throws Exception {
+        new JSObjectTest().issue31Test(context);
+    }
+
     /* JSONTest */
 
     @Test

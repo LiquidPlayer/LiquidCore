@@ -336,6 +336,30 @@ public class JSObjectTest {
         assertTrue(context.property("constr").toObject().isConstructor());
     }
 
+    class Test extends JSObject {
+        @jsexport Property<JSValue> x;
+
+        Test(JSContext context) {
+            super(context);
+            x.set(new JSValue(getContext(), "123"));
+        }
+    }
+
+    @org.junit.Test
+    public void issue31Test() throws Exception {
+        JSContext context = new JSContext();
+        issue31Test(context);
+    }
+    public void issue31Test(JSContext context) throws Exception {
+        Test test = new Test(context);
+        assertEquals("123", test.x.get().toString());
+        context.property("test", test);
+        assertEquals("123", context.evaluateScript("test.x").toString());
+        context.evaluateScript("test.x = 'test'");
+        assertEquals("test", test.x.get().toString());
+        assertEquals("test", context.evaluateScript("test.x").toString());
+    }
+
     @org.junit.After
     public void shutDown() {
         Runtime.getRuntime().gc();
