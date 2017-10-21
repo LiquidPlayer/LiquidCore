@@ -536,6 +536,49 @@ public class JSFunctionTest {
         }
     }
 
+    public static class PropertyTest extends JSFunction
+    {
+        @jsexport(type = Integer.class)
+        public Property<Integer> testField;
+
+        public PropertyTest()
+        {
+        }
+
+        public PropertyTest(JSContext ctx)
+        {
+            super(ctx, "ctor", PropertyTest.class);
+        }
+
+        public void ctor(String string)
+        {
+            getThis().property("some_string", string);
+            PropertyTest thiz = (PropertyTest) getThis();
+        }
+
+        @jsexport
+        public int log()
+        {
+            return testField.get();
+        }
+    }
+
+    @org.junit.Test
+    public void issue15Test() throws Exception {
+        JSContext context = new JSContext();
+        issue15Test(context);
+    }
+
+    public void issue15Test(JSContext context) throws Exception {
+        PropertyTest test = new PropertyTest(context);
+        context.property("test", test);
+        context.evaluateScript("var instance = new test('geronimo')");
+        assertEquals("geronimo", context.evaluateScript("instance.some_string").toString());
+        context.evaluateScript("instance.testField = 10");
+        assertEquals(10, context.evaluateScript("instance.testField").toNumber().intValue());
+        assertEquals(10, context.evaluateScript("instance.log()").toNumber().intValue());
+    }
+
     @org.junit.After
     public void shutDown() {
         Runtime.getRuntime().gc();

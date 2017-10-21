@@ -330,7 +330,10 @@ NATIVE(JSObject,jobject,setProperty) (PARAMS, jlong ctx, jlong object, jstring p
         TryCatch trycatch(isolate);
         JSValue<Value> *exception = nullptr;
 
-        Maybe<bool> defined = (attributes!=0) ?
+        Maybe<bool> has = o->Has(context, String::NewFromUtf8(isolate, c_string));
+        bool exists = has.FromMaybe(false);
+
+        Maybe<bool> defined = (!exists && attributes) ?
             o->DefineOwnProperty(
                 context,
                 String::NewFromUtf8(isolate, c_string),

@@ -107,10 +107,11 @@ public class JSObject extends JSValue {
                 context.throwJSException(new JSException(context,"object has no defined type"));
                 return null;
             }
-            if (name != null)
+            if (name != null) {
                 return (T) property(name).toJavaObject(pT);
-            else
+            } else {
                 return this.temp;
+            }
         }
 
         private String name=null;

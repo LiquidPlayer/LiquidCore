@@ -566,9 +566,10 @@ public class JSFunction extends JSObject {
                 JSValue proto = prototype();
                 try {
                     Constructor<?> defaultConstructor = subclass.getConstructor();
-                    JSObject thiz = (JSObject) defaultConstructor.newInstance();
+                    final JSObject thiz = (JSObject) defaultConstructor.newInstance();
                     thiz.context = context;
                     thiz.valueRef = thisObj;
+                    thiz.addJSExports();
                     function(thiz,args);
                     context.persistObject(thiz);
                     context.zombies.add(thiz);

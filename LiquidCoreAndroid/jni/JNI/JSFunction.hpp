@@ -167,28 +167,26 @@ class JSFunction : public JSValue<T> {
                     env->CallLongMethod(m_JavaThis, mid, objThis, argsArr, exceptionRefRef);
             }
 
-            {
-                V8_ISOLATE(grp, isolate)
-                    Local<Context> context = ctxt->Value();
-                    Context::Scope context_scope_(context);
+            V8_ISOLATE(grp, isolate)
+                Local<Context> context = ctxt->Value();
+                Context::Scope context_scope_(context);
 
-                    if (isConstructCall) {
-                        info.GetReturnValue().Set(info.This());
+                if (isConstructCall) {
+                    info.GetReturnValue().Set(info.This());
+                } else {
+                    if (objret) {
+                        info.GetReturnValue().Set(reinterpret_cast<JSValue<Value>*>(objret)->Value());
                     } else {
-                        if (objret) {
-                            info.GetReturnValue().Set(reinterpret_cast<JSValue<Value>*>(objret)->Value());
-                        } else {
-                            info.GetReturnValue().SetUndefined();
-                        }
+                        info.GetReturnValue().SetUndefined();
                     }
+                }
 
-                    if (exception) {
-                        Local<Value> excp = exception->Value();
-                        exception->release();
-                        isolate->ThrowException(excp);
-                    }
-                V8_UNLOCK()
-            }
+                if (exception) {
+                    Local<Value> excp = exception->Value();
+                    exception->release();
+                    isolate->ThrowException(excp);
+                }
+            V8_UNLOCK()
 
             delete args;
             env->DeleteLocalRef(argsArr);

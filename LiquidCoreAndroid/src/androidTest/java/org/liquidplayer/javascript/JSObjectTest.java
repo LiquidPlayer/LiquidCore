@@ -315,7 +315,7 @@ public class JSObjectTest {
             }
         };
 
-        /**
+        /*
          * isFunction()
          */
         assertTrue(func.isFunction());
@@ -325,7 +325,7 @@ public class JSObjectTest {
         assertFalse(context.property("nofunc").toObject().isFunction());
         assertTrue(context.property("constr").toObject().isFunction());
 
-        /**
+        /*
          * isConstructor()
          */
         assertTrue(func.isConstructor());

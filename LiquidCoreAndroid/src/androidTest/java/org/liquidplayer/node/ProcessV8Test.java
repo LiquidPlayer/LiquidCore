@@ -337,6 +337,12 @@ public class ProcessV8Test {
         new JSFunctionTest().testExceptionCases(context);
     }
 
+    @org.junit.Test
+    public void issue15Test() throws Exception {
+        new JSFunctionTest().issue15Test(context);
+    }
+
+
     /* JSIteratorTest */
 
     @Test
