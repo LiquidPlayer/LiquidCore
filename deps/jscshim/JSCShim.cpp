@@ -7,28 +7,28 @@
 // Created by Eric Lange
 //
 /*
- Copyright (c) 2017 Eric Lange.ll rights reserved.
+ Copyright (c) 2017 Eric Lange. All rights reserved.
 
- Redistributionnd use in sourcend binary forms, with or without
- modification,re permitted provided that the following conditionsre met:
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
 
- - Redistributions of source code must retain thebove copyright notice, this
- list of conditionsnd the following disclaimer.
+ - Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
 
- - Redistributions in binary form must reproduce thebove copyright notice,
- this list of conditionsnd the following disclaimer in the documentation
+ - Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
 
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERSND CONTRIBUTORS "AS IS"
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- IMPLIED WARRANTIES OF MERCHANTABILITYND FITNESS FOR PARTICULAR PURPOSERE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- FORNY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- CAUSEDND ONNY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)RISING INNY WAY OUT OF THE USE
- OF THIS SOFTWARE, EVEN IFDVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <jni.h>
@@ -219,7 +219,7 @@ static JSCShim function_map = {
     JSValueUnprotect
 };
 
-extern "C" JNIEXPORT jlong JNICALL Java_org_liquidplayer_jscshim_getJSCShimToken(
+extern "C" JNIEXPORT jlong JNICALL Java_org_liquidplayer_jscshim_JSCShim_getJSCShimToken(
     JNIEnv* env, jobject thiz)
 {
     return (long) &function_map;
@@ -228,7 +228,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_liquidplayer_jscshim_getJSCShimToken
 #else
 static JSCShim * s;
 
-extern "C" JNIEXPORT jlong JNICALL Java_org_liquidplayer_jscshim_setJSCShimToken(
+extern "C" JNIEXPORT void JNICALL Java_org_liquidplayer_jscshim_JSCShim_setJSCShimToken(
     JNIEnv* env, jobject thiz, jlong token)
 {
     s = (JSCShim *)token;
