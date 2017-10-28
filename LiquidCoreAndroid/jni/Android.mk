@@ -67,6 +67,7 @@ LOCAL_SRC_FILES := common.cpp \
                    JSC/JSC_JSContext.cpp \
                    JSC/JSC_JSObject.cpp \
                    JSC/JSC_JSBase.cpp \
+                   ../../deps/jscshim/JSCShim.cpp \
                    androidTest/testapi.cpp \
                    androidTest/CustomGlobalObjectClassTest.cpp \
                    androidTest/JSNode.cpp \
@@ -91,15 +92,16 @@ DEFS_Release := \
 	-D__POSIX__ \
 	-DHTTP_PARSER_STRICT=0 \
 	-D_LARGEFILE_SOURCE \
-	-D_FILE_OFFSET_BITS=64 \
 	-D_GLIBCXX_USE_C99_MATH \
     -D_REENTRANT=1 \
+    -DSQLITE_DISABLE_LFS \
     -DSQLITE_THREADSAFE=1 \
     -DSQLITE_ENABLE_FTS3 \
     -DSQLITE_ENABLE_FTS4 \
     -DSQLITE_ENABLE_FTS5 \
     -DSQLITE_ENABLE_JSON1 \
-    -DSQLITE_ENABLE_RTREE
+    -DSQLITE_ENABLE_RTREE \
+    -DJSCSHIM_IMPL
 
 CFLAGS_Release := \
     -Wall \
