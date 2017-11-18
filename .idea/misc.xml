@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavadocGenerationManager">
-    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../LiquidPlayer.github.io/LiquidCoreAndroid/0.2.2" />
+    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../LiquidPlayer.github.io/LiquidCoreAndroid/0.3.0" />
     <option name="OPTION_SCOPE" value="public" />
     <option name="OPTION_HIERARCHY" value="true" />
     <option name="OPTION_NAVIGATOR" value="true" />

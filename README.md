@@ -7,13 +7,13 @@ LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.2.2](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.2.2) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.2.2)
+[0.3.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.3.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.3.0)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.2.2](https://liquidplayer.github.io/LiquidCoreAndroid/0.2.2/)
+[Version 0.3.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.3.0/)
 
 # Table of Contents
 
@@ -50,7 +50,7 @@ MicroService service = new MicroService(
     new URI("http://my.server.com/path/to/code.js"),
     new MicroService.StartServiceListener() {
         @Override
-        public void onStart(MicroService service) {
+        public void onStart(MicroService service, Synchronizer synchronizer) {
             // .. The environment is live, but the startup JS code (from the URI)
             // has not been executed yet.
         }
@@ -205,7 +205,7 @@ But for now, we just have a console.  See the [ConsoleSurface](https://github.co
 
 #### Prerequisites
 
-* A recent version of [Node.js] -- 6.4 or newer
+* A recent version of [Node.js] -- 6.10.2 or newer
 * [Android Studio]
 
 (You can find all the code below in a complete example project [here](https://github.com/LiquidPlayer/Examples/tree/master/HelloWorld) if you get stuck).
@@ -349,10 +349,11 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    compile 'com.github.LiquidPlayer:LiquidCore:0.2.2'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.3.0'
 }
 
 ```
+Note that `implementation` should be replaced with `compile` if you are using an older buildtools version.
 
 Go ahead and sync to make sure the library downloads and links properly.  Run the app again to ensure that all is good.
 
@@ -426,7 +427,7 @@ public class MainActivity extends AppCompatActivity {
         // environment is set up
         final ServiceStartListener startListener = new ServiceStartListener() {
             @Override
-            public void onStart(MicroService service) {
+            public void onStart(MicroService service, Synchronizer synchronizer) {
                 service.addEventListener("ready", readyListener);
                 service.addEventListener("pong", pongListener);
             }
@@ -554,21 +555,21 @@ add the following to your app's `build.gradle`:
     }
 
     dependencies {
-        compile(name:'LiquidCore-release', ext:'aar')
+        implementation(name:'LiquidCore-release', ext:'aar') // 'compile' on older buildtools versions
     }
     
 ##### Note
 
 The Node.js library (`libnode.so`) is pre-compiled and included in binary form in
 `LiquidCoreAndroid/jni/lib/**/libnode.so`, where `**` represents the ABI.  All of the
-modifications required to produce the library are included in `deps/node-6.4.0`.  To
+modifications required to produce the library are included in `deps/node-6.10.2`.  To
 build each library (if you so choose), you can do the following:
 
 ```
-.../LiquidCore/deps/node-6.4.0% ./android-configure /path/to/android/ndk <abi>
-.../LiquidCore/deps/node-6.4.0% make
+.../LiquidCore/deps/node-6.10.2% ./android-configure /path/to/android/ndk <abi>
+.../LiquidCore/deps/node-6.10.2% make
 ```
-where `<abi>` is one of `arm`, `arm64`, `x86` or `x86_64`
+where `<abi>` is one of `arm` or `x86`
 
 
 License
