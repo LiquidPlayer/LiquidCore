@@ -10,7 +10,8 @@ import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.node.Process;
 
 import java.net.URI;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -20,36 +21,46 @@ public class MicroServiceTest {
     public void testMicroService() throws Exception {
         class Consts {
             int port;
-            int mask;
         }
         final Consts consts = new Consts();
-        consts.mask = 0;
-        final Semaphore waitForServer = new Semaphore(0);
-        final Semaphore waitForClient = new Semaphore(0);
+        final CountDownLatch waitForServer = new CountDownLatch(1);
+        final CountDownLatch waitForFinish = new CountDownLatch(2);
+
         final URI serverURI = URI.create("android.resource://" +
                 InstrumentationRegistry.getContext().getPackageName() + "/raw/server");
 
         // First, start a MicroService from a file.  This service creates a small HTTP file server
-        final MicroService server = new MicroService(InstrumentationRegistry.getContext(),serverURI,
-        new MicroService.ServiceStartListener() {
-            @Override
-            public void onStart(MicroService service) {
-                service.addEventListener("listening", new MicroService.EventListener() {
+        final MicroService server = new MicroService(InstrumentationRegistry.getContext(), serverURI,
+                new MicroService.ServiceStartListener() {
                     @Override
-                    public void onEvent(MicroService service, String event, JSONObject payload){
-                        try {
-                            consts.port = payload.getInt("port");
-                            waitForServer.release();
-                        } catch (JSONException e) {
-                            assertTrue(false);
-                        }
+                    public void onStart(MicroService service, Synchronizer synchronizer) {
+                        service.addEventListener("listening", new MicroService.EventListener() {
+                            @Override
+                            public void onEvent(MicroService service, String event, JSONObject payload) {
+                                try {
+                                    consts.port = payload.getInt("port");
+                                    waitForServer.countDown();
+                                } catch (JSONException e) {
+                                    assertTrue(false);
+                                }
+                            }
+                        });
+                    }
+                },
+                new MicroService.ServiceErrorListener() {
+                    @Override
+                    public void onError(MicroService service, Exception e) {
+                        android.util.Log.e("ServiceError", e.toString());
+                    }
+                },
+                new MicroService.ServiceExitListener() {
+                    @Override
+                    public void onExit(MicroService service, Integer exitCode) {
+                        waitForFinish.countDown();
                     }
                 });
-            }
-        });
         server.start();
-        waitForServer.acquire();
-        waitForServer.release();
+        assertTrue(waitForServer.await(10L, TimeUnit.SECONDS));
 
         final URI clientURI = URI.create("http://localhost:" + consts.port + "/hello.js");
 
@@ -57,7 +68,7 @@ public class MicroServiceTest {
         MicroService client = new MicroService(InstrumentationRegistry.getContext(), clientURI,
             new MicroService.ServiceStartListener() {
                 @Override
-                public void onStart(MicroService service) {
+                public void onStart(MicroService service, Synchronizer synchronizer) {
                     service.addEventListener("msg", new MicroService.EventListener() {
                         @Override
                         public void onEvent(MicroService service, String event, JSONObject payload){
@@ -142,25 +153,15 @@ public class MicroServiceTest {
                 @Override
                 public void onExit(MicroService service, Integer exitCode) {
                     assertEquals(0L, exitCode.longValue());
-                    waitForClient.release();
+                    waitForFinish.countDown();
+                    server.getProcess().exit(0);
                 }
             }
         );
-
-        server.getProcess().addEventListener(new Process.EventListener() {
-            public void onProcessStart(Process process, JSContext context) {}
-            public void onProcessAboutToExit(Process process, int exitCode) {}
-            public void onProcessExit(Process process, int exitCode) {
-                process.removeEventListener(this);
-                waitForServer.release();
-            }
-            public void onProcessFailed(Process process, Exception error) {}
-        });
-
         client.start();
 
-        waitForClient.acquire();
-        waitForServer.acquire();
+        assert(waitForFinish.await(10L, TimeUnit.SECONDS));
+        waitForFinish.await();
 
         MicroService.uninstall(InstrumentationRegistry.getContext(),serverURI);
         MicroService.uninstall(InstrumentationRegistry.getContext(),clientURI);

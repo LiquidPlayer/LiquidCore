@@ -46,7 +46,9 @@ import org.liquidplayer.javascript.JSValue;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -58,7 +60,7 @@ public class FSTest {
     private class Script implements Process.EventListener {
 
         final private String script;
-        final Semaphore processCompleted = new Semaphore(0);
+        final CountDownLatch processCompleted = new CountDownLatch(1);
         final private OnDone onDone;
         private JSContext context;
 
@@ -88,7 +90,7 @@ public class FSTest {
 
         @Override
         public void onProcessExit(Process process, int exitCode) {
-            processCompleted.release();
+            processCompleted.countDown();
         }
 
         @Override
@@ -136,7 +138,7 @@ public class FSTest {
                 "   });" +
                 "});" +
                 "";
-        new Script(script, new OnDone() {
+        Script s = new Script(script, new OnDone() {
             @Override
             public void onDone(JSContext ctx) {
                 JSBaseArray files = ctx.property("files").toJSArray();
@@ -165,7 +167,8 @@ public class FSTest {
                 assertEquals("Ok!", foo.read_only.get());
 
             }
-        }).processCompleted.acquire();
+        });
+        assertTrue(s.processCompleted.await(10L, TimeUnit.SECONDS));
 
         String content = new Scanner(new File(dirx + "/test.txt")).useDelimiter("\\Z").next();
         assertEquals("Hello, World!", content);
@@ -196,7 +199,7 @@ public class FSTest {
         Scanner s = new Scanner(in).useDelimiter("\\A");
         String script = s.hasNext() ? s.next() : "";
 
-        new Script(script, new OnDone() {
+        Script scr = new Script(script, new OnDone() {
             @Override
             public void onDone(JSContext ctx) {
                 android.util.Log.d("testLetsBeNaughty", ctx.property("a").toString());
@@ -211,7 +214,8 @@ public class FSTest {
                 android.util.Log.d("testLetsBeNaughty", ctx.property("e").toString());
                 assertTrue(ctx.property("e").toString().contains("EACCES"));
             }
-        }).processCompleted.acquire();
+        });
+        assertTrue(scr.processCompleted.await(10L, TimeUnit.SECONDS));
 
         Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
     }
@@ -227,8 +231,7 @@ public class FSTest {
         final String proc1 = "process.chdir('" + dir1 + "');";
         final String proc2 = "process.chdir('" + dir2 + "');";
 
-        final Semaphore s1 = new Semaphore(0);
-        final Semaphore s2 = new Semaphore(0);
+        final CountDownLatch cdl = new CountDownLatch(2);
 
         class Contexts {
             JSContext c1;
@@ -243,7 +246,7 @@ public class FSTest {
             public void onProcessStart(Process process, JSContext context) {
                 contexts.c1 = context;
                 process.keepAlive();
-                s1.release();
+                cdl.countDown();
             }
 
             @Override public void onProcessAboutToExit(Process process, int exitCode) {}
@@ -257,7 +260,7 @@ public class FSTest {
             public void onProcessStart(Process process, JSContext context) {
                 contexts.c2 = context;
                 process.keepAlive();
-                s2.release();
+                cdl.countDown();
             }
 
             @Override public void onProcessAboutToExit(Process process, int exitCode) {}
@@ -265,8 +268,7 @@ public class FSTest {
             @Override public void onProcessFailed(Process process, Exception error) {}
         });
 
-        s1.acquire();
-        s2.acquire();
+        assertTrue(cdl.await(10L, TimeUnit.SECONDS));
 
         contexts.c1.evaluateScript(proc1);
         JSValue v = contexts.c1.evaluateScript("process.cwd()");
@@ -311,11 +313,13 @@ public class FSTest {
                 "   });" +
                 "}" +
                 "";
-        new Script(script, new OnDone() {
+        Script s = new Script(script, new OnDone() {
             @Override
             public void onDone(JSContext ctx) {
             }
-        }).processCompleted.acquire();
+        });
+
+        assertTrue(s.processCompleted.await(10L, TimeUnit.SECONDS));
 
         File external = InstrumentationRegistry.getContext().getExternalFilesDir(null);
         if (external != null) {

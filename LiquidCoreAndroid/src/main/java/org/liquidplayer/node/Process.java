@@ -279,8 +279,9 @@ public class Process {
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
     @SuppressWarnings("unused") // called from native code
-    private void onNodeStarted(final long mainContext, long ctxGroupRef, long ctxRef) {
-        final ProcessContext ctx = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef));
+    private void onNodeStarted(final long mainContext, long ctxGroupRef, long jscCtxRef) {
+        final ProcessContext ctx = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef),
+                jscCtxRef);
         jscontext = new WeakReference<>(ctx);
         isActive = true;
         ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
@@ -308,9 +309,9 @@ public class Process {
                             new JSFunction(context, "onUncaughtException") {
                         @SuppressWarnings("unused")
                         public void onUncaughtException(JSObject error) {
-                            android.util.Log.d("Unhandled", "There is an unhandled exception!");
-                            android.util.Log.d("Unhandled", error.toString());
-                            android.util.Log.d("Unhandled", error.property("stack").toString());
+                            android.util.Log.i("Unhandled", "There is an unhandled exception!");
+                            android.util.Log.i("Unhandled", error.toString());
+                            android.util.Log.i("Unhandled", error.property("stack").toString());
                             eventOnProcessFailed(new JSException(error));
                             context.evaluateScript(
                                     "process.exit(process.exitCode === undefined ? -1 : process.exitCode)");
@@ -380,8 +381,16 @@ public class Process {
      * ProcessContext class -- subclasses a JSContext tied to a node.js process
      */
     private class ProcessContext extends JSContext {
-        ProcessContext(long contextRef, JSContextGroup group) {
+        final private long mJscCtxRef;
+
+        ProcessContext(long contextRef, JSContextGroup group, long jscCtxRef) {
             super(contextRef, group);
+            mJscCtxRef = jscCtxRef;
+        }
+
+        @Override
+        public long getJSCContext() {
+            return mJscCtxRef;
         }
 
         void setDefunct() {

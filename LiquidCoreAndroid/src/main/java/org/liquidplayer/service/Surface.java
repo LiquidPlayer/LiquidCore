@@ -32,17 +32,32 @@
 */
 package org.liquidplayer.service;
 
+import android.view.View;
+
+import org.liquidplayer.javascript.JSContext;
+
+import java.util.concurrent.Semaphore;
+
 /**
  * A Surface is a UI interaction layer with a MicroService.
  */
 public interface Surface {
     /**
+     * Binds a MicroService to the surface.  This will get called after the micro service
+     * is started, but before the service javascript is executed.  This gives the surface
+     * an opportunity to bind any native functions required by the module.
+     * @param service The microservice to bind
+     */
+    void bind(MicroService service, JSContext context, Synchronizer synchronizer);
+
+    /**
      * Attaches a MicroService to the UI.  For most Surfaces, this should be done before the
      * MicroService is started so any interaction code with the Surface can be loaded and exposed
      * to the MicroService before the JavaScript is executed.
      * @param service  The MicroService to attach
+     * @param onAttached A runnable to be called after the UI is active
      */
-    void attach(MicroService service, Runnable onAttached);
+    View attach(MicroService service, Runnable onAttached);
 
     /**
      * Detaches any currently attached MicroService.  The Surface may then be ready to be discarded

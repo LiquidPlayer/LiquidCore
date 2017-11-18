@@ -40,7 +40,9 @@ import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSValue;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -52,7 +54,7 @@ public class ProcessTest {
     @Test
     public void multiProcessTest() throws Exception {
 
-        final Semaphore semaphore = new Semaphore(-2);
+        final CountDownLatch cdl = new CountDownLatch(3);
 
         Process.EventListener listener = new Process.EventListener() {
             @Override
@@ -75,7 +77,7 @@ public class ProcessTest {
             @Override
             public void onProcessExit(final Process process, int exitCode) {
                 assertFalse(process.isActive());
-                semaphore.release();
+                cdl.countDown();
             }
 
             @Override
@@ -93,15 +95,13 @@ public class ProcessTest {
                 Process.kMediaAccessPermissionsRW,listener);
 
         // Hang out here until the processes all finish
-        semaphore.acquire();
-
-        assertTrue(true);
+        assertTrue(cdl.await(10L, TimeUnit.SECONDS));
     }
 
     @Test
     public void multiThreadTest() throws Exception {
 
-        final Semaphore semaphore = new Semaphore(0);
+        final CountDownLatch cdl = new CountDownLatch(1);
 
         new Process(InstrumentationRegistry.getContext(),"_",
                 Process.kMediaAccessPermissionsRW,new Process.EventListener() {
@@ -137,7 +137,7 @@ public class ProcessTest {
 
             @Override
             public void onProcessExit(Process process, int exitCode) {
-                semaphore.release();
+                cdl.countDown();
             }
 
             @Override
@@ -150,14 +150,12 @@ public class ProcessTest {
         });
 
         // Hang out here until the process finishes
-        semaphore.acquire();
-
-        assertTrue(true);
+        assertTrue(cdl.await(10L, TimeUnit.SECONDS));
     }
 
     @Test
     public void testForceExit() throws Exception {
-        final Semaphore semaphore = new Semaphore(0);
+        final CountDownLatch cdl = new CountDownLatch(1);
 
         new Process(InstrumentationRegistry.getContext(),"forceExitTest",
                 Process.kMediaAccessPermissionsRW,new Process.EventListener() {
@@ -170,7 +168,7 @@ public class ProcessTest {
             @Override
             public void onProcessExit(Process process, int exitCode) {
                 assertEquals(2, exitCode);
-                semaphore.release();
+                cdl.countDown();
             }
 
             @Override
@@ -183,7 +181,7 @@ public class ProcessTest {
         });
 
         // Hang out here until the process finishes
-        semaphore.acquire();
+        assertTrue(cdl.await(10L, TimeUnit.SECONDS));
 
         Process.uninstall(InstrumentationRegistry.getContext(), "forceExitTest",
                 Process.UninstallScope.Global);

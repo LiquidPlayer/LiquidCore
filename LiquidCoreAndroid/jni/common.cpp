@@ -274,10 +274,10 @@ void ContextGroup::callback(uv_async_t* handle) {
 }
 
 void ContextGroup::RegisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void*), void *data) {
-    struct GCCallback *gc = new struct GCCallback;
+    auto gc = std::unique_ptr<struct GCCallback>(new struct GCCallback);
     gc->cb = cb;
     gc->data = data;
-    m_gc_callbacks.push_back(gc);
+    m_gc_callbacks.push_back(std::move(gc));
 }
 
 void ContextGroup::UnregisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void*), void *data) {
@@ -288,7 +288,6 @@ void ContextGroup::UnregisterGCCallback(void (*cb)(GCType, GCCallbackFlags, void
         ++it;
         if (item->cb == cb && item->data == data) {
             m_gc_callbacks.remove(item);
-            delete item;
         }
     }
 }

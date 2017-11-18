@@ -6,6 +6,7 @@ var baseDirectory = '/home/local'
 
 // Create a file to serve
 
+/* The comments will be converted to a string */
 var source = function () {
   /*
     setInterval(function(){},1000)
@@ -62,14 +63,11 @@ var source = function () {
   */
   }.toString().split(/\n/).slice(2, -2).join('\n')
 
-fs.writeFile('/home/local/hello.js',
-   source,
-   function(err) {
-       if(err) {
-           return console.log(err);
-       }
-   }
-)
+try {
+    fs.writeFileSync('/home/local/hello.js', source, 'utf-8')
+} catch (e) {
+    console.error(e)
+}
 
 var server = http.createServer(function (request, response) {
    try {
@@ -81,6 +79,7 @@ var server = http.createServer(function (request, response) {
      var fileStream = fs.createReadStream(fsPath)
      fileStream.pipe(response)
      fileStream.on('error',function(e) {
+         console.error(e)
          response.writeHead(404)
          response.end()
      })

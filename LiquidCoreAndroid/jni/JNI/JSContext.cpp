@@ -35,6 +35,7 @@
 */
 
 #include "JSJNI.h"
+#include "../JSC/JSC.h"
 
 NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnable) {
     ContextGroup *group = reinterpret_cast<ContextGroup*>(ctxGroup);
@@ -80,7 +81,8 @@ NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnab
 }
 
 NATIVE(JSContextGroup,jlong,create) (PARAMS) {
-    ContextGroup *group = new ContextGroup();
+    // Maintain compatibility at the ContextGroup level with JSC
+    const ContextGroup *group = JSContextGroupCreate();
     return reinterpret_cast<long>(group);
 }
 

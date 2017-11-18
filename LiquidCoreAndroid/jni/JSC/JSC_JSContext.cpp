@@ -92,6 +92,7 @@ OpaqueJSContext::~OpaqueJSContext()
     static_cast<OpaqueJSContextGroup *>(m_context->Group())->DisassociateContext(this);
 
     V8_ISOLATE(m_context->Group(), isolate);
+        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "0");
         m_context->Group()->UnregisterGCCallback(StaticGCCallback, this);
 
         ForceGC();
@@ -100,6 +101,7 @@ OpaqueJSContext::~OpaqueJSContext()
 
         m_gc_lock.lock();
 
+        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "1");
         // First, look for all values that have a zero reference and clean them
         auto iterator = m_collection.begin();
         while (iterator != m_collection.end()) {
@@ -107,6 +109,7 @@ OpaqueJSContext::~OpaqueJSContext()
             ++iterator;
             v->Clean(true);
         }
+        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "2");
 
         // Then, release everything that has a reference count > 0
         bool isEmpty =  m_collection.empty();
@@ -116,10 +119,12 @@ OpaqueJSContext::~OpaqueJSContext()
             isEmpty =  m_collection.empty();
         }
         m_gc_lock.unlock();
+        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "3");
 
         ASSERTJSC(m_collection.empty());
 
         int count = m_context->release();
+        __android_log_print(ANDROID_LOG_DEBUG, "~OpaqueJSContext", "4");
     V8_UNLOCK();
 }
 
@@ -232,16 +237,13 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
     const_cast<OpaqueJSContextGroup*>(group)->retain();
 
     V8_ISOLATE((ContextGroup*)group, isolate)
-
         if (globalObjectClass) {
             ctx = globalObjectClass->NewContext(group);
         } else {
             ctx = new OpaqueJSContext(
                 new JSContext((ContextGroup*)group, Context::New(isolate)));
         }
-
         setUpConsoleLog(ctx);
-
         ((ContextGroup*)group)->release();
     V8_UNLOCK()
 

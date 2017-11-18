@@ -396,6 +396,7 @@ int NodeInstance::StartNodeInstance(void* arg) {
   }
 
   {
+    v8::Locker locker_(isolate);
     Isolate::Scope isolate_scope(isolate);
     HandleScope handle_scope(isolate);
 

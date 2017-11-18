@@ -7,7 +7,8 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -21,12 +22,12 @@ public class Sqlite3Test {
             InstrumentationRegistry.getContext().getPackageName() +"/raw/sqlite3test");
 
     private void testDatabase(final String fname) throws Exception {
-        final Semaphore waitToEnd = new Semaphore(0);
+        final CountDownLatch waitToEnd = new CountDownLatch(1);
         final Consts consts = new Consts();
         final MicroService test = new MicroService(InstrumentationRegistry.getContext(), testURI,
                 new MicroService.ServiceStartListener() {
                     @Override
-                    public void onStart(MicroService service) {
+                    public void onStart(MicroService service, Synchronizer synchronizer) {
                         service.addEventListener("count", new MicroService.EventListener() {
                             @Override
                             public void onEvent(MicroService service, String event, JSONObject row){
@@ -63,11 +64,11 @@ public class Sqlite3Test {
                     @Override
                     public void onExit(MicroService service, Integer exitCode) {
                         assertEquals(1+2+3+4+5+6+7+8+9+10,consts.count);
-                        waitToEnd.release();
+                        waitToEnd.countDown();
                     }
                 });
         test.start();
-        waitToEnd.acquire();
+        assertTrue(waitToEnd.await(10L, TimeUnit.SECONDS));
     }
 
     @Test

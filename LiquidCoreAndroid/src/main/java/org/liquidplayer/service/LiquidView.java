@@ -24,7 +24,13 @@ import org.liquidplayer.node.R;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -127,38 +133,40 @@ public class LiquidView extends RelativeLayout {
     }
 
 
-    private void attach(final String surface, final JSFunction callback) {
+    private void attach(final String surface_, final JSFunction callback) {
         final MicroService service = MicroService.getService(serviceId);
         try {
+            Surface surface = null;
             if (service == null)
                 throw new Exception("service not available");
-            if (surface == null || surfaceNames == null ||
-                    !surfaceNames.contains(surface)) {
-                throw new Exception("Invalid surface");
-            }
-            Class<? extends Surface> clss = null;
-            for (MicroService.AvailableSurface sfc : availableSurfaces()) {
-                if (sfc.cls.getCanonicalName().equals(surface)) {
-                    clss = sfc.cls;
+            android.util.Log.d("attach", "surface_: " + surface_);
+            for (Map.Entry<String,Surface> entry : surfaceHashMap.entrySet()) {
+                android.util.Log.d("attach", "canon: " + entry.getValue().getClass().getCanonicalName());
+                if (entry.getValue().getClass().getCanonicalName().equals(surface_)) {
+                    surface = entry.getValue();
+                    break;
                 }
             }
-            if (clss == null) {
-                throw new Exception("Surface " + surface +
-                        "not available");
+            if (surface == null) {
+                throw new Exception("Invalid surface");
             }
-            final Class<? extends Surface> cls = clss;
             if (surfaceId == View.NO_ID)
                 surfaceId = generateViewIdCommon();
-            canonicalSurface = surface;
-            service.getProcess().keepAlive();
+            canonicalSurface = surface_;
+            final Surface s = surface;
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override @SuppressWarnings("unchecked")
                 public void run() {
                     try {
-                        Surface s = cls.getConstructor(Context.class)
-                                .newInstance(LiquidView.this.getContext());
-                        surfaceView = (View) s;
-                        surfaceView.setId(surfaceId);
+                        surfaceView = s.attach(service, new Runnable() {
+                            @Override
+                            public void run() {
+                                if (callback != null) {
+                                    callback.call(null);
+                                }
+                            }
+                        });
+                        //FIXME: surfaceView.setId(surfaceId);
                         addView(surfaceView);
                         if (childrenStates != null) {
                             for (int i = 0; i < getChildCount(); i++) {
@@ -166,15 +174,6 @@ public class LiquidView extends RelativeLayout {
                             }
                             childrenStates = null;
                         }
-                        s.attach(service, new Runnable() {
-                            @Override
-                            public void run() {
-                                if (callback != null) {
-                                    callback.call(null);
-                                }
-                                service.getProcess().letDie();
-                            }
-                        });
                     } catch (Exception e) {
                         e.printStackTrace();
                         android.util.Log.d("exception", e.toString());
@@ -210,8 +209,11 @@ public class LiquidView extends RelativeLayout {
     private void detach(final JSFunction callback) {
         surfaceId = NO_ID;
         canonicalSurface = null;
+        if (attachedSurface != null) {
+            surfaceHashMap.get(attachedSurface).detach();
+            attachedSurface = null;
+        }
         if (surfaceView != null) {
-            ((Surface)surfaceView).detach();
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
@@ -257,11 +259,11 @@ public class LiquidView extends RelativeLayout {
             MicroService svc =
                     new MicroService(getContext(), uri, new MicroService.ServiceStartListener(){
                 @Override
-                public void onStart(final MicroService service) {
+                public void onStart(final MicroService service, final Synchronizer synchronizer) {
                     serviceId = service.getId();
                     service.getProcess().addEventListener(new Process.EventListener() {
                         @Override
-                        public void onProcessStart(Process process, JSContext context) {
+                        public void onProcessStart(Process process, final JSContext context) {
                             JSObject liquidCore = context.property("LiquidCore").toObject();
                             JSObject availableSurfaces = new JSObject(context);
                             for (int i=0; surfaceNames != null && surfaceVersions != null &&
@@ -282,20 +284,60 @@ public class LiquidView extends RelativeLayout {
                                     detach(cb);
                                 }
                             });
+
+                            // Bind surfaces
+                            service.getProcess().keepAlive();
+
+                            for (MicroService.AvailableSurface sfc : availableSurfaces()) {
+                                synchronizer.enter();
+                                final Class<? extends Surface> cls = sfc.cls;
+                                final String boundSurfaceId = UUID.randomUUID().toString();
+                                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            Surface s = cls.getConstructor(Context.class)
+                                                    .newInstance(LiquidView.this.getContext());
+                                            surfaceHashMap.put(boundSurfaceId, s);
+                                            boundSurfaces.add(boundSurfaceId);
+                                            s.bind(service, context, synchronizer);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                            android.util.Log.d("exception", e.toString());
+                                            service.getProcess().letDie();
+                                        } finally {
+                                            synchronizer.exit();
+                                        }
+                                    }
+                                });
+                            }
+
                             for (MicroService.ServiceStartListener listener : startListeners) {
-                                listener.onStart(service);
+                                listener.onStart(service, synchronizer);
                             }
                             startListeners.clear();
                         }
 
                         @Override public void onProcessAboutToExit(Process process, int exitCode) {
                             process.removeEventListener(this);
+                            for (String boundSurface : boundSurfaces) {
+                                surfaceHashMap.remove(boundSurface);
+                            }
+                            boundSurfaces.clear();
                         }
                         @Override public void onProcessExit(Process process, int exitCode) {
                             process.removeEventListener(this);
+                            for (String boundSurface : boundSurfaces) {
+                                surfaceHashMap.remove(boundSurface);
+                            }
+                            boundSurfaces.clear();
                         }
                         @Override public void onProcessFailed(Process process, Exception error) {
                             process.removeEventListener(this);
+                            for (String boundSurface : boundSurfaces) {
+                                surfaceHashMap.remove(boundSurface);
+                            }
+                            boundSurfaces.clear();
                         }
                     });
                 }
@@ -330,7 +372,9 @@ public class LiquidView extends RelativeLayout {
     public void enableSurface(Class<? extends Surface> cls) {
         try {
             Field f = cls.getDeclaredField("SURFACE_VERSION");
-            surfaces.add(new MicroService.AvailableSurface(cls,f.get(null).toString()));
+            MicroService.AvailableSurface as =
+                    new MicroService.AvailableSurface(cls,f.get(null).toString());
+            surfaces.add(as);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -341,6 +385,9 @@ public class LiquidView extends RelativeLayout {
     private MicroService.AvailableSurface[] availableSurfaces() {
         return surfaces.toArray(new MicroService.AvailableSurface[surfaces.size()]);
     }
+
+    /* -- statics -- */
+    private static HashMap<String,Surface> surfaceHashMap = new HashMap<>();
 
     /* -- local privates -- */
     private URI uri;
@@ -354,6 +401,8 @@ public class LiquidView extends RelativeLayout {
     private String serviceId;
     private String canonicalSurface;
     private SparseArray childrenStates;
+    private ArrayList<String> boundSurfaces = new ArrayList<>();
+    private String attachedSurface = null;
 
     @Override @SuppressWarnings("unchecked")
     public Parcelable onSaveInstanceState() {
@@ -368,6 +417,8 @@ public class LiquidView extends RelativeLayout {
         for (int i = 0; i < getChildCount(); i++) {
             getChildAt(i).saveHierarchyState(ss.childrenStates);
         }
+        ss.boundSurfaces = boundSurfaces;
+        ss.attachedSurface = attachedSurface;
         return ss;
     }
 
@@ -401,6 +452,12 @@ public class LiquidView extends RelativeLayout {
         if (canonicalSurface != null) {
             attach(canonicalSurface, null);
         }
+        if (ss.boundSurfaces == null) {
+            boundSurfaces = new ArrayList<>();
+        } else {
+            boundSurfaces = new ArrayList<>(ss.boundSurfaces);
+        }
+        attachedSurface = ss.attachedSurface;
     }
 
     @Override
@@ -421,6 +478,8 @@ public class LiquidView extends RelativeLayout {
         private List<String> surfaceVersions;
         private String serviceId;
         private String canonicalSurface;
+        private List<String> boundSurfaces;
+        private String attachedSurface;
 
         SavedState(Parcelable superState) {
             super(superState);
@@ -434,6 +493,8 @@ public class LiquidView extends RelativeLayout {
             serviceId = in.readString();
             canonicalSurface = in.readString();
             childrenStates = in.readSparseArray(classLoader);
+            in.readStringList(boundSurfaces);
+            attachedSurface = in.readString();
         }
 
         @Override @SuppressWarnings("unchecked")
@@ -445,6 +506,8 @@ public class LiquidView extends RelativeLayout {
             out.writeString(serviceId);
             out.writeString(canonicalSurface);
             out.writeSparseArray(childrenStates);
+            out.writeStringList(boundSurfaces);
+            out.writeString(attachedSurface);
         }
 
         public static final ClassLoaderCreator<SavedState> CREATOR

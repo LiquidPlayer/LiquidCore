@@ -53,6 +53,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -69,6 +71,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -80,6 +84,48 @@ import java.util.zip.GZIPInputStream;
  * message-based API, or a UI may be exposed by attaching to a Surface.
  */
 public class MicroService implements Process.EventListener {
+
+    public class SynchronizerImpl extends CountDownLatch implements Synchronizer {
+        SynchronizerImpl() {
+            super(1);
+        }
+        private int count = 0;
+        private final Object mutex = new Object();
+
+        @Override
+        public void enter() {
+            synchronized (mutex) {
+                count++;
+            }
+        }
+
+        @Override
+        public void exit() {
+            int ncount;
+            synchronized (mutex) {
+                ncount = --count;
+            }
+            if (ncount == 0) {
+                countDown();
+            }
+        }
+
+        public boolean isSynchronized() {
+            synchronized (mutex) {
+                return count==0;
+            }
+        }
+
+        void blockUntilReady() throws InterruptedException {
+            int ncount;
+            synchronized (mutex) {
+                ncount = count;
+            }
+            if (ncount > 0) {
+                await();
+            }
+        }
+    }
 
     /**
      * Listens for a specific event emitted by the MicroService
@@ -107,8 +153,11 @@ public class MicroService implements Process.EventListener {
          * Called after the environment is set up, but before the MicroService javascript is
          * executed.
          * @param service  The MicroService which is now started
+         * @param synchronizer Used to synchronize asynchronous init.  Ignore if you have no
+         *                     async initialization.  Can be null if the process cannot be
+         *                     managed asynchronously, so check first.
          */
-        void onStart(MicroService service);
+        void onStart(MicroService service, Synchronizer synchronizer);
     }
 
     /**
@@ -662,6 +711,7 @@ public class MicroService implements Process.EventListener {
                     in = connection.getInputStream();
                 }
             } else if (responseCode != 304) { // 304 just means the file has not changed
+                android.util.Log.e("FileNotFound", "responseCode = " + responseCode);
                 throw new FileNotFoundException();
             }
         } else {
@@ -681,7 +731,7 @@ public class MicroService implements Process.EventListener {
     }
 
     @Override
-    public void onProcessStart(Process process, JSContext context) {
+    public void onProcessStart(Process process, final JSContext context) {
         // Create LiquidCore EventEmitter
         context.evaluateScript(
                 "class LiquidCore_ extends require('events') {}\n" +
@@ -693,9 +743,13 @@ public class MicroService implements Process.EventListener {
             fetchService();
 
             // Notify host that service is ready to accept event listeners
+            final SynchronizerImpl synchronizer;
             if (startListener != null) {
-                startListener.onStart(this);
+                synchronizer = new SynchronizerImpl();
+                startListener.onStart(this, synchronizer);
                 startListener = null;
+            } else {
+                synchronizer = null;
             }
 
             // Construct process.argv
@@ -710,8 +764,30 @@ public class MicroService implements Process.EventListener {
             // Execute code
             final String script =
                     "eval(String(require('fs').readFileSync('/home/module/" + module + "')))";
-            context.evaluateScript(script);
+
+            if (synchronizer == null || synchronizer.isSynchronized()) {
+                context.evaluateScript(script);
+            } else {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            synchronizer.blockUntilReady();
+                            context.evaluateScript(script);
+                        } catch (InterruptedException e) {
+                            StringWriter sw = new StringWriter();
+                            PrintWriter pw = new PrintWriter(sw);
+                            e.printStackTrace(pw);
+                            String sStackTrace = sw.toString();
+                            android.util.Log.e("stacktrace", sStackTrace);
+                            onProcessFailed(null, e);
+                        }
+                    }
+                }.start();
+            }
+
         } catch (IOException e) {
+            e.printStackTrace();
             onProcessFailed(null, e);
         }
     }

@@ -61,7 +61,8 @@ import org.liquidplayer.javascript.JSUint8ArrayTest;
 import org.liquidplayer.javascript.JSUint8ClampedArrayTest;
 import org.liquidplayer.javascript.JSValueTest;
 
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -69,13 +70,13 @@ public class ProcessV8Test {
 
     private JSContext context = null;
     private Process process = null;
-    private Semaphore processCompleted;
+    private CountDownLatch processCompleted;
     private Boolean released = false;
 
     @Before
     public void setUp() throws Exception {
-        final Semaphore processStarted = new Semaphore(0);
-        processCompleted = new Semaphore(0);
+        final CountDownLatch processStarted = new CountDownLatch(1);
+        processCompleted = new CountDownLatch(1);
 
         new Process(InstrumentationRegistry.getContext(),"_",
                 Process.kMediaAccessPermissionsRW,new Process.EventListener() {
@@ -86,13 +87,13 @@ public class ProcessV8Test {
                 // Don't let the process die before we run the test
                 process.keepAlive();
                 released = true;
-                processStarted.release();
+                processStarted.countDown();
             }
 
             @Override
             public void onProcessExit(Process process, int exitCode) {
                 assertTrue(released);
-                processCompleted.release();
+                processCompleted.countDown();
             }
 
             @Override
@@ -108,7 +109,7 @@ public class ProcessV8Test {
         });
 
         // Hang out here until the process and promise are ready
-        processStarted.acquire();
+        assertTrue(processStarted.await(10L, TimeUnit.SECONDS));
     }
 
     /* JSArrayBufferTest */
@@ -439,8 +440,10 @@ public class ProcessV8Test {
     @After
     public void shutDown() throws Exception {
         // Mark the process as done and wait until the process shuts down
-        process.letDie();
-        processCompleted.acquire();
+        if (process != null) {
+            process.letDie();
+        }
+        assertTrue(processCompleted.await(10L, TimeUnit.SECONDS));
         context = null;
     }
 }

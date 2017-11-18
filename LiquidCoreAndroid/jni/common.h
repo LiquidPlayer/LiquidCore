@@ -128,24 +128,14 @@ public:
     ContextGroup();
     ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
 
-    virtual Isolate* isolate() {
+    virtual inline Isolate* isolate() {
         return m_isolate;
     }
-    virtual uv_loop_t * Loop() {
+    virtual inline uv_loop_t * Loop() {
         return m_uv_loop;
     }
-    virtual std::thread::id Thread() {
+    virtual inline std::thread::id Thread() {
         return m_thread_id;
-    }
-    virtual void Lock() {
-        if (!Loop()) {
-            m_lock.lock();
-        }
-    }
-    virtual void Unlock() {
-        if (!Loop()) {
-            m_lock.unlock();
-        }
     }
 
     virtual void sync(std::function<void()> runnable);
@@ -178,13 +168,12 @@ private:
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
-    std::recursive_mutex m_lock;
 
     struct GCCallback {
         void (*cb)(GCType type, GCCallbackFlags flags, void*);
         void *data;
     };
-    std::list<struct GCCallback *> m_gc_callbacks;
+    std::list<std::unique_ptr<struct GCCallback>> m_gc_callbacks;
 
 public:
     uv_async_t *m_async_handle;
@@ -234,7 +223,7 @@ private:
         auto runnable_ = [&]() \
         { \
             Isolate *iso = group_->isolate(); \
-            group_->Lock(); \
+            v8::Locker lock_(group_->isolate()); \
             Isolate::Scope isolate_scope_(iso); \
             HandleScope handle_scope_(iso);
 
@@ -245,10 +234,11 @@ private:
             Context::Scope context_scope_(Ctx);
 
 #define V8_UNLOCK() \
-            group_->Unlock(); \
         }; \
         if (group_->Loop()) { group_->sync(runnable_); } \
-        else runnable_();
+        else { \
+            runnable_(); \
+        }
 
 template <typename T>
 class JSValue : public Retainer {

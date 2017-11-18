@@ -61,7 +61,7 @@ public class JSContext extends JSObject {
     public static void dummy() {
     }
 
-    protected void sync(final Runnable runnable) {
+    public void sync(final Runnable runnable) {
         if (!contextGroup.hasDedicatedThread() ||
                 (android.os.Process.myTid() == mContextThreadTid)) {
             runnable.run();
@@ -79,11 +79,29 @@ public class JSContext extends JSObject {
         }
     }
 
+    public void async(final Runnable runnable) {
+        if (!contextGroup.hasDedicatedThread() ||
+                (android.os.Process.myTid() == mContextThreadTid)) {
+            runnable.run();
+        } else {
+            runInContextGroup(contextGroup.groupRef(),runnable);
+        }
+    }
+
+    public Boolean isOnThread() {
+        if (!contextGroup.hasDedicatedThread()) return null;
+        return (android.os.Process.myTid() == mContextThreadTid);
+    }
+
     private int mContextThreadTid = 0;
     @SuppressWarnings("unused") // called from Native code
     private void inContextCallback(Runnable runnable) {
         mContextThreadTid = android.os.Process.myTid();
         runnable.run();
+    }
+
+    public long getJSCContext() {
+        return 0L;
     }
 
     private JSContextGroup contextGroup = null;
