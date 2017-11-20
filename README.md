@@ -7,13 +7,13 @@ LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.3.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.3.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.3.0)
+[0.3.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.3.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.3.1)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.3.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.3.0/)
+[Version 0.3.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.3.1/)
 
 # Table of Contents
 
@@ -190,7 +190,7 @@ Everything else will result in an `ENOACES` (access denied) error.
 
 There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
 
-As of 0.2.1, there is only one surface so far: the [**`ConsoleSurface`**](https://github.com/LiquidPlayer/ConsoleSurface).  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  This isn't the most interesting surface, but it is an obvious first step.  A major improvement is being slated for 0.3.0, with the launch of a **`ReactNativeSurface`**.  At this point, you will be able to drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework.  There are other surfaces under consideration, including:
+As of 0.2.1, there is only one surface so far: the [**`ConsoleSurface`**](https://github.com/LiquidPlayer/ConsoleSurface).  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  This isn't the most interesting surface, but it is an obvious first step.  A major improvement is being slated for 0.3.1, with the launch of a **`ReactNativeSurface`**.  At this point, you will be able to drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework.  There are other surfaces under consideration, including:
 
 * **`WebSurface`** - a `WebView` front-end where a micro service can write to the DOM
 * **`CardSurface`** - a limited feature set suitable for driving card-like UI elements in a list
@@ -349,7 +349,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.3.0'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.3.1'
 }
 
 ```
