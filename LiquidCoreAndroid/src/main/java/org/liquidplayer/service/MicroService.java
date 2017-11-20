@@ -63,7 +63,6 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,7 +71,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -110,7 +108,7 @@ public class MicroService implements Process.EventListener {
             }
         }
 
-        public boolean isSynchronized() {
+        boolean isSynchronized() {
             synchronized (mutex) {
                 return count==0;
             }
@@ -646,9 +644,6 @@ public class MicroService implements Process.EventListener {
     private void fetchService() throws IOException {
         // See if the file already exists
         File modules = getModulePath();
-        if (modules == null) {
-            throw new FileNotFoundException();
-        }
 
         String path = serviceURI.getPath();
         module = path.substring(path.lastIndexOf('/') + 1);

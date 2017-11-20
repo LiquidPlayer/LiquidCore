@@ -28,9 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Phaser;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -166,7 +163,7 @@ public class LiquidView extends RelativeLayout {
                                 }
                             }
                         });
-                        //FIXME: surfaceView.setId(surfaceId);
+                        surfaceView.setId(surfaceId);
                         addView(surfaceView);
                         if (childrenStates != null) {
                             for (int i = 0; i < getChildCount(); i++) {

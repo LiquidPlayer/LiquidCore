@@ -47,13 +47,13 @@ public interface Surface {
      * is started, but before the service javascript is executed.  This gives the surface
      * an opportunity to bind any native functions required by the module.
      * @param service The microservice to bind
+     * @param context The Javascript context on which to bind
+     * @param synchronizer Used for synchronizing asynchronous init
      */
     void bind(MicroService service, JSContext context, Synchronizer synchronizer);
 
     /**
-     * Attaches a MicroService to the UI.  For most Surfaces, this should be done before the
-     * MicroService is started so any interaction code with the Surface can be loaded and exposed
-     * to the MicroService before the JavaScript is executed.
+     * Attaches a MicroService to the UI.
      * @param service  The MicroService to attach
      * @param onAttached A runnable to be called after the UI is active
      */
