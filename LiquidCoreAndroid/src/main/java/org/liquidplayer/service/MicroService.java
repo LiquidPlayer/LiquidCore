@@ -709,6 +709,9 @@ public class MicroService implements Process.EventListener {
                 android.util.Log.e("FileNotFound", "responseCode = " + responseCode);
                 throw new FileNotFoundException();
             }
+        } else if ("jarfile".equals(scheme)) {
+            int loc = serviceURI.getPath().lastIndexOf("/");
+            in = getClass().getClassLoader().getResourceAsStream(serviceURI.getPath().substring(loc+1));
         } else {
             in = androidCtx.getContentResolver().openInputStream(Uri.parse(serviceURI.toString()));
         }

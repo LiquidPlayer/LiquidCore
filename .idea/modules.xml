@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/LiquidCore.iml" filepath="$PROJECT_DIR$/LiquidCore.iml" />
       <module fileurl="file://$PROJECT_DIR$/LiquidCoreAndroid/LiquidCoreAndroid.iml" filepath="$PROJECT_DIR$/LiquidCoreAndroid/LiquidCoreAndroid.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LiquidCoreAndroid/LiquidCoreAndroid.iml" filepath="$PROJECT_DIR$/LiquidCoreAndroid/LiquidCoreAndroid.iml" />
     </modules>
   </component>
 </project>

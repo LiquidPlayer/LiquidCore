@@ -18,10 +18,10 @@ public class Sqlite3Test {
         int count;
     }
 
-    private final static URI testURI = URI.create("android.resource://" +
-            InstrumentationRegistry.getContext().getPackageName() +"/raw/sqlite3test");
-
     private void testDatabase(final String fname) throws Exception {
+        String testURIString = getClass().getClassLoader().getResource("sqlite3test.js").toString();
+        testURIString = testURIString.replace("jar:file:", "jarfile:");
+        final URI testURI = URI.create(testURIString);
         final CountDownLatch waitToEnd = new CountDownLatch(1);
         final Consts consts = new Consts();
         final MicroService test = new MicroService(InstrumentationRegistry.getContext(), testURI,
@@ -83,6 +83,9 @@ public class Sqlite3Test {
 
     @Test
     public void testLocalDb() throws Exception {
+        String testURIString = getClass().getClassLoader().getResource("sqlite3test.js").toString();
+        testURIString = testURIString.replace("jar:file:", "jarfile:");
+        final URI testURI = URI.create(testURIString);
         Exception throwme = null;
         MicroService.uninstall(InstrumentationRegistry.getContext(), testURI);
         try {

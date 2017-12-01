@@ -6,8 +6,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.liquidplayer.javascript.JSContext;
-import org.liquidplayer.node.Process;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -26,8 +24,9 @@ public class MicroServiceTest {
         final CountDownLatch waitForServer = new CountDownLatch(1);
         final CountDownLatch waitForFinish = new CountDownLatch(2);
 
-        final URI serverURI = URI.create("android.resource://" +
-                InstrumentationRegistry.getContext().getPackageName() + "/raw/server");
+        String serverURIString = getClass().getClassLoader().getResource("server.js").toString();
+        serverURIString = serverURIString.replace("jar:file:", "jarfile:");
+        final URI serverURI = URI.create(serverURIString);
 
         // First, start a MicroService from a file.  This service creates a small HTTP file server
         final MicroService server = new MicroService(InstrumentationRegistry.getContext(), serverURI,
