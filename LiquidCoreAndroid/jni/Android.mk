@@ -51,6 +51,7 @@ else
 endif
 
 LOCAL_MODULE    := liquidcore
+
 LOCAL_SRC_FILES := common.cpp \
                    JNI/JSContext.cpp \
                    JNI/JSValue.cpp \
@@ -67,7 +68,10 @@ LOCAL_SRC_FILES := common.cpp \
                    JSC/JSC_JSContext.cpp \
                    JSC/JSC_JSObject.cpp \
                    JSC/JSC_JSBase.cpp \
-                   ../../deps/jscshim/JSCShim.cpp \
+                   ../../deps/jscshim/JSCShim.cpp
+
+# FIXME: This should not be compiled into release builds
+LOCAL_SRC_FILES += \
                    androidTest/testapi.cpp \
                    androidTest/CustomGlobalObjectClassTest.cpp \
                    androidTest/JSNode.cpp \

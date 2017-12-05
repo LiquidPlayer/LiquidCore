@@ -292,5 +292,8 @@ for (var i = 0; i < 6; ++i)
     var z = PropertyCatchalls.z;
 shouldBe("z", null);
 
+global.foo = 'bar'
+shouldBe("foo", "bar");
+
 if (failed)
     throw "Some tests failed";

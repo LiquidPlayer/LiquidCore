@@ -190,9 +190,15 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreate(JSClassRef globalObjectClass)
     return (JSGlobalContextRef)ctx;
 }
 
-static void setUpConsoleLog(JSGlobalContextRef ctx) {
-    // Apparently JavaScriptCore implements console.log out of the box.  V8 doesn't.
+/*
+ * Some features come out of the box in JavaScriptCore that are not there in V8.  We
+ * simulate them here:
+ *  - console.log()
+ *  - global
+ */
+static void setUpJSCFeatures(JSGlobalContextRef ctx) {
     V8_ISOLATE_CTX(ctx->Context(), isolate, context)
+        // Apparently JavaScriptCore implements console.log out of the box.  V8 doesn't.
         Local<Object> global =
             context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
         Local<Object> console = Object::New(isolate);
@@ -215,6 +221,11 @@ static void setUpConsoleLog(JSGlobalContextRef ctx) {
         );
         console->Set(context, String::NewFromUtf8(isolate, "log"),
             logt->GetFunction(context).ToLocalChecked());
+
+        // global
+        global->DefineOwnProperty(context, String::NewFromUtf8(isolate, "global"), context->Global(),
+            v8::DontEnum);
+
     V8_UNLOCK()
 }
 
@@ -238,7 +249,7 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
             ctx = new OpaqueJSContext(
                 new JSContext((ContextGroup*)group, Context::New(isolate)));
         }
-        setUpConsoleLog(ctx);
+        setUpJSCFeatures(ctx);
         ((ContextGroup*)group)->release();
     V8_UNLOCK()
 
