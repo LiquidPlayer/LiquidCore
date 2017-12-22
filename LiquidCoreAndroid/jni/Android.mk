@@ -56,10 +56,10 @@ LOCAL_SRC_FILES := common.cpp \
                    JNI/JSContext.cpp \
                    JNI/JSValue.cpp \
                    JNI/JSObject.cpp \
-                   ../../deps/sqlite-autoconf-3150000/sqlite3.c \
                    node/NodeInstance.cpp \
                    node/nodedroid_file.cc \
                    node/process_wrap.cc \
+                   node/sqlite3_shim.cpp \
                    ../../deps/node-sqlite3/src/database.cc \
                    ../../deps/node-sqlite3/src/node_sqlite3.cc \
                    ../../deps/node-sqlite3/src/statement.cc \
@@ -69,6 +69,8 @@ LOCAL_SRC_FILES := common.cpp \
                    JSC/JSC_JSObject.cpp \
                    JSC/JSC_JSBase.cpp \
                    ../../deps/jscshim/JSCShim.cpp
+
+#                   ../../deps/sqlite-autoconf-3150000/sqlite3.c
 
 # FIXME: This should not be compiled into release builds
 LOCAL_SRC_FILES += \

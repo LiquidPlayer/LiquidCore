@@ -17,6 +17,7 @@ public class Modules {
 
     Modules(Context ctx) {
         context = ctx;
+        SQLite3Shim.init();
     }
 
     void setUpNodeModules() {
