@@ -106,7 +106,7 @@ class SQLite3Database {
         m_cancellationSignal.cancel();
     }
 
-    Long sqlite3_last_insert_rowid() {
+    long sqlite3_last_insert_rowid() {
         return m_last_insert_rowId;
     }
 

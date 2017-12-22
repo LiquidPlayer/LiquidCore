@@ -321,7 +321,12 @@ SQLITE_API void sqlite3_interrupt(sqlite3* db)
 }
 SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3* db)
 {
-    return 0;
+    JNI_ENTER(env)
+        jmethodID mid = method(env, db->m_db, "sqlite3_last_insert_rowid", "()J");
+        jlong value = env->CallLongMethod(db->m_db, mid);
+    JNI_EXIT()
+
+    return value;
 }
 SQLITE_API int sqlite3_load_extension(
   sqlite3 *db,          /* Load the extension into this database connection */
