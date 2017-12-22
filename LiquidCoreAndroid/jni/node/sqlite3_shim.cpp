@@ -196,7 +196,7 @@ static int get_status(JNIEnv *env, sqlite3* db, jobject ret) {
 extern "C" JNIEXPORT void JNICALL Java_org_liquidplayer_node_SQLite3Shim_initNative(JNIEnv* env, jobject thiz)
 {
     env->GetJavaVM(&s_jvm);
-    s_sqlite3 = env->NewGlobalRef(thiz);
+    s_sqlite3 = env->NewWeakGlobalRef(thiz);
     auto randomClass = env->FindClass(SQLITE3_JNIRETURNOBJECT);
     jclass classClass = env->GetObjectClass(randomClass);
     auto classLoaderClass = env->FindClass("java/lang/ClassLoader");
