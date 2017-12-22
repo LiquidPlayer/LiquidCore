@@ -149,7 +149,12 @@ public:
     bool m_first_step;
 } sqlite3_stmt;
 
+#define MUTEX_SIGNATURE 0xe71c1a08
 typedef struct sqlite3_mutex {
+    unsigned int signature;
+public:
+    sqlite3_mutex() : signature(MUTEX_SIGNATURE), mutex() {}
+    virtual ~sqlite3_mutex() {}
     std::mutex mutex;
 } sqlite3_mutex;
 
@@ -621,7 +626,11 @@ SQLITE_API int sqlite3_step(sqlite3_stmt* stmt)
 
 SQLITE_API void sqlite3_free(void* ptr)
 {
-    if (ptr) free(ptr);
+    if (ptr && *((unsigned int*)ptr) == MUTEX_SIGNATURE) {
+        delete (sqlite3_mutex *) ptr;
+    } else if (ptr) {
+        free(ptr);
+    }
 }
 SQLITE_API void sqlite3_mutex_enter(sqlite3_mutex* mutex)
 {
