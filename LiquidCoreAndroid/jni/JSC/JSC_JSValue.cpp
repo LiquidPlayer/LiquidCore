@@ -30,12 +30,10 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "JSC.h"
 
-#define CTX(ctx)     ((ctx)->Context())
-#define VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value) \
-    V8_ISOLATE_CTX(ctxRef,isolate,context) \
-    Local<Value> value = (valueRef->L());
+#include "JSC/Macros.h"
+#include "JSC/JSC.h"
+#include "JSC/TempException.h"
 
 JS_EXPORT JSType JSValueGetType(JSContextRef ctxRef, JSValueRef valueRef)
 {
@@ -250,7 +248,7 @@ JS_EXPORT JSValueRef JSValueMakeUndefined(JSContextRef ctx)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = OpaqueJSValue::New(ctx,Local<Value>::New(isolate,Undefined(isolate)));
+        value = &* OpaqueJSValue::New(ctx,Local<Value>::New(isolate,Undefined(isolate)));
     V8_UNLOCK()
 
     return value;
@@ -261,7 +259,7 @@ JS_EXPORT JSValueRef JSValueMakeNull(JSContextRef ctx)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = OpaqueJSValue::New(ctx,Local<Value>::New(isolate,Null(isolate)));
+        value = &* OpaqueJSValue::New(ctx,Local<Value>::New(isolate,Null(isolate)));
     V8_UNLOCK()
 
     return value;
@@ -272,7 +270,7 @@ JS_EXPORT JSValueRef JSValueMakeBoolean(JSContextRef ctx, bool boolean)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = OpaqueJSValue::New(ctx,
+        value = &* OpaqueJSValue::New(ctx,
             Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate)));
     V8_UNLOCK()
 
@@ -284,7 +282,7 @@ JS_EXPORT JSValueRef JSValueMakeNumber(JSContextRef ctx, double number)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = OpaqueJSValue::New(ctx,Number::New(isolate,number));
+        value = &* OpaqueJSValue::New(ctx,Number::New(isolate,number));
     V8_UNLOCK()
 
     return value;
@@ -297,7 +295,7 @@ JS_EXPORT JSValueRef JSValueMakeString(JSContextRef ctx, JSStringRef string)
     JSValueRef value;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        value = OpaqueJSValue::New(ctx,string->Value(isolate));
+        value = &* OpaqueJSValue::New(ctx,string->Value(isolate));
     V8_UNLOCK()
 
     return value;
@@ -314,7 +312,7 @@ JS_EXPORT JSValueRef JSValueMakeFromJSONString(JSContextRef ctx, JSStringRef str
         MaybeLocal<Value> parsed = JSON::Parse(isolate,
             static_cast<OpaqueJSString*>(string)->Value(isolate));
         if (!parsed.IsEmpty())
-            value = OpaqueJSValue::New(ctx,parsed.ToLocalChecked());
+            value = &* OpaqueJSValue::New(ctx,parsed.ToLocalChecked());
     V8_UNLOCK()
 
     return value;
@@ -323,7 +321,7 @@ JS_EXPORT JSValueRef JSValueMakeFromJSONString(JSContextRef ctx, JSStringRef str
 JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef valueRef,
     unsigned indent, JSValueRef* exceptionRef)
 {
-    if (!valueRef) return new OpaqueJSString("null");
+    if (!valueRef) return &* OpaqueJSString::New("null");
 
     OpaqueJSString *value = nullptr;
 
@@ -348,7 +346,7 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
             exception.Set(ctxRef, trycatch.Exception());
         } else if (!result.ToLocalChecked()->IsUndefined()) {
             Local<String> string = result.ToLocalChecked()->ToString(context).ToLocalChecked();
-            value = new OpaqueJSString(string);
+            value = &* OpaqueJSString::New(string);
         } else if (exceptionRef) {
             TempJSValue e(ctxRef, "Unserializable value");
             JSValueRef args[] = {*e};
@@ -398,7 +396,7 @@ JS_EXPORT double JSValueToNumber(JSContextRef ctxRef, JSValueRef valueRef, JSVal
 JS_EXPORT JSStringRef JSValueToStringCopy(JSContextRef ctxRef, JSValueRef valueRef,
     JSValueRef* exceptionRef)
 {
-    if (!valueRef) return new OpaqueJSString("null");
+    if (!valueRef) return &* OpaqueJSString::New("null");
 
     JSStringRef out = nullptr;
 
@@ -409,7 +407,7 @@ JS_EXPORT JSStringRef JSValueToStringCopy(JSContextRef ctxRef, JSValueRef valueR
         MaybeLocal<String> string = value->ToString(context);
         if (!string.IsEmpty()) {
             String::Utf8Value chars(string.ToLocalChecked());
-            out = new OpaqueJSString(*chars);
+            out = &* OpaqueJSString::New(*chars);
         } else {
             exception.Set(ctxRef, trycatch.Exception());
         }
@@ -431,7 +429,7 @@ JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
 
         MaybeLocal<Object> obj = value->ToObject(context);
         if (!obj.IsEmpty()) {
-            out = OpaqueJSValue::New(ctxRef, value->ToObject());
+            out = const_cast<JSObjectRef>(OpaqueJSValue::New(ctxRef, value->ToObject()));
         } else {
             exception.Set(ctxRef, trycatch.Exception());
         }

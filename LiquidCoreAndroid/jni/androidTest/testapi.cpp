@@ -59,6 +59,7 @@
 #endif
 
 #include "CustomGlobalObjectClassTest.h"
+#include "JNI/JNI.h"
 
 #if JSC_OBJC_API_ENABLED
 void testObjectiveCAPI(void);
@@ -1142,8 +1143,10 @@ static void reset_globals() {
 }
 
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* env,
-    jobject thiz, jstring testapi_js, jlong group)
+    jobject thiz, jstring testapi_js, jobject group_)
 {
+    auto group = &* SharedWrap<ContextGroup>::Shared(env, group_);
+
     reset_globals();
 
 #if JSC_OBJC_API_ENABLED

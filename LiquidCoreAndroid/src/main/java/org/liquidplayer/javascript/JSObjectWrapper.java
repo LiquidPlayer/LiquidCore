@@ -41,7 +41,6 @@ abstract class JSObjectWrapper extends JSObject {
         mJSObject = obj;
         context = obj.getContext();
         valueRef = obj.valueRef();
-        protect(context.ctxRef(), valueRef);
     }
     private final JSObject mJSObject;
 

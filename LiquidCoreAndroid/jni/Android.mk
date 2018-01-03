@@ -52,10 +52,15 @@ endif
 
 LOCAL_MODULE    := liquidcore
 
-LOCAL_SRC_FILES := common.cpp \
+LOCAL_SRC_FILES := \
+                   Common/ContextGroup.cpp \
+                   Common/JSContext.cpp \
+                   Common/JSValue.cpp \
+                   JNI/SharedWrap.cpp \
                    JNI/JSContext.cpp \
                    JNI/JSValue.cpp \
                    JNI/JSObject.cpp \
+                   JNI/JSFunction.cpp \
                    node/NodeInstance.cpp \
                    node/nodedroid_file.cc \
                    node/process_wrap.cc \
@@ -63,14 +68,18 @@ LOCAL_SRC_FILES := common.cpp \
                    ../../deps/node-sqlite3/src/database.cc \
                    ../../deps/node-sqlite3/src/node_sqlite3.cc \
                    ../../deps/node-sqlite3/src/statement.cc \
+                   JSC/OpaqueJSContextGroup.cpp \
+                   JSC/OpaqueJSContext.cpp \
+                   JSC/OpaqueJSString.cpp \
+                   JSC/OpaqueJSClass.cpp \
+                   JSC/OpaqueJSValue.cpp \
+                   JSC/ObjectData.cpp \
                    JSC/JSC_JSValue.cpp \
                    JSC/JSC_JSString.cpp \
                    JSC/JSC_JSContext.cpp \
                    JSC/JSC_JSObject.cpp \
                    JSC/JSC_JSBase.cpp \
                    ../../deps/jscshim/JSCShim.cpp
-
-#                   ../../deps/sqlite-autoconf-3150000/sqlite3.c
 
 # FIXME: This should not be compiled into release builds
 LOCAL_SRC_FILES += \
@@ -91,7 +100,7 @@ DEFS_Release := \
 	-DV8_DEPRECATION_WARNINGS=1 \
 	-DNODE_SHARED_MODE \
 	-DNODE_USE_V8_PLATFORM=1 \
-	-DHAVE_INSPECTOR=1 \
+	-DHAVE_INSPECTOR=0 \
 	-DV8_INSPECTOR_USE_STL=1 \
 	-DV8_INSPECTOR_USE_OLD_STL=1 \
 	-DHAVE_OPENSSL=1 \
@@ -126,13 +135,13 @@ CFLAGS_CC_Release := \
 	-fno-exceptions \
 	-std=gnu++0x
 
-LOCAL_CFLAGS  := -I$(LOCAL_PATH)/../../deps/node-6.10.2/src \
-    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/v8 \
-    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/v8/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/uv/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/cares/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/openssl/openssl/include \
-    -I$(LOCAL_PATH)/../../deps/node-6.10.2/deps/http_parser \
+LOCAL_CFLAGS  := -I$(LOCAL_PATH)/../../deps/node-8.9.3/src \
+    -I$(LOCAL_PATH)/../../deps/node-8.9.3/deps/v8 \
+    -I$(LOCAL_PATH)/../../deps/node-8.9.3/deps/v8/include \
+    -I$(LOCAL_PATH)/../../deps/node-8.9.3/deps/uv/include \
+    -I$(LOCAL_PATH)/../../deps/node-8.9.3/deps/cares/include \
+    -I$(LOCAL_PATH)/../../deps/node-8.9.3/deps/openssl/openssl/include \
+    -I$(LOCAL_PATH)/../../deps/node-8.9.3/deps/http_parser \
     -I$(LOCAL_PATH)/../../deps/JavaScriptCore/include \
     -I$(LOCAL_PATH)/../../deps/utfcpp \
     -I$(LOCAL_PATH)/../../deps/sqlite-autoconf-3150000 \

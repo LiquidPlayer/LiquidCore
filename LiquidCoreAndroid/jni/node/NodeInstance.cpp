@@ -31,9 +31,8 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "NodeInstance.h"
-
-#include "nodedroid_file.h"
+#include "node/NodeInstance.h"
+#include "node/nodedroid_file.h"
 
 #if defined HAVE_PERFCTR
 #include "node_counters.h"
@@ -55,7 +54,13 @@
 #include "node_lttng.h"
 #endif
 
+#include <sys/resource.h>  // getrlimit, setrlimit
+
+#include "node_perf.h"
+#include "v8-profiler.h"
+
 #include "JSC/JSC.h"
+#include "JNI/JNI.h"
 
 NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     env->GetJavaVM(&m_jvm);
@@ -98,7 +103,7 @@ void NodeInstance::spawnedThread()
       }
     argv[argc] = 0;
 
-    int ret = Start(argc, argv);
+    int ret = StartInstance(argc, argv);
 
     if (m_jvm) {
         JNIEnv *env;
@@ -138,10 +143,6 @@ void NodeInstance::spawnedThread()
 
 void NodeInstance::node_main_task(void *inst) {
     reinterpret_cast<NodeInstance*>(inst)->spawnedThread();
-}
-
-void NodeInstance::PumpMessageLoop(Isolate* isolate) {
-    v8::platform::PumpMessageLoop(ContextGroup::Platform(), isolate);
 }
 
 void NodeInstance::WaitForInspectorDisconnect(Environment* env) {
@@ -329,241 +330,500 @@ void NodeInstance::OnFatalError(const char* location, const char* message) {
   }
 }
 
-Environment* NodeInstance::CreateEnvironment(Isolate* isolate,
-                                      Local<Context> context,
-                                      NodeInstanceData* instance_data) {
-  return node::CreateEnvironment(isolate,
-                           instance_data->event_loop(),
-                           context,
-                           instance_data->argc(),
-                           instance_data->argv(),
-                           instance_data->exec_argc(),
-                           instance_data->exec_argv());
+static struct {
+  void Initialize(int thread_pool_size, uv_loop_t* loop) {}
+  void Dispose() {}
+  void DrainVMTasks() {}
+  bool StartInspector(Environment *env, const char* script_path,
+                      const node::DebugOptions& options) {
+    env->ThrowError("Node compiled with NODE_USE_V8_PLATFORM=0");
+    return true;
+  }
+
+  void StartTracingAgent() {
+    fprintf(stderr, "Node compiled with NODE_USE_V8_PLATFORM=0, "
+                    "so event tracing is not available.\n");
+  }
+  void StopTracingAgent() {}
+  bool InspectorStarted(Environment *env) {
+    return false;
+  }
+} v8_platform;
+
+static void PrintErrorString(const char* format, ...) {
+  va_list ap;
+  va_start(ap, format);
+#ifdef _WIN32
+  HANDLE stderr_handle = GetStdHandle(STD_ERROR_HANDLE);
+
+  // Check if stderr is something other than a tty/console
+  if (stderr_handle == INVALID_HANDLE_VALUE ||
+      stderr_handle == nullptr ||
+      uv_guess_handle(_fileno(stderr)) != UV_TTY) {
+    vfprintf(stderr, format, ap);
+    va_end(ap);
+    return;
+  }
+
+  // Fill in any placeholders
+  int n = _vscprintf(format, ap);
+  std::vector<char> out(n + 1);
+  vsprintf(out.data(), format, ap);
+
+  // Get required wide buffer size
+  n = MultiByteToWideChar(CP_UTF8, 0, out.data(), -1, nullptr, 0);
+
+  std::vector<wchar_t> wbuf(n);
+  MultiByteToWideChar(CP_UTF8, 0, out.data(), -1, wbuf.data(), n);
+
+  // Don't include the null character in the output
+  CHECK_GT(n, 0);
+  WriteConsoleW(stderr_handle, wbuf.data(), n - 1, nullptr, nullptr);
+#else
+  vfprintf(stderr, format, ap);
+#endif
+  va_end(ap);
 }
 
-int NodeInstance::StartNodeInstance(void* arg) {
-  NodeInstanceData* instance_data = static_cast<NodeInstanceData*>(arg);
-  Isolate::CreateParams params;
-  ArrayBufferAllocator* array_buffer_allocator = new ArrayBufferAllocator();
-  params.array_buffer_allocator = array_buffer_allocator;
-  Isolate* isolate = Isolate::New(params);
-  int exit_code = 1;
-  OpaqueJSContextGroup *group = nullptr;
+static void ReportException(Environment* env,
+                            Local<Value> er,
+                            Local<Message> message) {
+  HandleScope scope(env->isolate());
 
-  auto notify_start = [&] (JSContext *java_node_context, JSContextRef ctxRef) {
-      JNIEnv *jenv;
-      int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
-      if (getEnvStat == JNI_EDETACHED) {
-        m_jvm->AttachCurrentThread(&jenv, NULL);
+  AppendExceptionLine(env, er, message, FATAL_ERROR);
+
+  Local<Value> trace_value;
+  Local<Value> arrow;
+  const bool decorated = IsExceptionDecorated(env, er);
+
+  if (er->IsUndefined() || er->IsNull()) {
+    trace_value = Undefined(env->isolate());
+  } else {
+    Local<Object> err_obj = er->ToObject(env->isolate());
+
+    trace_value = err_obj->Get(env->stack_string());
+    arrow =
+        err_obj->GetPrivate(
+            env->context(),
+            env->arrow_message_private_symbol()).ToLocalChecked();
+  }
+
+  node::Utf8Value trace(env->isolate(), trace_value);
+
+  // range errors have a trace member set to undefined
+  if (trace.length() > 0 && !trace_value->IsUndefined()) {
+    if (arrow.IsEmpty() || !arrow->IsString() || decorated) {
+      PrintErrorString("%s\n", *trace);
+    } else {
+      node::Utf8Value arrow_string(env->isolate(), arrow);
+      PrintErrorString("%s\n%s\n", *arrow_string, *trace);
+    }
+  } else {
+    // this really only happens for RangeErrors, since they're the only
+    // kind that won't have all this info in the trace, or when non-Error
+    // objects are thrown manually.
+    Local<Value> message;
+    Local<Value> name;
+
+    if (er->IsObject()) {
+      Local<Object> err_obj = er.As<Object>();
+      message = err_obj->Get(env->message_string());
+      name = err_obj->Get(FIXED_ONE_BYTE_STRING(env->isolate(), "name"));
+    }
+
+    if (message.IsEmpty() ||
+        message->IsUndefined() ||
+        name.IsEmpty() ||
+        name->IsUndefined()) {
+      // Not an error object. Just print as-is.
+      String::Utf8Value message(er);
+
+      PrintErrorString("%s\n", *message ? *message :
+                                          "<toString() threw exception>");
+    } else {
+      node::Utf8Value name_string(env->isolate(), name);
+      node::Utf8Value message_string(env->isolate(), message);
+
+      if (arrow.IsEmpty() || !arrow->IsString() || decorated) {
+        PrintErrorString("%s: %s\n", *name_string, *message_string);
+      } else {
+        node::Utf8Value arrow_string(env->isolate(), arrow);
+        PrintErrorString("%s\n%s: %s\n",
+                         *arrow_string,
+                         *name_string,
+                         *message_string);
       }
-
-      jclass cls = jenv->GetObjectClass(m_JavaThis);
-      jmethodID mid;
-      do {
-        mid = jenv->GetMethodID(cls,"onNodeStarted","(JJJ)V");
-        if (!jenv->ExceptionCheck()) break;
-        jenv->ExceptionClear();
-        jclass super = jenv->GetSuperclass(cls);
-        jenv->DeleteLocalRef(cls);
-        if (super == NULL || jenv->ExceptionCheck()) {
-          if (super != NULL) jenv->DeleteLocalRef(super);
-          if (getEnvStat == JNI_EDETACHED) {
-            m_jvm->DetachCurrentThread();
-          }
-          CHECK_EQ(0,1); // This is bad
-        }
-        cls = super;
-      } while (true);
-      jenv->DeleteLocalRef(cls);
-
-      group->retain();
-      // FIXME: We should also retain context here for consistency and have Java release
-
-      jenv->CallVoidMethod(m_JavaThis, mid, reinterpret_cast<jlong>(java_node_context),
-        reinterpret_cast<jlong>(group), reinterpret_cast<jlong>(ctxRef));
-
-      if (getEnvStat == JNI_EDETACHED) {
-          m_jvm->DetachCurrentThread();
-      }
-  };
-
-  {
-    Mutex::ScopedLock scoped_lock(node_isolate_mutex);
-    if (instance_data->is_main()) {
-      CHECK_EQ(node_isolate, nullptr);
-      node_isolate = isolate;
     }
   }
 
+  fflush(stderr);
+}
+
+static void ReportException(Environment* env, const TryCatch& try_catch) {
+  ReportException(env, try_catch.Exception(), try_catch.Message());
+}
+
+void FatalException(Isolate* isolate,
+                    Local<Value> error,
+                    Local<Message> message) {
+  HandleScope scope(isolate);
+
+  Environment* env = Environment::GetCurrent(isolate);
+  Local<Object> process_object = env->process_object();
+  Local<String> fatal_exception_string = env->fatal_exception_string();
+  Local<Function> fatal_exception_function =
+      process_object->Get(fatal_exception_string).As<Function>();
+
+  int exit_code = 0;
+  if (!fatal_exception_function->IsFunction()) {
+    // failed before the process._fatalException function was added!
+    // this is probably pretty bad.  Nothing to do but report and exit.
+    ReportException(env, error, message);
+    exit_code = 6;
+  }
+
+  if (exit_code == 0) {
+    TryCatch fatal_try_catch(isolate);
+
+    // Do not call FatalException when _fatalException handler throws
+    fatal_try_catch.SetVerbose(false);
+
+    // this will return true if the JS layer handled it, false otherwise
+    Local<Value> caught =
+        fatal_exception_function->Call(process_object, 1, &error);
+
+    if (fatal_try_catch.HasCaught()) {
+      // the fatal exception function threw, so we must exit
+      ReportException(env, fatal_try_catch);
+      exit_code = 7;
+    }
+
+    if (exit_code == 0 && false == caught->BooleanValue()) {
+      ReportException(env, error, message);
+      exit_code = 1;
+    }
+  }
+
+  if (exit_code) {
+#if HAVE_INSPECTOR
+    env->inspector_agent()->FatalException(error, message);
+#endif
+    exit(exit_code);
+  }
+}
+
+
+static void OnMessage(Local<Message> message, Local<Value> error) {
+  // The current version of V8 sends messages for errors only
+  // (thus `error` is always set).
+  FatalException(Isolate::GetCurrent(), error, message);
+}
+
+void NodeInstance::StartInspector(Environment* env, const char* path,
+                           DebugOptions debug_options) {
+#if HAVE_INSPECTOR
+  CHECK(!env->inspector_agent()->IsStarted());
+  v8_platform.StartInspector(env, path, debug_options);
+#endif  // HAVE_INSPECTOR
+}
+
+#define JSC "Lorg/liquidplayer/javascript/JNIJSContext;"
+#define JSG "Lorg/liquidplayer/javascript/JNIJSContextGroup;"
+
+inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
+                 int argc, const char* const* argv,
+                 int exec_argc, const char* const* exec_argv) {
+  /* ===Start */
+  OpaqueJSContextGroup *group = reinterpret_cast<OpaqueJSContextGroup *>(group_);
+  Isolate *isolate = group->isolate();
+  HandleScope handle_scope(isolate);
+  JSGlobalContextRef ctxRef = nullptr;
+  JSClassRef globalClass = nullptr;
   {
-    v8::Locker locker_(isolate);
-    Isolate::Scope isolate_scope(isolate);
-    HandleScope handle_scope(isolate);
+    JSClassDefinition definition = kJSClassDefinitionEmpty;
+    definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
+    globalClass = JSClassCreate(&definition);
+    ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
+  }
+  JSClassRelease(globalClass);
+  auto java_node_context = ctxRef->Context();
+  Local<Context> context = java_node_context->Value();
 
-    group = new OpaqueJSContextGroup(isolate, instance_data->event_loop());
-
-    JSGlobalContextRef ctxRef = nullptr;
-    JSClassRef globalClass = nullptr;
-    {
-      JSClassDefinition definition = kJSClassDefinitionEmpty;
-      definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
-      globalClass = JSClassCreate(&definition);
-      ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
+  auto notify_start = [&] (std::shared_ptr<JSContext> java_node_context, JSContextRef ctxRef) {
+    JNIEnv *jenv;
+    int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
+    if (getEnvStat == JNI_EDETACHED) {
+      m_jvm->AttachCurrentThread(&jenv, NULL);
     }
 
-    JSClassRelease(globalClass);
-
-    JSContext *java_node_context;
-    java_node_context = const_cast<JSContext*>(ctxRef->Context());
-    java_node_context->retain();
-    Local<Context> context = java_node_context->Value();
-
-    Environment* env = CreateEnvironment(isolate, context, instance_data);
-    array_buffer_allocator->set_env(env);
-    Context::Scope context_scope(context);
-    {
-      ContextGroup::Mutex()->lock();
-
-      // Override default chdir and cwd methods
-      Local<Object> process = env->process_object();
-      env->SetMethod(process, "chdir", Chdir);
-      env->SetMethod(process, "cwd", Cwd);
-
-      // Remove process.dlopen().  Nothing good can come of it in this environment.
-      process->Delete(env->context(), String::NewFromUtf8(isolate, "dlopen"));
-
-      // Override exit() and abort() so they don't nuke the app
-      env->SetMethod(process, "reallyExit", Exit);
-      env->SetMethod(process, "abort", Abort);
-      env->SetMethod(process, "_kill", Kill);
-
-      instance_map[env] = this;
-
-      isolate->SetAbortOnUncaughtExceptionCallback(
-        ShouldAbortOnUncaughtException);
-
-      // Start debug agent when argv has --debug
-      /*
-      if (instance_data->use_debug_agent()) {
-        const char* path = instance_data->argc() > 1
-                           ? instance_data->argv()[1]
-                           : nullptr;
-        StartDebug(env, path, debug_wait_connect);
-        if (use_inspector && !debugger_running) {
-          exit(12);
+    jclass cls = jenv->GetObjectClass(m_JavaThis);
+    jmethodID mid;
+    findClass(jenv, "org/liquidplayer/javascript/JNIJSContextGroup");
+    findClass(jenv, "org/liquidplayer/javascript/JNIJSContext");
+    do {
+      mid = jenv->GetMethodID(cls,"onNodeStarted","(" JSC JSG "J)V");
+      if (!jenv->ExceptionCheck()) break;
+      jenv->ExceptionClear();
+      jclass super = jenv->GetSuperclass(cls);
+      jenv->DeleteLocalRef(cls);
+      if (super == NULL || jenv->ExceptionCheck()) {
+        if (super != NULL) jenv->DeleteLocalRef(super);
+        if (getEnvStat == JNI_EDETACHED) {
+          m_jvm->DetachCurrentThread();
         }
+        CHECK_EQ(0,1); // This is bad
       }
-      */
+      cls = super;
+    } while (true);
+    jenv->DeleteLocalRef(cls);
 
-      {
-        Environment::AsyncCallbackScope callback_scope(env);
-        env->isolate()->SetFatalErrorHandler(OnFatalError);
-        LoadEnvironment(env);
-      }
+    jenv->CallVoidMethod(m_JavaThis, mid,
+        SharedWrap<JSContext>::New(jenv, java_node_context),
+        SharedWrap<ContextGroup>::New(jenv, group->ContextGroup::shared_from_this()),
+        reinterpret_cast<jlong>(ctxRef)
+    );
 
-      // Enable debugger
-      /*
-      if (instance_data->use_debug_agent())
-        EnableDebug(env);
-      */
-      ContextGroup::Mutex()->unlock();
+    if (getEnvStat == JNI_EDETACHED) {
+        m_jvm->DetachCurrentThread();
     }
+  };
+  /* ===End */
 
-    {
-      SealHandleScope seal(isolate);
+  Context::Scope context_scope(context);
+  Environment env(isolate_data, context);
+  CHECK_EQ(0, uv_key_create(&thread_local_env));
+  uv_key_set(&thread_local_env, &env);
+  env.Start(argc, argv, exec_argc, exec_argv, v8_is_profiling);
 
-      if (m_jvm) {
-        //java_node_context->retain();
-        notify_start(java_node_context, ctxRef);
-      }
+  /* ===Start */
+  // Override default chdir and cwd methods
+  Local<Object> process = env.process_object();
+  env.SetMethod(process, "chdir", Chdir);
+  env.SetMethod(process, "cwd", Cwd);
 
-      bool more;
-      do {
-        PumpMessageLoop(isolate);
-        more = uv_run(env->event_loop(), UV_RUN_ONCE);
+  // Remove process.dlopen().  Nothing good can come of it in this environment.
+  process->Delete(env.context(), String::NewFromUtf8(isolate, "dlopen"));
 
-        if (more == false) {
-          PumpMessageLoop(isolate);
-          EmitBeforeExit(env);
+  // Override exit() and abort() so they don't nuke the app
+  env.SetMethod(process, "reallyExit", Exit);
+  env.SetMethod(process, "abort", Abort);
+  env.SetMethod(process, "_kill", Kill);
 
-          // Emit `beforeExit` if the loop became alive either after emitting
-          // event, or after running some callbacks.
-          more = uv_loop_alive(env->event_loop());
-          if (uv_run(env->event_loop(), UV_RUN_NOWAIT) != 0)
-            more = true;
-        }
-      } while (more == true);
-    }
+  instance_map[&env] = this;
 
-    {
-      ContextGroup::Mutex()->lock();
+  if (m_jvm) {
+    notify_start(java_node_context, ctxRef);
+  }
+  /* ===End */
 
-      env->set_trace_sync_io(false);
+  const char* path = argc > 1 ? argv[1] : nullptr;
+  StartInspector(&env, path, debug_options);
 
-      if(!didExit) {
-        exit_code = EmitExit(env);
-        RunAtExit(env);
-      } else {
-        exit_code = this->exit_code;
-      }
+  if (debug_options.inspector_enabled() && !v8_platform.InspectorStarted(&env))
+    return 12;  // Signal internal error.
 
-      JSGlobalContextRelease(ctxRef);
-      java_node_context->SetDefunct();
-      int count = java_node_context->release();
-      if (count != 0) {
-        __android_log_assert("FAIL", "ASSERT FAILED", "context count = %d", count);
-      }
+  env.set_abort_on_uncaught_exception(abort_on_uncaught_exception);
 
-      WaitForInspectorDisconnect(env);
+  if (force_async_hooks_checks) {
+    env.async_hooks()->force_checks();
+  }
+
+  {
+    Environment::AsyncCallbackScope callback_scope(&env);
+    env.async_hooks()->push_async_ids(1, 0);
+    LoadEnvironment(&env);
+    env.async_hooks()->pop_async_id(1);
+  }
+
+  env.set_trace_sync_io(trace_sync_io);
+
+  {
+    SealHandleScope seal(isolate);
+
+    bool more;
+    PERFORMANCE_MARK(&env, LOOP_START);
+    do {
+      uv_run(env.event_loop(), UV_RUN_DEFAULT);
+
+      v8_platform.DrainVMTasks();
+
+      more = uv_loop_alive(env.event_loop());
+      if (more)
+        continue;
+
+      EmitBeforeExit(&env);
+
+      // Emit `beforeExit` if the loop became alive either after emitting
+      // event, or after running some callbacks.
+      more = uv_loop_alive(env.event_loop());
+    } while (more == true);
+    PERFORMANCE_MARK(&env, LOOP_EXIT);
+  }
+
+  env.set_trace_sync_io(false);
+
+  const int exit_code = EmitExit(&env);
+  RunAtExit(&env);
+
+  /* ===Start */
+  JSGlobalContextRelease(ctxRef);
+  JSContextGroupRelease(group);
+__android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "Getting ready to dispose the group");
+  group->Dispose();
+  /* ===End */
+
+  uv_key_delete(&thread_local_env);
+
+  v8_platform.DrainVMTasks();
+  WaitForInspectorDisconnect(&env);
 #if defined(LEAK_SANITIZER)
-      __lsan_do_leak_check();
+  __lsan_do_leak_check();
 #endif
 
-      array_buffer_allocator->set_env(nullptr);
-
-      instance_map.erase(env);
-
-      env->Dispose();
-      env = nullptr;
-
-      ContextGroup::Mutex()->unlock();
-    }
-  }
-
-  {
-    Mutex::ScopedLock scoped_lock(node_isolate_mutex);
-    if (node_isolate == isolate)
-      node_isolate = nullptr;
-  }
-
-  CHECK_NE(isolate, nullptr);
-
-  group->retain();
-  JSContextGroupRelease(group);
-
-  int count = group->release();
-  if (count != 0) {
-    __android_log_assert("FAIL", "ASSERT FAILED", "group count = %d", count);
-  }
-
-  isolate->Dispose();
-  isolate = nullptr;
-
-  delete array_buffer_allocator;
+  /* ===Start */
+  instance_map.erase(&env);
+  /* ===End */
 
   return exit_code;
 }
 
-// Look up environment variable unless running as setuid root.
-inline const char* secure_getenv(const char* key) {
-#ifndef _WIN32
-  if (getuid() != geteuid() || getgid() != getegid())
-    return nullptr;
+inline int NodeInstance::StartInstance(uv_loop_t* event_loop,
+                 int argc, const char* const* argv,
+                 int exec_argc, const char* const* exec_argv) {
+  Isolate::CreateParams params;
+  ArrayBufferAllocator allocator;
+  params.array_buffer_allocator = &allocator;
+#ifdef NODE_ENABLE_VTUNE_PROFILING
+  params.code_event_handler = vTune::GetVtuneCodeEventHandler();
 #endif
-  return getenv(key);
+
+  Isolate* const isolate = Isolate::New(params);
+  if (isolate == nullptr)
+    return 12;  // Signal internal error.
+
+  isolate->AddMessageListener(OnMessage);
+  isolate->SetAbortOnUncaughtExceptionCallback(ShouldAbortOnUncaughtException);
+  isolate->SetAutorunMicrotasks(false);
+  isolate->SetFatalErrorHandler(OnFatalError);
+
+  if (track_heap_objects) {
+    isolate->GetHeapProfiler()->StartTrackingHeapObjects(true);
+  }
+
+  {
+    Mutex::ScopedLock scoped_lock(node_isolate_mutex);
+    CHECK_EQ(node_isolate, nullptr);
+    node_isolate = isolate;
+  }
+
+  JSContextGroupRef group = &* OpaqueJSContextGroup::New(isolate, event_loop);
+
+  int exit_code;
+  {
+    Locker locker(isolate);
+    Isolate::Scope isolate_scope(isolate);
+    HandleScope handle_scope(isolate);
+    IsolateData isolate_data(isolate, event_loop, allocator.zero_fill_field());
+    exit_code = StartInstance((void*)group, &isolate_data, argc, argv, exec_argc, exec_argv);
+  }
+
+  {
+    Mutex::ScopedLock scoped_lock(node_isolate_mutex);
+    CHECK_EQ(node_isolate, isolate);
+    node_isolate = nullptr;
+  }
+
+  isolate->Dispose();
+
+  return exit_code;
 }
 
-int NodeInstance::Start(int argc, char *argv[]) {
+inline void NodeInstance::PlatformInit() {
+#ifdef __POSIX__
+#if HAVE_INSPECTOR
+  sigset_t sigmask;
+  sigemptyset(&sigmask);
+  sigaddset(&sigmask, SIGUSR1);
+  const int err = pthread_sigmask(SIG_SETMASK, &sigmask, nullptr);
+#endif  // HAVE_INSPECTOR
+
+  // Make sure file descriptors 0-2 are valid before we start logging anything.
+  for (int fd = STDIN_FILENO; fd <= STDERR_FILENO; fd += 1) {
+    struct stat ignored;
+    if (fstat(fd, &ignored) == 0)
+      continue;
+    // Anything but EBADF means something is seriously wrong.  We don't
+    // have to special-case EINTR, fstat() is not interruptible.
+    if (errno != EBADF)
+      ABORT();
+    if (fd != open("/dev/null", O_RDWR))
+      ABORT();
+  }
+
+#if HAVE_INSPECTOR
+  CHECK_EQ(err, 0);
+#endif  // HAVE_INSPECTOR
+
+#ifndef NODE_SHARED_MODE
+  // Restore signal dispositions, the parent process may have changed them.
+  struct sigaction act;
+  memset(&act, 0, sizeof(act));
+
+  // The hard-coded upper limit is because NSIG is not very reliable; on Linux,
+  // it evaluates to 32, 34 or 64, depending on whether RT signals are enabled.
+  // Counting up to SIGRTMIN doesn't work for the same reason.
+  for (unsigned nr = 1; nr < kMaxSignal; nr += 1) {
+    if (nr == SIGKILL || nr == SIGSTOP)
+      continue;
+    act.sa_handler = (nr == SIGPIPE) ? SIG_IGN : SIG_DFL;
+    CHECK_EQ(0, sigaction(nr, &act, nullptr));
+  }
+#endif  // !NODE_SHARED_MODE
+
+  RegisterSignalHandler(SIGINT, SignalExit, true);
+  RegisterSignalHandler(SIGTERM, SignalExit, true);
+
+  // Raise the open file descriptor limit.
+  struct rlimit lim;
+  if (getrlimit(RLIMIT_NOFILE, &lim) == 0 && lim.rlim_cur != lim.rlim_max) {
+    // Do a binary search for the limit.
+    rlim_t min = lim.rlim_cur;
+    rlim_t max = 1 << 20;
+    // But if there's a defined upper bound, don't search, just set it.
+    if (lim.rlim_max != RLIM_INFINITY) {
+      min = lim.rlim_max;
+      max = lim.rlim_max;
+    }
+    do {
+      lim.rlim_cur = min + (max - min) / 2;
+      if (setrlimit(RLIMIT_NOFILE, &lim)) {
+        max = lim.rlim_cur;
+      } else {
+        min = lim.rlim_cur;
+      }
+    } while (min + 1 < max);
+  }
+#endif  // __POSIX__
+#ifdef _WIN32
+  for (int fd = 0; fd <= 2; ++fd) {
+    auto handle = reinterpret_cast<HANDLE>(_get_osfhandle(fd));
+    if (handle == INVALID_HANDLE_VALUE ||
+        GetFileType(handle) == FILE_TYPE_UNKNOWN) {
+      // Ignore _close result. If it fails or not depends on used Windows
+      // version. We will just check _open result.
+      _close(fd);
+      if (fd != _open("nul", _O_RDWR))
+        ABORT();
+    }
+  }
+#endif  // _WIN32
+}
+
+int NodeInstance::StartInstance(int argc, char *argv[]) {
+  atexit([] () { uv_tty_reset_mode(); });
+  PlatformInit();
+  node::performance::performance_node_start = PERFORMANCE_NOW();
+
   CHECK_GT(argc, 0);
 
   // Hack around with the argv pointer. Used for process.title = "blah".
@@ -576,8 +836,11 @@ int NodeInstance::Start(int argc, char *argv[]) {
   Init(&argc, const_cast<const char**>(argv), &exec_argc, &exec_argv);
 
 #if HAVE_OPENSSL
-  if (const char* extra = secure_getenv("NODE_EXTRA_CA_CERTS"))
-    crypto::UseExtraCaCerts(extra);
+  {
+    std::string extra_ca_certs;
+    if (SafeGetenv("NODE_EXTRA_CA_CERTS", &extra_ca_certs))
+      crypto::UseExtraCaCerts(extra_ca_certs);
+  }
 #ifdef NODE_FIPS_MODE
   // In the case of FIPS builds we should make sure
   // the random source is properly initialized first.
@@ -586,24 +849,24 @@ int NodeInstance::Start(int argc, char *argv[]) {
   // V8 on Windows doesn't have a good source of entropy. Seed it from
   // OpenSSL's pool.
   V8::SetEntropySource(crypto::EntropySource);
-#endif
+#endif  // HAVE_OPENSSL
 
   ContextGroup::init_v8();
 
-  int exit_code = 1;
-  {
-    uv_loop_t uv_loop;
-    uv_loop_init(&uv_loop);
-    NodeInstanceData instance_data(NodeInstanceType::MAIN,
-                                   &uv_loop,
-                                   argc,
-                                   const_cast<const char**>(argv),
-                                   exec_argc,
-                                   exec_argv,
-                                   use_debug_agent);
-    exit_code = StartNodeInstance(&instance_data);
-    uv_loop_close(&uv_loop);
+  node::performance::performance_v8_start = PERFORMANCE_NOW();
+  v8_initialized = true;
+  uv_loop_t uv_loop;
+  uv_loop_init(&uv_loop);
+  const int exit_code =
+      StartInstance(&uv_loop, argc, argv, exec_argc, exec_argv);
+  if (trace_enabled) {
+    v8_platform.StopTracingAgent();
   }
+  v8_initialized = false;
+
+  CHECK_EQ(uv_loop_alive(&uv_loop), 0);
+  // FIXME(EWL): Why does this intermittently crash here if we uncomment the below?
+  //uv_loop_close(&uv_loop);
 
   delete[] exec_argv;
   exec_argv = nullptr;
@@ -628,7 +891,7 @@ NATIVE(Process,void,dispose) (PARAMS, jlong ref)
     delete reinterpret_cast<NodeInstance*>(ref);
 }
 
-NATIVE(Process,long,keepAlive) (PARAMS, jlong contextRef)
+NATIVE(Process,long,keepAlive) (PARAMS, jobject contextRef)
 {
     auto done = [](uv_async_t* handle) {
         uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
@@ -636,8 +899,7 @@ NATIVE(Process,long,keepAlive) (PARAMS, jlong contextRef)
         });
     };
 
-    JSContext *context = reinterpret_cast<JSContext*>(contextRef);
-    ContextGroup *group = context->Group();
+    auto group = SharedWrap<JSContext>::Shared(env, contextRef)->Group();
     uv_async_t *async_handle = new uv_async_t();
     uv_async_init(group->Loop(), async_handle, done);
     return reinterpret_cast<jlong>(async_handle);
@@ -649,13 +911,14 @@ NATIVE(Process,void,letDie) (PARAMS, jlong ref)
     uv_async_send(async_handle);
 }
 
-NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
+NATIVE(Process,void,setFileSystem) (PARAMS, jobject contextRef, jobject fsObjectRef)
 {
-    V8_ISOLATE_CTX(contextRef,isolate,context);
+    auto ctx = SharedWrap<JSContext>::Shared(env, contextRef);
+    auto fs = SharedWrap<JSValue>::Shared(env, fsObjectRef);
+    V8_ISOLATE_CTX(ctx,isolate,context)
 
     Local<Object> globalObj = context->Global();
-    Local<Object> fsObj = reinterpret_cast<JSValue<Value>*>(fsObjectRef)
-        ->Value()->ToObject(context).ToLocalChecked();
+    Local<Object> fsObj = fs->Value()->ToObject(context).ToLocalChecked();
 
     Local<Private> privateKey = v8::Private::ForApi(isolate,
         String::NewFromUtf8(isolate, "__fs"));

@@ -92,8 +92,8 @@ public class ProcessV8Test {
 
             @Override
             public void onProcessExit(Process process, int exitCode) {
-                assertTrue(released);
                 processCompleted.countDown();
+                assertTrue(released);
             }
 
             @Override

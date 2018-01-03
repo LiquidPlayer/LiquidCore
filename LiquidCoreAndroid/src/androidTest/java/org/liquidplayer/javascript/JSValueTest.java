@@ -122,7 +122,7 @@ public class JSValueTest {
         assertTrue(arrayValue.isArray());
         assertEquals(arrayValue.toJSArray().get(2),"third");
 
-        JSValue undefined2 = new JSValue(0L,context);
+        JSValue undefined2 = new JSValue((JNIJSValue)null,context);
         assertTrue(undefined2.isUndefined());
     }
 

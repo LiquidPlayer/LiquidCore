@@ -30,79 +30,17 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <string>
-#include "JSC.h"
-#include "utf8.h"
 
-OpaqueJSString::OpaqueJSString(Local<String> string) : m_isNull(false)
-{
-    String::Utf8Value chars(string);
-    utf8::utf8to16(*chars, *chars + strlen(*chars), std::back_inserter(backstore));
-}
-
-OpaqueJSString::OpaqueJSString(const JSChar * chars, size_t numChars) :
-    backstore(chars, chars + numChars) , m_isNull(!chars)
-{
-}
-
-OpaqueJSString::OpaqueJSString(const char * chars) : m_isNull(!chars)
-{
-    if (chars) {
-        utf8::utf8to16(chars, chars + strlen(chars), std::back_inserter(backstore));
-    }
-}
-
-OpaqueJSString::~OpaqueJSString()
-{
-}
-
-Local<String> OpaqueJSString::Value(Isolate *isolate)
-{
-    std::string utf8str;
-    Utf8String(utf8str);
-    return String::NewFromUtf8(isolate, utf8str.c_str());
-}
-
-const JSChar * OpaqueJSString::Chars()
-{
-    static const JSChar emptyString[] = {0};
-
-    if (m_isNull) return nullptr;
-    if (backstore.data() == nullptr) return emptyString;
-
-    return backstore.data();
-}
-
-size_t OpaqueJSString::Size()
-{
-    return backstore.size();
-}
-
-size_t OpaqueJSString::Utf8Bytes()
-{
-    std::string utf8str;
-    utf8::utf16to8(backstore.begin(), backstore.end(), std::back_inserter(utf8str));
-    return utf8str.length() + 1;
-}
-
-void OpaqueJSString::Utf8String(std::string& utf8str)
-{
-    utf8::utf16to8(backstore.begin(), backstore.end(), std::back_inserter(utf8str));
-}
-
-bool OpaqueJSString::Equals(OpaqueJSString& other)
-{
-    return backstore == other.backstore;
-}
+#include "JSC/JSC.h"
 
 JS_EXPORT JSStringRef JSStringCreateWithCharacters(const JSChar* chars, size_t numChars)
 {
-    return new OpaqueJSString(chars, numChars);
+    return &* OpaqueJSString::New(chars, numChars);
 }
 
 JS_EXPORT JSStringRef JSStringCreateWithUTF8CString(const char* chars)
 {
-    return new OpaqueJSString(chars);
+    return &* OpaqueJSString::New(chars);
 }
 
 JS_EXPORT JSStringRef JSStringRetain(JSStringRef string)

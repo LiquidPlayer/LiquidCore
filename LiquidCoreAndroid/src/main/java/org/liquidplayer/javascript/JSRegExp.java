@@ -55,7 +55,7 @@ public class JSRegExp extends JSObject {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = makeRegExp(context.ctxRef(), pattern, flags).reference;
+                valueRef = (JNIJSObject)JNIJSObject.makeRegExp(context.ctxRef(), pattern, flags).reference;
                 addJSExports();
             }
         });
@@ -77,8 +77,7 @@ public class JSRegExp extends JSObject {
      */
     public class ExecResult extends JSArray<String> {
         protected ExecResult(JSObject result) {
-            super(result.valueRef(),result.getContext(),String.class);
-            protect(context.ctxRef(), valueRef);
+            super((JNIJSObject)result.valueRef(),result.getContext(),String.class);
         }
 
         /**

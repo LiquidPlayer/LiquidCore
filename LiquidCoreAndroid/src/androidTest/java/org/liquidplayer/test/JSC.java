@@ -32,6 +32,7 @@
 */
 package org.liquidplayer.test;
 
+import org.liquidplayer.javascript.JNIJSContextGroup;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
 
@@ -53,15 +54,15 @@ public class JSC {
     int testAPI() throws Exception {
         String script = new Scanner(getClass().getClassLoader()
                 .getResourceAsStream("testapi.js"), "UTF-8").useDelimiter("\\A").next();
-        return main(script, group==null?0L:group.groupRef());
+        return main(script, group==null?null:group.groupRef());
     }
 
     int testMinidom() throws Exception {
         String script = new Scanner(getClass().getClassLoader()
                 .getResourceAsStream("minidom.js"), "UTF-8").useDelimiter("\\A").next();
-        return minidom(script, group==null?0L:group.groupRef());
+        return minidom(script, group==null?null:group.groupRef());
     }
 
-    private native int main(String script, long contextGroup);
-    private native int minidom(String script, long contextGroup);
+    private native int main(String script, JNIJSContextGroup contextGroup);
+    private native int minidom(String script, JNIJSContextGroup contextGroup);
 }

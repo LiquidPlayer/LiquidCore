@@ -105,7 +105,7 @@ public class JSFloat32Array extends JSTypedArray<Float> {
      * @param ctx  The JSContext of the value
      * @since 0.1.0
      */
-    public JSFloat32Array(long valueRef, JSContext ctx) {
+    public JSFloat32Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Float.class);
     }
 

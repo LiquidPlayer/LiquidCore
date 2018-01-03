@@ -34,6 +34,9 @@ package org.liquidplayer.node;
 
 import android.content.Context;
 
+import org.liquidplayer.javascript.JNIJSContext;
+import org.liquidplayer.javascript.JNIJSContextGroup;
+import org.liquidplayer.javascript.JNIJSValue;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSException;
@@ -279,7 +282,7 @@ public class Process {
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
     @SuppressWarnings("unused") // called from native code
-    private void onNodeStarted(final long mainContext, long ctxGroupRef, long jscCtxRef) {
+    private void onNodeStarted(final JNIJSContext mainContext, JNIJSContextGroup ctxGroupRef, long jscCtxRef) {
         final ProcessContext ctx = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef),
                 jscCtxRef);
         jscontext = new WeakReference<>(ctx);
@@ -382,8 +385,9 @@ public class Process {
      */
     private class ProcessContext extends JSContext {
         final private long mJscCtxRef;
+        private boolean isDefunct = false; // FIXME: This doesn't do anything anymore
 
-        ProcessContext(long contextRef, JSContextGroup group, long jscCtxRef) {
+        ProcessContext(JNIJSContext contextRef, JSContextGroup group, long jscCtxRef) {
             super(contextRef, group);
             mJscCtxRef = jscCtxRef;
         }
@@ -418,8 +422,10 @@ public class Process {
 
         @Override
         public void finalize() throws Throwable {
-            exit(kContextFinalizedButProcessStillActive);
-            eventOnExit(exitCode);
+            if (isActive) {
+                exit(kContextFinalizedButProcessStillActive);
+                eventOnExit(exitCode);
+            }
             super.finalize();
             isActive = false;
         }
@@ -431,7 +437,7 @@ public class Process {
     /* Native JNI functions */
     private native long start();
     private native void dispose(long processRef);
-    private native long keepAlive(long contextRef);
+    private native long keepAlive(JNIJSContext contextRef);
     private native void letDie(long handleRef);
-    private native long setFileSystem(long contextRef, long fsObject);
+    private native void setFileSystem(JNIJSContext contextRef, JNIJSValue fsObject);
 }

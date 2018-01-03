@@ -105,7 +105,7 @@ public class JSUint8Array extends JSTypedArray<Byte> {
      * @param ctx  The JSContext of the value
      * @since 0.1.0
      */
-    public JSUint8Array(long valueRef, JSContext ctx) {
+    public JSUint8Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Byte.class);
     }
 

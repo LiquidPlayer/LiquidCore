@@ -63,6 +63,7 @@ public class FSTest {
         final CountDownLatch processCompleted = new CountDownLatch(1);
         final private OnDone onDone;
         private JSContext context;
+        Throwable exception;
 
         Script(String script, OnDone onDone) {
             this.script = script;
@@ -85,7 +86,11 @@ public class FSTest {
 
         @Override
         public void onProcessAboutToExit(Process process, int exitCode) {
-            onDone.onDone(context);
+            try {
+                onDone.onDone(context);
+            } catch (Throwable e) {
+                exception = e;
+            }
         }
 
         @Override
@@ -119,7 +124,7 @@ public class FSTest {
     }
 
     @Test
-    public void testFileSystem1() throws Exception {
+    public void testFileSystem1() throws Throwable {
         Context context = InstrumentationRegistry.getContext();
         String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__/local";
 
@@ -165,10 +170,10 @@ public class FSTest {
                 assertEquals("Ok!", foo.read_only.get());
                 ctx.evaluateScript("foo.read_only = 'boo';");
                 assertEquals("Ok!", foo.read_only.get());
-
             }
         });
         assertTrue(s.processCompleted.await(10L, TimeUnit.SECONDS));
+        if (s.exception != null) throw s.exception;
 
         String content = new Scanner(new File(dirx + "/test.txt")).useDelimiter("\\Z").next();
         assertEquals("Hello, World!", content);
@@ -194,7 +199,7 @@ public class FSTest {
     }
 
     @Test
-    public void testLetsBeNaughty() throws Exception {
+    public void testLetsBeNaughty() throws Throwable {
         InputStream in = getClass().getClassLoader().getResourceAsStream("fsTest.js");
         Scanner s = new Scanner(in).useDelimiter("\\A");
         String script = s.hasNext() ? s.next() : "";
@@ -216,6 +221,7 @@ public class FSTest {
             }
         });
         assertTrue(scr.processCompleted.await(10L, TimeUnit.SECONDS));
+        if (scr.exception != null) throw scr.exception;
 
         Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
     }
@@ -288,7 +294,7 @@ public class FSTest {
     }
 
     @Test
-    public void testGlobalUninstall() throws Exception {
+    public void testGlobalUninstall() throws Throwable {
         final String script = "" +
                 "var fs = require('fs');" +
                 "var external = true;" +
@@ -320,6 +326,7 @@ public class FSTest {
         });
 
         assertTrue(s.processCompleted.await(10L, TimeUnit.SECONDS));
+        if (s.exception != null) throw s.exception;
 
         File external = InstrumentationRegistry.getContext().getExternalFilesDir(null);
         if (external != null) {

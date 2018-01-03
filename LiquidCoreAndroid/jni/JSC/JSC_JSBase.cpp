@@ -30,7 +30,8 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "JSC.h"
+#include "JSC/JSC.h"
+#include "JSC/TempException.h"
 
 JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSObjectRef thisObject,
     JSStringRef sourceURL, int startingLineNumber, JSValueRef* exceptionRef)
@@ -68,7 +69,7 @@ JS_EXPORT JSValueRef JSEvaluateScript(JSContextRef ctx, JSStringRef script_, JSO
                 if (result.IsEmpty()) {
                     exception.Set(ctx, trycatch.Exception());
                 } else {
-                    ret = OpaqueJSValue::New(ctx, result.ToLocalChecked());
+                    ret = &* OpaqueJSValue::New(ctx, result.ToLocalChecked());
                 }
             }
         V8_UNLOCK()

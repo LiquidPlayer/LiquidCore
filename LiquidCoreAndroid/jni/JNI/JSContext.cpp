@@ -34,17 +34,60 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "JSJNI.h"
-#include "../JSC/JSC.h"
+#include "JNI/JNI.h"
+#include "JSC/JSC.h"
 
-NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnable) {
-    ContextGroup *group = reinterpret_cast<ContextGroup*>(ctxGroup);
+static jobject s_ClassLoader;
+static jmethodID s_FindClassMethod;
+
+jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    JNIEnv* env;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return -1;
+    }
+
+    auto randomClass = env->FindClass("org/liquidplayer/javascript/JNIJSContextGroup");
+    jclass classClass = env->GetObjectClass(randomClass);
+    auto classLoaderClass = env->FindClass("java/lang/ClassLoader");
+    auto getClassLoaderMethod = env->GetMethodID(classClass, "getClassLoader",
+                                             "()Ljava/lang/ClassLoader;");
+    s_ClassLoader = env->NewGlobalRef(env->CallObjectMethod(randomClass, getClassLoaderMethod));
+    s_FindClassMethod = env->GetMethodID(classLoaderClass, "findClass",
+                                    "(Ljava/lang/String;)Ljava/lang/Class;");
+
+    return JNI_VERSION_1_6;
+}
+
+jclass findClass(JNIEnv *env, const char* name)
+{
+    return static_cast<jclass>(env->CallObjectMethod(s_ClassLoader,
+        s_FindClassMethod, env->NewStringUTF(name)));
+}
+
+NATIVE(JNIJSContextGroup,jobject,create) (PARAMS)
+{
+    // Maintain compatibility at the ContextGroup level with JSC by using JSContextGroupCreate()
+    return SharedWrap<ContextGroup>::New(
+        env,
+        const_cast<OpaqueJSContextGroup*>(JSContextGroupCreate())->ContextGroup::shared_from_this()
+    );
+}
+
+NATIVE(JNIJSContextGroup,jboolean,isManaged) (PARAMS)
+{
+    auto group = SharedWrap<ContextGroup>::Shared(env, thiz);
+    return group && group->Loop();
+}
+
+NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jobject thisObj, jobject runnable) {
+    auto group = SharedWrap<ContextGroup>::Shared(env, thiz);
 
     if (group && group->Loop() && std::this_thread::get_id() != group->Thread()) {
         group->m_async_mutex.lock();
 
         struct Runnable *r = new struct Runnable;
-        r->thiz = env->NewGlobalRef(thiz);
+        r->thiz = env->NewGlobalRef(thisObj);
         r->runnable = env->NewGlobalRef(runnable);
         r->c_runnable = nullptr;
         env->GetJavaVM(&r->jvm);
@@ -52,13 +95,13 @@ NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnab
 
         if (!group->m_async_handle) {
             group->m_async_handle = new uv_async_t();
-            group->m_async_handle->data = group;
+            group->m_async_handle->data = new ContextGroupData(group);
             uv_async_init(group->Loop(), group->m_async_handle, ContextGroup::callback);
             uv_async_send(group->m_async_handle);
         }
         group->m_async_mutex.unlock();
     } else {
-        jclass cls = env->GetObjectClass(thiz);
+        jclass cls = env->GetObjectClass(thisObj);
         jmethodID mid;
         do {
             mid = env->GetMethodID(cls,"inContextCallback","(Ljava/lang/Runnable;)V");
@@ -76,123 +119,73 @@ NATIVE(JSContext,void,runInContextGroup) (PARAMS, jlong ctxGroup, jobject runnab
         } while (true);
         env->DeleteLocalRef(cls);
 
-        env->CallVoidMethod(thiz, mid, runnable);
+        env->CallVoidMethod(thisObj, mid, runnable);
     }
 }
 
-NATIVE(JSContextGroup,jlong,create) (PARAMS) {
-    // Maintain compatibility at the ContextGroup level with JSC
-    const ContextGroup *group = JSContextGroupCreate();
-    return reinterpret_cast<long>(group);
+NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, long reference)
+{
+    SharedWrap<ContextGroup>::Dispose(reference);
 }
 
-NATIVE(JSContextGroup,void,release) (PARAMS,jlong group) {
-    ContextGroup *isolate = (ContextGroup*) group;
-#ifdef DEBUG_RETAINER
-    Retainer::m_debug_mutex.lock();
-    bool found = (std::find(Retainer::m_debug.begin(),
-        Retainer::m_debug.end(), isolate) != Retainer::m_debug.end());
-    Retainer::m_debug_mutex.unlock();
-    if (!found) {
-        __android_log_assert("FAIL", "ContextGroup::release",
-            "Attempting to release a deleted object!");
-    }
-#endif
-    isolate->release();
-}
+NATIVE(JNIJSContext,jobject,createInGroup) (PARAMS,jobject grp)
+{
+    auto group = SharedWrap<ContextGroup>::Shared(env, grp);
+    jobject ctx;
+    { V8_ISOLATE(group,isolate)
+        ctx = SharedWrap<JSContext>::New(env, JSContext::New(group, Context::New(isolate)));
+    V8_UNLOCK() }
 
-NATIVE(JSContextGroup,jboolean,isManaged) (PARAMS, jlong ctxGroup) {
-    ContextGroup *group = reinterpret_cast<ContextGroup*>(ctxGroup);
-    return group && group->Loop();
-}
-
-NATIVE(JSContext,jlong,create) (PARAMS) {
-    long out;
-    ContextGroup *group = new ContextGroup();
-    {
-        V8_ISOLATE(group,isolate);
-            JSContext *ctx = new JSContext(group, Context::New(isolate));
-            out = reinterpret_cast<long>(ctx);
-        V8_UNLOCK();
-    }
-
-    group->release();
-
-    return out;
-}
-
-NATIVE(JSContext,jlong,createInGroup) (PARAMS,jlong grp) {
-    long out;
-    ContextGroup *group = reinterpret_cast<ContextGroup*>(grp);
-    {
-        V8_ISOLATE(group,isolate)
-            JSContext *ctx = new JSContext(group, Context::New(isolate));
-            out = reinterpret_cast<long>(ctx);
-        V8_UNLOCK()
-    }
-
-    return out;
-}
-
-NATIVE(JSContext,jlong,retain) (PARAMS,jlong ctx) {
-    JSContext *context = reinterpret_cast<JSContext*>(ctx);
-    context->retain();
     return ctx;
 }
 
-NATIVE(JSContext,void,release) (PARAMS,jlong ctx) {
-    JSContext *context = reinterpret_cast<JSContext*>(ctx);
-#ifdef DEBUG_RETAINER
-    Retainer::m_debug_mutex.lock();
-    bool found = (std::find(Retainer::m_debug.begin(),
-        Retainer::m_debug.end(), context) != Retainer::m_debug.end());
-    Retainer::m_debug_mutex.unlock();
-    if (!found) {
-        __android_log_assert("FAIL", "JSContext::release",
-            "Attempting to release a deleted object!");
-    }
-#endif
-    context->release();
+NATIVE(JNIJSContext,jobject,create) (PARAMS)
+{
+    jobject jGroup = Java_org_liquidplayer_javascript_JNIJSContextGroup_create(env, thiz);
+    return Java_org_liquidplayer_javascript_JNIJSContext_createInGroup(env, thiz, jGroup);
 }
 
-NATIVE(JSContext,jlong,getGlobalObject) (PARAMS, jlong ctx) {
-    jlong v=0;
+NATIVE(JNIJSContext,void,Finalize) (PARAMS, long reference)
+{
+    SharedWrap<JSContext>::Dispose(reference);
+}
+
+NATIVE(JNIJSContext,jobject,getGlobalObject) (PARAMS)
+{
+    jobject v=nullptr;
+    auto ctx = SharedWrap<JSContext>::Shared(env, thiz);
 
     V8_ISOLATE_CTX(ctx,isolate,Ctx)
-        v = reinterpret_cast<long>(context_->Global());
+        v = SharedWrap<JSValue>::New(env, ctx->Global());
     V8_UNLOCK()
 
     return v;
 }
 
-NATIVE(JSContext,jlong,getGroup) (PARAMS, jlong ctx) {
-    JSContext *context = reinterpret_cast<JSContext*>(ctx);
-    context->Group()->retain();
-    return reinterpret_cast<long>(context->Group());
+NATIVE(JNIJSContext,jobject,getGroup) (PARAMS)
+{
+    auto context = SharedWrap<JSContext>::Shared(env, thiz);
+    return SharedWrap<ContextGroup>::New(env, context->Group());
 }
 
-NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
-        jstring sourceURL, jint startingLineNumber) {
+NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script,
+    jstring sourceURL, jint startingLineNumber)
+{
+    auto ctx = SharedWrap<JSContext>::Shared(env, thiz);
 
     const char *_script = env->GetStringUTFChars(script, NULL);
     const char *_sourceURL = env->GetStringUTFChars(sourceURL, NULL);
 
-    jclass ret = env->FindClass("org/liquidplayer/javascript/JSValue$JNIReturnObject");
-    jmethodID cid = env->GetMethodID(ret,"<init>","()V");
-    jobject out = env->NewObject(ret, cid);
-
-    jfieldID fid = env->GetFieldID(ret , "reference", "J");
-
+    JNIReturnObject ret(env);
     {
-        JSContext *context_ = reinterpret_cast<JSContext*>(ctx);
-        V8_ISOLATE(context_->Group(), isolate)
+        V8_ISOLATE(ctx->Group(), isolate)
             TryCatch trycatch(isolate);
             Local<Context> context;
 
-            context = context_->Value();
+            context = ctx->Value();
             Context::Scope context_scope_(context);
 
-            JSValue<Value> *exception = nullptr;
+            std::shared_ptr<JSValue> exception;
 
             ScriptOrigin script_origin(
                 String::NewFromUtf8(isolate, _sourceURL, NewStringType::kNormal).ToLocalChecked(),
@@ -204,35 +197,37 @@ NATIVE(JSContext,jobject,evaluateScript) (PARAMS, jlong ctx, jstring script,
 
             MaybeLocal<Value>  result;
             if (source.IsEmpty()) {
-                exception = JSValue<Value>::New(context_, trycatch.Exception());
+                exception = JSValue::New(ctx, trycatch.Exception());
             }
 
             if (!exception) {
                 script = Script::Compile(context, source.ToLocalChecked(), &script_origin);
                 if (script.IsEmpty()) {
-                    exception = JSValue<Value>::New(context_, trycatch.Exception());
+                    exception = JSValue::New(ctx, trycatch.Exception());
                 }
             }
 
             if (!exception) {
                 result = script.ToLocalChecked()->Run(context);
                 if (result.IsEmpty()) {
-                    exception = JSValue<Value>::New(context_, trycatch.Exception());
+                    exception = JSValue::New(ctx, trycatch.Exception());
                 }
             }
 
             if (!exception) {
-                JSValue<Value> *value = JSValue<Value>::New(context_, result.ToLocalChecked());
-                env->SetLongField( out, fid, reinterpret_cast<long>(value));
+                std::shared_ptr<JSValue> value =
+                    JSValue::New(ctx, result.ToLocalChecked());
+                ret.SetReference(SharedWrap<JSValue>::New(env, value));
             }
 
-            fid = env->GetFieldID(ret , "exception", "J");
-            env->SetLongField(out, fid, reinterpret_cast<long>(exception));
+            if (exception) {
+                ret.SetException(SharedWrap<JSValue>::New(env, exception));
+            }
         V8_UNLOCK()
     }
 
     env->ReleaseStringUTFChars(script, _script);
     env->ReleaseStringUTFChars(sourceURL, _sourceURL);
 
-    return out;
+    return ret.ToJava();
 }

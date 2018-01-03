@@ -68,13 +68,13 @@ public class JSArray<T> extends JSBaseArray<T> {
         JSValue callback(T currentValue, int index, JSArray<T> array);
     }
 
-    private long testException(JNIReturnObject jni) {
-        if (jni.exception!=0) {
-            valueRef = make(context.ctxRef());
-            context.throwJSException(new JSException(new JSValue(jni.exception, context)));
+    private JNIJSValue testException(JNIReturnObject jni) {
+        if (jni.exception!=null) {
+            valueRef = JNIJSObject.make(context.ctxRef());
+            context.throwJSException(new JSException(new JSValue((JNIJSValue)jni.exception, context)));
             return valueRef;
         } else {
-            return jni.reference;
+            return (JNIJSValue) jni.reference;
         }
     }
 
@@ -88,14 +88,14 @@ public class JSArray<T> extends JSBaseArray<T> {
     @SuppressWarnings("unused")
     public JSArray(JSContext ctx, JSValue [] array, Class<T> cls) {
         super(ctx,cls);
-        final long [] valueRefs = new long[array.length];
+        final JNIJSValue [] valueRefs = new JNIJSValue[array.length];
         for (int i=0; i<array.length; i++) {
             valueRefs[i] = array[i].valueRef();
         }
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+                valueRef = testException(JNIJSObject.makeArray(context.ctxRef(), valueRefs));
                 addJSExports();
             }
         });
@@ -110,11 +110,11 @@ public class JSArray<T> extends JSBaseArray<T> {
      */
     public JSArray(JSContext ctx, Class<T> cls) {
         super(ctx,cls);
-        final long [] valueRefs = new long[0];
+        final JNIJSValue [] valueRefs = new JNIJSValue[0];
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+                valueRef = testException(JNIJSObject.makeArray(context.ctxRef(), valueRefs));
                 addJSExports();
             }
         });
@@ -131,7 +131,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      */
     public JSArray(JSContext ctx, Object [] array, Class<T> cls) {
         super(ctx,cls);
-        final long [] valueRefs = new long[array.length];
+        final JNIJSValue [] valueRefs = new JNIJSValue[array.length];
         for (int i=0; i<array.length; i++) {
             JSValue v = new JSValue(context,array[i]);
             valueRefs[i] = v.valueRef();
@@ -139,7 +139,7 @@ public class JSArray<T> extends JSBaseArray<T> {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = testException(makeArray(context.ctxRef(), valueRefs));
+                valueRef = testException(JNIJSObject.makeArray(context.ctxRef(), valueRefs));
                 addJSExports();
             }
         });
@@ -147,12 +147,12 @@ public class JSArray<T> extends JSBaseArray<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected JSArray(long valueRef, JSContext ctx) {
+    protected JSArray(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,(Class<T>)JSValue.class);
     }
 
     @SuppressWarnings("unchecked")
-    protected JSArray(long valueRef, JSContext ctx, Class<T> cls) {
+    protected JSArray(JNIJSObject valueRef, JSContext ctx, Class<T> cls) {
         super(valueRef,ctx,cls);
     }
 

@@ -53,17 +53,14 @@ public class JSErrorTest {
         JSError error = new JSError(context, "This is an error message");
         assertThat(error.message(),is("This is an error message"));
         assertThat(error.name(),is("Error"));
-        assertTrue(error.stack().contains("at Error (native)"));
 
         JSError error2 = new JSError(context, "Message2");
         assertThat(error2.message(),is("Message2"));
         assertThat(error2.name(),is("Error"));
-        assertTrue(error2.stack().contains("at Error (native)"));
 
         JSError error3 = new JSError(context);
         assertThat(error3.message(),is("Error"));
         assertThat(error3.name(),is("Error"));
-        assertTrue(error3.stack().contains("at Error (native)"));
 
         JSFunction fail = new JSFunction(context, "_fail", new String[] {},
                 "var undef; var foo = undef.accessme;",
@@ -94,8 +91,6 @@ public class JSErrorTest {
             assertThat(e.toString(),is("Error: This is an error message"));
             assertThat(error4.name(),is("Error"));
             assertThat(e.name(),is("Error"));
-            assertTrue(error4.stack().contains("at Error (native)"));
-            assertTrue(e.stack().contains("at Error (native)"));
         }
 
         try {
@@ -107,8 +102,6 @@ public class JSErrorTest {
             assertThat(e.toString(),is("Error: This is an error message"));
             assertThat(error5.name(),is("Error"));
             assertThat(e.name(),is("Error"));
-            assertTrue(error5.stack().contains("at Error (native)"));
-            assertTrue(e.stack().contains("at Error (native)"));
         }
 
         try {
@@ -120,8 +113,6 @@ public class JSErrorTest {
             assertThat(e.toString(),is("Error: Another exception"));
             assertThat(error5.name(),is("Error"));
             assertThat(e.name(),is("Error"));
-            assertTrue(error5.stack().contains("at Error (native)"));
-            assertTrue(e.stack().contains("at Error (native)"));
         }
 
         try {
@@ -131,7 +122,6 @@ public class JSErrorTest {
             assertThat(e.getMessage(),is("Error"));
             assertThat(e.toString(),is("Error: Error"));
             assertThat(e.name(),is("Error"));
-            assertTrue(e.stack().contains("at Error (native)"));
         }
     }
 

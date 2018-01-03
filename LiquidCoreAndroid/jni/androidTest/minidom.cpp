@@ -34,7 +34,7 @@
 #include "JavaScriptCore/JSStringRef.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <jni.h>
+#include "JNI/JNI.h"
 
 #include <android/log.h>
 #define ASSERT(x) if(!(x)) __android_log_assert("conditional", "ASSERTION FAIL", "%s(%d): %s", __FILE__, __LINE__, #x);
@@ -47,8 +47,10 @@
 static JSValueRef print(JSContextRef context, JSObjectRef object, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception);
 
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_minidom(JNIEnv* env,
-    jobject thiz, jstring minidom_js, jlong group)
+    jobject thiz, jstring minidom_js, jobject group_)
 {
+    auto group = &* SharedWrap<ContextGroup>::Shared(env, group_);
+
     const char *scriptPath = "minidom.js";
     const char *scriptUTF8 = env->GetStringUTFChars(minidom_js, NULL);
 

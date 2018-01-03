@@ -45,38 +45,12 @@ import java.util.Map;
 @SuppressWarnings("JniMissingFunction")
 public class JSValue {
 
-    /**
-     * Used in communicating with JavaScriptCore JNI.
-     * Clients do not need to use this.
-     */
-    static class JNIReturnObject {
-        /**
-         * The boolean return value
-         */
-        public boolean bool;
-        /**
-         * The numeric return value
-         */
-        public double number;
-        /**
-         * The reference return value
-         */
-        public long reference;
-        /**
-         * The exception reference if one was thrown, otherwise 0L
-         */
-        public long exception;
-
-        public String string;
-    }
-
     private abstract class JNIReturnClass implements Runnable {
         JNIReturnObject jni;
     }
 
-    protected Long valueRef = 0xdeadbeefL;
+    protected JNIJSValue valueRef;
     protected JSContext context = null;
-    protected Boolean isDefunct = false;
 
     /* Constructors */
     /**
@@ -96,7 +70,7 @@ public class JSValue {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = makeUndefined(context.ctxRef());
+                valueRef = JNIJSValue.makeUndefined(context.ctxRef());
             }
         });
     }
@@ -115,37 +89,33 @@ public class JSValue {
             @Override
             public void run() {
                 if (val == null) {
-                    valueRef = makeNull(context.ctxRef());
+                    valueRef = JNIJSValue.makeNull(context.ctxRef());
                 } else if (val instanceof JSValue) {
                     valueRef = ((JSValue) val).valueRef();
-                    protect(context.ctxRef(), valueRef);
                 } else if (val instanceof Map) {
                     valueRef = new JSObjectPropertiesMap(context, (Map)val, Object.class).getJSObject().valueRef();
-                    protect(context.ctxRef(), valueRef);
                 } else if (val instanceof List) {
                     valueRef = new JSArray<>(context, (List) val, JSValue.class).valueRef();
-                    protect(context.ctxRef(), valueRef);
                 } else if (val.getClass().isArray()) {
                     valueRef = new JSArray<>(context, (Object[])val, JSValue.class).valueRef();
-                    protect(context.ctxRef(), valueRef);
                 } else if (val instanceof Boolean) {
-                    valueRef = makeBoolean(context.ctxRef(), (Boolean)val);
+                    valueRef = JNIJSValue.makeBoolean(context.ctxRef(), (Boolean)val);
                 } else if (val instanceof Double) {
-                    valueRef = makeNumber(context.ctxRef(), (Double)val);
+                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), (Double)val);
                 } else if (val instanceof Float) {
-                    valueRef = makeNumber(context.ctxRef(), Double.valueOf(val.toString()));
+                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), Double.valueOf(val.toString()));
                 } else if (val instanceof Integer ) {
-                    valueRef = makeNumber(context.ctxRef(), ((Integer)val).doubleValue());
+                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Integer)val).doubleValue());
                 } else if (val instanceof Long) {
-                    valueRef = makeNumber(context.ctxRef(), ((Long)val).doubleValue());
+                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Long)val).doubleValue());
                 } else if (val instanceof Byte) {
-                    valueRef = makeNumber(context.ctxRef(), ((Byte)val).doubleValue());
+                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Byte)val).doubleValue());
                 } else if (val instanceof Short) {
-                    valueRef = makeNumber(context.ctxRef(), ((Short)val).doubleValue());
+                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Short)val).doubleValue());
                 } else if (val instanceof String) {
-                    valueRef = makeString(context.ctxRef(), (String)val);
+                    valueRef = JNIJSValue.makeString(context.ctxRef(), (String)val);
                 } else {
-                    valueRef = makeUndefined(context.ctxRef());
+                    valueRef = JNIJSValue.makeUndefined(context.ctxRef());
                 }
             }
         });
@@ -157,24 +127,18 @@ public class JSValue {
      * @param ctx  The context in which the value exists
      * @since 0.1.0
      */
-    protected JSValue(final long valueRef, JSContext ctx) {
+    protected JSValue(final JNIJSValue valueRef, JSContext ctx) {
         context = ctx;
-        if (valueRef != 0) {
+        if (valueRef != null) {
             this.valueRef = valueRef;
         } else {
             context.sync(new Runnable() {
                 @Override
                 public void run() {
-                    JSValue.this.valueRef = makeUndefined(context.ctxRef());
+                    JSValue.this.valueRef = JNIJSValue.makeUndefined(context.ctxRef());
                 }
             });
         }
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        //unprotect();
     }
 
     /* Testers */
@@ -188,7 +152,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isUndefined(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isUndefined();
             }
         };
         context.sync(runnable);
@@ -204,7 +168,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isNull(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isNull();
             }
         };
         context.sync(runnable);
@@ -220,7 +184,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isBoolean(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isBoolean();
             }
         };
         context.sync(runnable);
@@ -236,7 +200,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isNumber(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isNumber();
             }
         };
         context.sync(runnable);
@@ -252,7 +216,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isString(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isString();
             }
         };
         context.sync(runnable);
@@ -268,7 +232,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isArray(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isArray();
             }
         };
         context.sync(runnable);
@@ -284,7 +248,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isDate(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isDate();
             }
         };
         context.sync(runnable);
@@ -300,7 +264,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isObject(context.ctxRef(), valueRef);
+                jni.bool = valueRef().isObject();
             }
         };
         context.sync(runnable);
@@ -353,11 +317,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = isEqual(context.ctxRef(), valueRef, ojsv.valueRef);
+                jni = valueRef().isEqual(ojsv.valueRef);
             }
         };
         context.sync(runnable);
-        return runnable.jni.exception==0 && runnable.jni.bool;
+        return runnable.jni.exception==null && runnable.jni.bool;
     }
 
     /**
@@ -379,7 +343,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = isStrictEqual(context.ctxRef(), valueRef, ojsv.valueRef);
+                jni.bool = valueRef().isStrictEqual(ojsv.valueRef);
             }
         };
         context.sync(runnable);
@@ -397,7 +361,7 @@ public class JSValue {
             @Override
             public void run() {
                 jni = new JNIReturnObject();
-                jni.bool = toBoolean(context.ctxRef(), valueRef);
+                jni.bool = valueRef().toBoolean();
             }
         };
         context.sync(runnable);
@@ -412,12 +376,12 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = toNumber(context.ctxRef(), valueRef);
+                jni = valueRef().toNumber();
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=0) {
-            context.throwJSException(new JSException(new JSValue(runnable.jni.exception, context)));
+        if (runnable.jni.exception!=null) {
+            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
             return 0.0;
         }
         return runnable.jni.number;
@@ -427,12 +391,12 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = toStringCopy(context.ctxRef(), valueRef);
+                jni = valueRef().toStringCopy();
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=0) {
-            context.throwJSException(new JSException(new JSValue(runnable.jni.exception, context)));
+        if (runnable.jni.exception!=null) {
+            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
             return null;
         }
         return runnable.jni.string;
@@ -448,15 +412,15 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = toObject(context.ctxRef(), valueRef);
+                jni = valueRef().toObject();
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=0) {
-            context.throwJSException(new JSException(new JSValue(runnable.jni.exception, context)));
+        if (runnable.jni.exception!=null) {
+            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
             return new JSObject(context);
         }
-        return context.getObjectFromRef(runnable.jni.reference);
+        return context.getObjectFromRef((JNIJSObject)runnable.jni.reference);
     }
 
     /**
@@ -497,9 +461,9 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = createJSONString(context.ctxRef(), valueRef, indent);
-                if (jni.exception == 0) {
-                    JSValue json = new JSValue(jni.reference,context);
+                jni = valueRef().createJSONString(indent);
+                if (jni.exception == null) {
+                    JSValue json = new JSValue((JNIJSValue)jni.reference,context);
                     if (json.isUndefined())
                         jni.string = null;
                     else
@@ -508,8 +472,8 @@ public class JSValue {
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=0) {
-            context.throwJSException(new JSException(new JSValue(runnable.jni.exception, context)));
+        if (runnable.jni.exception!=null) {
+            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
             return null;
         }
         return runnable.jni.string;
@@ -580,53 +544,7 @@ public class JSValue {
      * @return  the JavaScriptCore value reference
      * @since 0.1.0
      */
-    public Long valueRef() {
+    public JNIJSValue valueRef() {
         return valueRef;
     }
-
-    /*
-    protected void unprotect() {
-        if (isProtected && !context.isDefunct) {
-            context.sync(new Runnable() {
-                @Override
-                public void run() {
-                    // Test once again that the context hasn't gone defunct.  There is possibly a
-                    // race condition that could render this defunct before this asynchronous method
-                    // gets called
-                    if (!context.isDefunct) {
-                        unprotect(context.ctxRef(), valueRef);
-                    }
-                }
-            });
-        }
-        isProtected = false;
-    }
-    private boolean isProtected = true;
-    */
-
-    /* Native functions */
-    protected native boolean isUndefined(long ctxRef, long valueRef);
-    protected native boolean isNull(long ctxRef, long valueRef );
-    protected native boolean isBoolean(long ctxRef, long valueRef );
-    protected native boolean isNumber(long ctxRef, long valueRef );
-    protected native boolean isString(long ctxRef, long valueRef );
-    protected native boolean isObject(long ctxRef, long valueRef );
-    protected native boolean isArray(long ctxRef, long valueRef );
-    protected native boolean isDate(long ctxRef, long valueRef );
-    protected native JNIReturnObject isEqual(long ctxRef, long a, long b );
-    protected native boolean isStrictEqual(long ctxRef, long a, long b );
-    protected native long makeUndefined(long ctx);
-    protected native long makeNull(long ctx);
-    protected native long makeBoolean(long ctx, boolean bool);
-    protected native long makeNumber(long ctx, double number);
-    protected native long makeString(long ctx, String string);
-    protected native long makeFromJSONString(long ctx, String string);
-    protected native JNIReturnObject createJSONString(long ctxRef, long valueRef, int indent);
-    protected native boolean toBoolean(long ctx, long valueRef);
-    protected native JNIReturnObject toNumber(long ctxRef, long valueRef);
-    protected native JNIReturnObject toStringCopy(long ctxRef, long valueRef);
-    protected native JNIReturnObject toObject(long ctxRef, long valueRef);
-    protected native void protect(long ctx, long valueRef);
-    protected native void unprotect(long ctx, long valueRef);
-    protected native void setException(long valueRef, long exceptionRefRef);
 }

@@ -1,5 +1,5 @@
 //
-// nodedroid_file.cc
+// NodeInstance.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -54,7 +54,7 @@
 #include "node_crypto.h"
 #endif
 
-#include "common.h"
+#include "Common/Common.h"
 
 using namespace node;
 
@@ -65,11 +65,19 @@ public:
     virtual ~NodeInstance();
 
 private:
-    Environment* CreateEnvironment(Isolate* isolate,
-                                   Local<Context> context,
-                                   NodeInstanceData* instance_data);
-    int StartNodeInstance(void* arg);
-    int Start(int argc, char *argv[]);
+    void StartInspector(Environment* env, const char* path,
+                           DebugOptions debug_options);
+
+    inline int StartInstance(uv_loop_t* event_loop,
+                 int argc, const char* const* argv,
+                 int exec_argc, const char* const* exec_argv);
+    inline int StartInstance(void* group, IsolateData* isolate_data,
+                 int argc, const char* const* argv,
+                 int exec_argc, const char* const* exec_argv);
+    inline void PlatformInit();
+
+    //int StartNodeInstance(void* arg);
+    int StartInstance(int argc, char *argv[]);
     void spawnedThread();
 
     static void WaitForInspectorDisconnect(Environment* env);
@@ -101,12 +109,20 @@ private:
     bool debug_wait_connect = false;
     bool trace_sync_io = false;
     bool use_debug_agent = false;
+    bool v8_is_profiling = false;
+    bool abort_on_uncaught_exception = false;
+    bool force_async_hooks_checks = false;
+    bool track_heap_objects = false;
+    bool trace_enabled = false;
+
     bool didExit = false;
     int  exit_code = 0;
     std::string node_modules_dir;
 
     JavaVM *m_jvm = nullptr;
     jobject m_JavaThis = nullptr;
+
+    uv_key_t thread_local_env;
 
     std::thread* node_main_thread = nullptr;
 };

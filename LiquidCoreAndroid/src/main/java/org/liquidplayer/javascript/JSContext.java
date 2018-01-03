@@ -40,7 +40,7 @@ import android.support.v4.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.concurrent.RunnableFuture;
+import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -62,8 +62,7 @@ public class JSContext extends JSObject {
     }
 
     public void sync(final Runnable runnable) {
-        if (!contextGroup.hasDedicatedThread() ||
-                (android.os.Process.myTid() == mContextThreadTid)) {
+        if (isOnThread()) {
             runnable.run();
         } else {
             final Semaphore sempahore = new Semaphore(0);
@@ -74,30 +73,22 @@ public class JSContext extends JSObject {
                     sempahore.release();
                 }
             };
-            runInContextGroup(contextGroup.groupRef(),syncRunner);
+            getGroup().schedule(syncRunner);
             sempahore.acquireUninterruptibly();
         }
     }
 
     public void async(final Runnable runnable) {
-        if (!contextGroup.hasDedicatedThread() ||
-                (android.os.Process.myTid() == mContextThreadTid)) {
+        if (isOnThread()) {
             runnable.run();
         } else {
-            runInContextGroup(contextGroup.groupRef(),runnable);
+            getGroup().schedule(runnable);
         }
     }
 
-    public Boolean isOnThread() {
-        if (!contextGroup.hasDedicatedThread()) return null;
-        return (android.os.Process.myTid() == mContextThreadTid);
-    }
-
-    private int mContextThreadTid = 0;
-    @SuppressWarnings("unused") // called from Native code
-    private void inContextCallback(Runnable runnable) {
-        mContextThreadTid = android.os.Process.myTid();
-        runnable.run();
+    private boolean isOnThread() {
+        if (jniContext == null) return true;
+        else return getGroup().isOnThread();
     }
 
     public long getJSCContext() {
@@ -119,14 +110,14 @@ public class JSContext extends JSObject {
         void handle(JSException exception);
     }
 
-    protected Long ctx;
+    private JNIJSContext jniContext;
     private IJSExceptionHandler exceptionHandler;
 
-    protected JSContext(long ctxHandle, JSContextGroup group) {
+    protected JSContext(JNIJSContext ctxHandle, JSContextGroup group) {
         context = this;
         contextGroup = group;
-        ctx = ctxHandle;
-        valueRef = getGlobalObject(ctx);
+        jniContext = ctxHandle;
+        valueRef = (JNIJSValue) jniContext.getGlobalObject();
         addJSExports();
     }
 
@@ -148,8 +139,8 @@ public class JSContext extends JSObject {
 
         sync(new Runnable() {
             @Override public void run() {
-                ctx = createInGroup(inGroup.groupRef());
-                valueRef = getGlobalObject(ctx);
+                jniContext = JNIJSContext.createInGroup(inGroup.groupRef());
+                valueRef = (JNIJSValue) jniContext.getGlobalObject();
                 addJSExports();
             }
         });
@@ -177,15 +168,6 @@ public class JSContext extends JSObject {
         for (Method m : methods) {
             JSObject f = new JSFunction(context, m, JSObject.class, context);
             property(m.getName(),f);
-        }
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        /* Let the dedicated thread handle object destruction. */
-        if (!contextGroup.hasDedicatedThread()) {
-            release(ctx);
         }
     }
 
@@ -233,8 +215,8 @@ public class JSContext extends JSObject {
      * @return  The context group to which this context belongs
      */
     public JSContextGroup getGroup() {
-        Long g = getGroup(ctx);
-        if (g==0) return null;
+        JNIJSContextGroup g = jniContext.getGroup();
+        if (g==null) return null;
         return new JSContextGroup(g);
     }
 
@@ -243,8 +225,8 @@ public class JSContext extends JSObject {
      * @return  the JavaScriptCore context reference
      * @since 0.1.0
      */
-    public Long ctxRef() {
-        return ctx;
+    public JNIJSContext ctxRef() {
+        return jniContext;
     }
 
     private abstract class JNIReturnClass implements Runnable {
@@ -265,17 +247,16 @@ public class JSContext extends JSObject {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override public void run() {
                 String src = (sourceURL==null) ? "<code>" : sourceURL;
-                jni = evaluateScript(ctx, script,
-                        src, startingLineNumber);
+                jni = jniContext.evaluateScript(script, src, startingLineNumber);
             }
         };
         sync(runnable);
 
-        if (runnable.jni.exception!=0) {
-            throwJSException(new JSException(new JSValue(runnable.jni.exception, context)));
+        if (runnable.jni.exception!=null) {
+            throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
             return new JSValue(this);
         }
-        return new JSValue(runnable.jni.reference,this);
+        return new JSValue((JNIJSValue)runnable.jni.reference,this);
     }
 
     /**
@@ -288,7 +269,7 @@ public class JSContext extends JSObject {
         return evaluateScript(script,null,0);
     }
 
-    private final LongSparseArray<WeakReference<JSObject>> objects = new LongSparseArray<>();
+    private final HashMap<JNIJSObject, WeakReference<JSObject>> objects = new HashMap<>();
     private final Object objectsMutex = new Object();
 
     /**
@@ -301,7 +282,9 @@ public class JSContext extends JSObject {
      */
     protected void persistObject(JSObject obj) {
         synchronized (objectsMutex) {
-            objects.put(obj.valueRef(), new WeakReference<>(obj));
+            if (JNIJSObject.class.isAssignableFrom(obj.valueRef().getClass())) {
+                objects.put((JNIJSObject) obj.valueRef(), new WeakReference<>(obj));
+            }
         }
     }
     /**
@@ -312,7 +295,9 @@ public class JSContext extends JSObject {
      */
     protected void finalizeObject(JSObject obj) {
         synchronized (objectsMutex) {
-            objects.remove(obj.valueRef());
+            if (JNIJSObject.class.isAssignableFrom(obj.valueRef().getClass())) {
+                objects.remove((JNIJSObject) obj.valueRef());
+            }
         }
     }
     /**
@@ -323,9 +308,8 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      * @return The JSObject representing the reference
      */
-    protected JSObject getObjectFromRef(final long objRef,boolean create) {
+    protected JSObject getObjectFromRef(final JNIJSObject objRef, boolean create) {
         if (objRef == valueRef()) {
-            unprotect(context.ctxRef(),objRef);
             return this;
         }
         WeakReference<JSObject> wr;
@@ -335,36 +319,20 @@ public class JSContext extends JSObject {
         JSObject obj = null;
         if (wr != null) {
             obj = wr.get();
-            if (obj != null) {
-                obj.unprotect(ctxRef(), objRef);
-            }
         }
         if (obj==null && create) {
             obj = new JSObject(objRef,this);
-            if (isArray(ctxRef(),objRef)) {
+            if (objRef.isArray()) {
                 obj = new JSArray(objRef, this);
-                protect(ctxRef(), objRef);
             } else if (JSTypedArray.isTypedArray(obj)) {
                 obj = JSTypedArray.from(obj);
-            } else if (isFunction(ctxRef(),objRef)) {
+            } else if (objRef.isFunction()) {
                 obj = new JSFunction(objRef, this);
-                protect(ctxRef(), objRef);
             }
         }
         return obj;
     }
-    protected JSObject getObjectFromRef(long objRef) {
+    protected JSObject getObjectFromRef(JNIJSObject objRef) {
         return getObjectFromRef(objRef,true);
     }
-
-    protected native void runInContextGroup(long ctxGrp, Runnable runnable);
-    protected native long create();
-    protected native long createInGroup(long group);
-    protected native long retain(long ctx);
-    protected native long release(long ctx);
-    protected native long getGroup(long ctx);
-    protected native long getGlobalObject(long ctx);
-    protected native JNIReturnObject evaluateScript(long ctx, String script,
-                                                    String sourceURL,
-                                                    int startingLineNumber);
 }

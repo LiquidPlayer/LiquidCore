@@ -105,7 +105,7 @@ public class JSUint32Array extends JSTypedArray<Long> {
      * @param ctx  The JSContext of the value
      * @since 0.1.0
      */
-    public JSUint32Array(long valueRef, JSContext ctx) {
+    public JSUint32Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Long.class);
     }
 

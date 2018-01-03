@@ -45,14 +45,14 @@ package org.liquidplayer.javascript;
  */
 @SuppressWarnings("JniMissingFunction")
 public class JSContextGroup {
-    private Long group;
+    private JNIJSContextGroup group;
 
     /**
      * Creates a new context group
      * @since 0.1.0
      */
     public JSContextGroup() {
-        group = create();
+        group = JNIJSContextGroup.create();
         hasDedicatedThread = false;
     }
     /**
@@ -60,29 +60,10 @@ public class JSContextGroup {
      * @param groupRef  the JavaScriptCore context group reference
      * @since 0.1.0
      */
-    public JSContextGroup(Long groupRef)
+    public JSContextGroup(JNIJSContextGroup groupRef)
     {
         group = groupRef;
-        hasDedicatedThread = isManaged(group);
-        /* If the entire JSContextGroup is running in a dedicated thread, then let
-         * that thread handle lifecycle.  Release here instead of in finalizer, which may
-         * only get called after the thread is killed or possibly deadlock.
-         */
-        if (hasDedicatedThread) {
-            release(group);
-        }
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        /* If we are not managed by a single thread, we can release this group during
-         * finalization.  It is unsafe to do so if running in a managed thread.  We will let
-         * the native code handle that.
-         */
-        if (!hasDedicatedThread) {
-            release(group);
-        }
+        hasDedicatedThread = groupRef.isManaged();
     }
 
     /**
@@ -98,8 +79,24 @@ public class JSContextGroup {
      * @since 0.1.0
      * @return  the JavaScriptCore context group reference
      */
-    public Long groupRef() {
+    public JNIJSContextGroup groupRef() {
         return group;
+    }
+
+    public boolean isOnThread() {
+        return (!hasDedicatedThread() ||
+                android.os.Process.myTid() == mContextGroupThreadTid);
+    }
+
+    private int mContextGroupThreadTid = 0;
+    @SuppressWarnings("unused") // called from Native code
+    private void inContextCallback(Runnable runnable) {
+        mContextGroupThreadTid = android.os.Process.myTid();
+        runnable.run();
+    }
+
+    void schedule(Runnable runnable) {
+        group.runInContextGroup(this, runnable);
     }
 
     /**
@@ -113,13 +110,9 @@ public class JSContextGroup {
         return (other !=null) &&
                 (this == other) ||
                 (other instanceof JSContextGroup) &&
-                !(groupRef() == null || groupRef() == 0) &&
+                groupRef() != null &&
                 groupRef().equals(((JSContextGroup)other).groupRef());
     }
-
-    protected native long create();
-    protected native static void release(long group);
-    protected native boolean isManaged(long group);
 
     private boolean hasDedicatedThread = false;
 }

@@ -104,7 +104,7 @@ public class JSFloat64Array extends JSTypedArray<Double> {
      * @param ctx  The JSContext of the value
      * @since 0.1.0
      */
-    public JSFloat64Array(long valueRef, JSContext ctx) {
+    public JSFloat64Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Double.class);
     }
 

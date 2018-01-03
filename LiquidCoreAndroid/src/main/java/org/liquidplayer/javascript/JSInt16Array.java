@@ -104,7 +104,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
      * @param valueRef  the JavaScriptCore value reference
      * @param ctx  The JSContext of the value
      */
-    public JSInt16Array(long valueRef, JSContext ctx) {
+    public JSInt16Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Short.class);
     }
 

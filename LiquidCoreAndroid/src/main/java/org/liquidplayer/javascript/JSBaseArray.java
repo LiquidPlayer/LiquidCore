@@ -56,7 +56,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
     protected int mRightBuffer = 0;
     protected JSBaseArray<T> mSuperList = null;
 
-    protected JSBaseArray(long valueRef, JSContext ctx, Class<T> cls) {
+    protected JSBaseArray(JNIJSObject valueRef, JSContext ctx, Class<T> cls) {
         super(valueRef,ctx);
         mType = cls;
     }
@@ -67,7 +67,6 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
         context = superList.context;
         valueRef = superList.valueRef();
         mSuperList = superList;
-        protect(context.ctxRef(), valueRef);
     }
     protected JSBaseArray(JSContext ctx, Class<T> cls) {
         context = ctx;

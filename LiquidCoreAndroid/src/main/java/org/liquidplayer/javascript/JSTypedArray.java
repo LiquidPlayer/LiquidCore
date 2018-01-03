@@ -51,7 +51,6 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
                 null, 0);
         JSValue newArray = constructor.call(null,length);
         valueRef = newArray.valueRef();
-        protect(context.ctxRef(), valueRef);
         addJSExports();
         context.persistObject(this);
     }
@@ -63,7 +62,6 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
                 null, 0);
         JSValue newArray = constructor.call(null,typedArray);
         valueRef = newArray.valueRef();
-        protect(context.ctxRef(), valueRef);
         addJSExports();
         context.persistObject(this);
     }
@@ -76,7 +74,6 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
                 null, 0);
         JSValue newArray = constructor.call(null,object);
         valueRef = newArray.valueRef();
-        protect(context.ctxRef(), valueRef);
         addJSExports();
         context.persistObject(this);
     }
@@ -90,7 +87,6 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
                 null, 0);
         JSValue newArray = constructor.call(null,buffer.getJSObject(),byteOffset,length);
         valueRef = newArray.valueRef();
-        protect(context.ctxRef(), valueRef);
         addJSExports();
         context.persistObject(this);
     }
@@ -103,7 +99,6 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
                 null, 0);
         JSValue newArray = constructor.call(null,buffer.getJSObject(),byteOffset);
         valueRef = newArray.valueRef();
-        protect(context.ctxRef(), valueRef);
         addJSExports();
         context.persistObject(this);
     }
@@ -115,11 +110,10 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
                 null, 0);
         JSValue newArray = constructor.call(null,buffer.getJSObject());
         valueRef = newArray.valueRef();
-        protect(context.ctxRef(), valueRef);
         addJSExports();
         context.persistObject(this);
     }
-    protected JSTypedArray(long objRef, JSContext ctx, Class<T> cls) {
+    protected JSTypedArray(JNIJSObject objRef, JSContext ctx, Class<T> cls) {
         super(objRef,ctx,cls);
     }
     @SuppressWarnings("unchecked")
@@ -139,27 +133,26 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         if (isTypedArray(obj)) {
             switch(obj.property("constructor").toObject().property("name").toString()) {
                 case "Int8Array":
-                    arr = new JSInt8Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSInt8Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Uint8Array":
-                    arr = new JSUint8Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSUint8Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Uint8ClampedArray":
-                    arr = new JSUint8ClampedArray(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSUint8ClampedArray(obj.toObject().JNI(),obj.getContext()); break;
                 case "Int16Array":
-                    arr = new JSInt16Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSInt16Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Uint16Array":
-                    arr = new JSUint16Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSUint16Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Int32Array":
-                    arr = new JSInt32Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSInt32Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Uint32Array":
-                    arr = new JSUint32Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSUint32Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Float32Array":
-                    arr = new JSFloat32Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSFloat32Array(obj.toObject().JNI(),obj.getContext()); break;
                 case "Float64Array":
-                    arr = new JSFloat64Array(obj.valueRef(),obj.getContext()); break;
+                    arr = new JSFloat64Array(obj.toObject().JNI(),obj.getContext()); break;
             }
         }
         if (arr == null) throw new JSException(obj.getContext(),"Object not a typed array");
-        arr.protect(arr.getContext().ctxRef(),arr.valueRef);
         return arr;
     }
 

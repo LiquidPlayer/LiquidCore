@@ -60,7 +60,7 @@ static jmethodID gFindClassMethod;
 #define SQLITE3_JNIRETURNOBJECT "org/liquidplayer/node/SQLite3Shim$JNIReturnObject"
 #define ROBJ "L" SQLITE3_JNIRETURNOBJECT ";"
 
-jclass findClass(JNIEnv *env, const char* name) {
+static jclass findClass(JNIEnv *env, const char* name) {
     return static_cast<jclass>(env->CallObjectMethod(gClassLoader,
         gFindClassMethod, env->NewStringUTF(name)));
 }

@@ -105,7 +105,7 @@ public class JSInt32Array extends JSTypedArray<Integer> {
      * @param ctx  The JSContext of the value
      * @since 0.1.0
      */
-    public JSInt32Array(long valueRef, JSContext ctx) {
+    public JSInt32Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Integer.class);
     }
 
