@@ -331,10 +331,7 @@ NATIVE(JNIJSObject,jobject,setProperty) (PARAMS, jstring propertyName, jobject v
         TryCatch trycatch(isolate);
         std::shared_ptr<JSValue> exception;
 
-        Maybe<bool> has = o->Has(context, String::NewFromUtf8(isolate, c_string));
-        bool exists = has.FromMaybe(false);
-
-        Maybe<bool> defined = (!exists && attributes) ?
+        Maybe<bool> defined = attributes ?
             o->DefineOwnProperty(
                 context,
                 String::NewFromUtf8(isolate, c_string),
