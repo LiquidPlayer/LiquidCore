@@ -14,6 +14,12 @@ android {
         setProperty("archivesBaseName", "LiquidCore")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         //multiDexEnabled true
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11 -fexceptions"
+                abiFilters "x86", "armeabi-v7a"
+            }
+        }
     }
     buildTypes {
         debug {
@@ -25,7 +31,25 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    sourceSets { main { jniLibs.srcDirs 'libs' } }
+    sourceSets {
+        main {
+            jni.srcDirs = []
+            jniLibs.srcDirs = [ '../deps/node-8.9.3/prebuilt/' ]
+        }
+    }
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'armeabi-v7a'
+            universalApk true
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
 }
 
 dependencies {
@@ -67,6 +91,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 
 group='com.github.liquidplayer'
 
+/*
 task ndkBuild(type: Exec) {
     def rootDir = project.rootDir
     def localProperties = new File(rootDir, "local.properties")
@@ -82,3 +107,4 @@ task ndkBuild(type: Exec) {
 }
 
 preBuild.dependsOn ndkBuild
+*/

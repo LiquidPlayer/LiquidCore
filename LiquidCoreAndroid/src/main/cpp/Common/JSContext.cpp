@@ -31,7 +31,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "Common/JSContext.h"
-#include "Common/JSvalue.h"
+#include "Common/JSValue.h"
 #include "Common/Macros.h"
 
 bool JSContext::IsDefunct()
@@ -42,7 +42,7 @@ bool JSContext::IsDefunct()
 std::shared_ptr<JSContext> JSContext::New(std::shared_ptr<ContextGroup> isolate, Local<Context> val)
 {
     auto p = std::make_shared<JSContext>(isolate, val);
-    isolate->ManageObject(p);
+    isolate->ManageJSContext(p);
     return p;
 }
 

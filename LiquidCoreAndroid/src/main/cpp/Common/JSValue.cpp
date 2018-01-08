@@ -79,7 +79,7 @@ std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<
         value = std::make_shared<JSValue>(context,val);
     }
 
-    context->Group()->ManageObject(value);
+    context->Group()->ManageJSValue(value);
     return value;
 }
 
@@ -113,9 +113,9 @@ void JSValue::Dispose()
 {
     if (!m_isDefunct) {
         m_isDefunct = true;
-        V8_ISOLATE(m_context->Group(), isolate);
 
         if (!m_isUndefined && !m_isNull) {
+            V8_ISOLATE(m_context->Group(), isolate)
             if (m_wrapped) {
                 Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
                 // Clear wrapper pointer if it exists, in case this object is still held by JS
@@ -125,13 +125,17 @@ void JSValue::Dispose()
                     Local<v8::Value>::New(isolate,Undefined(isolate)));
             }
             m_value.Reset();
+            V8_UNLOCK()
         }
 
-        V8_UNLOCK();
         m_isUndefined = true;
     }
 }
 
+bool JSValue::IsDefunct()
+{
+    return m_isDefunct;
+}
 
 Local<v8::Value> JSValue::Value ()
 {

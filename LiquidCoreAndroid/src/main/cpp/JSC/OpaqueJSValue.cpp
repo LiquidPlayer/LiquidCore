@@ -32,7 +32,7 @@
 */
 
 #include "JSC/Macros.h"
-#include "JavaScriptCore/Javascript.h"
+#include "JavaScriptCore/JavaScript.h"
 #include "JSC/OpaqueJSContext.h"
 #include "JSC/OpaqueJSValue.h"
 #include "JSC/OpaqueJSClass.h"

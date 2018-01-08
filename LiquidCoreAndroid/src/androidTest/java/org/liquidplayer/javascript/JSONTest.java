@@ -46,19 +46,13 @@ import static org.junit.Assert.*;
 
 public class JSONTest {
 
-    private JSContext context;
-
-    @Before
-    public void setUp() throws Exception {
-        context = new JSContext();
-    }
-
-    public void setUp(JSContext ctx) throws Exception {
-        context = ctx;
+    protected JSContext getContext() {
+        return new JSContext();
     }
 
     @Test
     public void testStringify() throws Exception {
+        JSContext context = getContext();
         context.evaluateScript("var s1 = JSON.stringify(1);");
         context.evaluateScript("var s2 = JSON.stringify('abc');");
         context.evaluateScript("var s3 = JSON.stringify([1,2,3]);");
@@ -77,6 +71,7 @@ public class JSONTest {
 
     @Test
     public void testStringify1() throws Exception {
+        JSContext context = getContext();
         context.evaluateScript("var s1 = JSON.stringify(1);");
         context.evaluateScript("var s2 = JSON.stringify('abc');");
         context.evaluateScript("var s3 = JSON.stringify([1,2,3]);");
@@ -95,6 +90,7 @@ public class JSONTest {
 
     @Test
     public void testParse() throws Exception {
+        JSContext context = getContext();
         context.evaluateScript("var s1 = JSON.stringify(1);");
         context.evaluateScript("var s2 = JSON.stringify('abc');");
         context.evaluateScript("var s3 = JSON.stringify([1,2,3]);");

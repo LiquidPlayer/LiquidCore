@@ -1,5 +1,5 @@
 //
-// OpaqueJSString.h
+// OpaqueJSContextGroup.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -30,32 +30,41 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-#ifndef LIQUIDCORE_OPAQUEJSSTRING_H
-#define LIQUIDCORE_OPAQUEJSSTRING_H
+#ifndef LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H
+#define LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H
 
 #include "JSC/JSCRetainer.h"
-#include "JavaScriptCore/JavaScript.h"
 
-class OpaqueJSString : public JSCRetainer {
+struct OpaqueJSContext;
+
+struct OpaqueJSContextGroup : public ContextGroup {
     public:
-        static JSStringRef New(Local<String> string);
-        static JSStringRef New(const JSChar * chars, size_t numChars);
-        static JSStringRef New(const char * chars);
-        OpaqueJSString(Local<String> string);
-        OpaqueJSString(const JSChar * chars, size_t numChars);
-        OpaqueJSString(const char * chars);
-        virtual ~OpaqueJSString();
-        virtual Local<String> Value(Isolate *);
-        virtual const JSChar * Chars();
-        virtual size_t Size();
-        virtual size_t Utf8Bytes();
-        virtual void Utf8String(std::string&);
-        virtual bool Equals(OpaqueJSString& other);
+        static std::shared_ptr<OpaqueJSContextGroup> New();
+        static std::shared_ptr<OpaqueJSContextGroup> New(Isolate *isolate, uv_loop_t *event_loop);
+        OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop);
+        OpaqueJSContextGroup();
+
+        virtual ~OpaqueJSContextGroup();
+
+        void AssociateContext(const OpaqueJSContext* ctx);
+        void DisassociateContext(const OpaqueJSContext* ctx);
+
+        void Retain();
+        void Release();
+
+        void inline retain() { m_count++; }
+        void inline release()
+        {
+            ASSERTJSC(m_self); if (--m_count==0) { m_self.reset(); }
+        }
 
     private:
-        std::vector<unsigned short> backstore;
-        bool m_isNull;
+        int m_jsc_count;
+        std::list<const OpaqueJSContext *> m_associatedContexts;
+        std::mutex m_mutex;
+        int m_count;
+    protected:
+        std::shared_ptr<ContextGroup> m_self;
 };
 
-#endif //LIQUIDCORE_OPAQUEJSSTRING_H
+#endif //LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H

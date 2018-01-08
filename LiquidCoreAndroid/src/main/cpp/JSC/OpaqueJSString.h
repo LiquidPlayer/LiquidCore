@@ -1,5 +1,5 @@
 //
-// OpaqueJSContext.h
+// OpaqueJSString.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -30,32 +30,32 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef LIQUIDCORE_OPAQUEJSCONTEXT_H_H
-#define LIQUIDCORE_OPAQUEJSCONTEXT_H_H
 
-#include "JavaScriptCore/JavaScript.h"
+#ifndef LIQUIDCORE_OPAQUEJSSTRING_H
+#define LIQUIDCORE_OPAQUEJSSTRING_H
+
 #include "JSC/JSCRetainer.h"
+#include "JavaScriptCore/JavaScript.h"
 
-class OpaqueJSContext : public JSCRetainer, public ManagedObject {
+struct OpaqueJSString : public JSCRetainer {
     public:
-        static JSGlobalContextRef New(std::shared_ptr<JSContext> ctx);
-        virtual ~OpaqueJSContext();
-        virtual inline std::shared_ptr<JSContext> Context() const { return m_context; }
-        virtual void MarkForCollection(JSValueRef value);
-        virtual void MarkCollected(JSValueRef value);
-        virtual void ForceGC();
-        virtual void Dispose();
+        static JSStringRef New(Local<String> string);
+        static JSStringRef New(const JSChar * chars, size_t numChars);
+        static JSStringRef New(const char * chars);
+        OpaqueJSString(Local<String> string);
+        OpaqueJSString(const JSChar * chars, size_t numChars);
+        OpaqueJSString(const char * chars);
+        virtual ~OpaqueJSString();
+        virtual Local<String> Value(Isolate *);
+        virtual const JSChar * Chars();
+        virtual size_t Size();
+        virtual size_t Utf8Bytes();
+        virtual void Utf8String(std::string&);
+        virtual bool Equals(OpaqueJSString& other);
 
     private:
-        OpaqueJSContext(std::shared_ptr<JSContext> ctx);
-        virtual void GCCallback(GCType type, GCCallbackFlags flags);
-
-        std::shared_ptr<JSContext> m_context;
-        std::list<JSValueRef> m_collection;
-        std::recursive_mutex m_gc_lock;
-        bool m_isDefunct;
-
-        static void StaticGCCallback(GCType type, GCCallbackFlags flags, void*data);
+        std::vector<unsigned short> backstore;
+        bool m_isNull;
 };
 
-#endif //LIQUIDCORE_OPAQUEJSCONTEXT_H_H
+#endif //LIQUIDCORE_OPAQUEJSSTRING_H

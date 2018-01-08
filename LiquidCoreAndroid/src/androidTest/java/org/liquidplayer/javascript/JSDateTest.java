@@ -45,118 +45,126 @@ import static org.hamcrest.Matchers.*;
 
 public class JSDateTest {
 
-    private JSContext context;
-    private JSDate ym, ymd, ymdh, ymdhm, ymdhms, ymdhmsm;
-
-    @Before
-    public void setUp() throws Exception {
-        setUp(new JSContext());
+    protected JSContext getContext() {
+        return new JSContext();
     }
 
-    public void setUp(JSContext context) throws Exception {
-        this.context = context;
-        ym = new JSDate(context,2016,7);
-        ymd = new JSDate(context,2016,7,2);
-        ymdh = new JSDate(context,2016,7,2,1);
-        ymdhm = new JSDate(context,2016,7,2,1,10);
-        ymdhms = new JSDate(context,2016,7,2,1,10,30);
-        ymdhmsm = new JSDate(context,2016,7,2,1,10,30,500);
+    class DateTest {
+        JSContext context;
+        JSDate ym, ymd, ymdh, ymdhm, ymdhms, ymdhmsm;
+
+        DateTest() throws Exception {
+            this.context = getContext();
+            ym = new JSDate(context,2016,7);
+            ymd = new JSDate(context,2016,7,2);
+            ymdh = new JSDate(context,2016,7,2,1);
+            ymdhm = new JSDate(context,2016,7,2,1,10);
+            ymdhms = new JSDate(context,2016,7,2,1,10,30);
+            ymdhmsm = new JSDate(context,2016,7,2,1,10,30,500);
+        }
+
+        //Runtime.getRuntime().gc();
     }
 
     @Test
     public void testConstructors() throws Exception {
-        JSDate now = new JSDate(context);
-        JSDate javaNow = new JSDate(context,new Date());
+        DateTest dateTest = new DateTest();
+        JSDate now = new JSDate(dateTest.context);
+        JSDate javaNow = new JSDate(dateTest.context,new Date());
         assertThat(javaNow.getTime(),greaterThanOrEqualTo(now.getTime()));
         assertThat(javaNow.getTime(),lessThan(now.getTime() + 2*1000));
 
-        assertEquals(ym.getTime() + 2*24*60*60*1000, ymd.getTime().longValue());
-        assertEquals(ymd.getTime() + 60*60*1000, ymdh.getTime().longValue());
-        assertEquals(ymdh.getTime() + 10*60*1000, ymdhm.getTime().longValue());
-        assertEquals(ymdhm.getTime() + 30*1000, ymdhms.getTime().longValue());
-        assertEquals(ymdhms.getTime() + 500, ymdhmsm.getTime().longValue());
+        assertEquals(dateTest.ym.getTime() + 2*24*60*60*1000, dateTest.ymd.getTime().longValue());
+        assertEquals(dateTest.ymd.getTime() + 60*60*1000, dateTest.ymdh.getTime().longValue());
+        assertEquals(dateTest.ymdh.getTime() + 10*60*1000, dateTest.ymdhm.getTime().longValue());
+        assertEquals(dateTest.ymdhm.getTime() + 30*1000, dateTest.ymdhms.getTime().longValue());
+        assertEquals(dateTest.ymdhms.getTime() + 500, dateTest.ymdhmsm.getTime().longValue());
     }
 
     @Test
     public void testMethods() throws Exception {
-        JSDate now1 = new JSDate(context);
-        Long now2 = JSDate.now(context);
+        DateTest dateTest = new DateTest();
+        JSDate now1 = new JSDate(dateTest.context);
+        Long now2 = JSDate.now(dateTest.context);
         assertThat(now2,greaterThanOrEqualTo(now1.getTime()));
         assertThat(now2,lessThan(now1.getTime() + 2*1000));
 
-        assertEquals(1000L * (now1.getTime() / 1000L),JSDate.parse(context,now1.toString()).longValue());
+        assertEquals(1000L * (now1.getTime() / 1000L),JSDate.parse(dateTest.context,now1.toString()).longValue());
     }
 
     @Test
     public void testGetters() throws Exception {
-        assertEquals(2016,ym.getFullYear().intValue());
-        assertEquals(6,ym.getMonth().intValue());
-        assertEquals(2,ymd.getDate().intValue());
-        assertEquals(1,ymdh.getHours().intValue());
-        assertEquals(10,ymdhm.getMinutes().intValue());
-        assertEquals(30,ymdhms.getSeconds().intValue());
-        assertEquals(500,ymdhmsm.getMilliseconds().intValue());
+        DateTest dateTest = new DateTest();
+        assertEquals(2016,dateTest.ym.getFullYear().intValue());
+        assertEquals(6,dateTest.ym.getMonth().intValue());
+        assertEquals(2,dateTest.ymd.getDate().intValue());
+        assertEquals(1,dateTest.ymdh.getHours().intValue());
+        assertEquals(10,dateTest.ymdhm.getMinutes().intValue());
+        assertEquals(30,dateTest.ymdhms.getSeconds().intValue());
+        assertEquals(500,dateTest.ymdhmsm.getMilliseconds().intValue());
 
-        assertEquals(2,ymdhm.getDay().intValue()); // Tuesday
+        assertEquals(2,dateTest.ymdhm.getDay().intValue()); // Tuesday
     }
 
     @Test
     public void testSetters() throws Exception {
-        Integer ms = ymdhmsm.getMilliseconds();
-        ymdhmsm.setMilliseconds(0);
-        assertThat(ymdhmsm.getTime(),is(ymdhms.getTime()));
-        ymdhmsm.setMilliseconds(ms);
+        DateTest dateTest = new DateTest();
+        Integer ms = dateTest.ymdhmsm.getMilliseconds();
+        dateTest.ymdhmsm.setMilliseconds(0);
+        assertThat(dateTest.ymdhmsm.getTime(),is(dateTest.ymdhms.getTime()));
+        dateTest.ymdhmsm.setMilliseconds(ms);
 
-        Integer s = ymdhms.getSeconds();
-        ymdhms.setSeconds(0);
-        assertThat(ymdhms.getTime(),is(ymdhm.getTime()));
-        ymdhms.setSeconds(s);
+        Integer s = dateTest.ymdhms.getSeconds();
+        dateTest.ymdhms.setSeconds(0);
+        assertThat(dateTest.ymdhms.getTime(),is(dateTest.ymdhm.getTime()));
+        dateTest.ymdhms.setSeconds(s);
 
-        Integer m = ymdhm.getMinutes();
-        ymdhm.setMinutes(0);
-        assertThat(ymdhm.getTime(),is(ymdh.getTime()));
-        ymdhm.setMinutes(m);
+        Integer m = dateTest.ymdhm.getMinutes();
+        dateTest.ymdhm.setMinutes(0);
+        assertThat(dateTest.ymdhm.getTime(),is(dateTest.ymdh.getTime()));
+        dateTest.ymdhm.setMinutes(m);
 
-        Integer h = ymdh.getHours();
-        ymdh.setHours(0);
-        assertThat(ymdh.getTime(),is(ymd.getTime()));
-        ymdh.setHours(h);
+        Integer h = dateTest.ymdh.getHours();
+        dateTest.ymdh.setHours(0);
+        assertThat(dateTest.ymdh.getTime(),is(dateTest.ymd.getTime()));
+        dateTest.ymdh.setHours(h);
 
-        Integer d = ymd.getDate();
-        ymd.setDate(0);
-        assertThat(ymd.getTime(),is(ym.getTime()));
-        ymd.setDate(d);
+        Integer d = dateTest.ymd.getDate();
+        dateTest.ymd.setDate(0);
+        assertThat(dateTest.ymd.getTime(),is(dateTest.ym.getTime()));
+        dateTest.ymd.setDate(d);
 
-        JSDate now = new JSDate(context);
+        JSDate now = new JSDate(dateTest.context);
         now.setFullYear(2005);
         assertThat(now.getFullYear(),is(2005));
 
         now.setMonth(5);
         assertThat(now.getMonth(),is(5));
 
-        JSDate settime = new JSDate(context);
-        settime.setTime(ymdhmsm.getTime());
-        assertEquals(ymdhmsm.getTime(),settime.getTime());
+        JSDate settime = new JSDate(dateTest.context);
+        settime.setTime(dateTest.ymdhmsm.getTime());
+        assertEquals(dateTest.ymdhmsm.getTime(),settime.getTime());
     }
 
     @Test
     public void testUTC() throws Exception {
-        Long Uym = JSDate.UTC(context,2016,7);
-        Long Uymd = JSDate.UTC(context,2016,7,2);
-        Long Uymdh = JSDate.UTC(context,2016,7,2,1);
-        Long Uymdhm = JSDate.UTC(context,2016,7,2,1,10);
-        Long Uymdhms = JSDate.UTC(context,2016,7,2,1,10,30);
-        Long Uymdhmsm = JSDate.UTC(context,2016,7,2,1,10,30,500);
+        DateTest dateTest = new DateTest();
+        Long Uym = JSDate.UTC(dateTest.context,2016,7);
+        Long Uymd = JSDate.UTC(dateTest.context,2016,7,2);
+        Long Uymdh = JSDate.UTC(dateTest.context,2016,7,2,1);
+        Long Uymdhm = JSDate.UTC(dateTest.context,2016,7,2,1,10);
+        Long Uymdhms = JSDate.UTC(dateTest.context,2016,7,2,1,10,30);
+        Long Uymdhmsm = JSDate.UTC(dateTest.context,2016,7,2,1,10,30,500);
         assertEquals(Uym + 2*24*60*60*1000, Uymd.longValue());
         assertEquals(Uymd + 60*60*1000, Uymdh.longValue());
         assertEquals(Uymdh + 10*60*1000, Uymdhm.longValue());
         assertEquals(Uymdhm + 30*1000, Uymdhms.longValue());
         assertEquals(Uymdhms + 500, Uymdhmsm.longValue());
 
-        assertEquals(Uym.longValue(), ym.getTime() - ym.getTimezoneOffset()*60*1000);
+        assertEquals(Uym.longValue(), dateTest.ym.getTime() - dateTest.ym.getTimezoneOffset()*60*1000);
 
-        JSDate utc = new JSDate(context,Uymdhmsm);
-        assertEquals(utc.getTime().longValue(), ymdhmsm.getTime() - ymdhmsm.getTimezoneOffset()*60*1000);
+        JSDate utc = new JSDate(dateTest.context,Uymdhmsm);
+        assertEquals(utc.getTime().longValue(), dateTest.ymdhmsm.getTime() - dateTest.ymdhmsm.getTimezoneOffset()*60*1000);
 
         assertEquals(2,utc.getUTCDay().intValue()); // Tuesday
 
@@ -190,28 +198,25 @@ public class JSDateTest {
 
     @Test
     public void testConversionGetter() throws Exception {
-        context.property("_date_",ymdhmsm);
-        context.evaluateScript("var dateString = _date_.toDateString();");
-        context.evaluateScript("var isoString = _date_.toISOString();");
-        context.evaluateScript("var jsonString = _date_.toJSON();");
-        context.evaluateScript("var timeString = _date_.toTimeString();");
-        context.evaluateScript("var utcString = _date_.toUTCString();");
+        DateTest dateTest = new DateTest();
+        dateTest.context.property("_date_",dateTest.ymdhmsm);
+        dateTest.context.evaluateScript("var dateString = _date_.toDateString();");
+        dateTest.context.evaluateScript("var isoString = _date_.toISOString();");
+        dateTest.context.evaluateScript("var jsonString = _date_.toJSON();");
+        dateTest.context.evaluateScript("var timeString = _date_.toTimeString();");
+        dateTest.context.evaluateScript("var utcString = _date_.toUTCString();");
 
-        String dateString = context.property("dateString").toString();
-        String isoString  = context.property("isoString").toString();
-        String jsonString = context.property("jsonString").toString();
-        String timeString = context.property("timeString").toString();
-        String utcString  = context.property("utcString").toString();
+        String dateString = dateTest.context.property("dateString").toString();
+        String isoString  = dateTest.context.property("isoString").toString();
+        String jsonString = dateTest.context.property("jsonString").toString();
+        String timeString = dateTest.context.property("timeString").toString();
+        String utcString  = dateTest.context.property("utcString").toString();
 
-        assertEquals(dateString,ymdhmsm.toDateString());
-        assertEquals(isoString,ymdhmsm.toISOString());
-        assertEquals(jsonString,ymdhmsm.toJSON());
-        assertEquals(timeString,ymdhmsm.toTimeString());
-        assertEquals(utcString,ymdhmsm.toUTCString());
+        assertEquals(dateString,dateTest.ymdhmsm.toDateString());
+        assertEquals(isoString,dateTest.ymdhmsm.toISOString());
+        assertEquals(jsonString,dateTest.ymdhmsm.toJSON());
+        assertEquals(timeString,dateTest.ymdhmsm.toTimeString());
+        assertEquals(utcString,dateTest.ymdhmsm.toUTCString());
     }
 
-    @org.junit.After
-    public void shutDown() {
-        Runtime.getRuntime().gc();
-    }
 }

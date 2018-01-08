@@ -48,6 +48,7 @@ public:
     virtual std::shared_ptr<ContextGroup> Group();
     virtual std::shared_ptr<JSContext> Context();
     virtual void Dispose();
+    virtual bool IsDefunct();
 
     static std::shared_ptr<JSValue> New(std::shared_ptr<JSContext> context, Local<v8::Value> val);
 

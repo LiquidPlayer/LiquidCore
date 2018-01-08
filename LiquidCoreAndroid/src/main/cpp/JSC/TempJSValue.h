@@ -36,7 +36,7 @@
 
 #include "Common/Common.h"
 #include "JSC/Macros.h"
-#include "JavaScriptCore/Javascript.h"
+#include "JavaScriptCore/JavaScript.h"
 
 class TempJSValue {
     public:

@@ -29,6 +29,7 @@
 
 #define WINDOWS 0
 #define DARWIN  0
+#define JSC_OBJC_API_ENABLED 0
 #define OS(x) (x)
 #define UNUSED_PARAM(x)
 #include <stdio.h>

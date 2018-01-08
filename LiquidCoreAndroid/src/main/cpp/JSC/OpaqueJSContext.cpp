@@ -97,6 +97,11 @@ void OpaqueJSContext::Dispose()
     }
 }
 
+bool OpaqueJSContext::IsDefunct()
+{
+    return m_isDefunct;
+}
+
 void OpaqueJSContext::MarkForCollection(JSValueRef value)
 {
     ASSERTJSC(value->Context() == this);

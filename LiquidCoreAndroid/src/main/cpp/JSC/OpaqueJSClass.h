@@ -37,7 +37,7 @@
 #include "JavaScriptCore/JavaScript.h"
 #include "JSC/JSCRetainer.h"
 
-class OpaqueJSClass : public JSCRetainer {
+struct OpaqueJSClass : public JSCRetainer {
     public:
         static JSClassRef New(const JSClassDefinition *definition);
 
@@ -79,7 +79,6 @@ class OpaqueJSClass : public JSCRetainer {
         virtual bool IsFunction();
         virtual bool IsConstructor();
         const JSClassDefinition *m_definition;
-        JSObjectRef m_classObject;
 };
 
 #endif //LIQUIDCORE_OPAQUEJSCLASS_H

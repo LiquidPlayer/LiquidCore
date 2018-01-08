@@ -151,6 +151,15 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
+void ContextGroup::MarkZombie(std::shared_ptr<ManagedObject> obj)
+{
+    if ((void*)&*obj != this) {
+        m_zombie_mutex.lock();
+        m_zombies.push_back(obj);
+        m_zombie_mutex.unlock();
+    }
+}
+
 void ContextGroup::callback(uv_async_t* handle)
 {
     ContextGroupData *data = reinterpret_cast<ContextGroupData*>(handle->data);
@@ -252,9 +261,14 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags)
     }
 }
 
-void ContextGroup::ManageObject(std::shared_ptr<ManagedObject> obj)
+void ContextGroup::ManageJSValue(std::shared_ptr<ManagedObject> obj)
 {
-    m_managedObjects.push_back(std::move(obj));
+    m_managedValues.push_back(std::move(obj));
+}
+
+void ContextGroup::ManageJSContext(std::shared_ptr<ManagedObject> obj)
+{
+    m_managedContexts.push_back(std::move(obj));
 }
 
 void ContextGroup::Dispose()
@@ -265,7 +279,13 @@ __android_log_print(ANDROID_LOG_DEBUG, "ContextGroup", "Disposing the ContextGro
 
         m_scheduling_mutex.lock();
 
-        for (auto it = m_managedObjects.begin(); it != m_managedObjects.end(); ++it) {
+        for (auto it = m_managedValues.begin(); it != m_managedValues.end(); ++it) {
+            std::shared_ptr<ManagedObject> valid = (*it).lock();
+            if (valid) {
+                valid->Dispose();
+            }
+        }
+        for (auto it = m_managedContexts.begin(); it != m_managedContexts.end(); ++it) {
             std::shared_ptr<ManagedObject> valid = (*it).lock();
             if (valid) {
                 valid->Dispose();
@@ -273,7 +293,9 @@ __android_log_print(ANDROID_LOG_DEBUG, "ContextGroup", "Disposing the ContextGro
         }
         m_isDefunct = true;
         m_scheduling_mutex.unlock();
-        m_managedObjects.clear();
+        m_managedValues.clear();
+        m_managedContexts.clear();
+        //m_zombies.clear();
 
         s_isolate_map.erase(m_isolate);
         if (m_manage_isolate) {
@@ -316,7 +338,7 @@ void ContextGroup::sync(std::function<void()> runnable)
 
         if (!m_async_handle) {
             m_async_handle = new uv_async_t();
-            m_async_handle->data = this;
+            m_async_handle->data = new ContextGroupData(shared_from_this());
             uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
             uv_async_send(m_async_handle);
         }
@@ -345,7 +367,7 @@ void ContextGroup::async(std::function<void()> runnable, bool queue_only)
 
         if (!queue_only && !m_async_handle) {
             m_async_handle = new uv_async_t();
-            m_async_handle->data = this;
+            m_async_handle->data = new ContextGroupData(shared_from_this());
             uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
             uv_async_send(m_async_handle);
         }

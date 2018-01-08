@@ -36,7 +36,7 @@
 
 #include "JSC/JSCRetainer.h"
 
-class OpaqueJSValue : public JSCRetainer {
+struct OpaqueJSValue : public JSCRetainer {
     public:
         static JSValueRef New(JSContextRef ctx, Local<Value> v, const JSClassDefinition* fromClass=0);
         static JSValueRef New(JSContextRef context, const char *s);

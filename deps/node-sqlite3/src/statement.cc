@@ -1,7 +1,7 @@
 #include <string.h>
-#include <node.h>
-#include <node_buffer.h>
-#include <node_version.h>
+#include "node.h"
+#include "node_buffer.h"
+#include "node_version.h"
 
 #include "macros.h"
 #include "database.h"

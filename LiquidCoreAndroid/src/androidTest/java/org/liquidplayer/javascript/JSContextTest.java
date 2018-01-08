@@ -38,7 +38,6 @@ package org.liquidplayer.javascript;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.util.SparseArray;
 
 import org.junit.Test;
 

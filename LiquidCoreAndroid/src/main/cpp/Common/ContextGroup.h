@@ -77,7 +77,7 @@ struct Runnable {
     std::function<void()> c_runnable;
 };
 
-class ContextGroup : public std::enable_shared_from_this<ContextGroup> {
+class ContextGroup : public std::enable_shared_from_this<ContextGroup>, public ManagedObject {
 public:
     ContextGroup();
     ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
@@ -86,13 +86,16 @@ public:
     virtual inline uv_loop_t * Loop() { return m_isDefunct ? nullptr : m_uv_loop; }
     virtual inline bool IsDefunct() { return m_isDefunct; }
     virtual inline std::thread::id Thread() { return m_thread_id; }
+    virtual inline std::shared_ptr<ContextGroup> Group() { return shared_from_this(); }
 
     virtual void sync(std::function<void()> runnable);
     virtual void async(std::function<void()> runnable, bool queue_only);
     virtual void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
     virtual void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
-    virtual void ManageObject(std::shared_ptr<ManagedObject> obj);
+    virtual void ManageJSValue(std::shared_ptr<ManagedObject> obj);
+    virtual void ManageJSContext(std::shared_ptr<ManagedObject> obj);
     virtual void Dispose();
+    virtual void MarkZombie(std::shared_ptr<ManagedObject> obj);
 
     static void init_v8();
     static inline std::mutex *Mutex() { return &s_mutex; }
@@ -118,7 +121,10 @@ private:
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
-    std::vector<std::weak_ptr<ManagedObject>> m_managedObjects;
+    std::vector<std::weak_ptr<ManagedObject>> m_managedValues;
+    std::vector<std::weak_ptr<ManagedObject>> m_managedContexts;
+    std::vector<std::shared_ptr<ManagedObject>> m_zombies;
+    std::mutex m_zombie_mutex;
     bool m_isDefunct;
 
     struct GCCallback {

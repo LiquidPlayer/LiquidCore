@@ -1,5 +1,5 @@
 //
-// SharedWrap.h
+// OpaqueJSContext.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -7,7 +7,7 @@
 // Created by Eric Lange
 //
 /*
- Copyright (c) 2018 Eric Lange. All rights reserved.
+ Copyright (c) 2014-2018 Eric Lange. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -30,31 +30,33 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef LIQUIDCORE_SHAREDWRAP_H
-#define LIQUIDCORE_SHAREDWRAP_H
+#ifndef LIQUIDCORE_OPAQUEJSCONTEXT_H_H
+#define LIQUIDCORE_OPAQUEJSCONTEXT_H_H
 
-#include "Common/Common.h"
-jclass findClass(JNIEnv *env, const char* name);
+#include "JavaScriptCore/JavaScript.h"
+#include "JSC/JSCRetainer.h"
 
-template<typename T>
-class SharedWrap {
-public:
-    SharedWrap(std::shared_ptr<T> g);
-    virtual ~SharedWrap();
+struct OpaqueJSContext : public JSCRetainer, public ManagedObject {
+    public:
+        static JSGlobalContextRef New(std::shared_ptr<JSContext> ctx);
+        virtual ~OpaqueJSContext();
+        virtual inline std::shared_ptr<JSContext> Context() const { return m_context; }
+        virtual void MarkForCollection(JSValueRef value);
+        virtual void MarkCollected(JSValueRef value);
+        virtual void ForceGC();
+        virtual void Dispose();
+        virtual bool IsDefunct();
 
-    static jobject New(JNIEnv *env, std::shared_ptr<T> shared);
-    static std::shared_ptr<T> Shared(JNIEnv *env, jobject thiz);
-    static void Dispose(long reference);
+    private:
+        OpaqueJSContext(std::shared_ptr<JSContext> ctx);
+        virtual void GCCallback(GCType type, GCCallbackFlags flags);
 
-private:
-    static SharedWrap<T>* GetWrap(JNIEnv *env, jobject thiz);
-    static const char * ClassName();
-    static const char * ClassName(std::shared_ptr<T> shared);
+        std::shared_ptr<JSContext> m_context;
+        std::list<JSValueRef> m_collection;
+        std::recursive_mutex m_gc_lock;
+        bool m_isDefunct;
 
-    static std::map<T *, jobject> s_jobject_map;
-    static std::mutex s_mutex;
-
-    std::shared_ptr<T> m_shared;
+        static void StaticGCCallback(GCType type, GCCallbackFlags flags, void*data);
 };
 
-#endif //LIQUIDCORE_SHAREDWRAP_H
+#endif //LIQUIDCORE_OPAQUEJSCONTEXT_H_H

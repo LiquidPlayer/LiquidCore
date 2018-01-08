@@ -36,138 +36,130 @@
 
 #include "JNI/JNI.h"
 
-#define VALUE_ISOLATE(valueRef,isolate,context,value) \
-    auto valueRef = SharedWrap<JSValue>::Shared(env, thiz); \
-    V8_ISOLATE_CTX(valueRef->Context(),isolate,context); \
-    Local<Value> value = valueRef->Value();
+template <typename F>
+jboolean boolean_func(JNIEnv* env, jobject thiz, F&& lambda, bool defValue){
+    auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
+    if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
+            !valueRef->Group()->IsDefunct()) {
+        V8_ISOLATE_CTX(valueRef->Context(), isolate, context)
+            Local<Value> value = valueRef->Value();
+            defValue = lambda(value, context);
+        V8_UNLOCK()
+    }
+    return (jboolean) defValue;
+}
+
+template <typename F>
+jobject exception_func(JNIEnv* env, jobject thiz, F&& lambda){
+    JNIReturnObject out(env);
+    auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
+    if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
+            !valueRef->Group()->IsDefunct()) {
+        V8_ISOLATE_CTX(valueRef->Context(), isolate, context)
+            Local<Value> value = valueRef->Value();
+
+            TryCatch trycatch(isolate);
+            std::shared_ptr<JSValue> exception;
+
+            bool failed = lambda(value, context, isolate, out);
+
+            if (failed) {
+                exception = JSValue::New(valueRef->Context(), trycatch.Exception());
+                out.SetException(SharedWrap<JSValue>::New(env, exception));
+            }
+        V8_UNLOCK()
+    }
+    return out.ToJava();
+}
 
 NATIVE(JNIJSValue,jboolean,isUndefined) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsUndefined();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsUndefined();
+    }, true);
 }
 
 NATIVE(JNIJSValue,jboolean,isNull) (PARAMS)
 {
-
-    bool v;
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsNull();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsNull();
+    }, false);
 }
 
 NATIVE(JNIJSValue,jboolean,isBoolean) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsBoolean();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsBoolean();
+    }, false);
 }
 
 NATIVE(JNIJSValue,jboolean,isNumber) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsNumber();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsNumber();
+    }, false);
 }
 
 NATIVE(JNIJSValue,jboolean,isString) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsString();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsString();
+    }, false);
 }
 
 NATIVE(JNIJSValue,jboolean,isObject) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsObject();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsObject();
+    }, false);
 }
 
 NATIVE(JNIJSValue,jboolean,isArray) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsArray();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsArray();
+    }, false);
 }
 
 NATIVE(JNIJSValue,jboolean,isDate) (PARAMS)
 {
-    bool v;
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        v = value->IsDate();
-    V8_UNLOCK()
-
-    return v;
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsDate();
+    }, false);
 }
 
 /* Comparing values */
 
 NATIVE(JNIJSValue,jobject,isEqual) (PARAMS, jobject b)
 {
-    JNIReturnObject out(env);
-
-    bool result = false;
-    std::shared_ptr<JSValue> exception;
-    {
-        VALUE_ISOLATE(a,isolate,context,a_)
-            Local<Value> b_ = SharedWrap<JSValue>::Shared(env, b)->Value();
-
-            TryCatch trycatch(isolate);
-
-            Maybe<bool> is = a_->Equals(context,b_);
-            if (is.IsNothing()) {
-                exception = JSValue::New(a->Context(), trycatch.Exception());
+    JNIReturnObject out1(env);
+    auto a = SharedWrap<JSValue>::Shared(env, thiz);
+    if (!a->IsDefunct()) {
+        return exception_func(env, b, [a](Local<Value> b_, Local<Context> context,
+                                           Isolate *isolate, JNIReturnObject out) {
+            Local<Value> a_ = a->Value();
+            bool result = false;
+            Maybe<bool> is = a_->Equals(context, b_);
+            if (!is.IsNothing()) {
+                out.SetBool(is.FromMaybe(result));
             } else {
-                result = is.FromMaybe(result);
+                out.SetBool(false);
             }
-        V8_UNLOCK()
+            return is.IsNothing();
+        });
+    } else {
+        out1.SetBool(false);
+        return out1.ToJava();
     }
-    out.SetBool(result);
-
-    if (exception) {
-        out.SetException(SharedWrap<JSValue>::New(env, exception));
-    }
-
-    return out.ToJava();
 }
 
 NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jobject b)
 {
-    bool v;
-    VALUE_ISOLATE(a,isolate,context,a_)
-        Local<Value> b_ = SharedWrap<JSValue>::Shared(env, b)->Value();
-        v = a_->StrictEquals(b_);
-    V8_UNLOCK()
-    return v;
+    return boolean_func(env, thiz, [env, b](Local<Value> a_, Local<Context> context) {
+        return boolean_func(env, b, [a_](Local<Value> b_, Local<Context> context_) {
+            return a_->StrictEquals(b_);
+        }, false);
+    }, false);
 }
 
 /* Creating values */
@@ -291,113 +283,71 @@ NATIVE(JNIJSValue,jobject,makeFromJSONString) (PARAMS, jobject ctx, jstring stri
 
 NATIVE(JNIJSValue,jobject,createJSONString) (PARAMS, jint indent)
 {
-    JNIReturnObject ret(env);
-
-    VALUE_ISOLATE(valueRef,isolate,context,inValue)
+    return exception_func(env, thiz, [env, thiz, indent](Local<Value> inValue, Local<Context> context,
+                                              Isolate *isolate, JNIReturnObject out) {
+        auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
         Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
 
         Local<Value> result = stringify->Call(json, 1, &inValue);
-        ret.SetReference(SharedWrap<JSValue>::New(
-            env,
-            JSValue::New(valueRef->Context(), result))
+        out.SetReference(SharedWrap<JSValue>::New(
+                env,
+                JSValue::New(valueRef->Context(), result))
         );
-    V8_UNLOCK()
-
-    return ret.ToJava();
+        return false;
+    });
 }
 
 /* Converting to primitive values */
 
 NATIVE(JNIJSValue,jboolean,toBoolean) (PARAMS)
 {
-    bool ret = false;
-    VALUE_ISOLATE(valueRef,isolate,context,value)
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
         MaybeLocal<Boolean> boolean = value->ToBoolean(context);
-        if (!boolean.IsEmpty()) {
-            ret = boolean.ToLocalChecked()->Value();
-        }
-    V8_UNLOCK()
-    return ret;
+        return !boolean.IsEmpty() && boolean.ToLocalChecked()->Value();
+    }, false);
 }
 
-NATIVE(JNIJSValue,jobject,toNumber) (PARAMS)
-{
-    JNIReturnObject out(env);
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
-
+NATIVE(JNIJSValue,jobject,toNumber) (PARAMS) {
+    return exception_func(env, thiz, [](Local<Value> value, Local<Context> context,
+                                        Isolate *isolate, JNIReturnObject out) {
         MaybeLocal<Number> number = value->ToNumber(context);
         double result = 0.0;
         if (!number.IsEmpty()) {
-            result = number.ToLocalChecked()->Value();
-        } else {
-            exception = JSValue::New(valueRef->Context(), trycatch.Exception());
+            out.SetNumber(number.ToLocalChecked()->Value());
         }
-
-        out.SetNumber(result);
-        if (exception) {
-            out.SetException(SharedWrap<JSValue>::New(env, exception));
-        }
-    V8_UNLOCK()
-    return out.ToJava();
+        return number.IsEmpty();
+    });
 }
 
 NATIVE(JNIJSValue,jobject,toStringCopy) (PARAMS)
 {
-    JNIReturnObject out(env);
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
-        jstring retStr;
-
+    return exception_func(env, thiz, [env](Local<Value> value, Local<Context> context,
+                                           Isolate *isolate, JNIReturnObject out) {
         MaybeLocal<String> string = value->ToString(context);
         if (!string.IsEmpty()) {
             String::Utf8Value const str(string.ToLocalChecked());
-            retStr = env->NewStringUTF(*str);
+            out.SetString(env->NewStringUTF(*str));
         } else {
-            retStr = env->NewStringUTF("");
-            exception = JSValue::New(valueRef->Context(), trycatch.Exception());
+            out.SetString(env->NewStringUTF(""));
         }
-
-        out.SetString(retStr);
-
-        if (exception) {
-            out.SetException(SharedWrap<JSValue>::New(env, exception));
-        }
-    V8_UNLOCK()
-    return out.ToJava();
+        return string.IsEmpty();
+    });
 }
 
 NATIVE(JNIJSValue,jobject,toObject) (PARAMS)
 {
-    JNIReturnObject out(env);
-
-    VALUE_ISOLATE(valueRef,isolate,context,value)
-        TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+    return exception_func(env, thiz, [env, thiz](Local<Value> value, Local<Context> context,
+                                                 Isolate *isolate, JNIReturnObject out) {
 
         MaybeLocal<Object> obj = value->ToObject(context);
         if (!obj.IsEmpty()) {
-            out.SetReference(
-                SharedWrap<JSValue>::New(
-                    env,
-                    JSValue::New(valueRef->Context(), value->ToObject())
-                )
-            );
-        } else {
-            out.SetException(
-                SharedWrap<JSValue>::New(
-                    env,
-                    JSValue::New(valueRef->Context(), trycatch.Exception())
-                )
-            );
+            auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
+            out.SetReference(SharedWrap<JSValue>::New(
+                    env, JSValue::New(valueRef->Context(), value->ToObject())));
         }
-    V8_UNLOCK()
-    return out.ToJava();
+        return obj.IsEmpty();
+    });
 }
 
 NATIVE(JNIJSValue,void,Finalize) (PARAMS, long reference)

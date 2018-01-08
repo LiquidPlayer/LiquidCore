@@ -50,7 +50,7 @@ import static org.hamcrest.Matchers.*;
 public class JSArrayTest {
 
     public void testJSArrayConstructors(JSContext context) throws Exception {
-        /**
+        /*
          * new JSArray(context, JSValue[], cls)
          */
         JSValue [] initializer = new JSValue[] { new JSValue(context,1), new JSValue(context,"two")};
@@ -59,7 +59,7 @@ public class JSArrayTest {
         assertThat(array.get(0).toNumber().intValue(),is(1));
         assertThat(array.get(1).toString(),is("two"));
 
-        /**
+        /*
          * new JSArray(context, cls)
          */
         JSArray<Integer> array2 = new JSArray<>(context,Integer.class);
@@ -68,7 +68,7 @@ public class JSArrayTest {
         assertThat(array2.size(),is(2));
         assertThat(array2.get(1),is(20));
 
-        /**
+        /*
          * new JSArray(context, Object[], cls)
          */
         Object [] objinit = new Object [] { 1, 2.0, "three"};
@@ -78,7 +78,7 @@ public class JSArrayTest {
         assertThat(array3.get(1).isStrictEqual(2),is(true));
         assertThat(array3.get(2).isStrictEqual("three"),is(true));
 
-        /**
+        /*
          * new JSArray(context, List, cls)
          */
         List<String> list = new ArrayList<>();
@@ -92,7 +92,7 @@ public class JSArrayTest {
 
     public void testJSArrayListMethods(JSContext context) throws Exception {
         List<Object> list = new JSArray<>(context, Object.class);
-        /**
+        /*
          * JSArray.add(value)
          */
         list.add("zero");
@@ -106,7 +106,7 @@ public class JSArrayTest {
         assertTrue(((JSValue) list.get(3)).isArray());
         assertTrue(((JSValue) list.get(4)).isObject());
 
-        /**
+        /*
          * JSArray.toArray()
          */
         Object[] array = list.toArray();
@@ -116,26 +116,26 @@ public class JSArrayTest {
         assertTrue(((JSValue) array[3]).isArray());
         assertTrue(((JSValue) array[4]).isObject());
 
-        /**
+        /*
          * JSArray.get(index)
          */
         ((JSArray) list).propertyAtIndex(list.size(), "anotherone");
         assertEquals(list.get(5),"anotherone");
         assertTrue(((JSValue) list.get(3)).isArray());
 
-        /**
+        /*
          * JSArray.size()
          */
         assertThat(list.size(),is(6));
 
-        /**
+        /*
          * JSArray.isEmpty()
          */
         List<Integer> list2 = new JSArray<>(context, Integer.class);
         assertFalse(list.isEmpty());
         assertTrue(list2.isEmpty());
 
-        /**
+        /*
          * JSArray.contains(object)
          */
         assertTrue(list.contains("zero"));
@@ -143,7 +143,7 @@ public class JSArrayTest {
         assertTrue(list.contains(2.0));
         assertFalse(list.contains(5));
 
-        /**
+        /*
          * JSArray.iterator()
          */
         int i = 0;
@@ -153,7 +153,7 @@ public class JSArrayTest {
         }
         assertThat(i,is(list.size()));
 
-        /**
+        /*
          * JSArray.toArray(Object[])
          */
         list2.add(0);
@@ -174,14 +174,14 @@ public class JSArrayTest {
         assertThat(arr2[1],is(1));
         assertNull(arr2[2]);
 
-        /**
+        /*
          * JSArray.remove(object)
          */
         assertTrue(list2.remove(Integer.valueOf(1)));
         assertFalse(list2.remove(Integer.valueOf(2)));
         assertFalse(list2.contains(1));
 
-        /**
+        /*
          * JSArray.containsAll(collection)
          */
         Collection<Object> collection = new ArrayList<>();
@@ -193,21 +193,21 @@ public class JSArrayTest {
         assertTrue(list.containsAll(collection));
         assertFalse(list.containsAll(collection2));
 
-        /**
+        /*
          * JSArray.addAll(collection)
          */
         int size = list.size();
         list.addAll(collection);
         assertThat(list.size(),is(size + collection.size()));
 
-        /**
+        /*
          * JSArray.removeAll(collection)
          */
         size = list.size();
         list.removeAll(collection);
         assertThat(list.size(),is(size - collection.size() * 2));
 
-        /**
+        /*
          * JSArray.retainAll(collection)
          */
         list.addAll(collection);
@@ -215,13 +215,13 @@ public class JSArrayTest {
         assertThat(list.size(),is(collection.size()));
         assertTrue(list.containsAll(collection));
 
-        /**
+        /*
          * JSArray.clear()
          */
         list.clear();
         assertThat(list.size(),is(0));
 
-        /**
+        /*
          * JSArray.set(index,object)
          */
         list.addAll(collection);
@@ -235,7 +235,7 @@ public class JSArrayTest {
         assertEquals(last1,1);
         assertEquals(list.get(1),"foo");
 
-        /**
+        /*
          * JSArray.add(index,object)
          */
         list.add(1, "hello");
@@ -252,7 +252,7 @@ public class JSArrayTest {
         assertThat(list.size(),is(5));
         assertEquals(list.get(4),"world");
 
-        /**
+        /*
          * JSArray.remove(index)
          */
         list.remove(4);
@@ -260,7 +260,7 @@ public class JSArrayTest {
         assertEquals(list.get(1),"foo");
         assertThat(list.size(),is(3));
 
-        /**
+        /*
          * JSArray.indexOf(object)
          */
         list.addAll(collection);
@@ -270,7 +270,7 @@ public class JSArrayTest {
         assertThat(list.indexOf(1),is(4));
         assertThat(list.indexOf("world"),is(-1));
 
-        /**
+        /*
          * JSArray.lastIndexOf(object)
          */
         assertThat(list.lastIndexOf("zero"),is(3));
@@ -279,7 +279,7 @@ public class JSArrayTest {
         assertThat(list.lastIndexOf(1),is(4));
         assertThat(list.lastIndexOf("world"),is(-1));
 
-        /**
+        /*
          * JSArray.listIterator()
          */
         // List iterator is heavily used by underlying JSArray methods already tested.  Only
@@ -293,7 +293,7 @@ public class JSArrayTest {
         assertThat(list.indexOf("changed"),is(0));
         assertThat(list.lastIndexOf("changed"),is(10));
 
-        /**
+        /*
          * JSArray.listIterator(index)
          */
         for (ListIterator<Object> it = list.listIterator(0); it.hasNext(); ) {
@@ -302,7 +302,7 @@ public class JSArrayTest {
         assertEquals(list.listIterator(list.size()).previous(),list.listIterator(list.size() + 10).previous());
         assertThat(list.size(),is(6));
 
-        /**
+        /*
          * JSArray.subList(fromIndex, toIndex)
          */
         list.subList(1, 4).clear();
@@ -314,14 +314,14 @@ public class JSArrayTest {
         assertEquals(list.get(1),3);
         list.subList(1,2).set(0,1);
 
-        /**
+        /*
          * JSArray.equals()
          */
         ArrayList<Object> arrayList = new ArrayList<>(collection);
         assertEquals(list,arrayList);
         assertNotEquals(list,list2);
 
-        /**
+        /*
          * JSArray.hashCode()
          */
         JSArray<Object> hashList = new JSArray<>(context, collection, Object.class);

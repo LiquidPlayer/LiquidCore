@@ -30,7 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "JavaScriptCore/Javascript.h"
+#include "JavaScriptCore/JavaScript.h"
 #include "JSC/OpaqueJSContextGroup.h"
 
 std::shared_ptr<OpaqueJSContextGroup> OpaqueJSContextGroup::New()

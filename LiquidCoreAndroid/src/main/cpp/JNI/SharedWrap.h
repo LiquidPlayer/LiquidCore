@@ -1,5 +1,5 @@
 //
-// ManagedObject.h
+// SharedWrap.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -7,7 +7,7 @@
 // Created by Eric Lange
 //
 /*
- Copyright (c) 2016 - 2018 Eric Lange. All rights reserved.
+ Copyright (c) 2018 Eric Lange. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -30,11 +30,32 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef LIQUIDCORE_MANAGEDOBJECT_H
-#define LIQUIDCORE_MANAGEDOBJECT_H
+#ifndef LIQUIDCORE_SHAREDWRAP_H
+#define LIQUIDCORE_SHAREDWRAP_H
 
-struct ManagedObject {
-    virtual void Dispose() = 0;
+#include "Common/Common.h"
+jclass findClass(JNIEnv *env, const char* name);
+
+template<typename T>
+class SharedWrap {
+public:
+    SharedWrap(std::shared_ptr<T> g);
+    virtual ~SharedWrap();
+
+    static jobject New(JNIEnv *env, std::shared_ptr<T> shared);
+    static std::shared_ptr<T> Shared(JNIEnv *env, jobject thiz);
+    static void Dispose(long reference);
+
+private:
+    static SharedWrap<T>* GetWrap(JNIEnv *env, jobject thiz);
+    static const char * ClassName();
+    static const char * ClassName(std::shared_ptr<T> shared);
+
+    static std::map<T *, jobject> s_jobject_map;
+    static std::mutex s_mutex;
+
+    std::shared_ptr<T> m_shared;
+    bool m_isAsync;
 };
 
-#endif //LIQUIDCORE_MANAGEDOBJECT_H
+#endif //LIQUIDCORE_SHAREDWRAP_H

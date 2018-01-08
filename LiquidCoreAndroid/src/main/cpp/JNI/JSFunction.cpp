@@ -84,7 +84,7 @@ std::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject java
     auto ctx = SharedWrap<JSContext>::Shared(env, javaContext);
     auto p = std::make_shared<JSFunction>(env, thiz, ctx, name_);
     ctx->retain(p);
-    ctx->Group()->ManageObject(p);
+    ctx->Group()->ManageJSValue(p);
     return p;
 }
 

@@ -35,6 +35,7 @@
 template<typename T>
 SharedWrap<T>::SharedWrap(std::shared_ptr<T> g) : m_shared(g)
 {
+    m_isAsync = g->Group()->Loop() != nullptr;
 }
 
 template<typename T>
@@ -45,7 +46,8 @@ SharedWrap<T>::~SharedWrap()
         s_jobject_map.erase(&*m_shared);
         s_mutex.unlock();
     }
-    m_shared.reset();
+
+    //m_shared.reset();
 }
 
 template<typename T>
@@ -56,9 +58,9 @@ jobject SharedWrap<T>::New(JNIEnv *env, std::shared_ptr<T> shared)
     jobject javao = nullptr;
 
     s_mutex.lock();
-    if (s_jobject_map.count(&*shared)) {
+    if (s_jobject_map.count(&*shared) == 1) {
         javao = s_jobject_map[&*shared];
-        if (env->IsSameObject(javao,nullptr)) {
+        if (env->IsSameObject(javao, nullptr)) {
             // If Finalize() is being called correctly, this shouldn't happen
             javao = nullptr;
             s_jobject_map.erase(&*shared);
@@ -81,25 +83,27 @@ jobject SharedWrap<T>::New(JNIEnv *env, std::shared_ptr<T> shared)
 template<typename T>
 std::shared_ptr<T> SharedWrap<T>::Shared(JNIEnv *env, jobject thiz)
 {
-    return thiz ? GetWrap(env, thiz)->m_shared : nullptr;
+    std::shared_ptr<T> s = thiz ? GetWrap(env, thiz)->m_shared : std::shared_ptr<T>();
+    return s;
 }
 
 template<typename T>
 void SharedWrap<T>::Dispose(long reference)
 {
     const auto valueWrap = reinterpret_cast<SharedWrap<T>*>(reference);
-    auto async = [reference](){
-        delete reinterpret_cast<SharedWrap<T>*>(reference);
-    };
-    valueWrap->m_shared->Group()->async(async, true);
+    if (valueWrap->m_isAsync && !valueWrap->m_shared->IsDefunct()) {
+        valueWrap->m_shared->Group()->MarkZombie(valueWrap->m_shared);
+    }
+    delete valueWrap;
 }
 
 template<typename T>
 SharedWrap<T>* SharedWrap<T>::GetWrap(JNIEnv *env, jobject thiz)
 {
-    jclass classType = findClass(env, "org/liquidplayer/javascript/JNIJSObject");
+    jclass classType = findClass(env, "org/liquidplayer/javascript/JNIObject");
     jfieldID fid = env->GetFieldID(classType, "reference", "J");
-    return reinterpret_cast<SharedWrap<T> *>(env->GetLongField(thiz, fid));
+    jlong ref = env->GetLongField(thiz, fid);
+    return reinterpret_cast<SharedWrap<T> *>(ref);
 }
 
 template<typename T>
@@ -131,27 +135,6 @@ const char * SharedWrap<JSValue>::ClassName(std::shared_ptr<JSValue> shared)
     }
     V8_UNLOCK()
     return r;
-}
-
-template<>
-void SharedWrap<ContextGroup>::Dispose(long reference)
-{
-    const auto valueWrap = reinterpret_cast<SharedWrap<ContextGroup>*>(reference);
-    auto async = [reference](){
-        delete reinterpret_cast<SharedWrap<ContextGroup>*>(reference);
-    };
-    valueWrap->m_shared->async(async, true);
-}
-
-template<>
-void SharedWrap<JSContext>::Dispose(long reference)
-{
-    const auto valueWrap = reinterpret_cast<SharedWrap<JSContext>*>(reference);
-    auto async = [valueWrap](){
-        valueWrap->m_shared->Dispose();
-        delete valueWrap;
-    };
-    valueWrap->m_shared->Group()->async(async, true);
 }
 
 template<typename T> std::map<T *, jobject> SharedWrap<T>::s_jobject_map;

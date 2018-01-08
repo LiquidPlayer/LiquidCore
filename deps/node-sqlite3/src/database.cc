@@ -4,7 +4,7 @@
 #include "database.h"
 #include "statement.h"
 
-#include "nodedroid_file.h"
+#include "node/nodedroid_file.h"
 #include "env.h"
 #include "env-inl.h"
 
