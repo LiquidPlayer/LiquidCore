@@ -115,6 +115,8 @@ const char * SharedWrap<T>::ClassName()
         return "org/liquidplayer/javascript/JNIJSContext";
     } else if (std::is_same<T,JSValue>::value) {
         return "org/liquidplayer/javascript/JNIJSValue";
+    } else if (std::is_same<T,LoopPreserver>::value) {
+        return "org/liquidplayer/javascript/JNILoopPreserver";
     }
     return nullptr;
 }
@@ -143,3 +145,4 @@ template<typename T> std::mutex SharedWrap<T>::s_mutex;
 template class SharedWrap<ContextGroup>;
 template class SharedWrap<JSContext>;
 template class SharedWrap<JSValue>;
+template class SharedWrap<LoopPreserver>;

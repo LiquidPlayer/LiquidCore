@@ -39,6 +39,7 @@ import android.support.test.InstrumentationRegistry;
 import org.junit.Test;
 import org.liquidplayer.javascript.JSBaseArray;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
@@ -47,7 +48,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -242,16 +242,18 @@ public class FSTest {
         class Contexts {
             JSContext c1;
             JSContext c2;
+            JSContextGroup.LoopPreserver p1;
+            JSContextGroup.LoopPreserver p2;
         }
 
         final Contexts contexts = new Contexts();
 
-        Process p1 = new Process(InstrumentationRegistry.getContext(), "_",
+        new Process(InstrumentationRegistry.getContext(), "_",
                 Process.kMediaAccessPermissionsRW, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
                 contexts.c1 = context;
-                process.keepAlive();
+                contexts.p1 = process.keepAlive();
                 cdl.countDown();
             }
 
@@ -260,12 +262,12 @@ public class FSTest {
             @Override public void onProcessFailed(Process process, Exception error) {}
         });
 
-        Process p2 = new Process(InstrumentationRegistry.getContext(), "_",
+        new Process(InstrumentationRegistry.getContext(), "_",
                 Process.kMediaAccessPermissionsRW, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
                 contexts.c2 = context;
-                process.keepAlive();
+                contexts.p2 = process.keepAlive();
                 cdl.countDown();
             }
 
@@ -287,8 +289,8 @@ public class FSTest {
         v = contexts.c1.evaluateScript("process.cwd()");
         assertEquals(dir1, v.toString());
 
-        p1.letDie();
-        p2.letDie();
+        contexts.p1.release();
+        contexts.p2.release();
 
         Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
     }

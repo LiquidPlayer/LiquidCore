@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.liquidplayer.javascript.JSArrayBufferTest;
 import org.liquidplayer.javascript.JSArrayTest;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSDataViewTest;
 import org.liquidplayer.javascript.JSDateTest;
 import org.liquidplayer.javascript.JSErrorTest;
@@ -75,6 +76,7 @@ public class ProcessV8Test {
         private Process process = null;
         private CountDownLatch processCompleted;
         private volatile Boolean released = false;
+        private JSContextGroup.LoopPreserver preserver = null;
 
         V8Test(Runner runnable) throws Exception {
             final CountDownLatch processStarted = new CountDownLatch(1);
@@ -87,7 +89,7 @@ public class ProcessV8Test {
                     context = ctx;
                     process = proc;
                     // Don't let the process die before we run the test
-                    process.keepAlive();
+                    preserver = process.keepAlive();
                     released = true;
                     processStarted.countDown();
                 }
@@ -115,8 +117,8 @@ public class ProcessV8Test {
             assertTrue(processStarted.await(10L, TimeUnit.SECONDS));
             if (released) {
                 runnable.run(context);
+                preserver.release();
             }
-            process.letDie();
             if (released) {
                 assertTrue(processCompleted.await(10L, TimeUnit.SECONDS));
             }

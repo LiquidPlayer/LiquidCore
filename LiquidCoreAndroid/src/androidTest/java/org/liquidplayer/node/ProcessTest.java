@@ -37,6 +37,7 @@ import android.support.test.InstrumentationRegistry;
 import org.junit.Test;
 import org.liquidplayer.javascript.JSArray;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSValue;
 
@@ -109,7 +110,7 @@ public class ProcessTest {
             public void onProcessStart(final Process process, final JSContext context) {
 
                 // Done let the process exit until our thread finishes
-                process.keepAlive();
+                final JSContextGroup.LoopPreserver preserver = process.keepAlive();
 
                 new Thread(new Runnable() {
                     @Override
@@ -130,7 +131,7 @@ public class ProcessTest {
                                 "  fs.readdir('/home',dir_contents);" +
                                 "})();");
                         // ok, we're done here
-                        process.letDie();
+                        preserver.release();
                     }
                 }).start();
             }

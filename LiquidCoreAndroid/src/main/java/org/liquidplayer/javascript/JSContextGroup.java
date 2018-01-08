@@ -47,6 +47,17 @@ package org.liquidplayer.javascript;
 public class JSContextGroup {
     private JNIJSContextGroup group;
 
+    public class LoopPreserver {
+        private JNILoopPreserver m_preserver;
+        LoopPreserver(JNILoopPreserver jniLoopPreserver) {
+            m_preserver = jniLoopPreserver;
+        }
+
+        public void release() {
+            if (m_preserver != null) m_preserver.release();
+        }
+    }
+
     /**
      * Creates a new context group
      * @since 0.1.0
@@ -97,6 +108,10 @@ public class JSContextGroup {
 
     void schedule(Runnable runnable) {
         group.runInContextGroup(this, runnable);
+    }
+
+    public LoopPreserver keepAlive() {
+        return new LoopPreserver(JNILoopPreserver.create(groupRef()));
     }
 
     /**

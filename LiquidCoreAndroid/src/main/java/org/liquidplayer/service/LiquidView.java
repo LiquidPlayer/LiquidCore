@@ -16,6 +16,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.node.Process;
@@ -174,7 +175,7 @@ public class LiquidView extends RelativeLayout {
                     } catch (Exception e) {
                         e.printStackTrace();
                         android.util.Log.d("exception", e.toString());
-                        service.getProcess().letDie();
+                        // FIXME: service.getProcess().letDie();
                     }
                 }
             });
@@ -283,7 +284,7 @@ public class LiquidView extends RelativeLayout {
                             });
 
                             // Bind surfaces
-                            service.getProcess().keepAlive();
+                            final JSContextGroup.LoopPreserver preserver = service.getProcess().keepAlive();
 
                             for (MicroService.AvailableSurface sfc : availableSurfaces()) {
                                 synchronizer.enter();
@@ -301,7 +302,7 @@ public class LiquidView extends RelativeLayout {
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                             android.util.Log.d("exception", e.toString());
-                                            service.getProcess().letDie();
+                                            preserver.release();
                                         } finally {
                                             synchronizer.exit();
                                         }

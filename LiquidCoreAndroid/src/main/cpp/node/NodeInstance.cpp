@@ -668,7 +668,6 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   /* ===Start */
   JSGlobalContextRelease(ctxRef);
   JSContextGroupRelease(group);
-__android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "Getting ready to dispose the group");
   group->Dispose();
   /* ===End */
 
@@ -865,8 +864,7 @@ int NodeInstance::StartInstance(int argc, char *argv[]) {
   v8_initialized = false;
 
   CHECK_EQ(uv_loop_alive(&uv_loop), 0);
-  // FIXME(EWL): Why does this intermittently crash here if we uncomment the below?
-  //uv_loop_close(&uv_loop);
+  uv_loop_close(&uv_loop);
 
   delete[] exec_argv;
   exec_argv = nullptr;
@@ -889,26 +887,6 @@ NATIVE(Process,jlong,start) (PARAMS)
 NATIVE(Process,void,dispose) (PARAMS, jlong ref)
 {
     delete reinterpret_cast<NodeInstance*>(ref);
-}
-
-NATIVE(Process,long,keepAlive) (PARAMS, jobject contextRef)
-{
-    auto done = [](uv_async_t* handle) {
-        uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
-            delete (uv_async_t*)h;
-        });
-    };
-
-    auto group = SharedWrap<JSContext>::Shared(env, contextRef)->Group();
-    uv_async_t *async_handle = new uv_async_t();
-    uv_async_init(group->Loop(), async_handle, done);
-    return reinterpret_cast<jlong>(async_handle);
-}
-
-NATIVE(Process,void,letDie) (PARAMS, jlong ref)
-{
-    uv_async_t *async_handle = reinterpret_cast<uv_async_t*>(ref);
-    uv_async_send(async_handle);
 }
 
 NATIVE(Process,void,setFileSystem) (PARAMS, jobject contextRef, jobject fsObjectRef)

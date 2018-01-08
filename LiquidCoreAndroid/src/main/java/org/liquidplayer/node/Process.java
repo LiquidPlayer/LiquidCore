@@ -43,13 +43,10 @@ import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 @SuppressWarnings("JniMissingFunction")
 public class Process {
-
-    final public static int kContextFinalizedButProcessStillActive = -222;
 
     final public static int kMediaAccessPermissionsNone = 0;
     final public static int kMediaAccessPermissionsRead = 1;
@@ -74,13 +71,6 @@ public class Process {
          * In the event that an EventListener is added by Process.addEventListener() after a
          * process has already started, this method will be called immediately (in the process
          * thread) if the process is still active.  Otherwise, onProcessExit() will be called.
-         *
-         * The caller must hold a reference to 'context' until it is done with the process.  This
-         * is a safeguard to protect against misbehavior, intended or not, where a caller starts
-         * a process, calls Process.keepAlive() or puts in an endless loop, and then exits.  To
-         * avoid having the process run indefinitely, if the context gets garbage collected, it will
-         * kill the process during the finalization sequence with exit code
-         * kContextFinalizedButProcessStillActive.
          *
          * @param process The node.js Process object
          * @param context The JavaScript JSContext for this process
@@ -147,11 +137,11 @@ public class Process {
             listeners.add(listener);
         }
         if (isActive()) {
-            jscontext.get().sync(new Runnable() {
+            jscontext.sync(new Runnable() {
                 @Override
                 public void run() {
                     if (isActive()) {
-                        listener.onProcessStart(Process.this, jscontext.get());
+                        listener.onProcessStart(Process.this, jscontext);
                     } else {
                         listener.onProcessExit(Process.this, Long.valueOf(exitCode).intValue());
                     }
@@ -177,7 +167,7 @@ public class Process {
      * @return true if active, false otherwise
      */
     public boolean isActive() {
-        return isActive && jscontext.get() != null;
+        return isActive && jscontext != null;
     }
 
     /**
@@ -186,11 +176,11 @@ public class Process {
      */
     public void exit(final int exitc) {
         if (isActive()) {
-            jscontext.get().sync(new Runnable() {
+            jscontext.sync(new Runnable() {
                 @Override
                 public void run() {
                     if (isActive()) {
-                        jscontext.get().evaluateScript("process.exit(" + exitc + ");");
+                        jscontext.evaluateScript("process.exit(" + exitc + ");");
                     }
                 }
             });
@@ -202,19 +192,8 @@ public class Process {
      * this method indefinitely leaves a callback pending until @letDie() is called.  This must
      * be followed up by a call to letDie() or the process will remain active indefinitely.
      */
-    public void keepAlive() {
-        if (isActive()) {
-            jscontext.get().keepAlive();
-        }
-    }
-
-    /**
-     * Instructs the VM to not keep itself alive if no more callbacks are pending.
-     */
-    public void letDie() {
-        if (isActive()) {
-            jscontext.get().letDie();
-        }
+    public JSContextGroup.LoopPreserver keepAlive() {
+        return jscontext.getGroup().keepAlive();
     }
 
     /**
@@ -274,7 +253,7 @@ public class Process {
 
     private long exitCode;
 
-    protected WeakReference<ProcessContext> jscontext = null;
+    protected ProcessContext jscontext = null;
     private boolean isActive = false;
     private boolean isDone = false;
     private FileSystem fs = null;
@@ -285,13 +264,13 @@ public class Process {
     private void onNodeStarted(final JNIJSContext mainContext, JNIJSContextGroup ctxGroupRef, long jscCtxRef) {
         final ProcessContext ctx = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef),
                 jscCtxRef);
-        jscontext = new WeakReference<>(ctx);
+        jscontext = ctx;
         isActive = true;
         ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
             @SuppressWarnings("unused")
             public void __nodedroid_onLoad() {
                 if (isActive()) {
-                    jscontext.get().deleteProperty("__nodedroid_onLoad");
+                    jscontext.deleteProperty("__nodedroid_onLoad");
 
                     // set file system
                     fs = new FileSystem(ctx, androidCtx, uniqueID, mediaAccessMask);
@@ -344,7 +323,7 @@ public class Process {
                     });
 
                     // Ready to start
-                    eventOnStart(jscontext.get());
+                    eventOnStart(jscontext);
                 }
             }
         });
@@ -353,12 +332,6 @@ public class Process {
     @SuppressWarnings("unused") // called from native code
     private void onNodeExit(long exitCode) {
         isActive = false;
-        if (jscontext != null && jscontext.get() != null) {
-            ProcessContext ctx = jscontext.get();
-            if (ctx != null) {
-                ctx.setDefunct();
-            }
-        }
         jscontext = null;
         isDone = true;
         eventOnExit(exitCode);
@@ -385,7 +358,6 @@ public class Process {
      */
     private class ProcessContext extends JSContext {
         final private long mJscCtxRef;
-        private boolean isDefunct = false; // FIXME: This doesn't do anything anymore
 
         ProcessContext(JNIJSContext contextRef, JSContextGroup group, long jscCtxRef) {
             super(contextRef, group);
@@ -396,48 +368,10 @@ public class Process {
         public long getJSCContext() {
             return mJscCtxRef;
         }
-
-        void setDefunct() {
-            isDefunct = true;
-        }
-
-        void keepAlive() {
-            if (handleRef == 0 && !isDefunct) {
-                handleRef = Process.this.keepAlive(ctxRef());
-            }
-            count++;
-        }
-
-        public void sync(Runnable runnable) {
-            super.sync(runnable);
-        }
-
-        void letDie() {
-            if (--count < 1 && handleRef != 0 && !isDefunct) {
-                Process.this.letDie(handleRef);
-                handleRef = 0L;
-                count = 0;
-            }
-        }
-
-        @Override
-        public void finalize() throws Throwable {
-            if (isActive) {
-                exit(kContextFinalizedButProcessStillActive);
-                eventOnExit(exitCode);
-            }
-            super.finalize();
-            isActive = false;
-        }
-
-        private long handleRef = 0L;
-        private int count = 0;
     }
 
     /* Native JNI functions */
     private native long start();
     private native void dispose(long processRef);
-    private native long keepAlive(JNIJSContext contextRef);
-    private native void letDie(long handleRef);
     private native void setFileSystem(JNIJSContext contextRef, JNIJSValue fsObject);
 }

@@ -274,7 +274,6 @@ void ContextGroup::ManageJSContext(std::shared_ptr<ManagedObject> obj)
 void ContextGroup::Dispose()
 {
     if (!m_isDefunct) {
-__android_log_print(ANDROID_LOG_DEBUG, "ContextGroup", "Disposing the ContextGroup");
         m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
 
         m_scheduling_mutex.lock();
@@ -379,3 +378,35 @@ void ContextGroup::async(std::function<void()> runnable, bool queue_only)
     }
 }
 
+std::shared_ptr<LoopPreserver> LoopPreserver::New(std::shared_ptr<ContextGroup> group)
+{
+    auto preserver = std::make_shared<LoopPreserver>(group);
+    return preserver;
+}
+
+LoopPreserver::LoopPreserver(std::shared_ptr<ContextGroup> group) :
+        m_isDefunct(false), m_group(group)
+{
+    auto done = [](uv_async_t* handle) {
+        uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
+            delete (uv_async_t*)h;
+        });
+    };
+
+    m_async_handle = new uv_async_t();
+    uv_async_init(group->Loop(), m_async_handle, done);
+}
+
+LoopPreserver::~LoopPreserver()
+{
+    Dispose();
+}
+
+void LoopPreserver::Dispose()
+{
+    if (!m_isDefunct) {
+        m_isDefunct = true;
+
+        uv_async_send(m_async_handle);
+    }
+}

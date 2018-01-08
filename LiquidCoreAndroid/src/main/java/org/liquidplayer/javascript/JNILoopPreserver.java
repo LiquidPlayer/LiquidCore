@@ -1,5 +1,5 @@
 //
-// JNIJSFunction.java
+// JNILoopPreserver.java
 //
 // AndroidJSCore project
 // https://github.com/ericwlange/AndroidJSCore/
@@ -35,11 +35,19 @@
 */
 package org.liquidplayer.javascript;
 
-@SuppressWarnings("JniMissingFunction")
-class JNIJSFunction extends JNIJSObject  {
-    JNIJSFunction(long ref) {
+class JNILoopPreserver extends JNIObject {
+    JNILoopPreserver(long ref) {
         super(ref);
     }
 
-    static native JNIJSObject makeFunctionWithCallback(JSFunction thiz, JNIJSContext ctx, String name);
+    @Override
+    protected void finalize() throws Throwable {
+        Finalize(reference);
+    }
+
+    static native JNILoopPreserver create(JNIJSContextGroup group);
+
+    native void release();
+
+    native void Finalize(long reference);
 }

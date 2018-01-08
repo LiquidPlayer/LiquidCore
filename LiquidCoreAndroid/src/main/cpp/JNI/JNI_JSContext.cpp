@@ -128,6 +128,30 @@ NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, long reference)
     SharedWrap<ContextGroup>::Dispose(reference);
 }
 
+NATIVE(JNILoopPreserver,jobject,create) (PARAMS, jobject grp)
+{
+    auto group = SharedWrap<ContextGroup>::Shared(env, grp);
+
+    if (group && group->Loop()) {
+        return SharedWrap<LoopPreserver>::New(
+                env,
+                LoopPreserver::New(group)
+        );
+    }
+
+    return nullptr;
+}
+
+NATIVE(JNILoopPreserver,void,release) (PARAMS)
+{
+    SharedWrap<LoopPreserver>::Shared(env, thiz)->Dispose();
+}
+
+NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, long reference)
+{
+    delete reinterpret_cast<SharedWrap<LoopPreserver>*>(reference);
+}
+
 NATIVE(JNIJSContext,jobject,createInGroup) (PARAMS,jobject grp)
 {
     auto group = SharedWrap<ContextGroup>::Shared(env, grp);

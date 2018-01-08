@@ -83,6 +83,7 @@ public class JSCTest {
     private Exception exception = null;
     private JSContextGroup group = null;
     private Process process = null;
+    private JSContextGroup.LoopPreserver preserver = null;
     @Before
     public void setUp() {
         exception = null;
@@ -126,7 +127,7 @@ public class JSCTest {
         InNodeProcess inp = new InNodeProcess(new Runnable() {
             @Override
             public void run() {
-                process.keepAlive();
+                preserver = process.keepAlive();
                 ready.countDown();
             }
         }, "_testapi");
@@ -137,7 +138,7 @@ public class JSCTest {
         JSC jsc = new JSC(group);
         assertEquals(0, jsc.testAPI());
 
-        process.letDie();
+        preserver.release();
         assertTrue(inp.processCompleted.await(10L, TimeUnit.SECONDS));
     }
 
@@ -165,7 +166,7 @@ public class JSCTest {
         InNodeProcess inp = new InNodeProcess(new Runnable() {
             @Override
             public void run() {
-                process.keepAlive();
+                preserver = process.keepAlive();
                 ready.countDown();
             }
         }, "_testapi");
@@ -176,7 +177,7 @@ public class JSCTest {
         JSC jsc = new JSC(group);
         assertEquals(0, jsc.testMinidom());
 
-        process.letDie();
+        preserver.release();
         assertTrue(inp.processCompleted.await(10L, TimeUnit.SECONDS));
     }
 
