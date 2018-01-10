@@ -1,5 +1,5 @@
 //
-// ManagedObject.h
+// JNI_Process.cpp
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -7,7 +7,7 @@
 // Created by Eric Lange
 //
 /*
- Copyright (c) 2016 - 2018 Eric Lange. All rights reserved.
+ Copyright (c) 2018 Eric Lange. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -30,12 +30,39 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef LIQUIDCORE_MANAGEDOBJECT_H
-#define LIQUIDCORE_MANAGEDOBJECT_H
 
-struct ManagedObject {
-    virtual void Dispose() = 0;
-    virtual bool IsDefunct() = 0;
-};
+#include "JNI/JNI.h"
+#include "NodeInstance.h"
 
-#endif //LIQUIDCORE_MANAGEDOBJECT_H
+#undef NATIVE
+#define NATIVE(package,rt,f) extern "C" JNIEXPORT \
+    rt JNICALL Java_org_liquidplayer_node_##package##_##f
+#undef PARAMS
+#define PARAMS JNIEnv* env, jobject thiz
+
+NATIVE(Process,jlong,start) (PARAMS)
+{
+    NodeInstance *instance = new NodeInstance(env, thiz);
+    return reinterpret_cast<jlong>(instance);
+}
+
+NATIVE(Process,void,dispose) (PARAMS, jlong ref)
+{
+    delete reinterpret_cast<NodeInstance*>(ref);
+}
+
+NATIVE(Process,void,setFileSystem) (PARAMS, jobject contextRef, jobject fsObjectRef)
+{
+    auto ctx = SharedWrap<JSContext>::Shared(env, contextRef);
+    auto fs = SharedWrap<JSValue>::Shared(env, fsObjectRef);
+    V8_ISOLATE_CTX(ctx,isolate,context)
+
+        Local<Object> globalObj = context->Global();
+        Local<Object> fsObj = fs->Value()->ToObject(context).ToLocalChecked();
+
+        Local<Private> privateKey = v8::Private::ForApi(isolate,
+                                                        String::NewFromUtf8(isolate, "__fs"));
+        globalObj->SetPrivate(context, privateKey, fsObj);
+
+    V8_UNLOCK();
+}

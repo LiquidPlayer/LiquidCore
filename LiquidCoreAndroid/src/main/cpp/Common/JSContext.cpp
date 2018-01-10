@@ -42,7 +42,7 @@ bool JSContext::IsDefunct()
 std::shared_ptr<JSContext> JSContext::New(std::shared_ptr<ContextGroup> isolate, Local<Context> val)
 {
     auto p = std::make_shared<JSContext>(isolate, val);
-    isolate->ManageJSContext(p);
+    isolate->Manage(p);
     return p;
 }
 
@@ -54,12 +54,6 @@ JSContext::JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val) 
 
 JSContext::~JSContext() {
     Dispose();
-
-    /* FIXME
-    V8_ISOLATE(m_isolate, isolate)
-        m_context.Reset();
-    V8_UNLOCK()
-    */
 };
 
 void JSContext::Dispose() {
@@ -67,14 +61,16 @@ void JSContext::Dispose() {
         m_isDefunct = true;
 
         m_set_mutex.lock();
-        //m_value_set.clear(); FIXME
+        m_value_set.clear();
         m_set_mutex.unlock();
+
+        m_context.Reset();
     }
 }
 
 void JSContext::retain(std::shared_ptr<JSValue> value) {
     m_set_mutex.lock();
-    m_value_set.insert(value);
+    m_value_set.push_back(value);
     m_set_mutex.unlock();
 }
 

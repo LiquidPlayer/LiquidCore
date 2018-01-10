@@ -869,36 +869,3 @@ int NodeInstance::StartInstance(int argc, char *argv[]) {
 
   return exit_code;
 }
-
-#undef NATIVE
-#define NATIVE(package,rt,f) extern "C" JNIEXPORT \
-    rt JNICALL Java_org_liquidplayer_node_##package##_##f
-#undef PARAMS
-#define PARAMS JNIEnv* env, jobject thiz
-
-NATIVE(Process,jlong,start) (PARAMS)
-{
-    NodeInstance *instance = new NodeInstance(env, thiz);
-    return reinterpret_cast<jlong>(instance);
-}
-
-NATIVE(Process,void,dispose) (PARAMS, jlong ref)
-{
-    delete reinterpret_cast<NodeInstance*>(ref);
-}
-
-NATIVE(Process,void,setFileSystem) (PARAMS, jobject contextRef, jobject fsObjectRef)
-{
-    auto ctx = SharedWrap<JSContext>::Shared(env, contextRef);
-    auto fs = SharedWrap<JSValue>::Shared(env, fsObjectRef);
-    V8_ISOLATE_CTX(ctx,isolate,context)
-
-    Local<Object> globalObj = context->Global();
-    Local<Object> fsObj = fs->Value()->ToObject(context).ToLocalChecked();
-
-    Local<Private> privateKey = v8::Private::ForApi(isolate,
-        String::NewFromUtf8(isolate, "__fs"));
-    globalObj->SetPrivate(context, privateKey, fsObj);
-
-    V8_UNLOCK();
-}

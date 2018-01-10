@@ -30,7 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
+#include <algorithm>
 #include "JSC/OpaqueJSContextGroup.h"
 #include "JSC/OpaqueJSContext.h"
 #include "JSC/OpaqueJSValue.h"
@@ -114,7 +114,9 @@ void OpaqueJSContext::MarkCollected(JSValueRef value)
 {
     ASSERTJSC(value->Context() == this);
     m_gc_lock.lock();
-    m_collection.remove(value);
+    auto it = std::find(m_collection.begin(), m_collection.end(), value);
+    if(it != m_collection.end())
+        m_collection.erase(it);
     m_gc_lock.unlock();
 }
 

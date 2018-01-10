@@ -69,7 +69,7 @@ public class JNIJSValue extends JNIObject {
     native JNIReturnObject isEqual(JNIJSValue b);
     native boolean isStrictEqual(JNIJSValue b);
 
-    native JNIReturnObject createJSONString(int indent);
+    native JNIReturnObject createJSONString();
     native boolean toBoolean();
     native JNIReturnObject toNumber();
     native JNIReturnObject toStringCopy();

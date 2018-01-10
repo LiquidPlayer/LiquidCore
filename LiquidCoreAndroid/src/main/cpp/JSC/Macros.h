@@ -35,6 +35,7 @@
 #define LIQUIDCORE_JSC_MACROS_H
 
 #include <list>
+#include <android/log.h>
 
 #define ASSERTJSC(x) if(!(x)) \
     __android_log_assert("conditional", "ASSERT FAILED", "%s(%d) : %s", __FILE__, __LINE__, #x);

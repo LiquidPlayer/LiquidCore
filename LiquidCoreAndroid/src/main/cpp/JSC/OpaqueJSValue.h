@@ -54,7 +54,7 @@ struct OpaqueJSValue : public JSCRetainer {
         virtual inline void *GetPrivateData() { return m_private_data; }
         virtual inline void SetFinalized() { m_finalized = true; }
         virtual inline bool HasFinalized() const { return m_finalized; }
-        virtual inline bool IsClassObject() const { return m_fromClassDefinition ? true : false; }
+        virtual inline bool IsClassObject() const { return m_fromClassDefinition != nullptr; }
 
     protected:
         OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass=0);

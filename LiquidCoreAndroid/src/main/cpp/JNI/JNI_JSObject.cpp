@@ -36,6 +36,7 @@
 
 #include "JNI/JNI.h"
 #include "JNI/JSFunction.h"
+#include "JNI/JNIReturnObject.h"
 
 #define VALUE_ISOLATE(valueRef,isolate,context,value) \
     auto valueRef = SharedWrap<JSValue>::Shared(env, thiz); \

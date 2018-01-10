@@ -79,7 +79,7 @@ std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<
         value = std::make_shared<JSValue>(context,val);
     }
 
-    context->Group()->ManageJSValue(value);
+    context->Group()->Manage(value);
     return value;
 }
 
@@ -125,6 +125,7 @@ void JSValue::Dispose()
                     Local<v8::Value>::New(isolate,Undefined(isolate)));
             }
             m_value.Reset();
+            m_context.reset();
             V8_UNLOCK()
         }
 

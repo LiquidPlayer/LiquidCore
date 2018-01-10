@@ -36,14 +36,11 @@
 #include <map>
 #include <memory>
 #include <malloc.h>
-#include <android/log.h>
 #include "sqlite3.h"
-#include "jni.h"
+#include "JNI/JNI.h"
 
 static JavaVM *s_jvm;
 static jobject s_sqlite3;
-static jobject gClassLoader;
-static jmethodID gFindClassMethod;
 
 #define JNI_ENTER(env) \
     JNIEnv *env; \
@@ -59,11 +56,6 @@ static jmethodID gFindClassMethod;
 
 #define SQLITE3_JNIRETURNOBJECT "org/liquidplayer/node/SQLite3Shim$JNIReturnObject"
 #define ROBJ "L" SQLITE3_JNIRETURNOBJECT ";"
-
-static jclass findClass(JNIEnv *env, const char* name) {
-    return static_cast<jclass>(env->CallObjectMethod(gClassLoader,
-        gFindClassMethod, env->NewStringUTF(name)));
-}
 
 typedef struct sqlite3 {
 public:
@@ -154,7 +146,7 @@ typedef struct sqlite3_mutex {
     unsigned int signature;
 public:
     sqlite3_mutex() : signature(MUTEX_SIGNATURE), mutex() {}
-    virtual ~sqlite3_mutex() {}
+    ~sqlite3_mutex() {}
     std::mutex mutex;
 } sqlite3_mutex;
 
@@ -202,14 +194,6 @@ extern "C" JNIEXPORT void JNICALL Java_org_liquidplayer_node_SQLite3Shim_initNat
 {
     env->GetJavaVM(&s_jvm);
     s_sqlite3 = env->NewWeakGlobalRef(thiz);
-    auto randomClass = env->FindClass(SQLITE3_JNIRETURNOBJECT);
-    jclass classClass = env->GetObjectClass(randomClass);
-    auto classLoaderClass = env->FindClass("java/lang/ClassLoader");
-    auto getClassLoaderMethod = env->GetMethodID(classClass, "getClassLoader",
-                                             "()Ljava/lang/ClassLoader;");
-    gClassLoader = env->NewGlobalRef(env->CallObjectMethod(randomClass, getClassLoaderMethod));
-    gFindClassMethod = env->GetMethodID(classLoaderClass, "findClass",
-                                    "(Ljava/lang/String;)Ljava/lang/Class;");
 }
 
 SQLITE_API int sqlite3_open_v2(

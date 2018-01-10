@@ -35,6 +35,7 @@
 */
 
 #include "JNI/JNI.h"
+#include "JNI/JNIReturnObject.h"
 
 template <typename F>
 jboolean boolean_func(JNIEnv* env, jobject thiz, F&& lambda, bool defValue){
@@ -281,9 +282,9 @@ NATIVE(JNIJSValue,jobject,makeFromJSONString) (PARAMS, jobject ctx, jstring stri
     return value;
 }
 
-NATIVE(JNIJSValue,jobject,createJSONString) (PARAMS, jint indent)
+NATIVE(JNIJSValue,jobject,createJSONString) (PARAMS)
 {
-    return exception_func(env, thiz, [env, thiz, indent](Local<Value> inValue, Local<Context> context,
+    return exception_func(env, thiz, [env, thiz](Local<Value> inValue, Local<Context> context,
                                               Isolate *isolate, JNIReturnObject out) {
         auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();

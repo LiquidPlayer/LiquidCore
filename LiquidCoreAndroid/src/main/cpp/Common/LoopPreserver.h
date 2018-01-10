@@ -34,21 +34,20 @@
 #ifndef LIQUIDCORE_LOOPPRESERVER_H
 #define LIQUIDCORE_LOOPPRESERVER_H
 
-#include "Common/ManagedObject.h"
 #include <memory>
 #include "uv.h"
 
 class ContextGroup;
 
-class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>, public ManagedObject
+class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>
 {
 public:
     static std::shared_ptr<LoopPreserver> New(std::shared_ptr<ContextGroup> group);
     LoopPreserver(std::shared_ptr<ContextGroup> group);
-    virtual ~LoopPreserver();
-    virtual void Dispose();
-    virtual inline bool IsDefunct() { return m_isDefunct; }
-    virtual inline std::shared_ptr<ContextGroup> Group() { return m_group; }
+    ~LoopPreserver();
+    void Dispose();
+    inline bool IsDefunct() { return m_isDefunct; }
+    inline std::shared_ptr<ContextGroup> Group() { return m_group; }
 
 private:
     bool m_isDefunct;

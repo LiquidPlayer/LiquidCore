@@ -39,27 +39,27 @@ using namespace v8;
 
 class JSValue;
 
-class JSContext : public std::enable_shared_from_this<JSContext>, public ManagedObject {
+class JSContext : public std::enable_shared_from_this<JSContext> {
 public:
     static std::shared_ptr<JSContext> New(std::shared_ptr<ContextGroup> isolate, Local<Context> val);
-    JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val);
     virtual ~JSContext();
+    JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val);
 
-    virtual std::shared_ptr<JSValue>      Global();
-    virtual Local<Context>                Value();
-    virtual Isolate *                     isolate();
-    virtual std::shared_ptr<ContextGroup> Group();
-    virtual void Dispose();
-    virtual bool IsDefunct();
+    std::shared_ptr<JSValue>      Global();
+    Local<Context>                Value();
+    Isolate *                     isolate();
+    std::shared_ptr<ContextGroup> Group();
+    void Dispose();
+    bool IsDefunct();
 
-    virtual void retain(std::shared_ptr<JSValue>);
+    void retain(std::shared_ptr<JSValue>);
 
 private:
     Persistent<Context, CopyablePersistentTraits<Context>> m_context;
-    Persistent<Object, CopyablePersistentTraits<Object>> m_globalObject;
+    //Persistent<Object, CopyablePersistentTraits<Object>> m_globalObject;
     std::shared_ptr<ContextGroup> m_isolate;
     bool m_isDefunct;
-    std::set<std::shared_ptr<JSValue>> m_value_set;
+    std::vector<std::shared_ptr<JSValue>> m_value_set;
     std::recursive_mutex m_set_mutex;
 };
 

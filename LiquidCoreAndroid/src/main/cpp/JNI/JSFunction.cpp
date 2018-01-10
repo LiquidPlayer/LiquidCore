@@ -35,6 +35,7 @@
 */
 #include "JNI/JNI.h"
 #include "JNI/JSFunction.h"
+#include "JNI/JNIReturnObject.h"
 
 using namespace v8;
 
@@ -84,7 +85,7 @@ std::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject java
     auto ctx = SharedWrap<JSContext>::Shared(env, javaContext);
     auto p = std::make_shared<JSFunction>(env, thiz, ctx, name_);
     ctx->retain(p);
-    ctx->Group()->ManageJSValue(p);
+    ctx->Group()->Manage(p);
     return p;
 }
 

@@ -1,5 +1,5 @@
 //
-// OpaqueJSContextGroup.h
+// JNI_LoopPreserver.cpp
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -7,7 +7,7 @@
 // Created by Eric Lange
 //
 /*
- Copyright (c) 2014-2018 Eric Lange. All rights reserved.
+ Copyright (c) 2018 Eric Lange. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
@@ -30,41 +30,31 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H
-#define LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H
 
-#include "JSC/JSCRetainer.h"
+#include "JNI/JNI.h"
+#include "Common/LoopPreserver.h"
 
-struct OpaqueJSContext;
+NATIVE(JNILoopPreserver,jobject,create) (PARAMS, jobject grp)
+{
+    auto group = SharedWrap<ContextGroup>::Shared(env, grp);
 
-struct OpaqueJSContextGroup : public ContextGroup {
-    public:
-        static std::shared_ptr<OpaqueJSContextGroup> New();
-        static std::shared_ptr<OpaqueJSContextGroup> New(Isolate *isolate, uv_loop_t *event_loop);
-        OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop);
-        OpaqueJSContextGroup();
+    if (group && group->Loop()) {
+        return SharedWrap<LoopPreserver>::New(
+                env,
+                LoopPreserver::New(group)
+        );
+    }
 
-        ~OpaqueJSContextGroup();
+    return nullptr;
+}
 
-        void AssociateContext(const OpaqueJSContext* ctx);
-        void DisassociateContext(const OpaqueJSContext* ctx);
+NATIVE(JNILoopPreserver,void,release) (PARAMS)
+{
+    SharedWrap<LoopPreserver>::Shared(env, thiz)->Dispose();
+}
 
-        void Retain();
-        void Release();
+NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, long reference)
+{
+    delete reinterpret_cast<SharedWrap<LoopPreserver>*>(reference);
+}
 
-        void inline retain() { m_count++; }
-        void inline release()
-        {
-            ASSERTJSC(m_self); if (--m_count==0) { m_self.reset(); }
-        }
-
-    private:
-        int m_jsc_count;
-        std::vector<const OpaqueJSContext *> m_associatedContexts;
-        std::mutex m_mutex;
-        int m_count;
-    protected:
-        std::shared_ptr<ContextGroup> m_self;
-};
-
-#endif //LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H

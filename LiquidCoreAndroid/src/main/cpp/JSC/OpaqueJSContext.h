@@ -36,7 +36,7 @@
 #include "JavaScriptCore/JavaScript.h"
 #include "JSC/JSCRetainer.h"
 
-struct OpaqueJSContext : public JSCRetainer, public ManagedObject {
+struct OpaqueJSContext : public JSCRetainer {
     public:
         static JSGlobalContextRef New(std::shared_ptr<JSContext> ctx);
         virtual ~OpaqueJSContext();
@@ -52,7 +52,7 @@ struct OpaqueJSContext : public JSCRetainer, public ManagedObject {
         virtual void GCCallback(GCType type, GCCallbackFlags flags);
 
         std::shared_ptr<JSContext> m_context;
-        std::list<JSValueRef> m_collection;
+        std::vector<JSValueRef> m_collection;
         std::recursive_mutex m_gc_lock;
         bool m_isDefunct;
 

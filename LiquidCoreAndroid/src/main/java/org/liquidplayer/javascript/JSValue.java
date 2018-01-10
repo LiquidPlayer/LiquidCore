@@ -453,15 +453,14 @@ public class JSValue {
 
     /**
      * Gets the JSON of this JS value
-     * @param indent  number of spaces to indent
      * @return  the JSON representing this value, or null if value is undefined
      * @since 0.1.0
      */
-    public String toJSON(final int indent) {
+    public String toJSON() {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = valueRef().createJSONString(indent);
+                jni = valueRef().createJSONString();
                 if (jni.exception == null) {
                     JSValue json = new JSValue((JNIJSValue)jni.reference,context);
                     if (json.isUndefined())
@@ -477,14 +476,6 @@ public class JSValue {
             return null;
         }
         return runnable.jni.string;
-    }
-    /**
-     * Gets the JSON of this JS value
-     * @return  the JSON representing this value
-     * @since 0.1.0
-     */
-    public String toJSON() {
-        return toJSON(0);
     }
 
     @SuppressWarnings("unchecked")

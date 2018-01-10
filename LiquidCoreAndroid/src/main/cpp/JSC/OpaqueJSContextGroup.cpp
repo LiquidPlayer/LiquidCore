@@ -30,6 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <algorithm>
 #include "JavaScriptCore/JavaScript.h"
 #include "JSC/OpaqueJSContextGroup.h"
 
@@ -71,7 +72,9 @@ void OpaqueJSContextGroup::AssociateContext(const OpaqueJSContext* ctx)
 void OpaqueJSContextGroup::DisassociateContext(const OpaqueJSContext* ctx)
 {
     m_mutex.lock();
-    m_associatedContexts.remove(ctx);
+    auto it = std::find(m_associatedContexts.begin(), m_associatedContexts.end(), ctx);
+    if(it != m_associatedContexts.end())
+        m_associatedContexts.erase(it);
     m_mutex.unlock();
 }
 

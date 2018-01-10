@@ -20,8 +20,11 @@ add_library( # Specifies the name of the library.
 
              # JNI API
              src/main/cpp/JNI/JNI_JSContext.cpp
+             src/main/cpp/JNI/JNI_JSContextGroup.cpp
              src/main/cpp/JNI/JNI_JSObject.cpp
              src/main/cpp/JNI/JNI_JSValue.cpp
+             src/main/cpp/JNI/JNI_LoopPreserver.cpp
+             src/main/cpp/JNI/JNI_OnLoad.cpp
              src/main/cpp/JNI/JSFunction.cpp
              src/main/cpp/JNI/SharedWrap.cpp
 
@@ -40,6 +43,7 @@ add_library( # Specifies the name of the library.
              src/main/cpp/JSC/OpaqueJSValue.cpp
 
              # Node.js
+             src/main/cpp/node/JNI_Process.cpp
              src/main/cpp/node/nodedroid_file.cc
              src/main/cpp/node/NodeInstance.cpp
              src/main/cpp/node/process_wrap.cc

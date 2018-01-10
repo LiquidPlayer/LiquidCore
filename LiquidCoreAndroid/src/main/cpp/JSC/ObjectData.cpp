@@ -31,6 +31,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cstdlib>
 #include "JSC/OpaqueJSClass.h"
 #include "JSC/ObjectData.h"
 #include "JSC/OpaqueJSContext.h"

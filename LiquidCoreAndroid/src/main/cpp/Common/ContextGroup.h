@@ -33,54 +33,50 @@
 #ifndef LIQUIDCORE_CONTEXTGROUP_H
 #define LIQUIDCORE_CONTEXTGROUP_H
 
-#include <stdlib.h>
-#include <jni.h>
-#include <android/log.h>
-#include <mutex>
-#include <list>
-#include <algorithm>
-#include <set>
-#include <thread>
-#include <list>
-#include <functional>
-#include <map>
-#include <memory>
-
-#include "Common/ManagedObject.h"
 #include "v8.h"
 #include "libplatform/libplatform.h"
 #include "uv.h"
 
+#include <jni.h>
+#include <thread>
+#include <mutex>
+#include <vector>
+#include <map>
+#include <list>
+
 using namespace v8;
 
 class GenericAllocator;
+class JSValue;
+class JSContext;
+class LoopPreserver;
+struct Runnable;
 
-struct Runnable {
-    jobject thiz;
-    jobject runnable;
-    JavaVM *jvm;
-    std::function<void()> c_runnable;
-};
-
-class ContextGroup : public std::enable_shared_from_this<ContextGroup>, public ManagedObject {
+class ContextGroup : public std::enable_shared_from_this<ContextGroup> {
 public:
     ContextGroup();
     ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
+    virtual ~ContextGroup();
 
-    virtual inline Isolate* isolate() { return m_isDefunct ? nullptr : m_isolate; }
-    virtual inline uv_loop_t * Loop() { return m_isDefunct ? nullptr : m_uv_loop; }
-    virtual inline bool IsDefunct() { return m_isDefunct; }
-    virtual inline std::thread::id Thread() { return m_thread_id; }
-    virtual inline std::shared_ptr<ContextGroup> Group() { return shared_from_this(); }
+    inline Isolate* isolate() { return m_isDefunct ? nullptr : m_isolate; }
+    inline uv_loop_t * Loop() { return m_isDefunct ? nullptr : m_uv_loop; }
+    inline bool IsDefunct() { return m_isDefunct; }
+    inline std::thread::id Thread() { return m_thread_id; }
+    inline std::shared_ptr<ContextGroup> Group() { return shared_from_this(); }
 
-    virtual void sync(std::function<void()> runnable);
-    virtual void async(std::function<void()> runnable, bool queue_only);
-    virtual void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
-    virtual void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
-    virtual void ManageJSValue(std::shared_ptr<ManagedObject> obj);
-    virtual void ManageJSContext(std::shared_ptr<ManagedObject> obj);
-    virtual void Dispose();
-    virtual void MarkZombie(std::shared_ptr<ManagedObject> obj);
+    void sync(std::function<void()> runnable);
+    void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
+    void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
+    void Manage(std::shared_ptr<JSValue> obj);
+    void Manage(std::shared_ptr<JSContext> obj);
+    void Dispose();
+    void MarkZombie(std::shared_ptr<JSValue> obj);
+    void MarkZombie(std::shared_ptr<JSContext> obj);
+    // These are just here for the SharedWrap template
+    void MarkZombie(std::shared_ptr<ContextGroup> obj) {}
+    void MarkZombie(std::shared_ptr<LoopPreserver> obj) {}
+
+    void schedule_java_runnable(JNIEnv *env, jobject thiz, jobject runnable);
 
     static void init_v8();
     static inline std::mutex *Mutex() { return &s_mutex; }
@@ -89,8 +85,7 @@ public:
     static void StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags);
 
 protected:
-    virtual ~ContextGroup();
-    virtual void GCPrologueCallback(GCType type, GCCallbackFlags flags);
+    void GCPrologueCallback(GCType type, GCCallbackFlags flags);
 
 private:
     static void dispose_v8();
@@ -105,9 +100,10 @@ private:
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
-    std::vector<std::weak_ptr<ManagedObject>> m_managedValues;
-    std::vector<std::weak_ptr<ManagedObject>> m_managedContexts;
-    std::vector<std::shared_ptr<ManagedObject>> m_zombies;
+    std::vector<std::weak_ptr<JSValue>> m_managedValues;
+    std::vector<std::weak_ptr<JSContext>> m_managedContexts;
+    std::vector<std::shared_ptr<JSValue>> m_value_zombies;
+    std::vector<std::shared_ptr<JSContext>> m_context_zombies;
     std::mutex m_zombie_mutex;
     bool m_isDefunct;
 
@@ -117,18 +113,10 @@ private:
     };
     std::list<std::unique_ptr<struct GCCallback>> m_gc_callbacks;
 
-public:
     uv_async_t *m_async_handle;
-    std::list<struct Runnable *> m_runnables;
+    std::vector<struct Runnable *> m_runnables;
     std::mutex m_async_mutex;
     std::recursive_mutex m_scheduling_mutex;
-};
-
-class ContextGroupData {
-public:
-    ContextGroupData(std::shared_ptr<ContextGroup> cg) : m_context_group(cg) {}
-    virtual ~ContextGroupData() { m_context_group.reset(); }
-    std::shared_ptr<ContextGroup> m_context_group;
 };
 
 #endif //LIQUIDCORE_CONTEXTGROUP_H

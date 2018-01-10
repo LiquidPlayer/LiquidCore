@@ -37,18 +37,18 @@
 
 using namespace v8;
 
-class JSValue : public std::enable_shared_from_this<JSValue>, public ManagedObject {
+class JSValue : public std::enable_shared_from_this<JSValue> {
 public:
     JSValue(std::shared_ptr<JSContext> context, Local<v8::Value> val);
     JSValue();
     virtual ~JSValue();
 
-    virtual Local<v8::Value> Value();
-    virtual Isolate* isolate();
-    virtual std::shared_ptr<ContextGroup> Group();
-    virtual std::shared_ptr<JSContext> Context();
-    virtual void Dispose();
-    virtual bool IsDefunct();
+    Local<v8::Value> Value();
+    Isolate* isolate();
+    std::shared_ptr<ContextGroup> Group();
+    std::shared_ptr<JSContext> Context();
+    void Dispose();
+    bool IsDefunct();
 
     static std::shared_ptr<JSValue> New(std::shared_ptr<JSContext> context, Local<v8::Value> val);
 

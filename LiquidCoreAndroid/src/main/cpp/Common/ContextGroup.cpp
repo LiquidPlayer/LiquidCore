@@ -36,8 +36,10 @@
 #include <unistd.h>
 #include <android/log.h>
 #include <exception>
+#include <malloc.h>
 #include <condition_variable>
-#include "ContextGroup.h"
+#include "Common/ContextGroup.h"
+#include "Common/JSValue.h"
 
 static int pfd[2];
 static pthread_t thr;
@@ -92,6 +94,20 @@ public:
     }
 };
 static GenericAllocator s_allocator;
+
+struct Runnable {
+    jobject thiz;
+    jobject runnable;
+    JavaVM *jvm;
+    std::function<void()> c_runnable;
+};
+
+class ContextGroupData {
+public:
+    ContextGroupData(std::shared_ptr<ContextGroup> cg) : m_context_group(cg) {}
+    ~ContextGroupData() { m_context_group.reset(); }
+    std::shared_ptr<ContextGroup> m_context_group;
+};
 
 void ContextGroup::StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags)
 {
@@ -168,11 +184,20 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
-void ContextGroup::MarkZombie(std::shared_ptr<ManagedObject> obj)
+void ContextGroup::MarkZombie(std::shared_ptr<JSValue> obj)
 {
     if ((void*)&*obj != this) {
         m_zombie_mutex.lock();
-        m_zombies.push_back(obj);
+        m_value_zombies.push_back(obj);
+        m_zombie_mutex.unlock();
+    }
+}
+
+void ContextGroup::MarkZombie(std::shared_ptr<JSContext> obj)
+{
+    if ((void*)&*obj != this) {
+        m_zombie_mutex.lock();
+        m_context_zombies.push_back(obj);
         m_zombie_mutex.unlock();
     }
 }
@@ -182,6 +207,10 @@ void ContextGroup::callback(uv_async_t* handle)
     ContextGroupData *data = reinterpret_cast<ContextGroupData*>(handle->data);
     std::shared_ptr<ContextGroup> group = data->m_context_group;
     delete data;
+
+    // Since we are in the correct thread now, free the zombies!
+    group->m_value_zombies.clear();
+    group->m_context_zombies.clear();
 
     group->m_async_mutex.lock();
     struct Runnable *r = group->m_runnables.empty() ? nullptr : group->m_runnables.front();
@@ -278,12 +307,12 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags)
     }
 }
 
-void ContextGroup::ManageJSValue(std::shared_ptr<ManagedObject> obj)
+void ContextGroup::Manage(std::shared_ptr<JSValue> obj)
 {
     m_managedValues.push_back(std::move(obj));
 }
 
-void ContextGroup::ManageJSContext(std::shared_ptr<ManagedObject> obj)
+void ContextGroup::Manage(std::shared_ptr<JSContext> obj)
 {
     m_managedContexts.push_back(std::move(obj));
 }
@@ -296,22 +325,23 @@ void ContextGroup::Dispose()
         m_scheduling_mutex.lock();
 
         for (auto it = m_managedValues.begin(); it != m_managedValues.end(); ++it) {
-            std::shared_ptr<ManagedObject> valid = (*it).lock();
+            std::shared_ptr<JSValue> valid = (*it).lock();
             if (valid) {
                 valid->Dispose();
             }
         }
         for (auto it = m_managedContexts.begin(); it != m_managedContexts.end(); ++it) {
-            std::shared_ptr<ManagedObject> valid = (*it).lock();
+            std::shared_ptr<JSContext> valid = (*it).lock();
             if (valid) {
                 valid->Dispose();
             }
         }
         m_isDefunct = true;
-        m_scheduling_mutex.unlock();
         m_managedValues.clear();
         m_managedContexts.clear();
-        //m_zombies.clear();
+        m_scheduling_mutex.unlock();
+        m_value_zombies.clear();
+        m_context_zombies.clear();
 
         s_isolate_map.erase(m_isolate);
         if (m_manage_isolate) {
@@ -367,30 +397,22 @@ void ContextGroup::sync(std::function<void()> runnable)
     }
 }
 
-void ContextGroup::async(std::function<void()> runnable, bool queue_only)
+void ContextGroup::schedule_java_runnable(JNIEnv *env, jobject thiz, jobject runnable)
 {
-    m_scheduling_mutex.lock();
-    if (Loop() && std::this_thread::get_id() != Thread()) {
-        m_scheduling_mutex.unlock();
-        struct Runnable *r = new struct Runnable;
-        r->thiz = nullptr;
-        r->runnable = nullptr;
-        r->jvm = nullptr;
-        r->c_runnable = runnable;
+    m_async_mutex.lock();
 
-        std::unique_lock<std::mutex> lk(m_async_mutex);
-        m_runnables.push_back(r);
+    struct Runnable *r = new struct Runnable;
+    r->thiz = env->NewGlobalRef(thiz);
+    r->runnable = env->NewGlobalRef(runnable);
+    r->c_runnable = nullptr;
+    env->GetJavaVM(&r->jvm);
+    m_runnables.push_back(r);
 
-        if (!queue_only && !m_async_handle) {
-            m_async_handle = new uv_async_t();
-            m_async_handle->data = new ContextGroupData(shared_from_this());
-            uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
-            uv_async_send(m_async_handle);
-        }
-
-        lk.unlock();
-    } else {
-        m_scheduling_mutex.unlock();
-        runnable();
+    if (!m_async_handle) {
+        m_async_handle = new uv_async_t();
+        m_async_handle->data = new ContextGroupData(shared_from_this());
+        uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
+        uv_async_send(m_async_handle);
     }
+    m_async_mutex.unlock();
 }

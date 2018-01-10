@@ -48,7 +48,7 @@ SharedWrap<T>::~SharedWrap()
         s_mutex.unlock();
     }
 
-    //m_shared.reset();
+    m_shared.reset();
 }
 
 template<typename T>
