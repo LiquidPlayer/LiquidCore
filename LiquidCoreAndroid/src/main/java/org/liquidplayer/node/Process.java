@@ -45,7 +45,6 @@ import org.liquidplayer.javascript.JSObject;
 
 import java.util.ArrayList;
 
-@SuppressWarnings("JniMissingFunction")
 public class Process {
 
     final public static int kMediaAccessPermissionsNone = 0;

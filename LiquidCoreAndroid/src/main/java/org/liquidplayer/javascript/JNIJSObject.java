@@ -35,7 +35,6 @@
 */
 package org.liquidplayer.javascript;
 
-@SuppressWarnings("JniMissingFunction")
 class JNIJSObject extends JNIJSValue {
     JNIJSObject(long ref) {
         super(ref);

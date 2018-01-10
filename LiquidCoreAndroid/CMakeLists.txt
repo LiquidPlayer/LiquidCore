@@ -16,6 +16,7 @@ add_library( # Specifies the name of the library.
              src/main/cpp/Common/ContextGroup.cpp
              src/main/cpp/Common/JSContext.cpp
              src/main/cpp/Common/JSValue.cpp
+             src/main/cpp/Common/LoopPreserver.cpp
 
              # JNI API
              src/main/cpp/JNI/JNI_JSContext.cpp

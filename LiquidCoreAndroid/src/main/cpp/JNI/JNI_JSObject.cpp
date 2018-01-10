@@ -81,7 +81,7 @@ NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jobject context_, jobjectArray ar
 
         TryCatch trycatch(isolate);
 
-        int i;
+        uint32_t i;
         for (i=0; !exception && i<len; i++) {
             Local<Value> element = SharedWrap<JSValue>::Shared(
                 env,
@@ -169,9 +169,10 @@ NATIVE(JNIJSObject,jobject,makeRegExp) (PARAMS, jobject context_, jstring patter
         RegExp::Flags flags = RegExp::Flags::kNone;
         for (size_t i=0; i<strlen(c_string); i++) {
             switch (c_string[i]) {
-                case 'g': flags = (RegExp::Flags) (flags | RegExp::Flags::kGlobal);     break;
-                case 'i': flags = (RegExp::Flags) (flags | RegExp::Flags::kIgnoreCase); break;
-                case 'm': flags = (RegExp::Flags) (flags | RegExp::Flags::kMultiline);  break;
+                case 'g': flags = (RegExp::Flags)(flags | RegExp::Flags::kGlobal);     break;
+                case 'i': flags = (RegExp::Flags)(flags | RegExp::Flags::kIgnoreCase); break;
+                case 'm': flags = (RegExp::Flags)(flags | RegExp::Flags::kMultiline);  break;
+                default: break;
             }
         }
         env->ReleaseStringUTFChars(flags_, c_string);
@@ -280,7 +281,7 @@ NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jstring propertyName)
         v = has.FromMaybe(false);
     V8_UNLOCK()
 
-    return v;
+    return (jboolean)v;
 }
 
 NATIVE(JNIJSObject,jobject,getProperty) (PARAMS, jstring propertyName)
@@ -388,7 +389,7 @@ NATIVE(JNIJSObject,jobject,getPropertyAtIndex) (PARAMS, jint propertyIndex)
         TryCatch trycatch(isolate);
         std::shared_ptr<JSValue> exception;
 
-        MaybeLocal<Value> value = o->Get(context, propertyIndex);
+        MaybeLocal<Value> value = o->Get(context, (uint32_t) propertyIndex);
         if (value.IsEmpty()) {
             exception = JSValue::New(object->Context(), trycatch.Exception());
         }
@@ -413,7 +414,7 @@ NATIVE(JNIJSObject,jobject,setPropertyAtIndex) (PARAMS, jint propertyIndex, jobj
         std::shared_ptr<JSValue> exception;
 
         Maybe<bool> defined =
-            o->Set(context, propertyIndex,SharedWrap<JSValue>::Shared(env, value)->Value());
+            o->Set(context, (uint32_t) propertyIndex,SharedWrap<JSValue>::Shared(env, value)->Value());
 
         if (defined.IsNothing()) {
             exception = JSValue::New(object->Context(), trycatch.Exception());
@@ -434,7 +435,7 @@ NATIVE(JNIJSObject,jboolean,isFunction) (PARAMS) {
         v = value->IsFunction();
     V8_UNLOCK()
 
-    return v;
+    return (jboolean) v;
 }
 
 NATIVE(JNIJSObject,jobject,callAsFunction) (PARAMS, jobject thisObject, jobjectArray args)
@@ -484,7 +485,7 @@ NATIVE(JNIJSObject,jboolean,isConstructor) (PARAMS)
         v = value->IsFunction();
     V8_UNLOCK()
 
-    return v;
+    return (jboolean)v;
 }
 
 NATIVE(JNIJSObject,jobject,callAsConstructor) (PARAMS, jobjectArray args)

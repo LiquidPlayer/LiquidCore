@@ -75,9 +75,29 @@ int start_logger(const char *app_name)
     return 0;
 }
 
+class GenericAllocator : public ArrayBuffer::Allocator {
+public:
+    GenericAllocator() {}
+    virtual ~GenericAllocator() {}
+    virtual void* Allocate(size_t length) {
+        unsigned char * mem =  (unsigned char *) malloc(length);
+        memset(mem, 0, length);
+        return (void*)mem;
+    }
+    virtual void* AllocateUninitialized(size_t length) {
+        return malloc(length);
+    }
+    virtual void Free(void* data, size_t length) {
+        free(data);
+    }
+};
+static GenericAllocator s_allocator;
+
 void ContextGroup::StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags)
 {
-    s_isolate_map[isolate]->GCPrologueCallback(type, flags);
+    if (s_isolate_map.count(isolate)) {
+        s_isolate_map[isolate]->GCPrologueCallback(type, flags);
+    }
 }
 
 Platform *ContextGroup::s_platform = NULL;
@@ -90,9 +110,8 @@ void ContextGroup::init_v8()
     s_mutex.lock();
     if (s_init_count++ == 0) {
         start_logger("LiquidCore");
-        /*
-        // see: https://github.com/nodejs/node/issues/7918
-        const char *flags = "--harmony-instanceof"; // " --expose_gc";
+        /* Add any required flags here.
+        const char *flags = "--expose_gc";
         V8::SetFlagsFromString(flags, strlen(flags));
         */
 
@@ -118,8 +137,6 @@ void ContextGroup::dispose_v8()
     }
     s_mutex.unlock();
 }
-
-GenericAllocator ContextGroup::s_allocator;
 
 ContextGroup::ContextGroup()
 {
@@ -375,38 +392,5 @@ void ContextGroup::async(std::function<void()> runnable, bool queue_only)
     } else {
         m_scheduling_mutex.unlock();
         runnable();
-    }
-}
-
-std::shared_ptr<LoopPreserver> LoopPreserver::New(std::shared_ptr<ContextGroup> group)
-{
-    auto preserver = std::make_shared<LoopPreserver>(group);
-    return preserver;
-}
-
-LoopPreserver::LoopPreserver(std::shared_ptr<ContextGroup> group) :
-        m_isDefunct(false), m_group(group)
-{
-    auto done = [](uv_async_t* handle) {
-        uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
-            delete (uv_async_t*)h;
-        });
-    };
-
-    m_async_handle = new uv_async_t();
-    uv_async_init(group->Loop(), m_async_handle, done);
-}
-
-LoopPreserver::~LoopPreserver()
-{
-    Dispose();
-}
-
-void LoopPreserver::Dispose()
-{
-    if (!m_isDefunct) {
-        m_isDefunct = true;
-
-        uv_async_send(m_async_handle);
     }
 }

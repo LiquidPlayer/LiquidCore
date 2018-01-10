@@ -31,6 +31,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "JNI/SharedWrap.h"
+#include "Common/LoopPreserver.h"
 
 template<typename T>
 SharedWrap<T>::SharedWrap(std::shared_ptr<T> g) : m_shared(g)

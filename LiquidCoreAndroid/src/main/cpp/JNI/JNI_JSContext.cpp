@@ -36,6 +36,7 @@
 
 #include "JNI/JNI.h"
 #include "JSC/JSC.h"
+#include "Common/LoopPreserver.h"
 
 static jobject s_ClassLoader;
 static jmethodID s_FindClassMethod;
@@ -113,7 +114,6 @@ NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jobject thisObj, jobje
                 if (super != NULL) env->DeleteLocalRef(super);
                 __android_log_assert("FAIL", "runInContextGroup",
                     "Internal error.  Can't call back.");
-                return;
             }
             cls = super;
         } while (true);
@@ -192,13 +192,13 @@ NATIVE(JNIJSContext,jobject,getGroup) (PARAMS)
     return SharedWrap<ContextGroup>::New(env, context->Group());
 }
 
-NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script,
-    jstring sourceURL, jint startingLineNumber)
+NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script_,
+    jstring sourceURL_, jint startingLineNumber)
 {
     auto ctx = SharedWrap<JSContext>::Shared(env, thiz);
 
-    const char *_script = env->GetStringUTFChars(script, NULL);
-    const char *_sourceURL = env->GetStringUTFChars(sourceURL, NULL);
+    const char *_script = env->GetStringUTFChars(script_, NULL);
+    const char *_sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
 
     JNIReturnObject ret(env);
     {
@@ -250,8 +250,8 @@ NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script,
         V8_UNLOCK()
     }
 
-    env->ReleaseStringUTFChars(script, _script);
-    env->ReleaseStringUTFChars(sourceURL, _sourceURL);
+    env->ReleaseStringUTFChars(script_, _script);
+    env->ReleaseStringUTFChars(sourceURL_, _sourceURL);
 
     return ret.ToJava();
 }

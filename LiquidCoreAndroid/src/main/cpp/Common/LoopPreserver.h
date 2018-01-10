@@ -1,8 +1,5 @@
 //
-// JNIJSFunction.java
-//
-// AndroidJSCore project
-// https://github.com/ericwlange/AndroidJSCore/
+// LoopPreserver.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -33,12 +30,30 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.liquidplayer.javascript;
 
-class JNIJSFunction extends JNIJSObject  {
-    JNIJSFunction(long ref) {
-        super(ref);
-    }
+#ifndef LIQUIDCORE_LOOPPRESERVER_H
+#define LIQUIDCORE_LOOPPRESERVER_H
 
-    static native JNIJSObject makeFunctionWithCallback(JSFunction thiz, JNIJSContext ctx, String name);
-}
+#include "Common/ManagedObject.h"
+#include <memory>
+#include "uv.h"
+
+class ContextGroup;
+
+class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>, public ManagedObject
+{
+public:
+    static std::shared_ptr<LoopPreserver> New(std::shared_ptr<ContextGroup> group);
+    LoopPreserver(std::shared_ptr<ContextGroup> group);
+    virtual ~LoopPreserver();
+    virtual void Dispose();
+    virtual inline bool IsDefunct() { return m_isDefunct; }
+    virtual inline std::shared_ptr<ContextGroup> Group() { return m_group; }
+
+private:
+    bool m_isDefunct;
+    uv_async_t * m_async_handle;
+    std::shared_ptr<ContextGroup> m_group;
+};
+
+#endif //LIQUIDCORE_LOOPPRESERVER_H

@@ -55,7 +55,7 @@ JSContext::JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val) 
 JSContext::~JSContext() {
     Dispose();
 
-    /*
+    /* FIXME
     V8_ISOLATE(m_isolate, isolate)
         m_context.Reset();
     V8_UNLOCK()
@@ -67,7 +67,7 @@ void JSContext::Dispose() {
         m_isDefunct = true;
 
         m_set_mutex.lock();
-        //m_value_set.clear();
+        //m_value_set.clear(); FIXME
         m_set_mutex.unlock();
     }
 }

@@ -53,22 +53,7 @@
 
 using namespace v8;
 
-class GenericAllocator : public ArrayBuffer::Allocator {
-public:
-    GenericAllocator() {}
-    virtual ~GenericAllocator() {}
-    virtual void* Allocate(size_t length) {
-        unsigned char * mem =  (unsigned char *) malloc(length);
-        memset(mem, 0, length);
-        return (void*)mem;
-    }
-    virtual void* AllocateUninitialized(size_t length) {
-        return malloc(length);
-    }
-    virtual void Free(void* data, size_t length) {
-        free(data);
-    }
-};
+class GenericAllocator;
 
 struct Runnable {
     jobject thiz;
@@ -117,7 +102,6 @@ private:
 
     Isolate *m_isolate;
     Isolate::CreateParams m_create_params;
-    static GenericAllocator s_allocator;
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
@@ -145,22 +129,6 @@ public:
     ContextGroupData(std::shared_ptr<ContextGroup> cg) : m_context_group(cg) {}
     virtual ~ContextGroupData() { m_context_group.reset(); }
     std::shared_ptr<ContextGroup> m_context_group;
-};
-
-class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>, public ManagedObject
-{
-public:
-    static std::shared_ptr<LoopPreserver> New(std::shared_ptr<ContextGroup> group);
-    LoopPreserver(std::shared_ptr<ContextGroup> group);
-    virtual ~LoopPreserver();
-    virtual void Dispose();
-    virtual inline bool IsDefunct() { return m_isDefunct; }
-    virtual inline std::shared_ptr<ContextGroup> Group() { return m_group; }
-
-private:
-    bool m_isDefunct;
-    uv_async_t * m_async_handle;
-    std::shared_ptr<ContextGroup> m_group;
 };
 
 #endif //LIQUIDCORE_CONTEXTGROUP_H
