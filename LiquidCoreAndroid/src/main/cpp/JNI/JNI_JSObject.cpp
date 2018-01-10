@@ -82,7 +82,7 @@ NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jobject context_, jobjectArray ar
         TryCatch trycatch(isolate);
 
         uint32_t i;
-        for (i=0; !exception && i<len; i++) {
+        for (i=0; !exception && (jsize)i<len; i++) {
             Local<Value> element = SharedWrap<JSValue>::Shared(
                 env,
                 env->GetObjectArrayElement(args, i)

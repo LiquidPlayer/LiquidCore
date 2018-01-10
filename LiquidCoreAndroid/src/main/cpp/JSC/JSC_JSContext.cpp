@@ -32,22 +32,6 @@
 */
 #include "JSC/JSC.h"
 
-JS_EXPORT JSContextGroupRef JSContextGroupCreate()
-{
-    return &* OpaqueJSContextGroup::New();
-}
-
-JS_EXPORT JSContextGroupRef JSContextGroupRetain(JSContextGroupRef group)
-{
-    const_cast<OpaqueJSContextGroup*>(group)->Retain();
-    return group;
-}
-
-JS_EXPORT void JSContextGroupRelease(JSContextGroupRef group)
-{
-    const_cast<OpaqueJSContextGroup*>(group)->Release();
-}
-
 class GlobalContextGroup : public OpaqueJSContextGroup
 {
     public:
@@ -59,11 +43,6 @@ class GlobalContextGroup : public OpaqueJSContextGroup
             return group;
         }
         GlobalContextGroup() : OpaqueJSContextGroup() {}
-        /*
-        virtual ~GlobalContextGroup() {
-            globalContextGroup.reset();
-        }
-        */
 };
 
 static std::shared_ptr<GlobalContextGroup> globalContextGroup;

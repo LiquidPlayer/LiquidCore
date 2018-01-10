@@ -1,5 +1,5 @@
 //
-// ObjectData.h
+// ObjectData.cpp
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -66,11 +66,6 @@ ObjectData* ObjectData::Get(Local<Value> value)
 void ObjectData::SetContext(JSContextRef ctx)
 {
     m_context = ctx;
-    /*
-    if (ctx) {
-        JSGlobalContextRetain(const_cast<JSGlobalContextRef>(ctx));
-    }
-    */
 }
 
 void ObjectData::SetName(Local<Value> name)
@@ -92,31 +87,10 @@ ObjectData::~ObjectData()
     if (m_name) free(m_name);
     m_name = nullptr;
 
-    /*
-    if (m_class) {
-        JSClassRelease(m_class);
-    }
-    */
-    /*
-    if (m_context) {
-        JSGlobalContextRelease(const_cast<JSGlobalContextRef>(m_context));
-    }
-    */
-
     m_func.Reset();
 }
 
 ObjectData::ObjectData(const JSClassDefinition *def, JSContextRef ctx, JSClassRef cls) :
     m_definition(def), m_context(ctx), m_class(cls), m_name(nullptr)
 {
-    /*
-    if (ctx) {
-        JSGlobalContextRetain(const_cast<JSGlobalContextRef>(ctx));
-    }
-    */
-    /*
-    if (cls) {
-        JSClassRetain(cls);
-    }
-    */
 }

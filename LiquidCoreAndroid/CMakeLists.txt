@@ -28,6 +28,7 @@ add_library( # Specifies the name of the library.
              # JavaScriptCore -> V8 bridge
              src/main/cpp/JSC/JSC_JSBase.cpp
              src/main/cpp/JSC/JSC_JSContext.cpp
+             src/main/cpp/JSC/JSC_JSContextGroup.cpp
              src/main/cpp/JSC/JSC_JSObject.cpp
              src/main/cpp/JSC/JSC_JSString.cpp
              src/main/cpp/JSC/JSC_JSValue.cpp

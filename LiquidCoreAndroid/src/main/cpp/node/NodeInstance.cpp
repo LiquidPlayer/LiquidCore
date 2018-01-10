@@ -558,8 +558,6 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
 
     jclass cls = jenv->GetObjectClass(m_JavaThis);
     jmethodID mid;
-    findClass(jenv, "org/liquidplayer/javascript/JNIJSContextGroup");
-    findClass(jenv, "org/liquidplayer/javascript/JNIJSContext");
     do {
       mid = jenv->GetMethodID(cls,"onNodeStarted","(" JSC JSG "J)V");
       if (!jenv->ExceptionCheck()) break;
