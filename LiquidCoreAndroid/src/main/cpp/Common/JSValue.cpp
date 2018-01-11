@@ -30,6 +30,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <cstdlib>
 #include "Common/JSValue.h"
 #include "Common/Macros.h"
 
@@ -62,18 +63,25 @@ std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<
         if (result.IsJust() && result.FromJust()) {
             hasPrivate = obj->GetPrivate(context->Value(), privateKey).ToLocal(&identifier);
         }
-        if (hasPrivate && identifier->IsNumber()) {
+        if (hasPrivate && identifier->IsString()) {
             // This object is already wrapped, let's re-use it
-            return reinterpret_cast<JSValue*>(
-                    (long)identifier->ToNumber(context->Value()).ToLocalChecked()->Value())
-                    ->shared_from_this();
+            String::Utf8Value chars(identifier);
+            unsigned long n = strtoul(*chars, NULL, 16);
+            JSValue *value_ = reinterpret_cast<JSValue*>(n);
+            return value_->shared_from_this();
         } else {
             // First time wrap.  Create it new and mark it
             value = std::make_shared<JSValue>(context,val);
             context->retain(value);
             value->m_wrapped = true;
-            obj->SetPrivate(context->Value(), privateKey,
-                Number::New(context->isolate(),(double)reinterpret_cast<long>(&*value)));
+
+            char this_[16];
+            sprintf(this_, "%p", &*value);
+            Local<v8::Value> data = String::NewFromUtf8(context->isolate(),
+                                                        this_,
+                                                        NewStringType::kNormal).ToLocalChecked();
+
+            obj->SetPrivate(context->Value(), privateKey, data);
         }
     } else {
         value = std::make_shared<JSValue>(context,val);

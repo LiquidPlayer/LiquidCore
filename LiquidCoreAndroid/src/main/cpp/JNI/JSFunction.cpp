@@ -33,6 +33,7 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <cstdlib>
 #include "JNI/JNI.h"
 #include "JNI/JSFunction.h"
 #include "JNI/JNIReturnObject.h"
@@ -51,14 +52,15 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, std::shared_ptr<JSContext> ctx
     Persistent<v8::Value, CopyablePersistentTraits<v8::Value>> value;
 
     V8_ISOLATE_CTX(ctx,isolate,context)
-        long this_ = reinterpret_cast<long>(this);
+        char this_[16];
+        sprintf(this_, "%p", this);
+        Local<v8::Value> data = String::NewFromUtf8(isolate, this_, NewStringType::kNormal)
+                .ToLocalChecked();
 
         const char *c_string = env->GetStringUTFChars(name_, NULL);
         Local<String> name =
             String::NewFromUtf8(isolate, c_string, NewStringType::kNormal).ToLocalChecked();
         env->ReleaseStringUTFChars(name_, c_string);
-
-        Local<v8::Value> data = Number::New(isolate, this_);
 
         Local<FunctionTemplate> ctor =
             FunctionTemplate::New(isolate, StaticFunctionCallback, data);
@@ -67,17 +69,16 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, std::shared_ptr<JSContext> ctx
 
         Local<Private> privateKey = v8::Private::ForApi(isolate,
             String::NewFromUtf8(isolate, "__JSValue_ptr"));
-        function->SetPrivate(context, privateKey,
-            Number::New(isolate,(double)this_));
+        function->SetPrivate(context, privateKey, data);
         m_wrapped = true;
 
         value = Persistent<v8::Value,CopyablePersistentTraits<v8::Value>>(isolate, function);
     V8_UNLOCK()
 
-    JSValue::m_isNull = false;
-    JSValue::m_isUndefined = false;
-    JSValue::m_value = value;
-    JSValue::m_context = ctx;
+    m_isNull = false;
+    m_isUndefined = false;
+    m_value = value;
+    m_context = ctx;
 }
 
 std::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_)
@@ -98,8 +99,9 @@ void JSFunction::StaticFunctionCallback(const FunctionCallbackInfo< v8::Value > 
     Isolate::Scope isolate_scope_(info.GetIsolate());
     HandleScope handle_scope_(info.GetIsolate());
 
-    JSFunction *this_ = reinterpret_cast<JSFunction*>(
-        (long)(info.Data()->ToNumber(info.GetIsolate())->Value()));
+    String::Utf8Value chars(info.Data());
+    unsigned long n = strtoul(*chars, NULL, 16);
+    JSFunction *this_ = reinterpret_cast<JSFunction*>(n);
     this_->FunctionCallback(info);
 }
 
