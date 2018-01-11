@@ -37,9 +37,7 @@ class GlobalContextGroup : public OpaqueJSContextGroup
     public:
         static std::shared_ptr<GlobalContextGroup> New() {
             auto group = std::make_shared<GlobalContextGroup>();
-            group->m_self = std::static_pointer_cast<ContextGroup>(
-                const_cast<GlobalContextGroup*>(&*group)->shared_from_this()
-            );
+            group->m_self = group->shared_from_this();
             return group;
         }
         GlobalContextGroup() : OpaqueJSContextGroup() {}
@@ -104,7 +102,7 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
         }
         group = &* globalContextGroup;
     }
-    const_cast<OpaqueJSContextGroup*>(group)->retain();
+    const_cast<OpaqueJSContextGroup*>(group)->Retain();
 
     auto cg = const_cast<OpaqueJSContextGroup*>(group)->ContextGroup::shared_from_this();
     V8_ISOLATE(cg, isolate)
@@ -114,7 +112,7 @@ JS_EXPORT JSGlobalContextRef JSGlobalContextCreateInGroup(JSContextGroupRef grou
             ctx = &* OpaqueJSContext::New(JSContext::New(cg, Context::New(isolate)));
         }
         setUpJSCFeatures(ctx);
-        const_cast<OpaqueJSContextGroup*>(group)->release();
+        const_cast<OpaqueJSContextGroup*>(group)->Release();
     V8_UNLOCK()
 
     return ctx;

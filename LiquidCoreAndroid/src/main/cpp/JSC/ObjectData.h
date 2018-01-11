@@ -42,16 +42,17 @@ class ObjectData {
         static Local<Value> New(const JSClassDefinition *def = nullptr, JSContextRef ctx = nullptr,
                                JSClassRef cls = nullptr);
         static ObjectData* Get(Local<Value> value);
-        virtual void SetContext(JSContextRef ctx);
-        virtual void SetName(Local<Value> name);
-        virtual void SetFunc(Local<Object> func);
-        virtual inline const JSClassDefinition *Definition() { return m_definition; }
-        virtual inline JSContextRef       Context() { return m_context; }
-        virtual inline JSClassRef         Class() { return m_class; }
-        virtual inline const char *       Name() { return m_name; }
-        virtual inline Local<Object>      Func() { return Local<Object>::New(Isolate::GetCurrent(), m_func); }
+        void SetContext(JSContextRef ctx);
+        void SetName(Local<Value> name);
+        void SetFunc(Local<Object> func);
+        inline const JSClassDefinition *Definition() { return m_definition; }
+        inline JSContextRef       Context() { return m_context; }
+        inline JSClassRef         Class() { return m_class; }
+        inline const char *       Name() { return m_name; }
+        inline Local<Object>      Func() { return Local<Object>::New(Isolate::GetCurrent(), m_func); }
 
-        virtual ~ObjectData();
+    protected:
+        ~ObjectData();
 
     private:
         ObjectData(const JSClassDefinition *def, JSContextRef ctx, JSClassRef cls);

@@ -43,12 +43,29 @@ public:
     JSValue();
     virtual ~JSValue();
 
-    Local<v8::Value> Value();
-    Isolate* isolate();
-    std::shared_ptr<ContextGroup> Group();
-    std::shared_ptr<JSContext> Context();
+    inline Local<v8::Value> Value ()
+    {
+        if (m_isUndefined) {
+            Local<v8::Value> undefined =
+                    Local<v8::Value>::New(isolate(),Undefined(isolate()));
+            return undefined;
+        } else if (m_isNull) {
+            Local<v8::Value> null =
+                    Local<v8::Value>::New(isolate(),Null(isolate()));
+            return null;
+        } else {
+            return Local<v8::Value>::New(isolate(), m_value);
+        }
+    }
+    inline Isolate* isolate() { return m_context->isolate(); }
+    inline std::shared_ptr<ContextGroup> Group() { return m_context->Group(); }
+    inline std::shared_ptr<JSContext> Context()  { return m_context; }
+    inline bool IsDefunct() { return m_isDefunct; }
+
     void Dispose();
-    bool IsDefunct();
+
+    static Local<v8::Value> Wrap(JSValue *value);
+    static JSValue* Unwrap(Local<v8::Value>);
 
     static std::shared_ptr<JSValue> New(std::shared_ptr<JSContext> context, Local<v8::Value> val);
 

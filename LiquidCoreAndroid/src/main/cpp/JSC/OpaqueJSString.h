@@ -46,12 +46,12 @@ struct OpaqueJSString : public JSCRetainer {
         OpaqueJSString(const JSChar * chars, size_t numChars);
         OpaqueJSString(const char * chars);
         virtual ~OpaqueJSString();
-        virtual Local<String> Value(Isolate *);
-        virtual const JSChar * Chars();
-        virtual size_t Size();
-        virtual size_t Utf8Bytes();
-        virtual void Utf8String(std::string&);
-        virtual bool Equals(OpaqueJSString& other);
+        Local<String> Value(Isolate *);
+        const JSChar * Chars();
+        size_t Size();
+        size_t Utf8Bytes();
+        void Utf8String(std::string&);
+        bool Equals(OpaqueJSString& other);
 
     private:
         std::vector<unsigned short> backstore;

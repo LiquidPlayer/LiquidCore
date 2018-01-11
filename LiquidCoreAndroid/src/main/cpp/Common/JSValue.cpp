@@ -34,19 +34,21 @@
 #include "Common/JSValue.h"
 #include "Common/Macros.h"
 
-Isolate* JSValue::isolate()
+Local<v8::Value> JSValue::Wrap(JSValue *value)
 {
-    return m_context->isolate();
+    char this_[16];
+    sprintf(this_, "%p", value);
+    Local<v8::Value> data = String::NewFromUtf8(Isolate::GetCurrent(),
+                                                this_,
+                                                NewStringType::kNormal).ToLocalChecked();
+    return data;
 }
 
-std::shared_ptr<ContextGroup> JSValue::Group()
+JSValue* JSValue::Unwrap(Local<v8::Value> identifier)
 {
-    return m_context->Group();
-}
-
-std::shared_ptr<JSContext> JSValue::Context()
-{
-    return m_context;
+    String::Utf8Value chars(identifier);
+    unsigned long n = strtoul(*chars, NULL, 16);
+    return reinterpret_cast<JSValue*>(n);
 }
 
 std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<v8::Value> val)
@@ -65,23 +67,14 @@ std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<
         }
         if (hasPrivate && identifier->IsString()) {
             // This object is already wrapped, let's re-use it
-            String::Utf8Value chars(identifier);
-            unsigned long n = strtoul(*chars, NULL, 16);
-            JSValue *value_ = reinterpret_cast<JSValue*>(n);
-            return value_->shared_from_this();
+            return Unwrap(identifier)->shared_from_this();
         } else {
             // First time wrap.  Create it new and mark it
             value = std::make_shared<JSValue>(context,val);
             context->retain(value);
             value->m_wrapped = true;
 
-            char this_[16];
-            sprintf(this_, "%p", &*value);
-            Local<v8::Value> data = String::NewFromUtf8(context->isolate(),
-                                                        this_,
-                                                        NewStringType::kNormal).ToLocalChecked();
-
-            obj->SetPrivate(context->Value(), privateKey, data);
+            obj->SetPrivate(context->Value(), privateKey, Wrap(&* value));
         }
     } else {
         value = std::make_shared<JSValue>(context,val);
@@ -138,25 +131,5 @@ void JSValue::Dispose()
         }
 
         m_isUndefined = true;
-    }
-}
-
-bool JSValue::IsDefunct()
-{
-    return m_isDefunct;
-}
-
-Local<v8::Value> JSValue::Value ()
-{
-    if (m_isUndefined) {
-        Local<v8::Value> undefined =
-            Local<v8::Value>::New(isolate(),Undefined(isolate()));
-        return undefined;
-    } else if (m_isNull) {
-        Local<v8::Value> null =
-            Local<v8::Value>::New(isolate(),Null(isolate()));
-        return null;
-    } else {
-        return Local<v8::Value>::New(isolate(), m_value);
     }
 }

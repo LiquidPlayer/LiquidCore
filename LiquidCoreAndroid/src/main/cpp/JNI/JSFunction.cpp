@@ -52,10 +52,7 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, std::shared_ptr<JSContext> ctx
     Persistent<v8::Value, CopyablePersistentTraits<v8::Value>> value;
 
     V8_ISOLATE_CTX(ctx,isolate,context)
-        char this_[16];
-        sprintf(this_, "%p", this);
-        Local<v8::Value> data = String::NewFromUtf8(isolate, this_, NewStringType::kNormal)
-                .ToLocalChecked();
+        Local<v8::Value> data = Wrap(this);
 
         const char *c_string = env->GetStringUTFChars(name_, NULL);
         Local<String> name =
@@ -99,9 +96,7 @@ void JSFunction::StaticFunctionCallback(const FunctionCallbackInfo< v8::Value > 
     Isolate::Scope isolate_scope_(info.GetIsolate());
     HandleScope handle_scope_(info.GetIsolate());
 
-    String::Utf8Value chars(info.Data());
-    unsigned long n = strtoul(*chars, NULL, 16);
-    JSFunction *this_ = reinterpret_cast<JSFunction*>(n);
+    JSFunction *this_ = static_cast<JSFunction*>(Unwrap(info.Data()));
     this_->FunctionCallback(info);
 }
 

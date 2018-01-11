@@ -76,7 +76,6 @@ private:
                  int exec_argc, const char* const* exec_argv);
     inline void PlatformInit();
 
-    //int StartNodeInstance(void* arg);
     int StartInstance(int argc, char *argv[]);
     void spawnedThread();
 
@@ -87,10 +86,6 @@ private:
     static bool ShouldAbortOnUncaughtException(Isolate* isolate);
 
     static void node_main_task(void *inst);
-
-    static void Destruct();
-    static bool StartInspector(Environment *env, int port, bool wait);
-    static void PumpMessageLoop(Isolate* isolate);
 
     static void Chdir(const FunctionCallbackInfo<Value>& args);
     static void Cwd(const FunctionCallbackInfo<Value>& args);
@@ -104,20 +99,13 @@ private:
 private:
     Mutex node_isolate_mutex;
     v8::Isolate* node_isolate = nullptr;
-    std::function<void(Persistent<Context,CopyablePersistentTraits<Context>>)> *onV8ContextCallback;
 
-    bool debug_wait_connect = false;
     bool trace_sync_io = false;
-    bool use_debug_agent = false;
     bool v8_is_profiling = false;
     bool abort_on_uncaught_exception = false;
     bool force_async_hooks_checks = false;
     bool track_heap_objects = false;
     bool trace_enabled = false;
-
-    bool didExit = false;
-    int  exit_code = 0;
-    std::string node_modules_dir;
 
     JavaVM *m_jvm = nullptr;
     jobject m_JavaThis = nullptr;

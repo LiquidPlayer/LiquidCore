@@ -42,12 +42,12 @@ struct OpaqueJSClass : public JSCRetainer {
         static JSClassRef New(const JSClassDefinition *definition);
 
         virtual ~OpaqueJSClass();
-        virtual inline const JSClassDefinition * Definition() { return m_definition; }
+        inline const JSClassDefinition * Definition() { return m_definition; }
 
-        virtual void NewTemplate(Local<Context> context, Local<Value> *data,
+        void NewTemplate(Local<Context> context, Local<Value> *data,
             Local<ObjectTemplate> *templ);
-        virtual JSGlobalContextRef NewContext(JSContextGroupRef group);
-        virtual JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance,
+        JSGlobalContextRef NewContext(JSContextGroupRef group);
+        JSObjectRef InitInstance(JSContextRef ctx, Local<Object> instance,
             Local<Value> data, void *privateData);
 
         static void CallAsFunction(const FunctionCallbackInfo< Value > &);

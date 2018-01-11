@@ -34,11 +34,6 @@
 #include "Common/JSValue.h"
 #include "Common/Macros.h"
 
-bool JSContext::IsDefunct()
-{
-    return m_isDefunct;
-}
-
 std::shared_ptr<JSContext> JSContext::New(std::shared_ptr<ContextGroup> isolate, Local<Context> val)
 {
     auto p = std::make_shared<JSContext>(isolate, val);
@@ -65,6 +60,7 @@ void JSContext::Dispose() {
         m_set_mutex.unlock();
 
         m_context.Reset();
+        m_isolate.reset();
     }
 }
 
@@ -78,16 +74,4 @@ std::shared_ptr<JSValue> JSContext::Global() {
     Local<v8::Value> global = Value()->Global();
     std::shared_ptr<JSContext> ctx = shared_from_this();
     return JSValue::New(ctx, global);
-}
-
-Local<Context> JSContext::Value() {
-    return Local<Context>::New(isolate(), m_context);
-}
-
-Isolate* JSContext::isolate() {
-    return m_isolate->isolate();
-}
-
-std::shared_ptr<ContextGroup> JSContext::Group() {
-    return m_isolate;
 }

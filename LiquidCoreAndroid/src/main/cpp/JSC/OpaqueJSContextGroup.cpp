@@ -50,11 +50,11 @@ std::shared_ptr<OpaqueJSContextGroup> OpaqueJSContextGroup::New(Isolate *isolate
 }
 
 OpaqueJSContextGroup::OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop) :
-    ContextGroup(isolate, event_loop), m_jsc_count(1), m_count(1)
+    ContextGroup(isolate, event_loop), m_jsc_count(1)
 {
 }
 
-OpaqueJSContextGroup::OpaqueJSContextGroup() : ContextGroup(), m_jsc_count(1), m_count(1)
+OpaqueJSContextGroup::OpaqueJSContextGroup() : ContextGroup(), m_jsc_count(1)
 {
 }
 
@@ -94,6 +94,6 @@ void OpaqueJSContextGroup::Release()
             m_mutex.lock();
         }
         m_mutex.unlock();
-        release();
+        m_self.reset();
     }
 }

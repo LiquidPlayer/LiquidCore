@@ -45,15 +45,16 @@ public:
     JSCRetainer() : m_count(1) {
     }
     virtual ~JSCRetainer() {};
-    virtual void retain() {
+    inline void retain() {
         m_count++;
     }
-    virtual void release() {
+    inline void release() {
         ASSERTJSC(m_count);
         if (--m_count==0) {
             delete this;
         }
     }
+protected:
     int m_count;
 };
 

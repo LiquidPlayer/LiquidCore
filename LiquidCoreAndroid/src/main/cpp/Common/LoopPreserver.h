@@ -44,7 +44,7 @@ class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>
 public:
     static std::shared_ptr<LoopPreserver> New(std::shared_ptr<ContextGroup> group);
     LoopPreserver(std::shared_ptr<ContextGroup> group);
-    ~LoopPreserver();
+    virtual ~LoopPreserver();
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
     inline std::shared_ptr<ContextGroup> Group() { return m_group; }

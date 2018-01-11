@@ -254,9 +254,6 @@ void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
     uv_unref(h);
   }, nullptr);
   uv_stop(env->event_loop());
-
-  instance->didExit = true;
-  instance->exit_code = (int) args[0]->Int32Value();
 }
 
 void NodeInstance::Abort(const FunctionCallbackInfo<Value>& args) {
@@ -276,8 +273,6 @@ void NodeInstance::Abort(const FunctionCallbackInfo<Value>& args) {
     uv_unref(h);
   }, nullptr);
   uv_stop(env->event_loop());
-
-  instance->didExit = true;
 }
 
 // FIXME: Not sure if we should allow clients to do this

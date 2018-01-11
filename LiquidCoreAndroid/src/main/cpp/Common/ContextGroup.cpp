@@ -31,51 +31,12 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 //#include "node/NodeInstance.h"
-#include <pthread.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <android/log.h>
 #include <exception>
 #include <malloc.h>
 #include <condition_variable>
+#include <JSC/Macros.h>
 #include "Common/ContextGroup.h"
 #include "Common/JSValue.h"
-
-static int pfd[2];
-static pthread_t thr;
-static const char *tag = "myapp";
-
-static void *thread_func(void*)
-{
-    ssize_t rdsz;
-    char buf[128];
-    while((rdsz = read(pfd[0], buf, sizeof buf - 1)) > 0) {
-        if(buf[rdsz - 1] == '\n') --rdsz;
-        buf[rdsz] = 0;  /* add null-terminator */
-        __android_log_write(ANDROID_LOG_DEBUG, tag, buf);
-    }
-    return 0;
-}
-
-int start_logger(const char *app_name)
-{
-    tag = app_name;
-
-    /* make stdout line-buffered and stderr unbuffered */
-    setvbuf(stdout, 0, _IOLBF, 0);
-    setvbuf(stderr, 0, _IONBF, 0);
-
-    /* create the pipe and redirect stdout and stderr */
-    pipe(pfd);
-    dup2(pfd[1], 1);
-    dup2(pfd[1], 2);
-
-    /* spawn the logging thread */
-    if(pthread_create(&thr, 0, thread_func, 0) == -1)
-        return -1;
-    pthread_detach(thr);
-    return 0;
-}
 
 class GenericAllocator : public ArrayBuffer::Allocator {
 public:
@@ -125,7 +86,6 @@ void ContextGroup::init_v8()
 {
     s_mutex.lock();
     if (s_init_count++ == 0) {
-        start_logger("LiquidCore");
         /* Add any required flags here.
         const char *flags = "--expose_gc";
         V8::SetFlagsFromString(flags, strlen(flags));
@@ -209,8 +169,10 @@ void ContextGroup::callback(uv_async_t* handle)
     delete data;
 
     // Since we are in the correct thread now, free the zombies!
+    group->m_zombie_mutex.lock();
     group->m_value_zombies.clear();
     group->m_context_zombies.clear();
+    group->m_zombie_mutex.unlock();
 
     group->m_async_mutex.lock();
     struct Runnable *r = group->m_runnables.empty() ? nullptr : group->m_runnables.front();
@@ -320,6 +282,8 @@ void ContextGroup::Manage(std::shared_ptr<JSContext> obj)
 void ContextGroup::Dispose()
 {
     if (!m_isDefunct) {
+        ASSERTJSC(m_runnables.empty());
+
         m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
 
         m_scheduling_mutex.lock();

@@ -43,8 +43,7 @@ struct OpaqueJSContextGroup : public ContextGroup {
         static std::shared_ptr<OpaqueJSContextGroup> New(Isolate *isolate, uv_loop_t *event_loop);
         OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop);
         OpaqueJSContextGroup();
-
-        ~OpaqueJSContextGroup();
+        virtual ~OpaqueJSContextGroup();
 
         void AssociateContext(const OpaqueJSContext* ctx);
         void DisassociateContext(const OpaqueJSContext* ctx);
@@ -52,17 +51,10 @@ struct OpaqueJSContextGroup : public ContextGroup {
         void Retain();
         void Release();
 
-        void inline retain() { m_count++; }
-        void inline release()
-        {
-            ASSERTJSC(m_self); if (--m_count==0) { m_self.reset(); }
-        }
-
     private:
         int m_jsc_count;
         std::vector<const OpaqueJSContext *> m_associatedContexts;
         std::mutex m_mutex;
-        int m_count;
     protected:
         std::shared_ptr<ContextGroup> m_self;
 };

@@ -95,11 +95,6 @@ OpaqueJSValue::~OpaqueJSValue()
             }
         }
         const_cast<OpaqueJSContext *>(m_ctx)->MarkCollected(this);
-        /*
-        if (value) {
-            value->release();
-        }
-        */
         weak.Reset();
     V8_UNLOCK()
 }
@@ -149,11 +144,11 @@ bool OpaqueJSValue::SetPrivateData(void *data)
     if (m_fromClassDefinition) {
         m_private_data = data;
     }
-    return m_fromClassDefinition ? true : false;
+    return m_fromClassDefinition != nullptr;
 }
 
 OpaqueJSValue::OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass) :
-    value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass)
+    value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass), m_count(1)
 {
     weak = UniquePersistent<Value>(context->Context()->isolate(), v);
     weak.SetWeak<OpaqueJSValue>(this, [](const WeakCallbackInfo<OpaqueJSValue> &info) {

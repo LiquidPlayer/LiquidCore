@@ -46,17 +46,18 @@ public:
     JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val);
 
     std::shared_ptr<JSValue>      Global();
-    Local<Context>                Value();
-    Isolate *                     isolate();
-    std::shared_ptr<ContextGroup> Group();
+
+    inline Local<Context> Value() { return Local<Context>::New(isolate(), m_context); }
+    inline Isolate* isolate() { return m_isolate->isolate(); }
+    inline std::shared_ptr<ContextGroup> Group() { return m_isolate; }
+
     void Dispose();
-    bool IsDefunct();
+    inline bool IsDefunct() { return m_isDefunct; }
 
     void retain(std::shared_ptr<JSValue>);
 
 private:
     Persistent<Context, CopyablePersistentTraits<Context>> m_context;
-    //Persistent<Object, CopyablePersistentTraits<Object>> m_globalObject;
     std::shared_ptr<ContextGroup> m_isolate;
     bool m_isDefunct;
     std::vector<std::shared_ptr<JSValue>> m_value_set;

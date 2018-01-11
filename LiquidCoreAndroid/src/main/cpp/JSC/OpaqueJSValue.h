@@ -36,25 +36,25 @@
 
 #include "JSC/JSCRetainer.h"
 
-struct OpaqueJSValue : public JSCRetainer {
+struct OpaqueJSValue {
     public:
         static JSValueRef New(JSContextRef ctx, Local<Value> v, const JSClassDefinition* fromClass=0);
         static JSValueRef New(JSContextRef context, const char *s);
         virtual ~OpaqueJSValue();
 
-        virtual inline Local<Value> L() const
+        inline Local<Value> L() const
         {
             return value ? value->Value() : Local<Value>::New(m_ctx->Context()->isolate(), weak);
         }
-        virtual void Clean(bool fromGC=false) const;
-        virtual int Retain();
-        virtual int Release(bool cleanOnZero=true);
-        virtual inline JSContextRef Context() const { return m_ctx; }
-        virtual bool SetPrivateData(void *data);
-        virtual inline void *GetPrivateData() { return m_private_data; }
-        virtual inline void SetFinalized() { m_finalized = true; }
-        virtual inline bool HasFinalized() const { return m_finalized; }
-        virtual inline bool IsClassObject() const { return m_fromClassDefinition != nullptr; }
+        void Clean(bool fromGC=false) const;
+        int Retain();
+        int Release(bool cleanOnZero=true);
+        inline JSContextRef Context() const { return m_ctx; }
+        bool SetPrivateData(void *data);
+        inline void *GetPrivateData() { return m_private_data; }
+        inline void SetFinalized() { m_finalized = true; }
+        inline bool HasFinalized() const { return m_finalized; }
+        inline bool IsClassObject() const { return m_fromClassDefinition != nullptr; }
 
     protected:
         OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass=0);
@@ -68,6 +68,7 @@ struct OpaqueJSValue : public JSCRetainer {
         void *m_private_data = nullptr;
         const JSClassDefinition * m_fromClassDefinition;
         bool m_finalized = false;
+        int m_count;
 };
 
 #endif //LIQUIDCORE_OPAQUEJSVALUE_H
