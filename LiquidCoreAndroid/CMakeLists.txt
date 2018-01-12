@@ -1,69 +1,80 @@
 cmake_minimum_required(VERSION 3.4.1)
 
+set( SOURCES
+
+     # External dependencies
+     ../deps/node-sqlite3/src/database.cc
+     ../deps/node-sqlite3/src/node_sqlite3.cc
+     ../deps/node-sqlite3/src/statement.cc
+     ../deps/jscshim/JSCShim.cpp
+
+     # Common V8 objects for JNI/JSC
+     src/main/cpp/Common/ContextGroup.cpp
+     src/main/cpp/Common/JSContext.cpp
+     src/main/cpp/Common/JSValue.cpp
+     src/main/cpp/Common/LoopPreserver.cpp
+
+     # JNI API
+     src/main/cpp/JNI/JNI_JSContext.cpp
+     src/main/cpp/JNI/JNI_JSContextGroup.cpp
+     src/main/cpp/JNI/JNI_JSObject.cpp
+     src/main/cpp/JNI/JNI_JSValue.cpp
+     src/main/cpp/JNI/JNI_LoopPreserver.cpp
+     src/main/cpp/JNI/JNI_OnLoad.cpp
+     src/main/cpp/JNI/JSFunction.cpp
+     src/main/cpp/JNI/SharedWrap.cpp
+
+     # JavaScriptCore -> V8 bridge
+     src/main/cpp/JSC/JSC_JSBase.cpp
+     src/main/cpp/JSC/JSC_JSContext.cpp
+     src/main/cpp/JSC/JSC_JSContextGroup.cpp
+     src/main/cpp/JSC/JSC_JSObject.cpp
+     src/main/cpp/JSC/JSC_JSString.cpp
+     src/main/cpp/JSC/JSC_JSValue.cpp
+     src/main/cpp/JSC/ObjectData.cpp
+     src/main/cpp/JSC/OpaqueJSClass.cpp
+     src/main/cpp/JSC/OpaqueJSContext.cpp
+     src/main/cpp/JSC/OpaqueJSContextGroup.cpp
+     src/main/cpp/JSC/OpaqueJSString.cpp
+     src/main/cpp/JSC/OpaqueJSValue.cpp
+
+     # Node.js
+     src/main/cpp/node/JNI_Process.cpp
+     src/main/cpp/node/nodedroid_file.cc
+     src/main/cpp/node/NodeInstance.cpp
+     src/main/cpp/node/process_wrap.cc
+     src/main/cpp/node/sqlite3_shim.cpp
+)
+
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    set(SOURCES ${SOURCES}
+
+     # Test files
+     src/main/cpp/androidTest/testapi.cpp
+     src/main/cpp/androidTest/CustomGlobalObjectClassTest.cpp
+     src/main/cpp/androidTest/JSNode.cpp
+     src/main/cpp/androidTest/JSNodeList.cpp
+     src/main/cpp/androidTest/Node.cpp
+     src/main/cpp/androidTest/NodeList.cpp
+     src/main/cpp/androidTest/minidom.cpp
+     )
+endif()
+
+
 add_library( # Specifies the name of the library.
              liquidcore
 
              # Sets the library as a shared library.
              SHARED
 
-             # External dependencies
-             ../deps/node-sqlite3/src/database.cc
-             ../deps/node-sqlite3/src/node_sqlite3.cc
-             ../deps/node-sqlite3/src/statement.cc
-             ../deps/jscshim/JSCShim.cpp
-
-             # Common V8 objects for JNI/JSC
-             src/main/cpp/Common/ContextGroup.cpp
-             src/main/cpp/Common/JSContext.cpp
-             src/main/cpp/Common/JSValue.cpp
-             src/main/cpp/Common/LoopPreserver.cpp
-
-             # JNI API
-             src/main/cpp/JNI/JNI_JSContext.cpp
-             src/main/cpp/JNI/JNI_JSContextGroup.cpp
-             src/main/cpp/JNI/JNI_JSObject.cpp
-             src/main/cpp/JNI/JNI_JSValue.cpp
-             src/main/cpp/JNI/JNI_LoopPreserver.cpp
-             src/main/cpp/JNI/JNI_OnLoad.cpp
-             src/main/cpp/JNI/JSFunction.cpp
-             src/main/cpp/JNI/SharedWrap.cpp
-
-             # JavaScriptCore -> V8 bridge
-             src/main/cpp/JSC/JSC_JSBase.cpp
-             src/main/cpp/JSC/JSC_JSContext.cpp
-             src/main/cpp/JSC/JSC_JSContextGroup.cpp
-             src/main/cpp/JSC/JSC_JSObject.cpp
-             src/main/cpp/JSC/JSC_JSString.cpp
-             src/main/cpp/JSC/JSC_JSValue.cpp
-             src/main/cpp/JSC/ObjectData.cpp
-             src/main/cpp/JSC/OpaqueJSClass.cpp
-             src/main/cpp/JSC/OpaqueJSContext.cpp
-             src/main/cpp/JSC/OpaqueJSContextGroup.cpp
-             src/main/cpp/JSC/OpaqueJSString.cpp
-             src/main/cpp/JSC/OpaqueJSValue.cpp
-
-             # Node.js
-             src/main/cpp/node/JNI_Process.cpp
-             src/main/cpp/node/nodedroid_file.cc
-             src/main/cpp/node/NodeInstance.cpp
-             src/main/cpp/node/process_wrap.cc
-             src/main/cpp/node/sqlite3_shim.cpp
-
-             # Test files (FIXME: do not compile into release builds)
-             src/main/cpp/androidTest/testapi.cpp
-             src/main/cpp/androidTest/CustomGlobalObjectClassTest.cpp
-             src/main/cpp/androidTest/JSNode.cpp
-             src/main/cpp/androidTest/JSNodeList.cpp
-             src/main/cpp/androidTest/Node.cpp
-             src/main/cpp/androidTest/NodeList.cpp
-             src/main/cpp/androidTest/minidom.cpp
-
+             ${SOURCES}
              )
 
 add_library( node
              SHARED
              IMPORTED )
 
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 set_target_properties(
              # Specifies the target library.
              node
@@ -72,7 +83,18 @@ set_target_properties(
              PROPERTIES IMPORTED_LOCATION
 
              # Provides the path to the library you want to import.
-             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/${ANDROID_ABI}/libnode.so )
+             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/symbols/${ANDROID_ABI}/libnode.so )
+else()
+set_target_properties(
+             # Specifies the target library.
+             node
+
+             # Specifies the parameter you want to define.
+             PROPERTIES IMPORTED_LOCATION
+
+             # Provides the path to the library you want to import.
+             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/nosymbols/${ANDROID_ABI}/libnode.so )
+endif()
 
 include_directories(
              src/main/cpp
@@ -139,6 +161,10 @@ list (APPEND CFLAGS_RELEASE
     -Wno-unused-result
     -fno-rtti
     )
+
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    list (APPEND CFLAGS_RELEASE -DDEBUG)
+endif()
 
 string (REPLACE ";" " " CPP_FLAGS_STR "${CFLAGS_RELEASE} ${DEFS_RELEASE}")
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CPP_FLAGS_STR}" )

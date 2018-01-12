@@ -32,6 +32,8 @@
 */
 
 #include <jni.h>
+
+#ifdef DEBUG
 #include <sys/types.h>
 #include <android/log.h>
 #include <unistd.h>
@@ -73,14 +75,17 @@ int start_logger(const char *app_name)
     pthread_detach(thr);
     return 0;
 }
-
+#endif
 
 static jobject s_ClassLoader;
 static jmethodID s_FindClassMethod;
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
+
+#ifdef DEBUG
     start_logger("LiquidCore");
+#endif
 
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {

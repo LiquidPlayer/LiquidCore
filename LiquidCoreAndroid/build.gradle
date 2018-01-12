@@ -9,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 19
-        versionCode 3
-        versionName "0.3.2"
+        versionCode 4
+        versionName "0.4.0"
         setProperty("archivesBaseName", "LiquidCore")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         //multiDexEnabled true
@@ -25,16 +25,22 @@ android {
         debug {
             testCoverageEnabled = false
             minifyEnabled false
+            sourceSets {
+                main {
+                    jni.srcDirs = []
+                    jniLibs.srcDirs = [ '../deps/node-8.9.3/prebuilt/symbols' ]
+                }
+            }
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-    sourceSets {
-        main {
-            jni.srcDirs = []
-            jniLibs.srcDirs = [ '../deps/node-8.9.3/prebuilt/' ]
+            sourceSets {
+                main {
+                    jni.srcDirs = []
+                    jniLibs.srcDirs = [ '../deps/node-8.9.3/prebuilt/nosymbols' ]
+                }
+            }
         }
     }
     splits {
@@ -90,21 +96,3 @@ artifacts {
 apply plugin: 'com.github.dcendents.android-maven'
 
 group='com.github.liquidplayer'
-
-/*
-task ndkBuild(type: Exec) {
-    def rootDir = project.rootDir
-    def localProperties = new File(rootDir, "local.properties")
-    def ndkDir = ''
-    if (localProperties.exists()) {
-        Properties properties = new Properties()
-        localProperties.withInputStream { instr ->
-            properties.load(instr)
-        }
-        ndkDir = properties.getProperty('ndk.dir')
-    }
-    executable "$ndkDir/ndk-build"
-}
-
-preBuild.dependsOn ndkBuild
-*/
