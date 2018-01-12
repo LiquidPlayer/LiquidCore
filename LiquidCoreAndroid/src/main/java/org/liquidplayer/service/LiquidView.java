@@ -175,7 +175,7 @@ public class LiquidView extends RelativeLayout {
                     } catch (Exception e) {
                         e.printStackTrace();
                         android.util.Log.d("exception", e.toString());
-                        // FIXME: service.getProcess().letDie();
+                        m_preserver.release();
                     }
                 }
             });
@@ -284,7 +284,7 @@ public class LiquidView extends RelativeLayout {
                             });
 
                             // Bind surfaces
-                            final JSContextGroup.LoopPreserver preserver = service.getProcess().keepAlive();
+                            m_preserver = service.getProcess().keepAlive();
 
                             for (MicroService.AvailableSurface sfc : availableSurfaces()) {
                                 synchronizer.enter();
@@ -302,7 +302,7 @@ public class LiquidView extends RelativeLayout {
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                             android.util.Log.d("exception", e.toString());
-                                            preserver.release();
+                                            m_preserver.release();
                                         } finally {
                                             synchronizer.exit();
                                         }
@@ -391,6 +391,7 @@ public class LiquidView extends RelativeLayout {
     private URI uri;
     private String [] argv;
     private View surfaceView;
+    private JSContextGroup.LoopPreserver m_preserver;
 
     /* -- parcelable privates -- */
     private int surfaceId = View.NO_ID;

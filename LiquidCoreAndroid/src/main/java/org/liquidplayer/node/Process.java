@@ -34,15 +34,13 @@ package org.liquidplayer.node;
 
 import android.content.Context;
 
-import org.liquidplayer.javascript.JNIJSContext;
-import org.liquidplayer.javascript.JNIJSContextGroup;
-import org.liquidplayer.javascript.JNIJSValue;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 public class Process {
@@ -252,7 +250,7 @@ public class Process {
 
     private long exitCode;
 
-    protected ProcessContext jscontext = null;
+    protected JSContext jscontext = null;
     private boolean isActive = false;
     private boolean isDone = false;
     private FileSystem fs = null;
@@ -260,19 +258,31 @@ public class Process {
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
     @SuppressWarnings("unused") // called from native code
-    private void onNodeStarted(final JNIJSContext mainContext, JNIJSContextGroup ctxGroupRef, long jscCtxRef) {
-        final ProcessContext ctx = new ProcessContext(mainContext, new JSContextGroup(ctxGroupRef),
-                jscCtxRef);
-        jscontext = ctx;
+    private void onNodeStarted(final Object mainContext, Object ctxGroupRef, long jscCtxRef) {
+        // We will use reflection to create these objects.  Ideally the JNI* classes would be
+        // package local to this, but since we wanted to split packages, we will do this.
+        try {
+            final Constructor<JSContextGroup> ctor =
+                    JSContextGroup.class.getDeclaredConstructor(Object.class);
+            ctor.setAccessible(true);
+            final JSContextGroup g = ctor.newInstance(ctxGroupRef);
+            final Constructor<JSContext> ctxCtor = JSContext.class.getDeclaredConstructor(
+                    Object.class, JSContextGroup.class, long.class);
+            ctxCtor.setAccessible(true);
+            jscontext = ctxCtor.newInstance(mainContext, g, jscCtxRef);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
         isActive = true;
-        ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
+        jscontext.property("__nodedroid_onLoad", new JSFunction(jscontext, "__nodedroid_onLoad") {
             @SuppressWarnings("unused")
             public void __nodedroid_onLoad() {
                 if (isActive()) {
                     jscontext.deleteProperty("__nodedroid_onLoad");
 
                     // set file system
-                    fs = new FileSystem(ctx, androidCtx, uniqueID, mediaAccessMask);
+                    fs = new FileSystem(jscontext, androidCtx, uniqueID, mediaAccessMask);
                     setFileSystem(mainContext, fs.valueRef());
 
                     // set exit handler
@@ -304,7 +314,7 @@ public class Process {
 
                     // intercept stdout and stderr
                     JSObject stdout =
-                            ctx.property("process").toObject().property("stdout").toObject();
+                            jscontext.property("process").toObject().property("stdout").toObject();
                     stdout.property("write", new JSFunction(stdout.getContext(), "write") {
                         @SuppressWarnings("unused")
                         public void write(String string) {
@@ -313,7 +323,7 @@ public class Process {
                     });
 
                     JSObject stderr =
-                            ctx.property("process").toObject().property("stderr").toObject();
+                            jscontext.property("process").toObject().property("stderr").toObject();
                     stderr.property("write", new JSFunction(stderr.getContext(), "write") {
                         @SuppressWarnings("unused")
                         public void write(String string) {
@@ -352,25 +362,8 @@ public class Process {
         JSContext.dummy();
     }
 
-    /**
-     * ProcessContext class -- subclasses a JSContext tied to a node.js process
-     */
-    private class ProcessContext extends JSContext {
-        final private long mJscCtxRef;
-
-        ProcessContext(JNIJSContext contextRef, JSContextGroup group, long jscCtxRef) {
-            super(contextRef, group);
-            mJscCtxRef = jscCtxRef;
-        }
-
-        @Override
-        public long getJSCContext() {
-            return mJscCtxRef;
-        }
-    }
-
     /* Native JNI functions */
     private native long start();
     private native void dispose(long processRef);
-    private native void setFileSystem(JNIJSContext contextRef, JNIJSValue fsObject);
+    private native void setFileSystem(Object contextRef, Object fsObject);
 }

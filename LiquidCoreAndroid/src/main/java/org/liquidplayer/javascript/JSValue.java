@@ -42,7 +42,6 @@ import java.util.Map;
  * A JavaScript value
  * @since 0.1.0
  */
-@SuppressWarnings("JniMissingFunction")
 public class JSValue {
 
     private abstract class JNIReturnClass implements Runnable {

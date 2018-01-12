@@ -32,7 +32,6 @@
 */
 package org.liquidplayer.test;
 
-import org.liquidplayer.javascript.JNIJSContextGroup;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
 
@@ -63,6 +62,6 @@ public class JSC {
         return minidom(script, group==null?null:group.groupRef());
     }
 
-    private native int main(String script, JNIJSContextGroup contextGroup);
-    private native int minidom(String script, JNIJSContextGroup contextGroup);
+    private native int main(String script, Object contextGroup);
+    private native int minidom(String script, Object contextGroup);
 }

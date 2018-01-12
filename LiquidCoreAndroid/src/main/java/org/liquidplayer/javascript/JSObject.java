@@ -49,7 +49,6 @@ import java.util.Map;
  * @since 0.1.0
  *
  */
-@SuppressWarnings("JniMissingFunction")
 public class JSObject extends JSValue {
 
     @Retention(RetentionPolicy.RUNTIME)

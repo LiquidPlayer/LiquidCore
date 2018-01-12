@@ -35,7 +35,7 @@
 */
 package org.liquidplayer.javascript;
 
-public class JNIJSContextGroup extends JNIObject {
+class JNIJSContextGroup extends JNIObject {
     JNIJSContextGroup(long ref) {
         super(ref);
     }

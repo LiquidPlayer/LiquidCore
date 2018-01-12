@@ -524,6 +524,7 @@ void NodeInstance::StartInspector(Environment* env, const char* path,
 
 #define JSC "Lorg/liquidplayer/javascript/JNIJSContext;"
 #define JSG "Lorg/liquidplayer/javascript/JNIJSContextGroup;"
+#define JOBJ "Ljava/lang/Object;"
 
 inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
                  int argc, const char* const* argv,
@@ -554,7 +555,7 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
     jclass cls = jenv->GetObjectClass(m_JavaThis);
     jmethodID mid;
     do {
-      mid = jenv->GetMethodID(cls,"onNodeStarted","(" JSC JSG "J)V");
+      mid = jenv->GetMethodID(cls,"onNodeStarted","(" JOBJ JOBJ "J)V");
       if (!jenv->ExceptionCheck()) break;
       jenv->ExceptionClear();
       jclass super = jenv->GetSuperclass(cls);

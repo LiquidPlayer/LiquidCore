@@ -34,7 +34,6 @@
 #define LIQUIDCORE_SHAREDWRAP_H
 
 #include "Common/Common.h"
-jclass findClass(JNIEnv *env, const char* name);
 
 template<typename T>
 class SharedWrap {

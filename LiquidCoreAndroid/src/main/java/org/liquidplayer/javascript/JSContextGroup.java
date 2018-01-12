@@ -71,10 +71,10 @@ public class JSContextGroup {
      * @param groupRef  the JavaScriptCore context group reference
      * @since 0.1.0
      */
-    public JSContextGroup(JNIJSContextGroup groupRef)
+    JSContextGroup(Object groupRef)
     {
-        group = groupRef;
-        hasDedicatedThread = groupRef.isManaged();
+        group = (JNIJSContextGroup)groupRef;
+        hasDedicatedThread = group.isManaged();
     }
 
     /**

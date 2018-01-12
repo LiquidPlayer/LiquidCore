@@ -47,7 +47,6 @@ import java.util.ArrayList;
  * @since 0.1.0
  *
  */
-@SuppressWarnings("JniMissingFunction")
 public class JSFunction extends JSObject {
 
     private abstract class JNIReturnClass implements Runnable {

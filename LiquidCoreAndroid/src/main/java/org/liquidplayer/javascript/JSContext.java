@@ -92,7 +92,7 @@ public class JSContext extends JSObject {
     }
 
     public long getJSCContext() {
-        return 0L;
+        return mJscCtxRef;
     }
 
     private JSContextGroup contextGroup = null;
@@ -120,6 +120,12 @@ public class JSContext extends JSObject {
         valueRef = (JNIJSValue) jniContext.getGlobalObject();
         addJSExports();
     }
+
+    JSContext(Object contextRef, JSContextGroup group, long jscCtxRef) {
+        this((JNIJSContext)contextRef, group);
+        mJscCtxRef = jscCtxRef;
+    }
+    private long mJscCtxRef = 0L;
 
     /**
      * Creates a new JavaScript context

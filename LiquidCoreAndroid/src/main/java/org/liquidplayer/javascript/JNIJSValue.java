@@ -35,7 +35,7 @@
 */
 package org.liquidplayer.javascript;
 
-public class JNIJSValue extends JNIObject {
+class JNIJSValue extends JNIObject {
     JNIJSValue(long ref) {
         super(ref);
     }
