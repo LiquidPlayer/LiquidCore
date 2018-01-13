@@ -39,8 +39,8 @@ struct OpaqueJSContext;
 
 struct OpaqueJSContextGroup : public ContextGroup {
     public:
-        static std::shared_ptr<OpaqueJSContextGroup> New();
-        static std::shared_ptr<OpaqueJSContextGroup> New(Isolate *isolate, uv_loop_t *event_loop);
+        static boost::shared_ptr<OpaqueJSContextGroup> New();
+        static boost::shared_ptr<OpaqueJSContextGroup> New(Isolate *isolate, uv_loop_t *event_loop);
         OpaqueJSContextGroup(Isolate *isolate, uv_loop_t *event_loop);
         OpaqueJSContextGroup();
         virtual ~OpaqueJSContextGroup();
@@ -56,7 +56,7 @@ struct OpaqueJSContextGroup : public ContextGroup {
         std::vector<const OpaqueJSContext *> m_associatedContexts;
         std::mutex m_mutex;
     protected:
-        std::shared_ptr<ContextGroup> m_self;
+        boost::atomic_shared_ptr<ContextGroup> m_self;
 };
 
 #endif //LIQUIDCORE_OPAQUEJSCONTEXTGROUP_H

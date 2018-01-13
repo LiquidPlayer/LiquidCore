@@ -31,6 +31,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <cstdlib>
+#include <boost/make_shared.hpp>
 #include "Common/JSValue.h"
 #include "Common/Macros.h"
 
@@ -51,9 +52,9 @@ JSValue* JSValue::Unwrap(Local<v8::Value> identifier)
     return reinterpret_cast<JSValue*>(n);
 }
 
-std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<v8::Value> val)
+boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Local<v8::Value> val)
 {
-    std::shared_ptr<JSValue> value;
+    boost::shared_ptr<JSValue> value;
 
     if (val->IsObject()) {
         Local<Private> privateKey = v8::Private::ForApi(context->isolate(),
@@ -70,21 +71,21 @@ std::shared_ptr<JSValue> JSValue::New(std::shared_ptr<JSContext> context, Local<
             return Unwrap(identifier)->shared_from_this();
         } else {
             // First time wrap.  Create it new and mark it
-            value = std::make_shared<JSValue>(context,val);
+            value = boost::make_shared<JSValue>(context,val);
             context->retain(value);
             value->m_wrapped = true;
 
             obj->SetPrivate(context->Value(), privateKey, Wrap(&* value));
         }
     } else {
-        value = std::make_shared<JSValue>(context,val);
+        value = boost::make_shared<JSValue>(context,val);
     }
 
     context->Group()->Manage(value);
     return value;
 }
 
-JSValue::JSValue(std::shared_ptr<JSContext> context, Local<v8::Value> val) :
+JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val) :
     m_wrapped(false), m_isDefunct(false)
 {
     if (val->IsUndefined()) {
@@ -115,18 +116,19 @@ void JSValue::Dispose()
     if (!m_isDefunct) {
         m_isDefunct = true;
 
-        if (!m_isUndefined && !m_isNull) {
-            V8_ISOLATE(m_context->Group(), isolate)
+        boost::shared_ptr<JSContext> context = m_context;
+        if (context && !m_isUndefined && !m_isNull) {
+            V8_ISOLATE(context->Group(), isolate)
             if (m_wrapped) {
-                Local<Object> obj = Value()->ToObject(m_context->Value()).ToLocalChecked();
+                Local<Object> obj = Value()->ToObject(context->Value()).ToLocalChecked();
                 // Clear wrapper pointer if it exists, in case this object is still held by JS
                 Local<Private> privateKey = v8::Private::ForApi(isolate,
                     String::NewFromUtf8(isolate, "__JSValue_ptr"));
-                obj->SetPrivate(m_context->Value(), privateKey,
+                obj->SetPrivate(context->Value(), privateKey,
                     Local<v8::Value>::New(isolate,Undefined(isolate)));
             }
             m_value.Reset();
-            m_context.reset();
+            context.reset();
             V8_UNLOCK()
         }
 

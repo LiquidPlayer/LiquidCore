@@ -30,21 +30,22 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <boost/make_shared.hpp>
 #include <algorithm>
 #include "JavaScriptCore/JavaScript.h"
 #include "JSC/OpaqueJSContextGroup.h"
 
-std::shared_ptr<OpaqueJSContextGroup> OpaqueJSContextGroup::New()
+boost::shared_ptr<OpaqueJSContextGroup> OpaqueJSContextGroup::New()
 {
-    auto group = std::make_shared<OpaqueJSContextGroup>();
+    auto group = boost::make_shared<OpaqueJSContextGroup>();
     group->m_self = group;
     return group;
 }
 
-std::shared_ptr<OpaqueJSContextGroup> OpaqueJSContextGroup::New(Isolate *isolate,
+boost::shared_ptr<OpaqueJSContextGroup> OpaqueJSContextGroup::New(Isolate *isolate,
     uv_loop_t *event_loop)
 {
-    auto group = std::make_shared<OpaqueJSContextGroup>(isolate, event_loop);
+    auto group = boost::make_shared<OpaqueJSContextGroup>(isolate, event_loop);
     group->m_self = group;
     return group;
 }
@@ -94,6 +95,9 @@ void OpaqueJSContextGroup::Release()
             m_mutex.lock();
         }
         m_mutex.unlock();
-        m_self.reset();
+        {
+            boost::shared_ptr<ContextGroup> self = m_self;
+            self.reset();
+        }
     }
 }

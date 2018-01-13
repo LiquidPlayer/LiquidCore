@@ -97,7 +97,7 @@ NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script_,
             context = ctx->Value();
             Context::Scope context_scope_(context);
 
-            std::shared_ptr<JSValue> exception;
+            boost::shared_ptr<JSValue> exception;
 
             ScriptOrigin script_origin(
                 String::NewFromUtf8(isolate, _sourceURL, NewStringType::kNormal).ToLocalChecked(),
@@ -127,7 +127,7 @@ NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script_,
             }
 
             if (!exception) {
-                std::shared_ptr<JSValue> value =
+                boost::shared_ptr<JSValue> value =
                     JSValue::New(ctx, result.ToLocalChecked());
                 ret.SetReference(SharedWrap<JSValue>::New(env, value));
             }

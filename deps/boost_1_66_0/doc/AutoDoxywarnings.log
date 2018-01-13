@@ -1,0 +1,254 @@
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp:143: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::initialize(const AccelerationIn &qin)
+Possible candidates:
+  'template < AccelerationIn >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::initialize(const AccelerationIn &ain)' at line 149 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, CoorIn, VelocityIn >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::initialize(System system, const CoorIn &qin, const VelocityIn &pin, time_type t)' at line 161 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp:279: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, StateInOut &x, Time t, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 94 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 101 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, CoorIn, VelocityIn, AccelerationIn, CoorOut, VelocityOut, AccelerationOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, CoorIn const &qin, VelocityIn const &pin, AccelerationIn const &ain, CoorOut &qout, VelocityOut &pout, AccelerationOut &aout, time_type t, time_type dt)' at line 109 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp:296: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, const StateInOut &x, Time t, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 94 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 101 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, CoorIn, VelocityIn, AccelerationIn, CoorOut, VelocityOut, AccelerationOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, CoorIn const &qin, VelocityIn const &pin, AccelerationIn const &ain, CoorOut &qout, VelocityOut &pout, AccelerationOut &aout, time_type t, time_type dt)' at line 109 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp:315: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, const CoorIn &qin, const VelocityIn &pin, const AccelerationIn &ain, CoorOut &qout, VelocityOut &pout, AccelerationOut &aout, Time t, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 94 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 101 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, CoorIn, VelocityIn, AccelerationIn, CoorOut, VelocityOut, AccelerationOut >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::do_step(System system, CoorIn const &qin, VelocityIn const &pin, AccelerationIn const &ain, CoorOut &qout, VelocityOut &pout, AccelerationOut &aout, time_type t, time_type dt)' at line 109 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp:351: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::initialize(System system, const CoorIn &qin, const VelocityIn &pin, Time t)
+Possible candidates:
+  'template < AccelerationIn >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::initialize(const AccelerationIn &ain)' at line 149 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+  'template < System, CoorIn, VelocityIn >
+  void boost::numeric::odeint::velocity_verlet< Coor, Velocity, Value, Acceleration, Time, TimeSq, Algebra, Operations, Resizer >::initialize(System system, const CoorIn &qin, const VelocityIn &pin, time_type t)' at line 161 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/velocity_verlet.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp:345: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::runge_kutta_dopri5< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt_in, stepper_base_type::time_type t, StateOut &out, DerivOut &dxdt_out, stepper_base_type::time_type dt)
+Possible candidates:
+  'template < System, StateIn, DerivIn, StateOut, DerivOut >
+  void boost::numeric::odeint::runge_kutta_dopri5< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt_in, time_type t, StateOut &out, DerivOut &dxdt_out, time_type dt)' at line 92 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp
+  'template < System, StateIn, DerivIn, StateOut, DerivOut, Err >
+  void boost::numeric::odeint::runge_kutta_dopri5< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt_in, time_type t, StateOut &out, DerivOut &dxdt_out, time_type dt, Err &xerr)' at line 163 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp:364: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::runge_kutta_dopri5< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt_in, stepper_base_type::time_type t, StateOut &out, DerivOut &dxdt_out, stepper_base_type::time_type dt, Err &xerr)
+Possible candidates:
+  'template < System, StateIn, DerivIn, StateOut, DerivOut >
+  void boost::numeric::odeint::runge_kutta_dopri5< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt_in, time_type t, StateOut &out, DerivOut &dxdt_out, time_type dt)' at line 92 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp
+  'template < System, StateIn, DerivIn, StateOut, DerivOut, Err >
+  void boost::numeric::odeint::runge_kutta_dopri5< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt_in, time_type t, StateOut &out, DerivOut &dxdt_out, time_type dt, Err &xerr)' at line 163 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_cash_karp54_classic.hpp:247: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::runge_kutta_cash_karp54_classic< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, stepper_base_type::time_type t, StateOut &out, stepper_base_type::time_type dt, Err &xerr)
+Possible candidates:
+  'template < System, StateIn, DerivIn, StateOut, Err >
+  void boost::numeric::odeint::runge_kutta_cash_karp54_classic< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt, Err &xerr)' at line 93 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_cash_karp54_classic.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  void boost::numeric::odeint::runge_kutta_cash_karp54_classic< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt)' at line 117 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_cash_karp54_classic.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_cash_karp54_classic.hpp:267: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::runge_kutta_cash_karp54_classic< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, stepper_base_type::time_type t, StateOut &out, stepper_base_type::time_type dt)
+Possible candidates:
+  'template < System, StateIn, DerivIn, StateOut, Err >
+  void boost::numeric::odeint::runge_kutta_cash_karp54_classic< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt, Err &xerr)' at line 93 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_cash_karp54_classic.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  void boost::numeric::odeint::runge_kutta_cash_karp54_classic< State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt)' at line 117 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/runge_kutta_cash_karp54_classic.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/explicit_error_generic_rk.hpp:213: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::explicit_error_generic_rk< StageCount, Order, StepperOrder, ErrorOrder, State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, stepper_base_type::time_type t, StateOut &out, stepper_base_type::time_type dt, Err &xerr)
+Possible candidates:
+  'template < System, StateIn, DerivIn, StateOut, Err >
+  void boost::numeric::odeint::explicit_error_generic_rk< StageCount, Order, StepperOrder, ErrorOrder, State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt, Err &xerr)' at line 116 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/explicit_error_generic_rk.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  void boost::numeric::odeint::explicit_error_generic_rk< StageCount, Order, StepperOrder, ErrorOrder, State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt)' at line 129 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/explicit_error_generic_rk.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/explicit_error_generic_rk.hpp:229: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::explicit_error_generic_rk< StageCount, Order, StepperOrder, ErrorOrder, State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, stepper_base_type::time_type t, StateOut &out, stepper_base_type::time_type dt)
+Possible candidates:
+  'template < System, StateIn, DerivIn, StateOut, Err >
+  void boost::numeric::odeint::explicit_error_generic_rk< StageCount, Order, StepperOrder, ErrorOrder, State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt, Err &xerr)' at line 116 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/explicit_error_generic_rk.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  void boost::numeric::odeint::explicit_error_generic_rk< StageCount, Order, StepperOrder, ErrorOrder, State, Value, Deriv, Time, Algebra, Operations, Resizer >::do_step_impl(System system, const StateIn &in, const DerivIn &dxdt, time_type t, StateOut &out, time_type dt)' at line 129 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/explicit_error_generic_rk.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:939: warning: documented symbol `boost::numeric::odeint::default_error_checker' was not declared or defined.
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:953: warning: documented symbol `boost::numeric::odeint::error' was not declared or defined.
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:968: warning: documented symbol `boost::numeric::odeint::error' was not declared or defined.
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:984: warning: documented symbol `time_type boost::numeric::odeint::decrease_step' was not declared or defined.
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:996: warning: documented symbol `time_type boost::numeric::odeint::increase_step' was not declared or defined.
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp:547: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, Time &t, Time &dt)
+Possible candidates:
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, time_type &t, time_type &dt)' at line 133 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateInOut &x, time_type &t, time_type &dt)' at line 142 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut, DerivIn >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, const DerivIn &dxdt, time_type &t, time_type &dt)' at line 153 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, StateOut >
+  boost::disable_if< boost::is_same< StateIn, time_type >, controlled_step_result >::type boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, time_type &t, StateOut &out, time_type &dt)' at line 171 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, const DerivIn &dxdt, time_type &t, StateOut &out, time_type &dt)' at line 186 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp:567: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, const DerivIn &dxdt, Time &t, Time &dt)
+Possible candidates:
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, time_type &t, time_type &dt)' at line 133 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateInOut &x, time_type &t, time_type &dt)' at line 142 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut, DerivIn >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, const DerivIn &dxdt, time_type &t, time_type &dt)' at line 153 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, StateOut >
+  boost::disable_if< boost::is_same< StateIn, time_type >, controlled_step_result >::type boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, time_type &t, StateOut &out, time_type &dt)' at line 171 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, const DerivIn &dxdt, time_type &t, StateOut &out, time_type &dt)' at line 186 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp:588: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, Time &t, StateOut &out, Time &dt)
+Possible candidates:
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, time_type &t, time_type &dt)' at line 133 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateInOut &x, time_type &t, time_type &dt)' at line 142 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut, DerivIn >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, const DerivIn &dxdt, time_type &t, time_type &dt)' at line 153 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, StateOut >
+  boost::disable_if< boost::is_same< StateIn, time_type >, controlled_step_result >::type boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, time_type &t, StateOut &out, time_type &dt)' at line 171 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, const DerivIn &dxdt, time_type &t, StateOut &out, time_type &dt)' at line 186 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp:611: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, const DerivIn &dxdt, Time &t, StateOut &out, Time &dt)
+Possible candidates:
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, time_type &t, time_type &dt)' at line 133 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateInOut &x, time_type &t, time_type &dt)' at line 142 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateInOut, DerivIn >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, StateInOut &x, const DerivIn &dxdt, time_type &t, time_type &dt)' at line 153 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, StateOut >
+  boost::disable_if< boost::is_same< StateIn, time_type >, controlled_step_result >::type boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, time_type &t, StateOut &out, time_type &dt)' at line 171 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+  'template < System, StateIn, DerivIn, StateOut >
+  controlled_step_result boost::numeric::odeint::bulirsch_stoer< State, Value, Deriv, Time, Algebra, Operations, Resizer >::try_step(System system, const StateIn &in, const DerivIn &dxdt, time_type &t, StateOut &out, time_type &dt)' at line 186 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp:250: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, StateInOut &x, Time t, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 100 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 109 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, const StateOut &out, time_type dt)' at line 115 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, StateOut &out, time_type dt)' at line 124 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp:262: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, Time t, const StateOut &out, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 100 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 109 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, const StateOut &out, time_type dt)' at line 115 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, StateOut &out, time_type dt)' at line 124 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp:280: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(ExplicitStepper explicit_stepper, System system, StateIn &x, Time &t, Time dt)
+Possible candidates:
+  'template < ExplicitStepper, System, StateIn >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(ExplicitStepper explicit_stepper, System system, StateIn &x, time_type &t, time_type dt)' at line 140 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateIn >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(System system, StateIn &x, time_type &t, time_type dt)' at line 147 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp:292: warning: no uniquely matching class member found for 
+  boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(System system, StateIn &x, Time &t, Time dt)
+Possible candidates:
+  'template < ExplicitStepper, System, StateIn >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(ExplicitStepper explicit_stepper, System system, StateIn &x, time_type &t, time_type dt)' at line 140 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+  'template < System, StateIn >
+  void boost::numeric::odeint::adams_bashforth_moulton< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(System system, StateIn &x, time_type &t, time_type dt)' at line 147 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth_moulton.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp:322: warning: no uniquely matching class member found for 
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, StateInOut &x, Time t, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 138 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 147 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, StateOut &out, time_type dt)' at line 161 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, const StateOut &out, time_type dt)' at line 170 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp:333: warning: no uniquely matching class member found for 
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, Time t, StateOut &out, Time dt)
+Possible candidates:
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, StateInOut &x, time_type t, time_type dt)' at line 138 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateInOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateInOut &x, time_type t, time_type dt)' at line 147 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, StateOut &out, time_type dt)' at line 161 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateIn, StateOut >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::do_step(System system, const StateIn &in, time_type t, const StateOut &out, time_type dt)' at line 170 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp:364: warning: no uniquely matching class member found for 
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(ExplicitStepper explicit_stepper, System system, StateIn &x, Time &t, Time dt)
+Possible candidates:
+  'template < ExplicitStepper, System, StateIn >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(ExplicitStepper explicit_stepper, System system, StateIn &x, time_type &t, time_type dt)' at line 193 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateIn >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(System system, StateIn &x, time_type &t, time_type dt)' at line 212 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp:375: warning: no uniquely matching class member found for 
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(System system, StateIn &x, Time &t, Time dt)
+Possible candidates:
+  'template < ExplicitStepper, System, StateIn >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(ExplicitStepper explicit_stepper, System system, StateIn &x, time_type &t, time_type dt)' at line 193 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+  'template < System, StateIn >
+  void boost::numeric::odeint::adams_bashforth< Steps, State, Value, Deriv, Time, Algebra, Operations, Resizer, InitializingStepper >::initialize(System system, StateIn &x, time_type &t, time_type dt)' at line 212 of file /home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/adams_bashforth.hpp
+
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer.hpp:537: warning: The following parameters of boost::numeric::odeint::bulirsch_stoer::bulirsch_stoer(value_type eps_abs=1E-6, value_type eps_rel=1E-6, value_type factor_x=1.0, value_type factor_dxdt=1.0, time_type max_dt=static_cast< time_type >(0)) are not documented:
+  parameter 'max_dt'
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer_dense_out.hpp:738: warning: The following parameters of boost::numeric::odeint::bulirsch_stoer_dense_out::bulirsch_stoer_dense_out(value_type eps_abs=1E-6, value_type eps_rel=1E-6, value_type factor_x=1.0, value_type factor_dxdt=1.0, time_type max_dt=static_cast< time_type >(0), bool control_interpolation=false) are not documented:
+  parameter 'max_dt'
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/bulirsch_stoer_dense_out.hpp:751: warning: The following parameters of boost::numeric::odeint::bulirsch_stoer_dense_out::try_step(System system, const StateIn &in, const DerivIn &dxdt, time_type &t, StateOut &out, DerivOut &dxdt_new, time_type &dt) are not documented:
+  parameter 'dxdt_new'
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:578: warning: The following parameters of boost::numeric::odeint::controlled_runge_kutta< ErrorStepper, ErrorChecker, StepAdjuster, Resizer, explicit_error_stepper_fsal_tag >::controlled_runge_kutta(const error_checker_type &error_checker=error_checker_type(), const step_adjuster_type &step_adjuster=step_adjuster_type(), const stepper_type &stepper=stepper_type()) are not documented:
+  parameter 'step_adjuster'
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:732: warning: argument 'dxdt' of command @param is not found in the argument list of boost::numeric::odeint::controlled_runge_kutta< ErrorStepper, ErrorChecker, StepAdjuster, Resizer, explicit_error_stepper_fsal_tag >::try_step(System system, const StateIn &in, const DerivIn &dxdt_in, time_type &t, StateOut &out, DerivOut &dxdt_out, time_type &dt)
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:732: warning: The following parameters of boost::numeric::odeint::controlled_runge_kutta< ErrorStepper, ErrorChecker, StepAdjuster, Resizer, explicit_error_stepper_fsal_tag >::try_step(System system, const StateIn &in, const DerivIn &dxdt_in, time_type &t, StateOut &out, DerivOut &dxdt_out, time_type &dt) are not documented:
+  parameter 'dxdt_in'
+  parameter 'dxdt_out'
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/stepper/controlled_runge_kutta.hpp:243: warning: The following parameters of boost::numeric::odeint::controlled_runge_kutta< ErrorStepper, ErrorChecker, StepAdjuster, Resizer, explicit_error_stepper_tag >::controlled_runge_kutta(const error_checker_type &error_checker=error_checker_type(), const step_adjuster_type &step_adjuster=step_adjuster_type(), const stepper_type &stepper=stepper_type()) are not documented:
+  parameter 'step_adjuster'
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/integrate/integrate_times.hpp:184: warning: argument 'checker' of command @param is not found in the argument list of boost::numeric::odeint::integrate_times(Stepper stepper, System system, State &start_state, TimeIterator times_start, TimeIterator times_end, Time dt, Observer observer)
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/integrate/integrate_n_steps.hpp:142: warning: argument 'checker' of command @param is not found in the argument list of boost::numeric::odeint::integrate_n_steps(Stepper stepper, System system, State &start_state, Time start_time, Time dt, size_t num_of_steps, Observer observer)
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/iterator/const_step_time_iterator.hpp:148: warning: argument 't' of command @param is not found in the argument list of boost::numeric::odeint::make_const_step_time_range(Stepper stepper, System system, State &x, typename traits::time_type< Stepper >::type t_start, typename traits::time_type< Stepper >::type t_end, typename traits::time_type< Stepper >::type dt)
+/home/ubuntu/boost/libs/numeric/odeint/include/boost/numeric/odeint/iterator/const_step_time_iterator.hpp:148: warning: The following parameters of boost::numeric::odeint::make_const_step_time_range(Stepper stepper, System system, State &x, typename traits::time_type< Stepper >::type t_start, typename traits::time_type< Stepper >::type t_end, typename traits::time_type< Stepper >::type dt) are not documented:
+  parameter 't_start'

@@ -1,0 +1,25 @@
+[article Examples
+    [quickbook 1.7]
+    [version: 0.0.0]
+    [authors [Rivera, Rene]]
+    [copyright 2017 Rene Rivera]
+    [id bbv2.examples]
+    [license
+        Distributed under the Boost Software License, Version 1.0.
+        (See accompanying file LICENSE_1_0.txt or copy at
+        [@http://www.boost.org/LICENSE_1_0.txt])
+    ]
+]
+
+[section Introduction]
+
+Here we include a collection of simple to complex fully working examples of
+using Boost Build v2 for various tasks. They show the gamut from simple
+to advanced features. If you find yourself looking at the examples and not
+finding something you want to see working please post to our support list
+and we'll try and come up with a solution and add it here for others to learn
+from.
+
+[endsect]
+
+[include ../example/*/readme.qbk]

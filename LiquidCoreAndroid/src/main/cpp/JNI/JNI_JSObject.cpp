@@ -76,7 +76,7 @@ NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jobject context_, jobjectArray ar
     V8_ISOLATE_CTX(ctx,isolate,context)
         jsize len = env->GetArrayLength(args);
 
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         Local<Array> array = Array::New(isolate, len);
 
@@ -179,7 +179,7 @@ NATIVE(JNIJSObject,jobject,makeRegExp) (PARAMS, jobject context_, jstring patter
         env->ReleaseStringUTFChars(flags_, c_string);
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, flags);
         if (regexp.IsEmpty()) {
@@ -215,7 +215,7 @@ NATIVE(JNIJSObject,jobject,makeFunction) (PARAMS, jobject context_, jstring name
         env->ReleaseStringUTFChars(func_, c_string);
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         const char *sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
         ScriptOrigin script_origin(
@@ -293,7 +293,7 @@ NATIVE(JNIJSObject,jobject,getProperty) (PARAMS, jstring propertyName)
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         MaybeLocal<Value> value = o->Get(context, String::NewFromUtf8(isolate, c_string));
         if (value.IsEmpty()) {
@@ -331,7 +331,7 @@ NATIVE(JNIJSObject,jobject,setProperty) (PARAMS, jstring propertyName, jobject v
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         Maybe<bool> defined = attributes ?
             o->DefineOwnProperty(
@@ -365,7 +365,7 @@ NATIVE(JNIJSObject,jobject,deleteProperty) (PARAMS, jstring propertyName)
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         Maybe<bool> deleted = o->Delete(context, String::NewFromUtf8(isolate, c_string));
         if (deleted.IsNothing()) {
@@ -388,7 +388,7 @@ NATIVE(JNIJSObject,jobject,getPropertyAtIndex) (PARAMS, jint propertyIndex)
 
     V8_ISOLATE_OBJ(object,isolate,context,o)
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         MaybeLocal<Value> value = o->Get(context, (uint32_t) propertyIndex);
         if (value.IsEmpty()) {
@@ -412,7 +412,7 @@ NATIVE(JNIJSObject,jobject,setPropertyAtIndex) (PARAMS, jint propertyIndex, jobj
 
     V8_ISOLATE_OBJ(object,isolate,context,o)
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         Maybe<bool> defined =
             o->Set(context, (uint32_t) propertyIndex,SharedWrap<JSValue>::Shared(env, value)->Value());
@@ -457,7 +457,7 @@ NATIVE(JNIJSObject,jobject,callAsFunction) (PARAMS, jobject thisObject, jobjectA
         }
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         MaybeLocal<Value> value = o->CallAsFunction(context, this_, len, elements);
         if (value.IsEmpty()) {
@@ -503,7 +503,7 @@ NATIVE(JNIJSObject,jobject,callAsConstructor) (PARAMS, jobjectArray args)
         }
 
         TryCatch trycatch(isolate);
-        std::shared_ptr<JSValue> exception;
+        boost::shared_ptr<JSValue> exception;
 
         MaybeLocal<Value> value = o->CallAsConstructor(context, len, elements);
         if (value.IsEmpty()) {

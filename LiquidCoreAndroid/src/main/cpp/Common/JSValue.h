@@ -37,9 +37,9 @@
 
 using namespace v8;
 
-class JSValue : public std::enable_shared_from_this<JSValue> {
+class JSValue : public boost::enable_shared_from_this<JSValue> {
 public:
-    JSValue(std::shared_ptr<JSContext> context, Local<v8::Value> val);
+    JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val);
     JSValue();
     virtual ~JSValue();
 
@@ -57,9 +57,17 @@ public:
             return Local<v8::Value>::New(isolate(), m_value);
         }
     }
-    inline Isolate* isolate() { return m_context->isolate(); }
-    inline std::shared_ptr<ContextGroup> Group() { return m_context->Group(); }
-    inline std::shared_ptr<JSContext> Context()  { return m_context; }
+    inline Isolate* isolate()
+    {
+        boost::shared_ptr<JSContext> context = m_context;
+        return context ? context->isolate() : nullptr;
+    }
+    inline boost::shared_ptr<ContextGroup> Group()
+    {
+        boost::shared_ptr<JSContext> context = m_context;
+        return context ? context->Group() : boost::shared_ptr<ContextGroup>();
+    }
+    inline boost::shared_ptr<JSContext> Context()  { return m_context; }
     inline bool IsDefunct() { return m_isDefunct; }
 
     void Dispose();
@@ -67,11 +75,11 @@ public:
     static Local<v8::Value> Wrap(JSValue *value);
     static JSValue* Unwrap(Local<v8::Value>);
 
-    static std::shared_ptr<JSValue> New(std::shared_ptr<JSContext> context, Local<v8::Value> val);
+    static boost::shared_ptr<JSValue> New(boost::shared_ptr<JSContext> context, Local<v8::Value> val);
 
 protected:
     Persistent<v8::Value, CopyablePersistentTraits<v8::Value>> m_value;
-    std::shared_ptr<JSContext> m_context;
+    boost::atomic_shared_ptr<JSContext> m_context;
     bool m_isUndefined;
     bool m_isNull;
     bool m_wrapped;

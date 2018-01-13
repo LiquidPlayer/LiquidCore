@@ -42,10 +42,10 @@ using namespace v8;
 
 class JSFunction : public JSValue {
 public:
-    JSFunction(JNIEnv* env, jobject thiz, std::shared_ptr<JSContext> ctx, jstring name_);
+    JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> ctx, jstring name_);
     virtual ~JSFunction();
 
-    static std::shared_ptr<JSValue> New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_);
+    static boost::shared_ptr<JSValue> New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_);
 
 private:
     static void StaticFunctionCallback(const FunctionCallbackInfo< v8::Value > &info);

@@ -46,6 +46,7 @@ NATIVE(JNIJSContextGroup,jobject,create) (PARAMS)
 NATIVE(JNIJSContextGroup,jboolean,isManaged) (PARAMS)
 {
     auto group = SharedWrap<ContextGroup>::Shared(env, thiz);
+
     return (jboolean) (group && group->Loop());
 }
 

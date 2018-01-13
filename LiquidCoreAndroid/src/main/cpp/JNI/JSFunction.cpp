@@ -34,6 +34,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <cstdlib>
+#include <boost/make_shared.hpp>
 #include "JNI/JNI.h"
 #include "JNI/JSFunction.h"
 #include "JNI/JNIReturnObject.h"
@@ -44,7 +45,7 @@ using namespace v8;
 #define JSV "Lorg/liquidplayer/javascript/JNIJSValue;"
 #define JSR "Lorg/liquidplayer/javascript/JNIReturnObject;"
 
-JSFunction::JSFunction(JNIEnv* env, jobject thiz, std::shared_ptr<JSContext> ctx, jstring name_)
+JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> ctx, jstring name_)
 {
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewWeakGlobalRef(thiz);
@@ -78,10 +79,10 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, std::shared_ptr<JSContext> ctx
     m_context = ctx;
 }
 
-std::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_)
+boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_)
 {
     auto ctx = SharedWrap<JSContext>::Shared(env, javaContext);
-    auto p = std::make_shared<JSFunction>(env, thiz, ctx, name_);
+    auto p = boost::make_shared<JSFunction>(env, thiz, ctx, name_);
     ctx->retain(p);
     ctx->Group()->Manage(p);
     return p;
@@ -115,61 +116,62 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
         m_jvm->AttachCurrentThread(&env, NULL);
     }
 
-    auto grp = JSValue::m_context->Group();
-    auto ctxt = JSValue::m_context;
+    boost::shared_ptr<JSContext> ctxt = m_context;
+    boost::shared_ptr<ContextGroup> grp;
+    if (ctxt) {
+        grp = ctxt->Group();
 
-    {
-    V8_ISOLATE(grp, isolate)
-        Local<v8::Context> context = ctxt->Value();
-        Context::Scope context_scope_(context);
+        V8_ISOLATE(grp, isolate)
+            Local<v8::Context> context = ctxt->Value();
+            Context::Scope context_scope_(context);
 
-        isConstructCall = info.IsConstructCall();
+            isConstructCall = info.IsConstructCall();
 
-        jclass cls = env->GetObjectClass(m_JavaThis);
-        do {
-            if (isConstructCall) {
-                mid = env->GetMethodID(cls,"constructorCallback","(" JSO "[" JSV ")" JSR);
-            } else {
-                mid = env->GetMethodID(cls,"functionCallback","(" JSV "[" JSV ")" JSR);
-            }
-            if (!env->ExceptionCheck()) break;
-            env->ExceptionClear();
-            jclass super = env->GetSuperclass(cls);
-            env->DeleteLocalRef(cls);
-            if (super == NULL || env->ExceptionCheck()) {
-                if (super != NULL) env->DeleteLocalRef(super);
-                if (getEnvStat == JNI_EDETACHED) {
-                    m_jvm->DetachCurrentThread();
+            jclass cls = env->GetObjectClass(m_JavaThis);
+            do {
+                if (isConstructCall) {
+                    mid = env->GetMethodID(cls,"constructorCallback","(" JSO "[" JSV ")" JSR);
+                } else {
+                    mid = env->GetMethodID(cls,"functionCallback","(" JSV "[" JSV ")" JSR);
                 }
-                __android_log_assert("FAIL", "FunctionCallback",
-                    "Did not find callback method");
-                return; // Drops out of this context
-            }
-            cls = super;
-        } while (true);
-        env->DeleteLocalRef(cls);
+                if (!env->ExceptionCheck()) break;
+                env->ExceptionClear();
+                jclass super = env->GetSuperclass(cls);
+                env->DeleteLocalRef(cls);
+                if (super == NULL || env->ExceptionCheck()) {
+                    if (super != NULL) env->DeleteLocalRef(super);
+                    if (getEnvStat == JNI_EDETACHED) {
+                        m_jvm->DetachCurrentThread();
+                    }
+                    __android_log_assert("FAIL", "FunctionCallback",
+                        "Did not find callback method");
+                    return; // Drops out of this context
+                }
+                cls = super;
+            } while (true);
+            env->DeleteLocalRef(cls);
 
-        objThis = SharedWrap<JSValue>::New(
-            env,
-            JSValue::New(ctxt, info.This())
-        );
-
-        int argumentCount = info.Length();
-
-        jclass claz = findClass(env, "org/liquidplayer/javascript/JNIJSValue");
-        argsArr = env->NewObjectArray(argumentCount, claz, nullptr);
-        args = new jobject[argumentCount];
-        for (int i=0; i<argumentCount; i++) {
-            env->SetObjectArrayElement(
-                argsArr,
-                i,
-                SharedWrap<JSValue>::New(
-                    env,
-                    JSValue::New(ctxt, info[i])
-                )
+            objThis = SharedWrap<JSValue>::New(
+                env,
+                JSValue::New(ctxt, info.This())
             );
-        }
-    V8_UNLOCK()
+
+            int argumentCount = info.Length();
+
+            jclass claz = findClass(env, "org/liquidplayer/javascript/JNIJSValue");
+            argsArr = env->NewObjectArray(argumentCount, claz, nullptr);
+            args = new jobject[argumentCount];
+            for (int i=0; i<argumentCount; i++) {
+                env->SetObjectArrayElement(
+                    argsArr,
+                    i,
+                    SharedWrap<JSValue>::New(
+                        env,
+                        JSValue::New(ctxt, info[i])
+                    )
+                );
+            }
+        V8_UNLOCK()
     }
 
     // The 'return' statement above only returns from the lambda function buried

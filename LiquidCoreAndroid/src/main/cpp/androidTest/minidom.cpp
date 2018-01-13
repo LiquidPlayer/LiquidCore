@@ -49,12 +49,12 @@ static JSValueRef print(JSContextRef context, JSObjectRef object, JSObjectRef th
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_minidom(JNIEnv* env,
     jobject thiz, jstring minidom_js, jobject group_)
 {
-    auto group = &* SharedWrap<ContextGroup>::Shared(env, group_);
+    auto group = SharedWrap<ContextGroup>::Shared(env, group_);
 
     const char *scriptPath = "minidom.js";
     const char *scriptUTF8 = env->GetStringUTFChars(minidom_js, NULL);
 
-    JSContextGroupRef contextGroup = reinterpret_cast<JSContextGroupRef>(group);
+    JSContextGroupRef contextGroup = group ? reinterpret_cast<JSContextGroupRef>(&*group) : nullptr;
 
     JSGlobalContextRef context = JSGlobalContextCreateInGroup(contextGroup, NULL);
     JSObjectRef globalObject = JSContextGetGlobalObject(context);

@@ -35,6 +35,8 @@
 #define LIQUIDCORE_LOOPPRESERVER_H
 
 #include <memory>
+#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/atomic_shared_ptr.hpp>
 #include "uv.h"
 
 class ContextGroup;
@@ -42,17 +44,17 @@ class ContextGroup;
 class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>
 {
 public:
-    static std::shared_ptr<LoopPreserver> New(std::shared_ptr<ContextGroup> group);
-    LoopPreserver(std::shared_ptr<ContextGroup> group);
+    static boost::shared_ptr<LoopPreserver> New(boost::shared_ptr<ContextGroup> group);
+    LoopPreserver(boost::shared_ptr<ContextGroup> group);
     virtual ~LoopPreserver();
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
-    inline std::shared_ptr<ContextGroup> Group() { return m_group; }
+    inline boost::shared_ptr<ContextGroup> Group() { return m_group; }
 
 private:
     bool m_isDefunct;
     uv_async_t * m_async_handle;
-    std::shared_ptr<ContextGroup> m_group;
+    boost::atomic_shared_ptr<ContextGroup> m_group;
 };
 
 #endif //LIQUIDCORE_LOOPPRESERVER_H

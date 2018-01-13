@@ -60,7 +60,7 @@ jobject exception_func(JNIEnv* env, jobject thiz, F&& lambda){
             Local<Value> value = valueRef->Value();
 
             TryCatch trycatch(isolate);
-            std::shared_ptr<JSValue> exception;
+            boost::shared_ptr<JSValue> exception;
 
             bool failed = lambda(value, context, isolate, out);
 

@@ -36,7 +36,7 @@
 #include "Common/JSContext.h"
 
 #define V8_ISOLATE(group,iso) \
-        std::shared_ptr<ContextGroup> group_ = (group); \
+        boost::shared_ptr<ContextGroup> group_ = (group); \
         auto runnable_ = [&]() \
         { \
             Isolate *iso = group_->isolate(); \

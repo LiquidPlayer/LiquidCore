@@ -1146,14 +1146,14 @@ static void reset_globals() {
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* env,
     jobject thiz, jstring testapi_js, jobject group_)
 {
-    auto group = &* SharedWrap<ContextGroup>::Shared(env, group_);
+    auto group = SharedWrap<ContextGroup>::Shared(env, group_);
 
     reset_globals();
 
 #if JSC_OBJC_API_ENABLED
     testObjectiveCAPI();
 #endif
-    contextGroup = reinterpret_cast<JSContextGroupRef>(group);
+    contextGroup = group ? reinterpret_cast<JSContextGroupRef>(&*group) : nullptr;
 
     const char *scriptPath = "testapi.js";
     const char *scriptUTF8 = env->GetStringUTFChars(testapi_js, NULL);

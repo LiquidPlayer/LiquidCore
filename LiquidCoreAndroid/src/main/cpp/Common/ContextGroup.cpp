@@ -30,13 +30,13 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-//#include "node/NodeInstance.h"
 #include <exception>
 #include <malloc.h>
 #include <condition_variable>
 #include <JSC/Macros.h>
 #include "Common/ContextGroup.h"
 #include "Common/JSValue.h"
+#include "Macros.h"
 
 class GenericAllocator : public ArrayBuffer::Allocator {
 public:
@@ -65,9 +65,9 @@ struct Runnable {
 
 class ContextGroupData {
 public:
-    ContextGroupData(std::shared_ptr<ContextGroup> cg) : m_context_group(cg) {}
+    ContextGroupData(boost::shared_ptr<ContextGroup> cg) : m_context_group(cg) {}
     ~ContextGroupData() { m_context_group.reset(); }
-    std::shared_ptr<ContextGroup> m_context_group;
+    boost::shared_ptr<ContextGroup> m_context_group;
 };
 
 void ContextGroup::StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags)
@@ -144,7 +144,7 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
 
-void ContextGroup::MarkZombie(std::shared_ptr<JSValue> obj)
+void ContextGroup::MarkZombie(boost::shared_ptr<JSValue> obj)
 {
     if ((void*)&*obj != this) {
         m_zombie_mutex.lock();
@@ -153,7 +153,7 @@ void ContextGroup::MarkZombie(std::shared_ptr<JSValue> obj)
     }
 }
 
-void ContextGroup::MarkZombie(std::shared_ptr<JSContext> obj)
+void ContextGroup::MarkZombie(boost::shared_ptr<JSContext> obj)
 {
     if ((void*)&*obj != this) {
         m_zombie_mutex.lock();
@@ -162,20 +162,48 @@ void ContextGroup::MarkZombie(std::shared_ptr<JSContext> obj)
     }
 }
 
+void ContextGroup::FreeZombies()
+{
+    m_zombie_mutex.lock();
+    m_value_zombies.clear();
+
+    /*
+     * JSContext zombies indicate that Java is done with the context, however the process
+     * is still running.  To ensure that unused processes don't continue to run, we
+     * exit the process here.
+     */
+    auto it = m_context_zombies.begin();
+    while (it != m_context_zombies.end() && !(*it)->IsDefunct()) {
+        V8_ISOLATE_CTX((*it), isolate, context)
+            Local<Object> process =
+                    context->Global()->Get(String::NewFromUtf8(isolate, "process"))->ToObject();
+            Local<Function> exit = process->Get(String::NewFromUtf8(isolate, "exit")).As<Function>();
+            Local<Value> exit_code = Number::New(isolate,
+                                                 CONTEXT_GARBAGE_COLLECTED_BUT_PROCESS_STILL_ACTIVE);
+            exit->Call(process, 1, &exit_code);
+#if DEBUG
+            __android_log_assert("condition", "FreeZombies()", "Context was collected but process still runnning");
+#endif
+        V8_UNLOCK()
+        ++it;
+    }
+
+    m_context_zombies.clear();
+    m_zombie_mutex.unlock();
+}
+
 void ContextGroup::callback(uv_async_t* handle)
 {
     ContextGroupData *data = reinterpret_cast<ContextGroupData*>(handle->data);
-    std::shared_ptr<ContextGroup> group = data->m_context_group;
+    boost::shared_ptr<ContextGroup> group = data->m_context_group;
     delete data;
 
     // Since we are in the correct thread now, free the zombies!
-    group->m_zombie_mutex.lock();
-    group->m_value_zombies.clear();
-    group->m_context_zombies.clear();
-    group->m_zombie_mutex.unlock();
+    group->FreeZombies();
 
     group->m_async_mutex.lock();
-    struct Runnable *r = group->m_runnables.empty() ? nullptr : group->m_runnables.front();
+    struct Runnable *r = group->m_runnables.empty() ? nullptr :
+                         (struct Runnable *) group->m_runnables.front();
 
     while (r) {
         group->m_async_mutex.unlock();
@@ -204,7 +232,6 @@ void ContextGroup::callback(uv_async_t* handle)
                     }
                     __android_log_assert("FAIL", "ContextGroup::callback",
                         "Can't find the class to call back?");
-                    break;
                 }
                 cls = super;
             } while (true);
@@ -225,7 +252,7 @@ void ContextGroup::callback(uv_async_t* handle)
         group->m_runnables.erase(group->m_runnables.begin());
         delete r;
 
-        r = group->m_runnables.empty() ? nullptr : group->m_runnables.front();
+        r = group->m_runnables.empty() ? nullptr : (struct Runnable *) group->m_runnables.front();
     }
     // Close the handle.  We will create a new one if we
     // need another.  This keeps the node process from staying alive
@@ -269,12 +296,12 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags)
     }
 }
 
-void ContextGroup::Manage(std::shared_ptr<JSValue> obj)
+void ContextGroup::Manage(boost::shared_ptr<JSValue> obj)
 {
     m_managedValues.push_back(std::move(obj));
 }
 
-void ContextGroup::Manage(std::shared_ptr<JSContext> obj)
+void ContextGroup::Manage(boost::shared_ptr<JSContext> obj)
 {
     m_managedContexts.push_back(std::move(obj));
 }
@@ -282,6 +309,9 @@ void ContextGroup::Manage(std::shared_ptr<JSContext> obj)
 void ContextGroup::Dispose()
 {
     if (!m_isDefunct) {
+        // Make sure we don't get destructed during the managed values/context disposal process
+        auto wait = shared_from_this();
+
         ASSERTJSC(m_runnables.empty());
 
         m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
@@ -289,13 +319,13 @@ void ContextGroup::Dispose()
         m_scheduling_mutex.lock();
 
         for (auto it = m_managedValues.begin(); it != m_managedValues.end(); ++it) {
-            std::shared_ptr<JSValue> valid = (*it).lock();
+            boost::shared_ptr<JSValue> valid = (*it).lock();
             if (valid) {
                 valid->Dispose();
             }
         }
         for (auto it = m_managedContexts.begin(); it != m_managedContexts.end(); ++it) {
-            std::shared_ptr<JSContext> valid = (*it).lock();
+            boost::shared_ptr<JSContext> valid = (*it).lock();
             if (valid) {
                 valid->Dispose();
             }
@@ -304,8 +334,7 @@ void ContextGroup::Dispose()
         m_managedValues.clear();
         m_managedContexts.clear();
         m_scheduling_mutex.unlock();
-        m_value_zombies.clear();
-        m_context_zombies.clear();
+        FreeZombies();
 
         s_isolate_map.erase(m_isolate);
         if (m_manage_isolate) {
@@ -313,6 +342,8 @@ void ContextGroup::Dispose()
         } else {
             dispose_v8();
         }
+
+        wait.reset();
     }
 }
 
@@ -344,7 +375,7 @@ void ContextGroup::sync(std::function<void()> runnable)
         };
 
         std::unique_lock<std::mutex> lk(m_async_mutex);
-        m_runnables.push_back(r);
+        m_runnables.push_back((void*)r);
 
         if (!m_async_handle) {
             m_async_handle = new uv_async_t();
@@ -370,7 +401,7 @@ void ContextGroup::schedule_java_runnable(JNIEnv *env, jobject thiz, jobject run
     r->runnable = env->NewGlobalRef(runnable);
     r->c_runnable = nullptr;
     env->GetJavaVM(&r->jvm);
-    m_runnables.push_back(r);
+    m_runnables.push_back((void*)r);
 
     if (!m_async_handle) {
         m_async_handle = new uv_async_t();

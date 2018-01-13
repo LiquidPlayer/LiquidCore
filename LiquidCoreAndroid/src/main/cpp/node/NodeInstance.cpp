@@ -523,7 +523,6 @@ void NodeInstance::StartInspector(Environment* env, const char* path,
 }
 
 #define JSC "Lorg/liquidplayer/javascript/JNIJSContext;"
-#define JSG "Lorg/liquidplayer/javascript/JNIJSContextGroup;"
 #define JOBJ "Ljava/lang/Object;"
 
 inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
@@ -545,7 +544,7 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   auto java_node_context = ctxRef->Context();
   Local<Context> context = java_node_context->Value();
 
-  auto notify_start = [&] (std::shared_ptr<JSContext> java_node_context, JSContextRef ctxRef) {
+  auto notify_start = [&] (boost::shared_ptr<JSContext> java_node_context, JSContextRef ctxRef) {
     JNIEnv *jenv;
     int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED) {
@@ -858,7 +857,8 @@ int NodeInstance::StartInstance(int argc, char *argv[]) {
   v8_initialized = false;
 
   CHECK_EQ(uv_loop_alive(&uv_loop), 0);
-  uv_loop_close(&uv_loop);
+  //FIXME: why does uncommenting this lead to spurious death?
+  //uv_loop_close(&uv_loop);
 
   delete[] exec_argv;
   exec_argv = nullptr;

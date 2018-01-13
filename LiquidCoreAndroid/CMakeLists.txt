@@ -109,6 +109,7 @@ include_directories(
              src/../../deps/utfcpp
              src/../../deps/sqlite-autoconf-3150000
              src/../../deps/nan-2.5.1
+             src/../../deps/boost_1_66_0
              )
 
 find_library( # Sets the name of the path variable.

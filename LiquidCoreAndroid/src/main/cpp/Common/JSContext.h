@@ -39,28 +39,34 @@ using namespace v8;
 
 class JSValue;
 
-class JSContext : public std::enable_shared_from_this<JSContext> {
+class JSContext : public boost::enable_shared_from_this<JSContext> {
 public:
-    static std::shared_ptr<JSContext> New(std::shared_ptr<ContextGroup> isolate, Local<Context> val);
+    static boost::shared_ptr<JSContext> New(boost::shared_ptr<ContextGroup> isolate, Local<Context> val);
     virtual ~JSContext();
-    JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val);
+    JSContext(boost::shared_ptr<ContextGroup> isolate, Local<Context> val);
 
-    std::shared_ptr<JSValue>      Global();
+    boost::shared_ptr<JSValue>      Global();
 
     inline Local<Context> Value() { return Local<Context>::New(isolate(), m_context); }
-    inline Isolate* isolate() { return m_isolate->isolate(); }
-    inline std::shared_ptr<ContextGroup> Group() { return m_isolate; }
+    inline Isolate* isolate() {
+        boost::shared_ptr<ContextGroup> sp = m_isolate;
+        return sp->isolate();
+    }
+    inline boost::shared_ptr<ContextGroup> Group() {
+        boost::shared_ptr<ContextGroup> sp = m_isolate;
+        return sp;
+    }
 
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
 
-    void retain(std::shared_ptr<JSValue>);
+    void retain(boost::shared_ptr<JSValue>);
 
 private:
     Persistent<Context, CopyablePersistentTraits<Context>> m_context;
-    std::shared_ptr<ContextGroup> m_isolate;
+    boost::atomic_shared_ptr<ContextGroup> m_isolate;
     bool m_isDefunct;
-    std::vector<std::shared_ptr<JSValue>> m_value_set;
+    std::vector<boost::shared_ptr<JSValue>> m_value_set;
     std::recursive_mutex m_set_mutex;
 };
 

@@ -92,7 +92,7 @@ public class JSContext extends JSObject {
     }
 
     public long getJSCContext() {
-        return mJscCtxRef;
+        return 0L;
     }
 
     private JSContextGroup contextGroup = null;
@@ -113,19 +113,13 @@ public class JSContext extends JSObject {
     private JNIJSContext jniContext;
     private IJSExceptionHandler exceptionHandler;
 
-    protected JSContext(JNIJSContext ctxHandle, JSContextGroup group) {
+    protected JSContext(Object ctxHandle, JSContextGroup group) {
         context = this;
         contextGroup = group;
-        jniContext = ctxHandle;
+        jniContext = (JNIJSContext)ctxHandle;
         valueRef = (JNIJSValue) jniContext.getGlobalObject();
         addJSExports();
     }
-
-    JSContext(Object contextRef, JSContextGroup group, long jscCtxRef) {
-        this((JNIJSContext)contextRef, group);
-        mJscCtxRef = jscCtxRef;
-    }
-    private long mJscCtxRef = 0L;
 
     /**
      * Creates a new JavaScript context

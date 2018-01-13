@@ -30,16 +30,17 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <boost/make_shared.hpp>
 #include "Common/LoopPreserver.h"
 #include "Common/ContextGroup.h"
 
-std::shared_ptr<LoopPreserver> LoopPreserver::New(std::shared_ptr<ContextGroup> group)
+boost::shared_ptr<LoopPreserver> LoopPreserver::New(boost::shared_ptr<ContextGroup> group)
 {
-    auto preserver = std::make_shared<LoopPreserver>(group);
+    auto preserver = boost::make_shared<LoopPreserver>(group);
     return preserver;
 }
 
-LoopPreserver::LoopPreserver(std::shared_ptr<ContextGroup> group) :
+LoopPreserver::LoopPreserver(boost::shared_ptr<ContextGroup> group) :
         m_isDefunct(false), m_group(group)
 {
     auto done = [](uv_async_t* handle) {

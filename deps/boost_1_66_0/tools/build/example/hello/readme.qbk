@@ -1,0 +1,45 @@
+[/
+Copyright 2008 Jurko Gospodnetic
+Copyright 2017 Rene Rivera
+Distributed under the Boost Software License, Version 1.0.
+(See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
+]
+
+[section Hello]
+
+[import jamroot.jam]
+
+This example shows a very basic Boost Build project set up so it compiles a
+single executable from a single source file.
+
+Files:
+
+* [@../../example/hello/hello.cpp hello.cpp]
+* [@../../example/hello/jamroot.jam jamroot.jam]
+
+Our `jamroot.jam` is minimal and only specifies one `exe` target for the
+program:
+
+[jamroot]
+
+Building the example yields:
+
+[teletype]
+```
+> cd /example/hello
+> b2
+...found 8 targets...
+...updating 4 targets...
+common.mkdir bin/clang-darwin-4.2.1
+common.mkdir bin/clang-darwin-4.2.1/debug
+clang-darwin.compile.c++ bin/clang-darwin-4.2.1/debug/hello.o
+clang-darwin.link bin/clang-darwin-4.2.1/debug/hello
+...updated 4 targets...
+> bin/clang-darwin-4.2.1/debug/hello 
+Hello!
+```
+
+[note The actual paths in the `bin` sub-directory will depend on your
+toolset.]
+
+[endsect]

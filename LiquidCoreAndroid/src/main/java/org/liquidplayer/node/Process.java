@@ -40,6 +40,7 @@ import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
@@ -68,6 +69,10 @@ public class Process {
          * In the event that an EventListener is added by Process.addEventListener() after a
          * process has already started, this method will be called immediately (in the process
          * thread) if the process is still active.  Otherwise, onProcessExit() will be called.
+         *
+         * Clients must hold a reference to the context for as long as they want the process to
+         * remain active.  If the context is garbage collected, the process will be exited
+         * automatically in order to prevent misuse.
          *
          * @param process The node.js Process object
          * @param context The JavaScript JSContext for this process
@@ -133,12 +138,14 @@ public class Process {
         if (!listeners.contains(listener)) {
             listeners.add(listener);
         }
-        if (isActive()) {
-            jscontext.sync(new Runnable() {
+        JSContext ctx = jscontext.get();
+        if (isActive() && ctx != null) {
+            ctx.sync(new Runnable() {
                 @Override
                 public void run() {
-                    if (isActive()) {
-                        listener.onProcessStart(Process.this, jscontext);
+                    JSContext ctx = jscontext.get();
+                    if (isActive() && ctx != null) {
+                        listener.onProcessStart(Process.this, ctx);
                     } else {
                         listener.onProcessExit(Process.this, Long.valueOf(exitCode).intValue());
                     }
@@ -172,12 +179,14 @@ public class Process {
      * @param exitc The exit code
      */
     public void exit(final int exitc) {
-        if (isActive()) {
-            jscontext.sync(new Runnable() {
+        JSContext ctx = jscontext.get();
+        if (isActive() && ctx != null) {
+            ctx.sync(new Runnable() {
                 @Override
                 public void run() {
-                    if (isActive()) {
-                        jscontext.evaluateScript("process.exit(" + exitc + ");");
+                    JSContext ctx = jscontext.get();
+                    if (isActive() && ctx != null) {
+                        ctx.evaluateScript("process.exit(" + exitc + ");");
                     }
                 }
             });
@@ -190,7 +199,11 @@ public class Process {
      * be followed up by a call to letDie() or the process will remain active indefinitely.
      */
     public JSContextGroup.LoopPreserver keepAlive() {
-        return jscontext.getGroup().keepAlive();
+        JSContext ctx = jscontext.get();
+        if (isActive() && ctx != null) {
+            return ctx.getGroup().keepAlive();
+        }
+        return null;
     }
 
     /**
@@ -250,39 +263,57 @@ public class Process {
 
     private long exitCode;
 
-    protected JSContext jscontext = null;
+    protected WeakReference<JSContext> jscontext = new WeakReference<>(null);
     private boolean isActive = false;
     private boolean isDone = false;
     private FileSystem fs = null;
+    // FIXME: HACK!
+    private JSContext holdContext;
 
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
+    private class ProcessContext extends JSContext {
+        ProcessContext(final Object mainContext, JSContextGroup ctxGroup, long jscCtxRef) {
+            super(mainContext, ctxGroup);
+            mJscCtxRef = jscCtxRef;
+        }
+
+        private final long mJscCtxRef;
+
+        @Override
+        public long getJSCContext() {
+            return mJscCtxRef;
+        }
+    }
+
     @SuppressWarnings("unused") // called from native code
     private void onNodeStarted(final Object mainContext, Object ctxGroupRef, long jscCtxRef) {
-        // We will use reflection to create these objects.  Ideally the JNI* classes would be
-        // package local to this, but since we wanted to split packages, we will do this.
+        // We will use reflection to create this object.  Ideally the JNI* classes would be
+        // package local to this, but since we wanted to split packages, we will do it this way.
+        JSContext ctx;
         try {
             final Constructor<JSContextGroup> ctor =
                     JSContextGroup.class.getDeclaredConstructor(Object.class);
             ctor.setAccessible(true);
             final JSContextGroup g = ctor.newInstance(ctxGroupRef);
-            final Constructor<JSContext> ctxCtor = JSContext.class.getDeclaredConstructor(
-                    Object.class, JSContextGroup.class, long.class);
-            ctxCtor.setAccessible(true);
-            jscontext = ctxCtor.newInstance(mainContext, g, jscCtxRef);
+            ctx = new ProcessContext(mainContext, g, jscCtxRef);
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
+        jscontext = new WeakReference<>(ctx);
+        // FIXME! HACK!
+        holdContext = ctx;
         isActive = true;
-        jscontext.property("__nodedroid_onLoad", new JSFunction(jscontext, "__nodedroid_onLoad") {
+        ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
             @SuppressWarnings("unused")
             public void __nodedroid_onLoad() {
-                if (isActive()) {
-                    jscontext.deleteProperty("__nodedroid_onLoad");
+                JSContext ctx = jscontext.get();
+                if (isActive() && ctx != null) {
+                    ctx.deleteProperty("__nodedroid_onLoad");
 
                     // set file system
-                    fs = new FileSystem(jscontext, androidCtx, uniqueID, mediaAccessMask);
+                    fs = new FileSystem(ctx, androidCtx, uniqueID, mediaAccessMask);
                     setFileSystem(mainContext, fs.valueRef());
 
                     // set exit handler
@@ -314,7 +345,7 @@ public class Process {
 
                     // intercept stdout and stderr
                     JSObject stdout =
-                            jscontext.property("process").toObject().property("stdout").toObject();
+                            ctx.property("process").toObject().property("stdout").toObject();
                     stdout.property("write", new JSFunction(stdout.getContext(), "write") {
                         @SuppressWarnings("unused")
                         public void write(String string) {
@@ -323,7 +354,7 @@ public class Process {
                     });
 
                     JSObject stderr =
-                            jscontext.property("process").toObject().property("stderr").toObject();
+                            ctx.property("process").toObject().property("stderr").toObject();
                     stderr.property("write", new JSFunction(stderr.getContext(), "write") {
                         @SuppressWarnings("unused")
                         public void write(String string) {
@@ -332,7 +363,7 @@ public class Process {
                     });
 
                     // Ready to start
-                    eventOnStart(jscontext);
+                    eventOnStart(ctx);
                 }
             }
         });

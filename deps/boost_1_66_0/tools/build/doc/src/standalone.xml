@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//Boost//DTD BoostBook XML V1.0//EN"
+  "http://www.boost.org/tools/boostbook/dtd/boostbook.dtd">
+
+<book xmlns:xi="http://www.w3.org/2001/XInclude"
+      id="bbv2" last-revision="$Date$">
+
+  <title>Boost.Build User Manual</title>
+
+  <!-- Chapters -->
+  <xi:include href="howto.xml"/>
+  <xi:include href="install.xml"/>
+  <xi:include href="tutorial.xml"/>
+  <xi:include href="overview.xml"/>
+  <xi:include href="tasks.xml"/>
+  <xi:include href="reference.xml"/>
+  <xi:include href="debug.xml"/>
+  <xi:include href="extending.xml"/>
+  <xi:include href="faq.xml"/>
+
+  <!-- Tools -->
+  <appendix id="extra-tools">
+    <title>Extra Tools</title>
+    <xi:include href="tools.docbook" parse="xml"
+      xpointer="xpointer(id('_documentation_tools')|id('_documentation_tools')/following-sibling::*)"/>
+  </appendix>
+  <!-- Appendicies -->
+  <appendix id="examples">
+    <title>Examples</title>
+    <xi:include href="examples_docs.xml" parse="xml"
+  xpointer="xpointer(id('bbv2.examples.introduction')|id('bbv2.examples.introduction')/following-sibling::*)"/>
+  </appendix>
+<!--  <xi:include href="architecture.xml"/> -->
+  <appendix id="bbv2.jam">
+    <title>Boost.Jam Documentation</title>
+    <xi:include href="jam_docs.xml" parse="xml" 
+	xpointer="xpointer(id('jam.building')|id('jam.building')/following-sibling::*)"/>
+  </appendix>
+  
+  <index/>
+
+</book>

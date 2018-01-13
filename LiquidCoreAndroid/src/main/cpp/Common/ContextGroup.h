@@ -43,6 +43,10 @@
 #include <vector>
 #include <map>
 #include <list>
+#include <boost/smart_ptr/atomic_shared_ptr.hpp>
+#include <boost/smart_ptr/enable_shared_from_this.hpp>
+
+#define CONTEXT_GARBAGE_COLLECTED_BUT_PROCESS_STILL_ACTIVE 222
 
 using namespace v8;
 
@@ -50,9 +54,8 @@ class GenericAllocator;
 class JSValue;
 class JSContext;
 class LoopPreserver;
-struct Runnable;
 
-class ContextGroup : public std::enable_shared_from_this<ContextGroup> {
+class ContextGroup : public boost::enable_shared_from_this<ContextGroup> {
 public:
     ContextGroup();
     ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
@@ -62,19 +65,20 @@ public:
     inline uv_loop_t * Loop() { return m_isDefunct ? nullptr : m_uv_loop; }
     inline bool IsDefunct() { return m_isDefunct; }
     inline std::thread::id Thread() { return m_thread_id; }
-    inline std::shared_ptr<ContextGroup> Group() { return shared_from_this(); }
+    inline boost::shared_ptr<ContextGroup> Group() { return shared_from_this(); }
 
     void sync(std::function<void()> runnable);
     void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
     void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
-    void Manage(std::shared_ptr<JSValue> obj);
-    void Manage(std::shared_ptr<JSContext> obj);
+    void Manage(boost::shared_ptr<JSValue> obj);
+    void Manage(boost::shared_ptr<JSContext> obj);
     void Dispose();
-    void MarkZombie(std::shared_ptr<JSValue> obj);
-    void MarkZombie(std::shared_ptr<JSContext> obj);
+    void MarkZombie(boost::shared_ptr<JSValue> obj);
+    void MarkZombie(boost::shared_ptr<JSContext> obj);
     // These are just here for the SharedWrap template
-    void MarkZombie(std::shared_ptr<ContextGroup> obj) {}
-    void MarkZombie(std::shared_ptr<LoopPreserver> obj) {}
+    void MarkZombie(boost::shared_ptr<ContextGroup> obj) {}
+    void MarkZombie(boost::shared_ptr<LoopPreserver> obj) {}
+    void FreeZombies();
 
     void schedule_java_runnable(JNIEnv *env, jobject thiz, jobject runnable);
 
@@ -100,10 +104,10 @@ private:
     bool m_manage_isolate;
     uv_loop_t *m_uv_loop;
     std::thread::id m_thread_id;
-    std::vector<std::weak_ptr<JSValue>> m_managedValues;
-    std::vector<std::weak_ptr<JSContext>> m_managedContexts;
-    std::vector<std::shared_ptr<JSValue>> m_value_zombies;
-    std::vector<std::shared_ptr<JSContext>> m_context_zombies;
+    std::vector<boost::weak_ptr<JSValue>> m_managedValues;
+    std::vector<boost::weak_ptr<JSContext>> m_managedContexts;
+    std::vector<boost::shared_ptr<JSValue>> m_value_zombies;
+    std::vector<boost::shared_ptr<JSContext>> m_context_zombies;
     std::mutex m_zombie_mutex;
     bool m_isDefunct;
 
@@ -114,7 +118,7 @@ private:
     std::list<std::unique_ptr<struct GCCallback>> m_gc_callbacks;
 
     uv_async_t *m_async_handle;
-    std::vector<struct Runnable *> m_runnables;
+    std::vector<void *> m_runnables;
     std::mutex m_async_mutex;
     std::recursive_mutex m_scheduling_mutex;
 };

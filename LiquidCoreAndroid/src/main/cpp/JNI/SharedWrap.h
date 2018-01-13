@@ -38,22 +38,22 @@
 template<typename T>
 class SharedWrap {
 public:
-    SharedWrap(std::shared_ptr<T> g);
+    SharedWrap(boost::shared_ptr<T> g);
     virtual ~SharedWrap();
 
-    static jobject New(JNIEnv *env, std::shared_ptr<T> shared);
-    static std::shared_ptr<T> Shared(JNIEnv *env, jobject thiz);
+    static jobject New(JNIEnv *env, boost::shared_ptr<T> shared);
+    static boost::shared_ptr<T> Shared(JNIEnv *env, jobject thiz);
     static void Dispose(long reference);
 
 private:
     static SharedWrap<T>* GetWrap(JNIEnv *env, jobject thiz);
     static const char * ClassName();
-    static const char * ClassName(std::shared_ptr<T> shared);
+    static const char * ClassName(boost::shared_ptr<T> shared);
 
     static std::map<T *, jobject> s_jobject_map;
     static std::mutex s_mutex;
 
-    std::shared_ptr<T> m_shared;
+    boost::atomic_shared_ptr<T> m_shared;
     bool m_isAsync;
 };
 

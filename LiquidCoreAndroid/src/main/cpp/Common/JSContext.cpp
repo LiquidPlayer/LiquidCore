@@ -33,15 +33,16 @@
 #include "Common/JSContext.h"
 #include "Common/JSValue.h"
 #include "Common/Macros.h"
+#include <boost/make_shared.hpp>
 
-std::shared_ptr<JSContext> JSContext::New(std::shared_ptr<ContextGroup> isolate, Local<Context> val)
+boost::shared_ptr<JSContext> JSContext::New(boost::shared_ptr<ContextGroup> isolate, Local<Context> val)
 {
-    auto p = std::make_shared<JSContext>(isolate, val);
+    auto p = boost::make_shared<JSContext>(isolate, val);
     isolate->Manage(p);
     return p;
 }
 
-JSContext::JSContext(std::shared_ptr<ContextGroup> isolate, Local<Context> val) {
+JSContext::JSContext(boost::shared_ptr<ContextGroup> isolate, Local<Context> val) {
     m_isolate = isolate;
     m_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate->isolate(), val);
     m_isDefunct = false;
@@ -60,18 +61,21 @@ void JSContext::Dispose() {
         m_set_mutex.unlock();
 
         m_context.Reset();
-        m_isolate.reset();
+        {
+            boost::shared_ptr<ContextGroup> isolate = m_isolate;
+            isolate.reset();
+        }
     }
 }
 
-void JSContext::retain(std::shared_ptr<JSValue> value) {
+void JSContext::retain(boost::shared_ptr<JSValue> value) {
     m_set_mutex.lock();
     m_value_set.push_back(value);
     m_set_mutex.unlock();
 }
 
-std::shared_ptr<JSValue> JSContext::Global() {
+boost::shared_ptr<JSValue> JSContext::Global() {
     Local<v8::Value> global = Value()->Global();
-    std::shared_ptr<JSContext> ctx = shared_from_this();
+    boost::shared_ptr<JSContext> ctx = shared_from_this();
     return JSValue::New(ctx, global);
 }

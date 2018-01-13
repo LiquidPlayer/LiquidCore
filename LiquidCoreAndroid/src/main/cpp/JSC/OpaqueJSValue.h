@@ -62,7 +62,7 @@ struct OpaqueJSValue {
     private:
         virtual void WeakCallback();
 
-        std::shared_ptr<JSValue> value;
+        boost::shared_ptr<JSValue> value;
         UniquePersistent<Value> weak;
         JSContextRef m_ctx;
         void *m_private_data = nullptr;

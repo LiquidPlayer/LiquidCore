@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//Boost//DTD BoostBook XML V1.0//EN"
+  "http://www.boost.org/tools/boostbook/dtd/boostbook.dtd">
+
+<chapter id="bbv2.util">
+  <title>Utilities</title>
+  <section id="bbv2.util.debugger">
+    <title>Debugger</title>
+    <indexterm><primary>debugger</primary></indexterm>
+
+    <section id="bbv2.util.debugger.overview">
+      <title>Overview</title>
+      <para>
+        Boost.Build comes with a debugger for Jamfiles.  To run the
+        debugger, start Boost.Build with <command>b2 -dconsole</command>.
+      </para>
+
+      <programlisting>
+$ b2 -dconsole
+(b2db) break gcc.init
+Breakpoint 1 set at gcc.init
+(b2db) run
+Starting program: /usr/bin/b2
+Breakpoint 1, gcc.init ( ) at /usr/share/boost-build/tools/gcc.jam:74
+74	    local tool-command = ;
+(b2db) quit
+</programlisting>
+    </section>
+
+    <section id="bbv2.util.debugger.running">
+      <title>Running the Program</title>
+      <para>
+        The <code>run</code> command is used to start a new <code>b2</code>
+        subprocess for debugging.  The arguments to <code>run</code> are
+        passed on the command line.  If a child process is already running,
+        it will be terminated before the new child is launched.
+      </para>
+      <para>
+        When the program is paused <code>continue</code> will resume execution.
+        The <code>step</code> command will advance the program by a single
+        statement, stopping on entry to another function or return
+        from the current function.  <code>next</code> is like <code>step</code>
+        except that it skips over function calls.  <code>finish</code> executes
+        until the current function returns.
+      </para>
+      <para>
+        The <code>kill</code> command terminates the current child
+        immediately.
+      </para>
+    </section>
+
+    <section id="bbv2.util.debugger.break">
+      <title>Breakpoints</title>
+      <para>
+        Breakpoints are set using the <code>break</code> command.
+        The location of the breakpoint can be specified as either
+        the name of a function (including the module name) or
+        or a file name and line number of the form <code>file:line</code>.
+        When a breakpoint is created it is given a unique id which is
+        used to identify it for other commands.
+      </para>
+      <programlisting>
+(b2db) break Jamfile:10
+Breakpoint 1 set at Jamfile:10
+(b2db) break msvc.init
+Breakpoint 2 set at msvc.init
+</programlisting>
+      <para>
+        A breakpoint can be temporarily disabled using the <code>disable</code>
+        command.  While a breakpoint is disabled, the child will not
+        stop when it is hit.  A disabled breakpoint can be activated
+        again with <code>enable</code>.
+      </para>
+      <programlisting>
+(b2db) disable 1
+(b2db) enable 1
+</programlisting>
+      <para>
+        Breakpoints can be removed permanently with <code>delete</code>
+        or <code>clear</code>.  The difference between them is that
+        <code>delete</code> takes the breakpoint id while
+        <code>clear</code> takes the location of the breakpoint as
+        originally specified to break.
+      </para>
+      <programlisting>
+(b2db) clear Jamfile:10
+Deleted breakpoint 1
+(b2db) delete 2
+</programlisting>
+    </section>
+
+    <section id="bbv2.util.debugger.stack">
+      <title>Examining the Stack</title>
+      <para>
+        The <code>backtrace</code> command will print a summary of
+        every frame on the stack.
+      </para>
+      <para>
+        The <code>print</code> command can be used to show the value
+        of an expression.
+      </para>
+      <programlisting>
+(b2db) print [ modules.peek : ARGV ]
+/usr/bin/b2 toolset=msvc install
+(b2db) print $(__file__)
+Jamfile.jam
+</programlisting>
+    </section>
+
+    <section id="bbv2.util.debugger.misc">
+      <title>Miscellaneous Commands</title>
+
+      <para>
+        <code>quit</code> exits the debugger.
+        <code>help</code> describes the available commands.
+      </para>
+    </section>
+    
+  </section>
+</chapter>

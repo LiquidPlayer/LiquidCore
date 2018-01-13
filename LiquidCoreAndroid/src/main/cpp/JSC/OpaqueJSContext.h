@@ -38,10 +38,10 @@
 
 struct OpaqueJSContext : public JSCRetainer {
     public:
-        static JSGlobalContextRef New(std::shared_ptr<JSContext> ctx);
+        static JSGlobalContextRef New(boost::shared_ptr<JSContext> ctx);
         virtual ~OpaqueJSContext();
 
-        inline std::shared_ptr<JSContext> Context() const { return m_context; }
+        inline boost::shared_ptr<JSContext> Context() const { return m_context; }
         void MarkForCollection(JSValueRef value);
         void MarkCollected(JSValueRef value);
         void ForceGC();
@@ -49,10 +49,10 @@ struct OpaqueJSContext : public JSCRetainer {
         bool IsDefunct();
 
     private:
-        OpaqueJSContext(std::shared_ptr<JSContext> ctx);
+        OpaqueJSContext(boost::shared_ptr<JSContext> ctx);
         void GCCallback(GCType type, GCCallbackFlags flags);
 
-        std::shared_ptr<JSContext> m_context;
+        boost::shared_ptr<JSContext> m_context;
         std::vector<JSValueRef> m_collection;
         std::recursive_mutex m_gc_lock;
         bool m_isDefunct;

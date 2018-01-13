@@ -30,20 +30,21 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <boost/make_shared.hpp>
 #include "JSC/JSC.h"
 
 class GlobalContextGroup : public OpaqueJSContextGroup
 {
     public:
-        static std::shared_ptr<GlobalContextGroup> New() {
-            auto group = std::make_shared<GlobalContextGroup>();
+        static boost::shared_ptr<GlobalContextGroup> New() {
+            auto group = boost::make_shared<GlobalContextGroup>();
             group->m_self = group->shared_from_this();
             return group;
         }
         GlobalContextGroup() : OpaqueJSContextGroup() {}
 };
 
-static std::shared_ptr<GlobalContextGroup> globalContextGroup;
+static boost::shared_ptr<GlobalContextGroup> globalContextGroup;
 
 JS_EXPORT JSGlobalContextRef JSGlobalContextCreate(JSClassRef globalObjectClass)
 {

@@ -35,7 +35,7 @@
 #include "Common/LoopPreserver.h"
 
 template<typename T>
-SharedWrap<T>::SharedWrap(std::shared_ptr<T> g) : m_shared(g)
+SharedWrap<T>::SharedWrap(boost::shared_ptr<T> g) : m_shared(g)
 {
     m_isAsync = g->Group()->Loop() != nullptr;
 }
@@ -43,17 +43,18 @@ SharedWrap<T>::SharedWrap(std::shared_ptr<T> g) : m_shared(g)
 template<typename T>
 SharedWrap<T>::~SharedWrap()
 {
-    if (m_shared) {
+    boost::shared_ptr<T> shared = m_shared;
+    if (shared) {
         s_mutex.lock();
-        s_jobject_map.erase(&*m_shared);
+        s_jobject_map.erase(&*shared);
         s_mutex.unlock();
-    }
 
-    m_shared.reset();
+        shared.reset();
+    }
 }
 
 template<typename T>
-jobject SharedWrap<T>::New(JNIEnv *env, std::shared_ptr<T> shared)
+jobject SharedWrap<T>::New(JNIEnv *env, boost::shared_ptr<T> shared)
 {
     if (!shared) return nullptr;
 
@@ -65,7 +66,9 @@ jobject SharedWrap<T>::New(JNIEnv *env, std::shared_ptr<T> shared)
         if (env->IsSameObject(javao, nullptr)) {
             // If Finalize() is being called correctly, this shouldn't happen
             javao = nullptr;
+            s_mutex.lock();
             s_jobject_map.erase(&*shared);
+            s_mutex.unlock();
         }
     }
     s_mutex.unlock();
@@ -83,18 +86,21 @@ jobject SharedWrap<T>::New(JNIEnv *env, std::shared_ptr<T> shared)
 }
 
 template<typename T>
-std::shared_ptr<T> SharedWrap<T>::Shared(JNIEnv *env, jobject thiz)
+boost::shared_ptr<T> SharedWrap<T>::Shared(JNIEnv *env, jobject thiz)
 {
-    std::shared_ptr<T> s = thiz ? GetWrap(env, thiz)->m_shared : std::shared_ptr<T>();
-    return s;
+    if (!thiz) return boost::shared_ptr<T>();
+    boost::shared_ptr<T> w = GetWrap(env, thiz)->m_shared;
+    return w;
 }
 
 template<typename T>
 void SharedWrap<T>::Dispose(long reference)
 {
     const auto valueWrap = reinterpret_cast<SharedWrap<T>*>(reference);
-    if (valueWrap->m_isAsync && !valueWrap->m_shared->IsDefunct()) {
-        valueWrap->m_shared->Group()->MarkZombie(valueWrap->m_shared);
+
+    boost::shared_ptr<T> shared = valueWrap->m_shared;
+    if (valueWrap->m_isAsync && !shared->IsDefunct()) {
+        shared->Group()->MarkZombie(valueWrap->m_shared);
     }
     delete valueWrap;
 }
@@ -124,13 +130,13 @@ const char * SharedWrap<T>::ClassName()
 }
 
 template<typename T>
-const char * SharedWrap<T>::ClassName(std::shared_ptr<T> shared)
+const char * SharedWrap<T>::ClassName(boost::shared_ptr<T> shared)
 {
     return ClassName();
 }
 
 template<>
-const char * SharedWrap<JSValue>::ClassName(std::shared_ptr<JSValue> shared)
+const char * SharedWrap<JSValue>::ClassName(boost::shared_ptr<JSValue> shared)
 {
     const char *r = "org/liquidplayer/javascript/JNIJSValue";
     V8_ISOLATE_CTX(shared->Context(), isolate, ctx)

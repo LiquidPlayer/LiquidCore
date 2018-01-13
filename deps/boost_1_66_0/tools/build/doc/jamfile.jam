@@ -1,0 +1,61 @@
+# Copyright 2004,2006 Vladimir Prus
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
+
+import quickbook ;
+
+project tools/build/doc
+    ;
+
+boostbook userman : src/standalone.xml 
+    :   <xsl:param>toc.section.depth=1
+        <xsl:param>doc.standalone=true 
+        <xsl:param>nav.layout=none
+        <xsl:param>boost.root=.
+        <xsl:param>boost.graphics.root=images/
+        <xsl:param>html.stylesheet=boostbook.css
+        <xsl:param>chunk.first.sections=0
+        <xsl:param>admon.graphics=0
+
+        <xsl:param>boost.defaults=Boost
+
+        <implicit-dependency>jam_docs
+        <dependency>jam_docs
+
+        <implicit-dependency>examples_docs
+        <dependency>examples_docs
+
+        <implicit-dependency>tools
+        <dependency>tools
+
+        <dependency>images
+        <dependency>callouts
+        <dependency>css
+        <dependency>logo
+    ;
+
+xml jam_docs : bjam.qbk ;
+
+local examples = [ glob-tree-ex [ glob ../example/* ] : *.* : bin .DS_Store ] ;
+xml examples_docs : examples.qbk : <dependency>$(examples) ;
+
+docbook tools : src/tools.adoc ;
+
+# HTML dependencies for standalone docs.
+install images : [ glob images/*.png ] : <location>html/images ;
+explicit images ;
+install callouts : [ glob images/callouts/*.png ] : <location>html/images/callouts ;
+explicit callouts ;
+install css : [ glob *.css ] : <location>html ;
+explicit css ;
+install logo : [ glob *.png ] : <location>html ;
+explicit logo ;
+
+###############################################################################
+
+alias boostdoc : src/userman.xml
+    : : : <dependency>examples_docs <implicit-dependency>examples_docs ;
+explicit boostdoc ;
+
+alias boostrelease ;
+explicit boostrelease ;

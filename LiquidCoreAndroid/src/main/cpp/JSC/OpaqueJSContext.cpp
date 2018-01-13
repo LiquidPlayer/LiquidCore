@@ -35,7 +35,7 @@
 #include "JSC/OpaqueJSContext.h"
 #include "JSC/OpaqueJSValue.h"
 
-JSGlobalContextRef OpaqueJSContext::New(std::shared_ptr<JSContext> ctx)
+JSGlobalContextRef OpaqueJSContext::New(boost::shared_ptr<JSContext> ctx)
 {
     JSGlobalContextRef p = new OpaqueJSContext(ctx);
     static_cast<OpaqueJSContextGroup *>(&* ctx->Group())->AssociateContext(p);
@@ -47,7 +47,7 @@ void OpaqueJSContext::StaticGCCallback(GCType type, GCCallbackFlags flags, void*
     reinterpret_cast<OpaqueJSContext*>(data)->GCCallback(type,flags);
 }
 
-OpaqueJSContext::OpaqueJSContext(std::shared_ptr<JSContext> ctx) : m_context(ctx), m_isDefunct(false)
+OpaqueJSContext::OpaqueJSContext(boost::shared_ptr<JSContext> ctx) : m_context(ctx), m_isDefunct(false)
 {
     ctx->Group()->RegisterGCCallback(StaticGCCallback, this);
 }
