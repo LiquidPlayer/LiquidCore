@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 /**
  * This creates a JavaScript object that is used by nodedroid_file.cc in the native code
@@ -146,43 +147,94 @@ import java.util.UUID;
  */
 class FileSystem extends JSObject {
 
-    @jsexport(attributes = JSPropertyAttributeReadOnly) @SuppressWarnings("unused")
-    private Property<JSObject> access_;
+    private class JSBuilder {
+        private StringBuilder js = new StringBuilder();
 
-    @jsexport(attributes = JSPropertyAttributeReadOnly) @SuppressWarnings("unused")
-    private Property<JSObject> aliases_;
+        private void add(String s) {
+            js.append(s);
+        }
 
-    @jsexport(attributes = JSPropertyAttributeReadOnly) @SuppressWarnings("unused")
-    private Property<JSFunction> fs;
+        private void realDir(final String android) {
+            js.append("(function(){try {return fs.realpathSync('");
+            js.append(android);
+            js.append("');}catch(e){}})()");
+        }
 
-    @jsexport(attributes = JSPropertyAttributeReadOnly) @SuppressWarnings("unused")
-    private Property<JSFunction> alias;
+        private void alias(final String alias, final String android, final int mask) {
+            js.append("fs_.aliases_['");
+            js.append(alias);
+            js.append("']=");
+            realDir(android);
+            js.append(";fs_.access_['");
+            js.append(alias);
+            js.append("']=");
+            js.append(mask);
+            js.append(";");
+        }
 
-    @jsexport  @SuppressWarnings("unused")
-    private Property<String> cwd;
+        private void mkdir(final String alias, final String androidp, final int mask) {
+            if (new File(androidp).mkdirs()) {
+                android.util.Log.i("mkdir", "Created directory " + androidp);
+            }
+            alias(alias, androidp, mask);
+        }
+
+        private void symlink(final String alias, final String target, final String linkpath, final int mask) {
+            js.append("(function(){fs.symlinkSync('");
+            js.append(target);
+            js.append("','");
+            js.append(linkpath);
+            js.append("');})();");
+            alias(alias, target, mask);
+        }
+
+        private void symlinkRealTarget(final String alias, final String target, final String linkpath, final int mask) {
+            js.append("(function(){fs.symlinkSync(");
+            realDir(target);
+            js.append(",'");
+            js.append(linkpath);
+            js.append("');})();");
+            alias(alias, target, mask);
+        }
+
+        private void linkMedia(final String type, final String alias, final String linkpath, int mask) {
+            File external = Environment.getExternalStoragePublicDirectory(type);
+            if (external.mkdirs()) {
+                android.util.Log.i("linkMedia", "Created external directory " + external);
+            }
+            js.append("{var m=");
+            realDir(external.getAbsolutePath());
+            js.append(";");
+            js.append("if(m){");
+            js.append("(function(){fs.symlinkSync(m,'");
+            js.append(linkpath);
+            js.append("/public/media/");
+            js.append(alias);
+            js.append("');})();");
+            js.append("fs_.aliases_['");
+            js.append("/home/public/media/");
+            js.append(alias);
+            js.append("']=m;fs_.access_['");
+            js.append("/home/public/media/");
+            js.append(alias);
+            js.append("']=");
+            js.append(mask);
+            js.append(";}}");
+        }
+
+        private void append(final String s) {
+            js.append(s);
+        }
+
+        private String build() {
+            return js.toString();
+        }
+    }
 
     private final Context androidCtx;
     private final String uniqueID;
     private final String sessionID;
 
-    private String realDir(String dir) {
-        JSValue v = getContext().evaluateScript(
-                "(function(){try {return require('fs').realpathSync('" + dir + "');}catch(e){}})()"
-        );
-        if (v.isUndefined() || v.isNull()) return null;
-        return v.toString();
-    }
-    private String mkdir(String dir) {
-        if (new File(dir).mkdirs()) {
-            android.util.Log.i("mkdir", "Created directory " + dir);
-        }
-        return realDir(dir);
-    }
-    private void symlink(String target, String linkpath) {
-        getContext().evaluateScript(
-                "(function(){require('fs').symlinkSync('" + target + "','" + linkpath +"');})()"
-        );
-    }
     private static boolean isSymlink(File file) throws IOException {
         if (file == null)
             throw new NullPointerException("File must not be null");
@@ -212,63 +264,33 @@ class FileSystem extends JSObject {
                     "Failed to delete " + fileOrDirectory.getAbsolutePath());
         }
     }
-    private void linkMedia(String type, String dir, String home, int mediaPermissionsMask) {
-        File external = Environment.getExternalStoragePublicDirectory(type);
-        if (external.mkdirs()) {
-            android.util.Log.i("linkMedia", "Created external directory " + external);
-        }
-        String media = realDir(external.getAbsolutePath());
-        if (media != null) {
-            symlink(media, home + "/public/media/" + dir);
-            aliases_.get().property("/home/public/media/" + dir, media);
-            access_.get().property("/home/public/media/" + dir, mediaPermissionsMask);
-        }
-    }
 
-    private void setUp(int mediaPermissionsMask) {
+    private void setUp(JSBuilder js, int mediaPermissionsMask) {
         final String suffix = "/__org.liquidplayer.node__/_" + uniqueID;
-        String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
+        final String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
+        final String sessionPath = androidCtx.getCacheDir().getAbsolutePath() + sessionSuffix;
+        final String path = androidCtx.getCacheDir().getAbsolutePath() + suffix;
+        final String localPath = androidCtx.getFilesDir().getAbsolutePath() + suffix;
+        final String node_modules = androidCtx.getFilesDir().getAbsolutePath() +
+                "/__org.liquidplayer.node__/node_modules";
 
         // Set up /home (read-only)
-        String home  = mkdir(androidCtx.getCacheDir().getAbsolutePath() +
-                sessionSuffix + "/home");
-        aliases_.get().property("/home", home);
-        access_ .get().property("/home", Process.kMediaAccessPermissionsRead);
-
+        js.mkdir("/home", sessionPath + "/home", Process.kMediaAccessPermissionsRead);
         // Set up /home/module (read-only)
-        String module = mkdir(androidCtx.getFilesDir().getAbsolutePath() +
-                suffix + "/module");
-        symlink(module, home + "/module");
-        aliases_.get().property("/home/module", module);
-        access_ .get().property("/home/module", Process.kMediaAccessPermissionsRead);
-
+        if (new File(localPath + "/module").mkdirs()) {
+            android.util.Log.i("FileSystem", "Created directory " + path + "/module" );
+        }
+        js.symlinkRealTarget("/home/module", localPath + "/module",
+                sessionPath + "/home/module", Process.kMediaAccessPermissionsRead);
         // Set up /home/temp (read/write)
-        String temp = mkdir(androidCtx.getCacheDir().getAbsolutePath() +
-                sessionSuffix + "/temp");
-        symlink(temp, home + "/temp");
-        aliases_.get().property("/home/temp", temp);
-        access_ .get().property("/home/temp", Process.kMediaAccessPermissionsRW);
-
+        js.mkdir("/home/temp", sessionPath + "/temp", Process.kMediaAccessPermissionsRW);
         // Set up /home/cache (read/write)
-        String cache = mkdir(androidCtx.getCacheDir().getAbsolutePath() +
-                suffix + "/cache");
-        symlink(cache, home + "/cache");
-        aliases_.get().property("/home/cache", cache);
-        access_ .get().property("/home/cache", Process.kMediaAccessPermissionsRW);
-
+        js.mkdir("/home/cache", path + "/cache", Process.kMediaAccessPermissionsRW);
         // Set up /home/local (read/write)
-        String local = mkdir(androidCtx.getFilesDir().getAbsolutePath() +
-                suffix + "/local");
-        symlink(local, home + "/local");
-        aliases_.get().property("/home/local", local);
-        access_ .get().property("/home/local", Process.kMediaAccessPermissionsRW);
-
+        js.mkdir("/home/local", localPath + "/local", Process.kMediaAccessPermissionsRW);
         // Permit access to node_modules
-        String node_modules = androidCtx.getFilesDir().getAbsolutePath() +
-                "/__org.liquidplayer.node__/node_modules";
-        symlink(node_modules, home + "/node_modules");
-        aliases_.get().property("/home/node_modules", node_modules);
-        access_ .get().property("/home/node_modules", Process.kMediaAccessPermissionsRead);
+        js.symlink("/home/node_modules", node_modules,
+                sessionPath + "/home/node_modules", Process.kMediaAccessPermissionsRead);
 
         String state = Environment.getExternalStorageState();
         if (!Environment.MEDIA_MOUNTED.equals(state) &&
@@ -283,22 +305,23 @@ class FileSystem extends JSObject {
             }
 
             // Set up /home/public
-            if (!new File(home + "/public").mkdirs()) {
+            if (!new File(sessionPath + "/home/public").mkdirs()) {
                 android.util.Log.e("FileSystem", "Error: Failed to set up /home/public");
             }
 
             // Set up /home/public/data
             File external = androidCtx.getExternalFilesDir(null);
             if (external != null) {
-                String externalPersistent = mkdir(external.getAbsolutePath() +
-                        "/LiquidPlayer/" + uniqueID);
-                symlink(externalPersistent, home + "/public/data");
-                aliases_.get().property("/home/public/data", externalPersistent);
-                access_.get().property("/home/public/data", Process.kMediaAccessPermissionsRW);
+                final String externalPersistent = external.getAbsolutePath() + "/LiquidPlayer/" + uniqueID;
+                if (new File(externalPersistent).mkdirs()) {
+                    android.util.Log.i("FileSystem", "Created external directory " + externalPersistent);
+                }
+                js.symlinkRealTarget("/home/public/data", externalPersistent,
+                        sessionPath + "/home/public/data", Process.kMediaAccessPermissionsRW);
             }
 
             // Set up /home/public/media
-            if (!new File(home + "/public/media").mkdirs()) {
+            if (!new File(sessionPath + "/home/public/media").mkdirs()) {
                 android.util.Log.e("FileSystem", "Error: Failed to set up /home/public/media");
             }
 
@@ -310,34 +333,37 @@ class FileSystem extends JSObject {
                 mediaPermissionsMask &= ~Process.kMediaAccessPermissionsWrite;
             }
 
-            linkMedia(Environment.DIRECTORY_MOVIES,   "Movies",   home, mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_PICTURES, "Pictures", home, mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_DCIM,     "DCIM",     home, mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_ALARMS,   "Alarms",   home, mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_MOVIES,   "Movies",   sessionPath+"/home", mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_PICTURES, "Pictures", sessionPath+"/home", mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_DCIM,     "DCIM",     sessionPath+"/home", mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_ALARMS,   "Alarms",   sessionPath+"/home", mediaPermissionsMask);
             if (Build.VERSION.SDK_INT >= 19) {
-                linkMedia(Environment.DIRECTORY_DOCUMENTS, "Documents", home, mediaPermissionsMask);
+                js.linkMedia(Environment.DIRECTORY_DOCUMENTS, "Documents", sessionPath+"/home", mediaPermissionsMask);
             }
-            linkMedia(Environment.DIRECTORY_DOWNLOADS,"Downloads",home, mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_MUSIC,    "Music"    ,home, mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_NOTIFICATIONS, "Notifications", home,
+            js.linkMedia(Environment.DIRECTORY_DOWNLOADS,"Downloads",sessionPath+"/home", mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_MUSIC,    "Music"    ,sessionPath+"/home", mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_NOTIFICATIONS, "Notifications", sessionPath+"/home",
                     mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_PODCASTS, "Podcasts", home, mediaPermissionsMask);
-            linkMedia(Environment.DIRECTORY_RINGTONES,"Ringtones",home, mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_PODCASTS, "Podcasts", sessionPath+"/home", mediaPermissionsMask);
+            js.linkMedia(Environment.DIRECTORY_RINGTONES,"Ringtones",sessionPath+"/home", mediaPermissionsMask);
         }
-
-        cwd.set("/home");
+        js.append("fs_.cwd='/home';");
     }
 
     private static final Object sessionMutex = new Object();
     private static final ArrayList<String> activeSessions = new ArrayList<>();
 
+    private static final Object lock = new Object();
+
     private static void uninstallSession(Context ctx, String sessionID) {
-        String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
+        synchronized (lock) {
+            String sessionSuffix = "/__org.liquidplayer.node__/sessions/" + sessionID;
 
-        File session = new File(ctx.getCacheDir().getAbsolutePath() + sessionSuffix);
-        android.util.Log.i("sessionWatchdog", "deleting session " + session);
+            File session = new File(ctx.getCacheDir().getAbsolutePath() + sessionSuffix);
+            android.util.Log.i("sessionWatchdog", "deleting session " + session);
 
-        deleteRecursive(session);
+            deleteRecursive(session);
+        }
     }
 
     static void uninstallLocal(Context ctx, String serviceID) {
@@ -369,12 +395,13 @@ class FileSystem extends JSObject {
             activeSessions.add(sessionID);
         }
 
-        aliases_.set(new JSObject(ctx));
-        access_ .set(new JSObject(ctx));
+        JSBuilder js = new JSBuilder();
+        js.append("fs_.aliases_={};fs_.access_={};");
 
-        setUp(mediaPermissionsMask);
+        setUp(js, mediaPermissionsMask);
 
-        fs.set(new JSFunction(ctx, "fs", ""+
+        js.append("fs_.fs=function(file){");
+        js.append(
                 "if (!file.startsWith('/')) { file = ''+this.cwd+'/'+file; }" +
                 "try { file = require('path').resolve(file); } catch (e) {console.log(e);}"+
                 "var access = 0;"+
@@ -405,10 +432,10 @@ class FileSystem extends JSObject {
                 "        break;"+
                 "    }"+
                 "}"+
-                "return [access,newfile];",
-                "file"));
-
-        alias.set(new JSFunction(ctx, "alias", ""+
+                "return [access,newfile];");
+        js.append("};");
+        js.append("fs_.alias=function(file){");
+        js.append(
                 "var keys = Object.keys(this.aliases_).sort().reverse();"+
                 "for (var p=0; p<keys.length; p++) {"+
                 "   if (file.startsWith(this.aliases_[keys[p]] + '/')) {"+
@@ -419,39 +446,43 @@ class FileSystem extends JSObject {
                 "       break;"+
                 "   }"+
                 "}"+
-                "return file;",
-                "file"));
+                "return file;");
+        js.append("};");
 
+        new JSFunction(ctx, "setup",
+                new String[] {"fs_"},
+                js.build(),
+                null,
+                0
+        ).call(null, this);
     }
 
     private static long lastSessionBark = 0L;
     // Don't clean constantly; wait 5 minutes at least between cleanings
     private static final long SESSION_WATCHDOG_TIMER = 5 * 60 * 1000;
-    private static void sessionWatchdog(Context ctx) {
+    private static void sessionWatchdog(final Context ctx) {
         final String sessionsSuffix = "/__org.liquidplayer.node__/sessions";
 
         if (new Date().getTime() - lastSessionBark > SESSION_WATCHDOG_TIMER) {
-            File sessions = new File(ctx.getCacheDir().getAbsolutePath() + sessionsSuffix);
-            File[] files = sessions.listFiles();
-            if (files != null) {
-                for (File session : files) {
-                    boolean isActive;
-                    synchronized (sessionMutex) {
-                        isActive = activeSessions.contains(session.getName());
+            new Thread() {
+                @Override public void run() {
+                    File sessions = new File(ctx.getCacheDir().getAbsolutePath() + sessionsSuffix);
+                    File[] files = sessions.listFiles();
+                    if (files != null) {
+                        for (File session : files) {
+                            boolean isActive;
+                            synchronized (sessionMutex) {
+                                isActive = activeSessions.contains(session.getName());
+                            }
+                            if (!isActive) {
+                                uninstallSession(ctx, session.getName());
+                            }
+                        }
                     }
-                    if (!isActive) {
-                        uninstallSession(ctx, session.getName());
-                    }
+                    lastSessionBark = new Date().getTime();
                 }
-            }
-            lastSessionBark = new Date().getTime();
+            }.start();
         }
-    }
-
-    @Override
-    public void finalize() throws Throwable {
-        super.finalize();
-        //cleanUp();
     }
 
     void cleanUp() {
