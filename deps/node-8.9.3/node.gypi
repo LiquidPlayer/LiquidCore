@@ -345,7 +345,16 @@
         ],
       }
     }],
-    ['OS == "android"', {
+    ['OS == "android" and android_target_arch == "arm64"', {
+        'cflags': [ '-D__ANDROID_API__=21' ],
+    }],
+    ['OS == "android" and android_target_arch == "x86_64"', {
+        'cflags': [ '-D__ANDROID_API__=21' ],
+    }],
+    ['OS == "android" and android_target_arch == "x86"', {
+        'cflags': [ '-D__ANDROID_API__=16' ],
+    }],
+    ['OS == "android" and android_target_arch == "arm"', {
         'cflags': [ '-D__ANDROID_API__=16' ],
     }],
     [ 'OS=="sunos"', {

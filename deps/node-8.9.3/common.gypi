@@ -355,7 +355,19 @@
       }],
       ['OS=="android"', {
         'target_conditions': [
-          ['_toolset=="target"', {
+          ['_toolset=="target" and android_target_arch=="arm64"', {
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=21' ],
+            'libraries': [ '-llog' ],
+          }],
+          ['_toolset=="target" and android_target_arch=="x86_64"', {
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=21' ],
+            'libraries': [ '-llog' ],
+          }],
+          ['_toolset=="target" and android_target_arch=="arm"', {
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=16' ],
+            'libraries': [ '-llog' ],
+          }],
+          ['_toolset=="target" and android_target_arch=="x86"', {
             'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=16' ],
             'libraries': [ '-llog' ],
           }],
