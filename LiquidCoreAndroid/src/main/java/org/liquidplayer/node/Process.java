@@ -302,7 +302,8 @@ public class Process {
             return;
         }
         jscontext = new WeakReference<>(ctx);
-        // FIXME! HACK!
+
+        // Hold the context until we get our callback.
         holdContext = ctx;
         isActive = true;
         ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
@@ -364,6 +365,12 @@ public class Process {
 
                     // Ready to start
                     eventOnStart(ctx);
+
+                    // Ok, we have now handed off the context to the client.  We can release our
+                    // strong reference and just keep the weak one.  This will allow us to close a
+                    // a process that isn't being held by Java if it is intentionally or unintentionally
+                    // left running
+                    holdContext = null;
                 }
             }
         });
