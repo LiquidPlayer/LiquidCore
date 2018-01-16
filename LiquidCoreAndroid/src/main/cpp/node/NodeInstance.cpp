@@ -235,18 +235,10 @@ void NodeInstance::Chdir(const FunctionCallbackInfo<Value>& args) {
   }
 }
 
-std::map<Environment*,NodeInstance*> NodeInstance::instance_map;
-
 void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
   __android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "exit(%d) called", (int) args[0]->Int32Value());
-
-  NodeInstance *instance;
-
-  ContextGroup::Mutex()->lock();
-  instance = instance_map[env];
-  ContextGroup::Mutex()->unlock();
 
   WaitForInspectorDisconnect(Environment::GetCurrent(args));
 
@@ -258,14 +250,6 @@ void NodeInstance::Exit(const FunctionCallbackInfo<Value>& args) {
 
 void NodeInstance::Abort(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
-
-  __android_log_print(ANDROID_LOG_DEBUG, "NodeInstance", "abort called");
-
-  NodeInstance *instance;
-
-  ContextGroup::Mutex()->lock();
-  instance = instance_map[env];
-  ContextGroup::Mutex()->unlock();
 
   WaitForInspectorDisconnect(Environment::GetCurrent(args));
 
@@ -602,8 +586,6 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   env.SetMethod(process, "abort", Abort);
   env.SetMethod(process, "_kill", Kill);
 
-  instance_map[&env] = this;
-
   if (m_jvm) {
     notify_start(java_node_context, ctxRef);
   }
@@ -671,10 +653,6 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
 #if defined(LEAK_SANITIZER)
   __lsan_do_leak_check();
 #endif
-
-  /* ===Start */
-  instance_map.erase(&env);
-  /* ===End */
 
   return exit_code;
 }

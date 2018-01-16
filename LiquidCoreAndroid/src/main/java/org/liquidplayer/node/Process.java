@@ -40,6 +40,7 @@ import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -267,7 +268,6 @@ public class Process {
     private boolean isActive = false;
     private boolean isDone = false;
     private FileSystem fs = null;
-    // FIXME: HACK!
     private JSContext holdContext;
 
     private ArrayList<EventListener> listeners = new ArrayList<>();
@@ -290,23 +290,21 @@ public class Process {
     private void onNodeStarted(final Object mainContext, Object ctxGroupRef, long jscCtxRef) {
         // We will use reflection to create this object.  Ideally the JNI* classes would be
         // package local to this, but since we wanted to split packages, we will do it this way.
-        JSContext ctx;
         try {
             final Constructor<JSContextGroup> ctor =
                     JSContextGroup.class.getDeclaredConstructor(Object.class);
             ctor.setAccessible(true);
             final JSContextGroup g = ctor.newInstance(ctxGroupRef);
-            ctx = new ProcessContext(mainContext, g, jscCtxRef);
+            holdContext = new ProcessContext(mainContext, g, jscCtxRef);
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
-        jscontext = new WeakReference<>(ctx);
+        jscontext = new WeakReference<>(holdContext);
 
         // Hold the context until we get our callback.
-        holdContext = ctx;
         isActive = true;
-        ctx.property("__nodedroid_onLoad", new JSFunction(ctx, "__nodedroid_onLoad") {
+        holdContext.property("__nodedroid_onLoad", new JSFunction(holdContext, "__nodedroid_onLoad") {
             @SuppressWarnings("unused")
             public void __nodedroid_onLoad() {
                 JSContext ctx = jscontext.get();

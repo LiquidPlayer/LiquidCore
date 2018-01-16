@@ -94,8 +94,6 @@ private:
     static void Kill(const FunctionCallbackInfo<Value>& args);
     static void OnFatalError(const char* location, const char* message);
 
-    static std::map<Environment*,NodeInstance*> instance_map;
-
 private:
     Mutex node_isolate_mutex;
     v8::Isolate* node_isolate = nullptr;

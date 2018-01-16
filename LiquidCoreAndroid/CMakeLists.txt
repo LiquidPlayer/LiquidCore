@@ -74,6 +74,16 @@ add_library( node
              SHARED
              IMPORTED )
 
+if(${ANDROID_ABI} STREQUAL armeabi-v7a)
+    SET( ARCH_SIZE "32bit" )
+elseif(${ANDROID_ABI} STREQUAL x86)
+    SET( ARCH_SIZE "32bit" )
+elseif(${ANDROID_ABI} STREQUAL x86_64)
+    SET( ARCH_SIZE "64bit" )
+elseif(${ANDROID_ABI} STREQUAL arm64-v8a)
+    SET( ARCH_SIZE "64bit" )
+endif()
+
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 set_target_properties(
              # Specifies the target library.
@@ -83,7 +93,7 @@ set_target_properties(
              PROPERTIES IMPORTED_LOCATION
 
              # Provides the path to the library you want to import.
-             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/symbols/${ANDROID_ABI}/libnode.so )
+             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/${ARCH_SIZE}/symbols/${ANDROID_ABI}/libnode.so )
 else()
 set_target_properties(
              # Specifies the target library.
@@ -93,7 +103,7 @@ set_target_properties(
              PROPERTIES IMPORTED_LOCATION
 
              # Provides the path to the library you want to import.
-             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/nosymbols/${ANDROID_ABI}/libnode.so )
+             ${PROJECT_SOURCE_DIR}/../deps/node-8.9.3/prebuilt/${ARCH_SIZE}/nosymbols/${ANDROID_ABI}/libnode.so )
 endif()
 
 include_directories(

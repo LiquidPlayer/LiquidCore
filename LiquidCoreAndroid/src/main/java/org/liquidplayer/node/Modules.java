@@ -36,8 +36,11 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -59,11 +62,24 @@ public class Modules {
             File dest_dir = new File(dest_dir_path);
 
             if (!modules_loaded) {
+                File version = new File(dest_dir_path + addLeadingSlash(".__version"));
                 try {
-                    if (dest_dir.exists()) {
-                        FileSystem.deleteRecursive(dest_dir);
+                    boolean reload = true;
+                    if (version.exists()) {
+                        BufferedReader br = new BufferedReader(new FileReader(version));
+                        String installed_version = br.readLine().trim();
+                        br.close();
+                        reload = !BuildConfig.VERSION_NAME.equals(installed_version);
                     }
-                    copyDirorfileFromAssetManager("node_modules", "node_modules");
+                    if (reload) {
+                        if (dest_dir.exists()) {
+                            FileSystem.deleteRecursive(dest_dir);
+                        }
+                        copyDirorfileFromAssetManager("node_modules", "node_modules");
+                        FileWriter writer = new FileWriter(dest_dir_path + addLeadingSlash(".__version"));
+                        writer.write(BuildConfig.VERSION_NAME);
+                        writer.close();
+                    }
                     modules_loaded = true;
                 } catch (IOException e) {
                     Log.e("setUpNodeModules", "Exception", e);

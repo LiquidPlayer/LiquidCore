@@ -336,7 +336,9 @@ void ContextGroup::Dispose()
         m_scheduling_mutex.unlock();
         FreeZombies();
 
-        s_isolate_map.erase(m_isolate);
+        if (s_isolate_map.count(m_isolate)) {
+            s_isolate_map.erase(m_isolate);
+        }
         if (m_manage_isolate) {
             m_isolate->Dispose();
         } else {

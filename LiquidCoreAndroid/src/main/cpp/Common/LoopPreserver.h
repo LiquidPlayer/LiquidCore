@@ -37,11 +37,12 @@
 #include <memory>
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
+#include <boost/smart_ptr/enable_shared_from_this.hpp>
 #include "uv.h"
 
 class ContextGroup;
 
-class LoopPreserver : public std::enable_shared_from_this<LoopPreserver>
+class LoopPreserver : public boost::enable_shared_from_this<LoopPreserver>
 {
 public:
     static boost::shared_ptr<LoopPreserver> New(boost::shared_ptr<ContextGroup> group);
