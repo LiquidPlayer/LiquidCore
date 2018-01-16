@@ -44,6 +44,7 @@ struct OpaqueJSValue {
 
         inline Local<Value> L() const
         {
+            boost::shared_ptr<JSValue> value = m_value;
             return value ? value->Value() : Local<Value>::New(m_ctx->Context()->isolate(), weak);
         }
         void Clean(bool fromGC=false) const;
@@ -62,7 +63,7 @@ struct OpaqueJSValue {
     private:
         virtual void WeakCallback();
 
-        boost::shared_ptr<JSValue> value;
+        boost::atomic_shared_ptr<JSValue> m_value;
         UniquePersistent<Value> weak;
         JSContextRef m_ctx;
         void *m_private_data = nullptr;

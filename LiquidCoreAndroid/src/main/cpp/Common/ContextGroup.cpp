@@ -165,6 +165,12 @@ void ContextGroup::MarkZombie(boost::shared_ptr<JSContext> obj)
 void ContextGroup::FreeZombies()
 {
     m_zombie_mutex.lock();
+    auto vit = m_value_zombies.begin();
+    while (vit != m_value_zombies.end()) {
+        auto value = boost::atomic_load(&(*vit));
+        value.reset();
+        ++vit;
+    }
     m_value_zombies.clear();
 
     /*
@@ -173,18 +179,24 @@ void ContextGroup::FreeZombies()
      * exit the process here.
      */
     auto it = m_context_zombies.begin();
-    while (it != m_context_zombies.end() && !(*it)->IsDefunct()) {
-        V8_ISOLATE_CTX((*it), isolate, context)
-            Local<Object> process =
-                    context->Global()->Get(String::NewFromUtf8(isolate, "process"))->ToObject();
-            Local<Function> exit = process->Get(String::NewFromUtf8(isolate, "exit")).As<Function>();
-            Local<Value> exit_code = Number::New(isolate,
-                                                 CONTEXT_GARBAGE_COLLECTED_BUT_PROCESS_STILL_ACTIVE);
-            exit->Call(process, 1, &exit_code);
+    while (it != m_context_zombies.end()) {
+        auto ctx = boost::atomic_load(&(*it));
+        if (!ctx->IsDefunct()) {
+            V8_ISOLATE_CTX(ctx, isolate, context)
+                Local<Object> process =
+                        context->Global()->Get(String::NewFromUtf8(isolate, "process"))->ToObject();
+                Local<Function> exit = process->Get(
+                        String::NewFromUtf8(isolate, "exit")).As<Function>();
+                Local<Value> exit_code = Number::New(isolate,
+                                                     CONTEXT_GARBAGE_COLLECTED_BUT_PROCESS_STILL_ACTIVE);
+                exit->Call(process, 1, &exit_code);
 #if DEBUG
-            __android_log_assert("condition", "FreeZombies()", "Context was collected but process still runnning");
+                __android_log_assert("condition", "FreeZombies()",
+                                     "Context was collected but process still runnning");
 #endif
-        V8_UNLOCK()
+            V8_UNLOCK()
+        }
+        ctx.reset();
         ++it;
     }
 
@@ -298,12 +310,12 @@ void ContextGroup::GCPrologueCallback(GCType type, GCCallbackFlags flags)
 
 void ContextGroup::Manage(boost::shared_ptr<JSValue> obj)
 {
-    m_managedValues.push_back(std::move(obj));
+    m_managedValues.push_back(obj);
 }
 
 void ContextGroup::Manage(boost::shared_ptr<JSContext> obj)
 {
-    m_managedContexts.push_back(std::move(obj));
+    m_managedContexts.push_back(obj);
 }
 
 void ContextGroup::Dispose()

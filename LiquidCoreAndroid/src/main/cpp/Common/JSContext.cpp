@@ -57,6 +57,10 @@ void JSContext::Dispose() {
         m_isDefunct = true;
 
         m_set_mutex.lock();
+        for (auto it = m_value_set.begin(); it != m_value_set.end(); ++it) {
+            auto p = boost::atomic_load<JSValue>(&(*it));
+            p.reset();
+        }
         m_value_set.clear();
         m_set_mutex.unlock();
 

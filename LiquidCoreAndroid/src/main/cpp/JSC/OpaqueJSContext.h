@@ -52,7 +52,7 @@ struct OpaqueJSContext : public JSCRetainer {
         OpaqueJSContext(boost::shared_ptr<JSContext> ctx);
         void GCCallback(GCType type, GCCallbackFlags flags);
 
-        boost::shared_ptr<JSContext> m_context;
+        boost::atomic_shared_ptr<JSContext> m_context;
         std::vector<JSValueRef> m_collection;
         std::recursive_mutex m_gc_lock;
         bool m_isDefunct;

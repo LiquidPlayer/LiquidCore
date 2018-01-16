@@ -119,10 +119,11 @@ void OpaqueJSValue::Clean(bool fromGC) const
 
 int OpaqueJSValue::Retain()
 {
+    boost::shared_ptr<JSValue> value = m_value;
     if (!value) {
         V8_ISOLATE(m_ctx->Context()->Group(), isolate)
             Context::Scope(m_ctx->Context()->Value());
-            value = JSValue::New(m_ctx->Context(), Local<Value>::New(isolate,weak));
+            m_value = JSValue::New(m_ctx->Context(), Local<Value>::New(isolate,weak));
             weak.Reset();
         V8_UNLOCK()
     }
@@ -148,7 +149,7 @@ bool OpaqueJSValue::SetPrivateData(void *data)
 }
 
 OpaqueJSValue::OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass) :
-    value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass), m_count(1)
+    m_value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass), m_count(1)
 {
     weak = UniquePersistent<Value>(context->Context()->isolate(), v);
     weak.SetWeak<OpaqueJSValue>(this, [](const WeakCallbackInfo<OpaqueJSValue> &info) {

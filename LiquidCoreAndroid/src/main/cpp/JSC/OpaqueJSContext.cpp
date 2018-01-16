@@ -64,8 +64,9 @@ void OpaqueJSContext::Dispose()
         static_cast<OpaqueJSContextGroup *>(&*Context()->Group())
             ->DisassociateContext(this);
 
-        V8_ISOLATE(m_context->Group(), isolate);
-            m_context->Group()->UnregisterGCCallback(StaticGCCallback, this);
+        boost::shared_ptr<JSContext> context = m_context;
+        V8_ISOLATE(context->Group(), isolate);
+            context->Group()->UnregisterGCCallback(StaticGCCallback, this);
 
             ForceGC();
             //For testing only.  Must also specify --enable_gc flag in common.cpp
@@ -92,7 +93,7 @@ void OpaqueJSContext::Dispose()
 
             ASSERTJSC(m_collection.empty());
 
-            m_context.reset();
+            context.reset();
         V8_UNLOCK();
     }
 }
