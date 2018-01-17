@@ -72,9 +72,11 @@ public:
 
 void ContextGroup::StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags)
 {
+    s_mutex.lock();
     if (s_isolate_map.count(isolate)) {
         s_isolate_map[isolate]->GCPrologueCallback(type, flags);
     }
+    s_mutex.unlock();
 }
 
 Platform *ContextGroup::s_platform = NULL;
@@ -139,7 +141,9 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_async_handle = nullptr;
     m_isDefunct = false;
 
+    s_mutex.lock();
     s_isolate_map[m_isolate] = this;
+    s_mutex.unlock();
     m_gc_callbacks.clear();
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
@@ -348,9 +352,11 @@ void ContextGroup::Dispose()
         m_scheduling_mutex.unlock();
         FreeZombies();
 
+        s_mutex.lock();
         if (s_isolate_map.count(m_isolate)) {
             s_isolate_map.erase(m_isolate);
         }
+        s_mutex.unlock();
         if (m_manage_isolate) {
             m_isolate->Dispose();
         } else {
