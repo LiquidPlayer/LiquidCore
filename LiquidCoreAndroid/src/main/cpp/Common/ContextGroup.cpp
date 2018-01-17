@@ -66,8 +66,8 @@ struct Runnable {
 class ContextGroupData {
 public:
     ContextGroupData(boost::shared_ptr<ContextGroup> cg) : m_context_group(cg) {}
-    ~ContextGroupData() { m_context_group.reset(); }
-    boost::shared_ptr<ContextGroup> m_context_group;
+    ~ContextGroupData() { boost::shared_ptr<ContextGroup> group = m_context_group; group.reset(); }
+    boost::atomic_shared_ptr<ContextGroup> m_context_group;
 };
 
 void ContextGroup::StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags)
