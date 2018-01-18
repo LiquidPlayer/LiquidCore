@@ -20,39 +20,37 @@ android {
                 abiFilters "x86", "armeabi-v7a" //, "x86_64", "arm64-v8a"
             }
         }
+        sourceSets {
+            main {
+                jni.srcDirs = []
+                release.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/nosymbols'
+                                   //, '../deps/node-8.9.3/prebuilt/64bit/nosymbols'
+                ]
+                jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/symbols'
+                                           //, '../deps/node-8.9.3/prebuilt/64bit/symbols'
+                ]
+            }
+        }
+    }
+    packagingOptions{
+        doNotStrip "**/*/libnode.so"
     }
     buildTypes {
-        release {
+        debug {
             testCoverageEnabled = false
             minifyEnabled false
-            sourceSets {
-                main {
-                    jni.srcDirs = []
-                    jniLibs.srcDirs = [ '../deps/node-8.9.3/prebuilt/32bit/symbols'
-                            //, '../deps/node-8.9.3/prebuilt/64bit/symbols'
-                    ]
-                }
-            }
-        }/*
+        }
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            sourceSets {
-                main {
-                    jni.srcDirs = []
-                    jniLibs.srcDirs = [ '../deps/node-8.9.3/prebuilt/32bit/nosymbols'
-                                        //, '../deps/node-8.9.3/prebuilt/64bit/nosymbols'
-                    ]
-                }
-            }
-        }*/
+        }
     }
     splits {
         abi {
             enable true
             reset()
             include 'x86', 'armeabi-v7a' //, 'x86_64', 'arm64-v8a'
-//            universalApk true
+            universalApk true
         }
     }
     externalNativeBuild {
