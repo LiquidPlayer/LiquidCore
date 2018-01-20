@@ -104,7 +104,7 @@ public class JSContextGroup {
      * @return The written file
      * @throws IOException thrown if taking snapshot or writing to the file fails; check message
      */
-    static File createSnapshot(String script, File snapshotToWrite) throws IOException
+    public static File createSnapshot(String script, File snapshotToWrite) throws IOException
     {
         int result = JNIJSContextGroup.createSnapshot(script, snapshotToWrite.getAbsolutePath());
         switch(result) {
@@ -126,9 +126,9 @@ public class JSContextGroup {
     }
 
     /**
-     * Gets the JavaScriptCore context group reference
+     * Gets the JNI context group reference
      * @since 0.1.0
-     * @return  the JavaScriptCore context group reference
+     * @return  the JNI context group reference
      */
     public JNIJSContextGroup groupRef() {
         return group;
