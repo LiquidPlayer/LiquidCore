@@ -3,17 +3,19 @@ The LiquidCore Project
 
 LiquidCore provides an environment for developers to create native mobile micro apps in Javascript that can in turn be embedded into _other_ apps.  Think: native `<iframe>` for mobile apps.  A LiquidCore micro app is simply a [Node.js] module that can be served from the cloud, and therefore, like in a webpage, it can be modified server-side and instantly updated on all mobile devices.
 
+LiquidCore also provides a convenient way for Android developers to execute raw JavaScript inside of their apps, as iOS developers can already do natively with JavaScriptCore.
+
 LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.3.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.3.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.3.1)
+[0.4.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.4.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.4.0)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.3.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.3.1/)
+[Version 0.4.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.4.0/)
 
 # Table of Contents
 
@@ -99,98 +101,18 @@ LiquidCore.on('host_event', function(msg) {
 })
 ```
 
-### Virtual File System
-
-A micro service **namespace** is uniquely referenced by its URI _path_ (excluding the filename).  In the example above, its namespace would be `http://my.server.com/path/to`.  This allows multiple instances of a micro service, or even different micro services (with different filenames in the same path) to share data between them.  In web terms, this acts like the cookie space to ensure that micro services from different providers remain isolated from each other.
-
-Some definitions:
-
-**Host**: The hosting app -- that is, the native Android app that includes the LiquidCore library.
-
-**Micro service:** A Node.js module whose code is referenced by a URI
-
-**Instance:** A single instance of a micro service.  Each instance operates in its own thread and in its own Node.js environment.  Two instances of the same micro service are independent of each other, except that they share a virtual file system.
-
-**Namespace:** A namespace, specified by the _path_ of the micro service URI, identifies which micro services share a virtual file system.  Namespaces are not hierarchical.  For example, `http://foo.org/a` and `http://foo.org/a/b` are two completely different namespaces; one does not inherit from another.
-
-Each namespace its own virtual file system, but can share files between instances running in the same namespace on the same host (via `/home/local` or `/home/cache`), or make them publicly available (via `/home/public`).  The directory structure is as follows:
-
-```
-home
-  |
-  +--- node_modules
-  |
-  +--- module
-  |
-  +--- temp
-  |
-  +--- cache
-  |
-  +--- local
-  |
-  +--- public
-         |
-         +--- data
-         |
-         +--- media
-                |
-                +--- Pictures
-                |
-                +--- Movies
-                |
-                +--- Ringtones
-                |
-                +--- ...
-```
-
-#### /home
-
-Read-only directory which acts only as a holding bin for other directories
-
-#### /home/node_modules
-
-Read-only directory containing included node modules.  These modules can be loaded using `require()`.  These modules are in addition to the standard built-in Node.js modules.  As of version 0.2.0, only `sqlite3` is natively included.
-
-#### /home/module
-
-Read-only directory.  Contains downloaded javascript code for the micro service.  As these files change on the server, they will be updated and cached here.
-
-#### /home/temp
-
-Read/write directory.  This directory is private to a single instance of a micro service.  The contents of this directory live only as long as the underlying Node.js process is active. This directory is appropriate only for very short-lived temporary files.
-
-#### /home/cache
-
-Read/write directory.  This directory is available to all micro service instances running in the same namespace on the same local host.  The host is the host app which uses an instance of the LiquidCore library.  Files in this directory will be deleted on an as-needed basis as they age and/or a memory space quota is breaching.
-
-#### /home/local
-
-Read/write directory.  This directory is the persistent storage for a namespace and is shared amongst all instances running in the same namespace _and_ on the same local host.  All content in this directory will persist so long as a micro service in this namespace is installed on the host.  This directory will only be cleared when all micro services in the namespace are "uninstalled".  Uninstallation happens for micro services that have not been used in a long time and when space is required for installing new micro services.
-
-#### /home/public
-
-Read-only directory which acts as a holding bin for other public directories.  This directory may not exist if no external (SD card) storage is available.
-
-#### /home/public/data
-
-Read/write directory for namespace-specific data.  This directory is shared between all instances of a micro service namespace on all hosts (local or not).  Its contents are publicly available for any app to access, though its true location on external media is somewhat obscured.  This directory persists so long as a namespace micro service is still installed on any host.  If all micro services in a given namespace are uninstalled from every host, this directory will also be cleared.
-
-#### /home/public/media
-
-Read-only holding directory for public media-specific directories.
-
-#### /home/public/media/[MediaType]
-
-Read or read/write directory (depending on permissions given by the host) for known media types.  These types include Pictures, Movies, Ringtones, Music, Downloads, etc. as exposed by Android and typically reside at a true location like `/sdcard/Pictures`, for example.  Files in these directories are never cleared by LiquidCore, but can be managed by any other app or service.
-
-Everything else will result in an `ENOACES` (access denied) error.
-
+LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the Android filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
 
 ## The Micro App
 
 There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
 
-As of 0.2.1, there is only one surface so far: the [**`ConsoleSurface`**](https://github.com/LiquidPlayer/ConsoleSurface).  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  This isn't the most interesting surface, but it is an obvious first step.  A major improvement is being slated for 0.3.1, with the launch of a **`ReactNativeSurface`**.  At this point, you will be able to drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework.  There are other surfaces under consideration, including:
+There are two surfaces so far:
+
+1. [**`ConsoleSurface`**](https://github.com/LiquidPlayer/ConsoleSurface).  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  See the [ConsoleSurface](https://github.com/LiquidPlayer/ConsoleSurface) project for a tutorial on how to use it.
+2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/react-native).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.  This is a fork of the React Native project that has modifications to allow it to run on LiquidCore.  It is very experimental at this point and I haven't written any documentation yet.  But it does work.
+
+There are other surfaces under consideration, including:
 
 * **`WebSurface`** - a `WebView` front-end where a micro service can write to the DOM
 * **`CardSurface`** - a limited feature set suitable for driving card-like UI elements in a list
@@ -198,14 +120,11 @@ As of 0.2.1, there is only one surface so far: the [**`ConsoleSurface`**](https:
 
 Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
 
-But for now, we just have a console.  See the [ConsoleSurface](https://github.com/LiquidPlayer/ConsoleSurface) project for a tutorial on how to use it.
-
-
 ### "Hallo, die Weld!" Micro Service Tutorial
 
 #### Prerequisites
 
-* A recent version of [Node.js] -- 6.10.2 or newer
+* A recent version of [Node.js] -- 8.9.3 or newer
 * [Android Studio]
 
 (You can find all the code below in a complete example project [here](https://github.com/LiquidPlayer/Examples/tree/master/HelloWorld) if you get stuck).
@@ -349,7 +268,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.3.1'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.4.0'
 }
 
 ```
@@ -561,21 +480,12 @@ add the following to your app's `build.gradle`:
 ##### Note
 
 The Node.js library (`libnode.so`) is pre-compiled and included in binary form in
-`LiquidCoreAndroid/jni/lib/**/libnode.so`, where `**` represents the ABI.  All of the
-modifications required to produce the library are included in `deps/node-6.10.2`.  To
-build each library (if you so choose), you can do the following:
-
-```
-.../LiquidCore/deps/node-6.10.2% ./android-configure /path/to/android/ndk <abi>
-.../LiquidCore/deps/node-6.10.2% make
-```
-where `<abi>` is one of `arm` or `x86`
-
+`deps/node-8.9.3/prebuilt`.  All of the modifications required to produce the library are included in `deps/node-8.9.3`.  To build each library (if you so choose), see the instructions [here](https://github.com/LiquidPlayer/LiquidCore/wiki/How-to-build-libnode.so).
 
 License
 -------
 
- Copyright (c) 2014-2017 Eric Lange. All rights reserved.
+ Copyright (c) 2014-2018 Eric Lange. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
