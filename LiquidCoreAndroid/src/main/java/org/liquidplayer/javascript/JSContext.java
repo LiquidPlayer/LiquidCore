@@ -54,11 +54,7 @@ public class JSContext extends JSObject {
         System.loadLibrary("liquidcore");
     }
 
-    /**
-     * Forces static libraries to load
-     * @since 0.1.0
-     */
-    public static void dummy() {
+    static void init() {
     }
 
     public void sync(final Runnable runnable) {

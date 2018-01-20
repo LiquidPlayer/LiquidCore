@@ -35,13 +35,20 @@ package org.liquidplayer.test;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
 
+import java.lang.reflect.Method;
 import java.util.Scanner;
 
 @SuppressWarnings("JniMissingFunction")
 public class JSC {
 
+    /* Ensure the shared libraries get loaded first */
     static {
-        JSContext.dummy();
+        try {
+            Method init = JSContext.class.getDeclaredMethod("init");
+            init.invoke(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private JSContextGroup group = null;

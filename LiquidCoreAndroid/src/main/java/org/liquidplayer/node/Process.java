@@ -43,6 +43,7 @@ import org.liquidplayer.javascript.JSObject;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public class Process {
@@ -395,7 +396,12 @@ public class Process {
 
     /* Ensure the shared libraries get loaded first */
     static {
-        JSContext.dummy();
+        try {
+            Method init = JSContext.class.getDeclaredMethod("init");
+            init.invoke(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /* Native JNI functions */

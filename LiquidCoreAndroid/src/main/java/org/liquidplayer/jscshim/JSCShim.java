@@ -2,13 +2,21 @@ package org.liquidplayer.jscshim;
 
 import org.liquidplayer.javascript.JSContext;
 
+import java.lang.reflect.Method;
+
 /**
  * Provides static initialization for projects that require the JavaScriptCore -> V8 bridge
  */
 @SuppressWarnings("JniMissingFunction")
 public class JSCShim {
+    /* Ensure the shared libraries get loaded first */
     static {
-        JSContext.dummy();
+        try {
+            Method init = JSContext.class.getDeclaredMethod("init");
+            init.invoke(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     private static boolean initialized = false;
 

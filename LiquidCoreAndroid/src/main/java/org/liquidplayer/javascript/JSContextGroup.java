@@ -36,9 +36,7 @@
 package org.liquidplayer.javascript;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.WriteAbortedException;
 
 /**
  * A JSContextGroup associates JavaScript contexts with one another. Contexts
@@ -51,7 +49,7 @@ import java.io.WriteAbortedException;
 @SuppressWarnings("JniMissingFunction")
 public class JSContextGroup {
     static {
-        JSContext.dummy();
+        JSContext.init();
     }
     private JNIJSContextGroup group;
 
@@ -88,7 +86,8 @@ public class JSContextGroup {
 
     /**
      * Creates a new context group for which all contexts created in it will start from
-     * a snapshot
+     * a snapshot.  If snapshot file load files, this constructor will fail silently
+     * and use the default snapshot.
      * @param snapshot File generated from previous call to createSnapshot()
      */
     public JSContextGroup(File snapshot)
@@ -101,9 +100,9 @@ public class JSContextGroup {
      * Creates a snapshot of JavaScript code that can be used by the JSContextGroup(File)
      * constructor to speed up startup of new contexts.
      * @param script Script to create snapshot from
-     * @param snapshotToWrite File to write (will be overwritten)
+     * @param snapshotToWrite File to write (will be overwritten if exists)
      * @return The written file
-     * @throws IOException thrown if taking snapshot or writing to the file fails, check message
+     * @throws IOException thrown if taking snapshot or writing to the file fails; check message
      */
     static File createSnapshot(String script, File snapshotToWrite) throws IOException
     {
@@ -111,7 +110,7 @@ public class JSContextGroup {
         switch(result) {
             case  0: return snapshotToWrite; // success
             case -1: throw new IOException("Failed to create snapshot");
-            case -2: throw new FileNotFoundException("Unable to open for writing");
+            case -2: throw new IOException("Unable to open for writing");
             case -3: throw new IOException("Could not write file");
             case -4: throw new IOException("Could not close file");
             default: throw new IOException();
@@ -122,7 +121,7 @@ public class JSContextGroup {
      * Determines if the ContextGroup is being managed by a single thread (i.e. Node)
      * @return true if managed by a single thread, false otherwise
      */
-    boolean hasDedicatedThread() {
+    private boolean hasDedicatedThread() {
         return hasDedicatedThread;
     }
 
@@ -135,7 +134,7 @@ public class JSContextGroup {
         return group;
     }
 
-    public boolean isOnThread() {
+    boolean isOnThread() {
         return (!hasDedicatedThread() ||
                 android.os.Process.myTid() == mContextGroupThreadTid);
     }
