@@ -59,6 +59,7 @@ class ContextGroup : public boost::enable_shared_from_this<ContextGroup> {
 public:
     ContextGroup();
     ContextGroup(Isolate *isolate, uv_loop_t *uv_loop);
+    ContextGroup(char *snapshot, int size);
     virtual ~ContextGroup();
 
     inline Isolate* isolate() { return m_isDefunct ? nullptr : m_isolate; }
@@ -83,17 +84,17 @@ public:
     void schedule_java_runnable(JNIEnv *env, jobject thiz, jobject runnable);
 
     static void init_v8();
+    static void dispose_v8();
     static inline std::mutex *Mutex() { return &s_mutex; }
     static inline v8::Platform * Platform() { return s_platform; }
     static void callback(uv_async_t* handle);
     static void StaticGCPrologueCallback(Isolate *isolate, GCType type, GCCallbackFlags flags);
+    static boost::shared_ptr<ContextGroup> New(const char *snapshotFile);
 
 protected:
     void GCPrologueCallback(GCType type, GCCallbackFlags flags);
 
 private:
-    static void dispose_v8();
-
     static v8::Platform *s_platform;
     static int s_init_count;
     static std::mutex s_mutex;
@@ -121,6 +122,8 @@ private:
     std::vector<void *> m_runnables;
     std::mutex m_async_mutex;
     std::recursive_mutex m_scheduling_mutex;
+
+    v8::StartupData m_startup_data;
 };
 
 #endif //LIQUIDCORE_CONTEXTGROUP_H

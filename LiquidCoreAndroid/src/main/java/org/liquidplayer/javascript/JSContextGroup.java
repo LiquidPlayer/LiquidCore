@@ -35,6 +35,11 @@
 */
 package org.liquidplayer.javascript;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.WriteAbortedException;
+
 /**
  * A JSContextGroup associates JavaScript contexts with one another. Contexts
  * in the same group may share and exchange JavaScript objects. Sharing and/or
@@ -45,6 +50,9 @@ package org.liquidplayer.javascript;
  */
 @SuppressWarnings("JniMissingFunction")
 public class JSContextGroup {
+    static {
+        JSContext.dummy();
+    }
     private JNIJSContextGroup group;
 
     public class LoopPreserver {
@@ -66,6 +74,7 @@ public class JSContextGroup {
         group = JNIJSContextGroup.create();
         hasDedicatedThread = false;
     }
+
     /**
      * Wraps an existing context group
      * @param groupRef  the JavaScriptCore context group reference
@@ -75,6 +84,38 @@ public class JSContextGroup {
     {
         group = (JNIJSContextGroup)groupRef;
         hasDedicatedThread = group.isManaged();
+    }
+
+    /**
+     * Creates a new context group for which all contexts created in it will start from
+     * a snapshot
+     * @param snapshot File generated from previous call to createSnapshot()
+     */
+    public JSContextGroup(File snapshot)
+    {
+        group = JNIJSContextGroup.createWithSnapshotFile(snapshot.getAbsolutePath());
+        hasDedicatedThread = false;
+    }
+
+    /**
+     * Creates a snapshot of JavaScript code that can be used by the JSContextGroup(File)
+     * constructor to speed up startup of new contexts.
+     * @param script Script to create snapshot from
+     * @param snapshotToWrite File to write (will be overwritten)
+     * @return The written file
+     * @throws IOException thrown if taking snapshot or writing to the file fails, check message
+     */
+    static File createSnapshot(String script, File snapshotToWrite) throws IOException
+    {
+        int result = JNIJSContextGroup.createSnapshot(script, snapshotToWrite.getAbsolutePath());
+        switch(result) {
+            case  0: return snapshotToWrite; // success
+            case -1: throw new IOException("Failed to create snapshot");
+            case -2: throw new FileNotFoundException("Unable to open for writing");
+            case -3: throw new IOException("Could not write file");
+            case -4: throw new IOException("Could not close file");
+            default: throw new IOException();
+        }
     }
 
     /**

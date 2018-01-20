@@ -37,10 +37,12 @@ package org.liquidplayer.javascript;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.support.test.InstrumentationRegistry;
 import android.util.Log;
 
 import org.junit.Test;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -313,6 +315,32 @@ public class JSContextTest {
             contextTest2.callFunction(12);
         }
         contextTest2.semaphore.acquire();
+    }
+
+    @Test
+    public void snapshotTest() throws Exception {
+        String source1 = "function f() { return 42; }";
+        String source2 =
+                "function f() { return g() * 2; }" +
+                "function g() { return 43; }" +
+                "/./.test('a')";
+
+        File snapshot1 = JSContextGroup.createSnapshot(source1,
+                new File(InstrumentationRegistry.getContext().getFilesDir() + "/snapshot1.snap"));
+        File snapshot2 = JSContextGroup.createSnapshot(source2,
+                new File(InstrumentationRegistry.getContext().getFilesDir() + "/snapshot2.snap"));
+
+        JSContextGroup group1 = new JSContextGroup(snapshot1);
+        JSContext context1 = new JSContext(group1);
+        assertEquals(42, context1.evaluateScript("f()").toNumber().intValue());
+
+        JSContextGroup group2 = new JSContextGroup(snapshot2);
+        JSContext context2 = new JSContext(group2);
+        assertEquals(86, context2.evaluateScript("f()").toNumber().intValue());
+        assertEquals(43, context2.evaluateScript("g()").toNumber().intValue());
+
+        if(snapshot1.delete()) android.util.Log.d("snapshotTest()", "Deleted " + snapshot1.getAbsolutePath());
+        if(snapshot2.delete()) android.util.Log.d("snapshotTest()", "Deleted " + snapshot2.getAbsolutePath());
     }
 
     @org.junit.After

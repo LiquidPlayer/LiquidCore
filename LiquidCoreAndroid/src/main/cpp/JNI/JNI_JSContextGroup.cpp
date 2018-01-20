@@ -77,6 +77,61 @@ NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jobject thisObj, jobje
     }
 }
 
+/*
+ * Error codes:
+ * 0  = snapshot successfully taken and file written
+ * -1 = snashot failed
+ * -2 = snapshot taken, but could not open file for writing
+ * -3 = snapshot taken, but could not write to file
+ * -4 = snapshot taken, but could not close file properly
+ */
+NATIVE(JNIJSContextGroup,int,createSnapshot) (PARAMS, jstring script_, jstring outFile_)
+{
+    const char *_script = env->GetStringUTFChars(script_, NULL);
+    const char *_outFile = env->GetStringUTFChars(outFile_, NULL);
+
+    int rval = 0;
+
+    ContextGroup::init_v8();
+    v8::StartupData data = v8::V8::CreateSnapshotDataBlob(_script);
+    ContextGroup::dispose_v8();
+
+    if (data.data == nullptr) {
+        rval = -1;
+    } else {
+        FILE *fp = fopen(_outFile, "wb");
+        if (fp == nullptr) {
+            rval = -2;
+        } else {
+            size_t written = fwrite(data.data, sizeof (char), (size_t) data.raw_size, fp);
+            rval = (written == (size_t) data.raw_size) ? 0 : -3;
+            int c = fclose(fp);
+            if (!rval && c) rval = -4;
+        }
+        delete[] data.data;
+    }
+
+    env->ReleaseStringUTFChars(script_, _script);
+    env->ReleaseStringUTFChars(outFile_, _outFile);
+
+    return rval;
+}
+
+NATIVE(JNIJSContextGroup,jobject,createWithSnapshotFile) (PARAMS, jstring inFile_)
+{
+    const char *_inFile = env->GetStringUTFChars(inFile_, NULL);
+
+    boost::shared_ptr<ContextGroup> group = ContextGroup::New(_inFile);
+
+    env->ReleaseStringUTFChars(inFile_, _inFile);
+
+    // Maintain compatibility at the ContextGroup level with JSC by using JSContextGroupCreate()
+    return SharedWrap<ContextGroup>::New(
+            env,
+            group
+    );
+}
+
 NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, long reference)
 {
     SharedWrap<ContextGroup>::Dispose(reference);

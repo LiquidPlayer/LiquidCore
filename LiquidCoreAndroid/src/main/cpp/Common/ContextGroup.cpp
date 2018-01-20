@@ -32,8 +32,10 @@
 */
 #include <exception>
 #include <malloc.h>
+#include <stdio.h>
 #include <condition_variable>
 #include <JSC/Macros.h>
+#include <boost/make_shared.hpp>
 #include "Common/ContextGroup.h"
 #include "Common/JSValue.h"
 #include "Macros.h"
@@ -126,6 +128,8 @@ ContextGroup::ContextGroup()
     m_thread_id = std::this_thread::get_id();
     m_async_handle = nullptr;
     m_isDefunct = false;
+    m_startup_data.data = nullptr;
+    m_startup_data.raw_size = 0;
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
@@ -140,10 +144,34 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_thread_id = std::this_thread::get_id();
     m_async_handle = nullptr;
     m_isDefunct = false;
+    m_startup_data.data = nullptr;
+    m_startup_data.raw_size = 0;
 
     s_mutex.lock();
     s_isolate_map[m_isolate] = this;
     s_mutex.unlock();
+    m_gc_callbacks.clear();
+    m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+}
+
+ContextGroup::ContextGroup(char *snapshot, int size)
+{
+    init_v8();
+    m_create_params.array_buffer_allocator = &s_allocator;
+    m_startup_data.data = snapshot;
+    m_startup_data.raw_size = size;
+
+    if (snapshot && size) {
+        m_create_params.snapshot_blob = &m_startup_data;
+    }
+    m_isolate = Isolate::New(m_create_params);
+    m_manage_isolate = true;
+    m_uv_loop = nullptr;
+    m_thread_id = std::this_thread::get_id();
+    m_async_handle = nullptr;
+    m_isDefunct = false;
+
+    s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
 }
@@ -363,6 +391,10 @@ void ContextGroup::Dispose()
             dispose_v8();
         }
 
+        if (m_startup_data.data && m_startup_data.raw_size) {
+            delete [] m_startup_data.data;
+        }
+
         wait.reset();
     }
 }
@@ -430,4 +462,30 @@ void ContextGroup::schedule_java_runnable(JNIEnv *env, jobject thiz, jobject run
         uv_async_send(m_async_handle);
     }
     m_async_mutex.unlock();
+}
+
+boost::shared_ptr<ContextGroup> ContextGroup::New(const char *snapshotFile)
+{
+    char *data = nullptr;
+    int size;
+
+    FILE *fp = fopen(snapshotFile, "rb");
+    if (fp) {
+        fseek(fp, 0L, SEEK_END);
+        size = ftell(fp);
+        rewind(fp);
+        data = new char[size];
+        int read = fread((void*)data, sizeof (char), size, fp);
+        if (read != size) {
+            delete[] data;
+            data = nullptr;
+        }
+        fclose(fp);
+    }
+
+    if (data) {
+        return boost::make_shared<ContextGroup>(data, size);
+    } else {
+        return boost::make_shared<ContextGroup>();
+    }
 }

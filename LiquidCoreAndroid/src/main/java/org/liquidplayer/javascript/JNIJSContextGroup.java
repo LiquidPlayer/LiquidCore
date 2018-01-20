@@ -47,6 +47,8 @@ class JNIJSContextGroup extends JNIObject {
     }
 
     static native JNIJSContextGroup create();
+    static native JNIJSContextGroup createWithSnapshotFile(String snapshotFile);
+    static native int createSnapshot(String script, String snapshotFile);
     native boolean isManaged();
     native void runInContextGroup(Object thisObject, Runnable runnable);
     native void Finalize(long reference);
