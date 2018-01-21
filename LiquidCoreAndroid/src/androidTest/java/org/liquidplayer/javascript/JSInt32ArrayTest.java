@@ -65,7 +65,7 @@ public class JSInt32ArrayTest {
         JSInt32Array array = new JSInt32Array(context,8);
         assertThat(array.byteLength(),is(8*4));
         assertThat(array.byteOffset(),is(0));
-        assertTrue(JSTypedArray.isTypedArray(array));
+        assertTrue(array.isTypedArray());
         assertEquals(array.property("BYTES_PER_ELEMENT").toNumber().intValue(),4);
 
         JSInt32Array i8 = new JSInt32Array(context,8);

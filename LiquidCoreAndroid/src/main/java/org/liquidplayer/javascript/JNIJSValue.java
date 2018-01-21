@@ -66,6 +66,7 @@ class JNIJSValue extends JNIObject {
     native boolean isObject();
     native boolean isArray();
     native boolean isDate();
+    native boolean isTypedArray();
     native JNIReturnObject isEqual(JNIJSValue b);
     native boolean isStrictEqual(JNIJSValue b);
 

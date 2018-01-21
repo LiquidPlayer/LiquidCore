@@ -129,6 +129,13 @@ NATIVE(JNIJSValue,jboolean,isDate) (PARAMS)
     }, false);
 }
 
+NATIVE(JNIJSValue,jboolean,isTypedArray) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsTypedArray();
+    }, false);
+}
+
 /* Comparing values */
 
 NATIVE(JNIJSValue,jobject,isEqual) (PARAMS, jobject b)

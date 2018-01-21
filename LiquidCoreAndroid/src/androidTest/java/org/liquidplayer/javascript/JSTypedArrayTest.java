@@ -57,6 +57,6 @@ public class JSTypedArrayTest {
             assertTrue(exception);
         }
 
-        assertFalse(JSTypedArray.isTypedArray(new JSValue(context)));
+        assertFalse(new JSValue(context).isTypedArray());
     }
 }

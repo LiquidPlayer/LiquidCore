@@ -130,7 +130,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      */
     public static JSTypedArray from(JSObject obj) {
         JSTypedArray arr = null;
-        if (isTypedArray(obj)) {
+        if (obj.isTypedArray()) {
             switch(obj.property("constructor").toObject().property("name").toString()) {
                 case "Int8Array":
                     arr = new JSInt8Array(obj.toObject().JNI(),obj.getContext()); break;
@@ -154,19 +154,6 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
         }
         if (arr == null) throw new JSException(obj.getContext(),"Object not a typed array");
         return arr;
-    }
-
-    /**
-     * Determineds if a JSValue is a typed array
-     * @param value  the JSValue to test
-     * @return  true if a typed array, false otherwise
-     * @since 0.1.0
-     */
-    public static boolean isTypedArray(JSValue value) {
-        if (!value.isObject()) return false;
-        JSObject obj = value.toObject();
-        return obj.hasProperty("BYTES_PER_ELEMENT") && obj.hasProperty("length") &&
-                obj.hasProperty("byteOffset") && obj.hasProperty("byteLength");
     }
 
     /**

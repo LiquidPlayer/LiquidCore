@@ -320,7 +320,7 @@ public class JSContext extends JSObject {
             obj = new JSObject(objRef,this);
             if (objRef.isArray()) {
                 obj = new JSArray(objRef, this);
-            } else if (JSTypedArray.isTypedArray(obj)) {
+            } else if (obj.isTypedArray()) {
                 obj = JSTypedArray.from(obj);
             } else if (objRef.isFunction()) {
                 obj = new JSFunction(objRef, this);

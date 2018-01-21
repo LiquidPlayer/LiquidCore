@@ -67,7 +67,7 @@ public class JSFloat32ArrayTest {
 
         assertThat(array.byteLength(),is(8*4));
         assertThat(array.byteOffset(),is(0));
-        assertTrue(JSTypedArray.isTypedArray(array));
+        assertTrue(array.isTypedArray());
         assertEquals(array.property("BYTES_PER_ELEMENT").toNumber().intValue(),4);
         android.util.Log.d("Test", "a");
 

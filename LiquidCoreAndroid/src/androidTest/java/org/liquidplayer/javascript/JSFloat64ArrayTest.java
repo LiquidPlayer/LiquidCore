@@ -66,7 +66,7 @@ public class JSFloat64ArrayTest {
         JSFloat64Array array = new JSFloat64Array(context,8);
         assertThat(array.byteLength(),is(8*8));
         assertThat(array.byteOffset(),is(0));
-        assertTrue(JSTypedArray.isTypedArray(array));
+        assertTrue(array.isTypedArray());
         assertEquals(array.property("BYTES_PER_ELEMENT").toNumber().intValue(),8);
 
         JSInt8Array i8 = new JSInt8Array(context,8);

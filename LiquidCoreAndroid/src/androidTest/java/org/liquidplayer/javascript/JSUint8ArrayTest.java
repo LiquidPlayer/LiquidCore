@@ -66,7 +66,7 @@ public class JSUint8ArrayTest {
         JSUint8Array array = new JSUint8Array(context,8);
         assertThat(array.byteLength(),is(8));
         assertThat(array.byteOffset(),is(0));
-        assertTrue(JSTypedArray.isTypedArray(array));
+        assertTrue(array.isTypedArray());
         assertEquals(array.property("BYTES_PER_ELEMENT").toNumber().intValue(),1);
 
         JSUint8Array i8 = new JSUint8Array(context,8);

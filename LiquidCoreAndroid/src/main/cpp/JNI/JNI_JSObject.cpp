@@ -276,7 +276,7 @@ NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jstring propertyName)
 
     V8_ISOLATE_OBJ(object,isolate,context,o)
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
-        Maybe<bool> has = o->Has(context, String::NewFromUtf8(isolate, c_string));
+        Maybe<bool> has = o->HasOwnProperty(context, String::NewFromUtf8(isolate, c_string));
         env->ReleaseStringUTFChars(propertyName, c_string);
 
         v = has.FromMaybe(false);

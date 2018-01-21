@@ -254,6 +254,22 @@ public class JSValue {
         return runnable.jni.bool;
     }
     /**
+     * Tests whether the value is a typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isTypedArray() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isTypedArray();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
      * Tests whether the value is an object
      * @return  true if an object, false otherwise
      * @since 0.1.0

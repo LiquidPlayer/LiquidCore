@@ -65,7 +65,7 @@ public class JSInt16ArrayTest {
         JSInt16Array array = new JSInt16Array(context,8);
         assertThat(array.byteLength(),is(8*2));
         assertThat(array.byteOffset(),is(0));
-        assertTrue(JSTypedArray.isTypedArray(array));
+        assertTrue(array.isTypedArray());
         assertEquals(array.property("BYTES_PER_ELEMENT").toNumber().intValue(),2);
 
         JSInt16Array i8 = new JSInt16Array(context,8);
