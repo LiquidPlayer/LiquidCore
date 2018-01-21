@@ -45,6 +45,7 @@ public class JSC {
     static {
         try {
             Method init = JSContext.class.getDeclaredMethod("init");
+            init.setAccessible(true);
             init.invoke(null);
         } catch (Exception e) {
             e.printStackTrace();
