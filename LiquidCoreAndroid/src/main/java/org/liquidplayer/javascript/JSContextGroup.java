@@ -46,7 +46,6 @@ import java.io.IOException;
  * threads, explicit synchronization is required.
  *
  */
-@SuppressWarnings("JniMissingFunction")
 public class JSContextGroup {
     static {
         JSContext.init();

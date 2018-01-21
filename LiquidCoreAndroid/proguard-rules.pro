@@ -61,3 +61,10 @@
 # -keep public class mypackage.MyClass
 # -keep public interface mypackage.MyInterface
 # -keep public class * implements mypackage.MyInterface
+
+-keep class org.liquidplayer.node.Process { *; }
+-keep class org.liquidplayer.node.SQLite3Database { *; }
+-keep class org.liquidplayer.node.SQLite3Statement { *; }
+-keep class org.liquidplayer.node.SQLite3Shim { *; }
+-keep class org.liquidplayer.javascript.JNIObject { *; }
+-keep class org.liquidplayer.javascript.JSFunction { *; }

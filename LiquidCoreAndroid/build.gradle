@@ -23,10 +23,10 @@ android {
         sourceSets {
             main {
                 jni.srcDirs = []
-                release.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/nosymbols'
+                debug.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/nosymbols'
                                    //, '../deps/node-8.9.3/prebuilt/64bit/nosymbols'
                 ]
-                jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/symbols'
+                release.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/symbols'
                                            //, '../deps/node-8.9.3/prebuilt/64bit/symbols'
                 ]
             }
