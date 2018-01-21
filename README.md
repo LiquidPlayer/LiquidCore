@@ -9,13 +9,13 @@ LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.4.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.4.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.4.1)
+[0.4.2](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.4.2) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.4.2)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.4.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.4.1/index.html)
+[Version 0.4.2](https://liquidplayer.github.io/LiquidCoreAndroid/0.4.2/index.html)
 
 # Table of Contents
 
