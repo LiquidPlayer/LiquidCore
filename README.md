@@ -268,7 +268,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.4.0'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.4.4'
 }
 
 ```
