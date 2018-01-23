@@ -35,6 +35,10 @@
 */
 package org.liquidplayer.javascript;
 
+import android.support.annotation.NonNull;
+
+import java.util.List;
+
 /**
  * A convenience base class for JavaScript typed arrays.  This is an abstract class, and is
  * subclassed by JSInt8Array, JSInt16Array, JSInt32Array, JSUint8Array, JSUint16Array,
@@ -130,29 +134,18 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      */
     public static JSTypedArray from(JSObject obj) {
         JSTypedArray arr = null;
-        if (obj.isTypedArray()) {
-            switch(obj.property("constructor").toObject().property("name").toString()) {
-                case "Int8Array":
-                    arr = new JSInt8Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Uint8Array":
-                    arr = new JSUint8Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Uint8ClampedArray":
-                    arr = new JSUint8ClampedArray(obj.toObject().JNI(),obj.getContext()); break;
-                case "Int16Array":
-                    arr = new JSInt16Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Uint16Array":
-                    arr = new JSUint16Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Int32Array":
-                    arr = new JSInt32Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Uint32Array":
-                    arr = new JSUint32Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Float32Array":
-                    arr = new JSFloat32Array(obj.toObject().JNI(),obj.getContext()); break;
-                case "Float64Array":
-                    arr = new JSFloat64Array(obj.toObject().JNI(),obj.getContext()); break;
-            }
+        if     (obj.isInt8Array())  arr = new JSInt8Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isUint8Array()) arr = new JSUint8Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isUint8ClampedArray()) arr = new JSUint8ClampedArray(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isInt16Array()) arr = new JSInt16Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isUint16Array())arr = new JSUint16Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isInt32Array()) arr = new JSInt32Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isUint32Array())arr = new JSUint32Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isFloat32Array())arr = new JSFloat32Array(obj.toObject().JNI(),obj.getContext());
+        else if(obj.isFloat64Array())arr = new JSFloat64Array(obj.toObject().JNI(),obj.getContext());
+        else {
+            throw new JSException(obj.getContext(), "Object not a typed array");
         }
-        if (arr == null) throw new JSException(obj.getContext(),"Object not a typed array");
         return arr;
     }
 

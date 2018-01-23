@@ -270,6 +270,151 @@ public class JSValue {
         return runnable.jni.bool;
     }
     /**
+     * Tests whether the value is an Int8 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isInt8Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isInt8Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an Int16 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isInt16Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isInt16Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an Int32 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isInt32Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isInt32Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an unsigned Int8 clamped typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isUint8ClampedArray() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isUint8ClampedArray();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an unsigned Int8 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isUint8Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isUint8Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an unsigned Int16 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isUint16Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isUint16Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an unsigned Int32 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isUint32Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isUint32Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an float32 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isFloat32Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isFloat32Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+    /**
+     * Tests whether the value is an float64 typed array
+     * @return  true if a typed array object, false otherwise
+     * @since 0.4.4
+     */
+    public Boolean isFloat64Array() {
+        JNIReturnClass runnable = new JNIReturnClass() {
+            @Override
+            public void run() {
+                jni = new JNIReturnObject();
+                jni.bool = valueRef().isFloat64Array();
+            }
+        };
+        context.sync(runnable);
+        return runnable.jni.bool;
+    }
+
+    /**
      * Tests whether the value is an object
      * @return  true if an object, false otherwise
      * @since 0.1.0

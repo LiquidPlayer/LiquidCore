@@ -136,6 +136,69 @@ NATIVE(JNIJSValue,jboolean,isTypedArray) (PARAMS)
     }, false);
 }
 
+NATIVE(JNIJSValue,jboolean,isInt8Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsInt8Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isInt16Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsInt16Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isInt32Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsInt32Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isUint8Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsUint8Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isUint8ClampedArray) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsUint8ClampedArray();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isUint16Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsUint16Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isUint32Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsUint32Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isFloat32Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsFloat32Array();
+    }, false);
+}
+
+NATIVE(JNIJSValue,jboolean,isFloat64Array) (PARAMS)
+{
+    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+        return value->IsFloat64Array();
+    }, false);
+}
+
 /* Comparing values */
 
 NATIVE(JNIJSValue,jobject,isEqual) (PARAMS, jobject b)

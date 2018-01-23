@@ -12,6 +12,7 @@ import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -130,9 +131,17 @@ public class LiquidView extends RelativeLayout {
         }
     }
 
+    private static class LiquidViewService extends MicroService {
+        LiquidViewService(Context ctx, URI serviceURI, ServiceStartListener start,
+                            ServiceErrorListener error) {
+            super(ctx, serviceURI, start, error);
+        }
+
+        JSContextGroup.LoopPreserver m_preserver;
+    }
 
     private void attach(final String surface_, final JSFunction callback) {
-        final MicroService service = MicroService.getService(serviceId);
+        final LiquidViewService service = (LiquidViewService) MicroService.getService(serviceId);
         try {
             Surface surface = null;
             if (service == null)
@@ -165,6 +174,10 @@ public class LiquidView extends RelativeLayout {
                             }
                         });
                         surfaceView.setId(surfaceId);
+                        ViewGroup parent = (ViewGroup) surfaceView.getParent();
+                        if (parent != null) {
+                            parent.removeView(surfaceView);
+                        }
                         addView(surfaceView);
                         if (childrenStates != null) {
                             for (int i = 0; i < getChildCount(); i++) {
@@ -175,7 +188,7 @@ public class LiquidView extends RelativeLayout {
                     } catch (Exception e) {
                         e.printStackTrace();
                         android.util.Log.d("exception", e.toString());
-                        m_preserver.release();
+                        ((LiquidViewService)service).m_preserver.release();
                     }
                 }
             });
@@ -255,7 +268,7 @@ public class LiquidView extends RelativeLayout {
             }
 
             MicroService svc =
-                    new MicroService(getContext(), uri, new MicroService.ServiceStartListener(){
+                    new LiquidViewService(getContext(), uri, new MicroService.ServiceStartListener(){
                 @Override
                 public void onStart(final MicroService service, final Synchronizer synchronizer) {
                     serviceId = service.getId();
@@ -284,7 +297,7 @@ public class LiquidView extends RelativeLayout {
                             });
 
                             // Bind surfaces
-                            m_preserver = service.getProcess().keepAlive();
+                            ((LiquidViewService)service).m_preserver = service.getProcess().keepAlive();
 
                             for (MicroService.AvailableSurface sfc : availableSurfaces()) {
                                 synchronizer.enter();
@@ -302,7 +315,7 @@ public class LiquidView extends RelativeLayout {
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                             android.util.Log.d("exception", e.toString());
-                                            m_preserver.release();
+                                            ((LiquidViewService)service).m_preserver.release();
                                         } finally {
                                             synchronizer.exit();
                                         }
@@ -391,7 +404,6 @@ public class LiquidView extends RelativeLayout {
     private URI uri;
     private String [] argv;
     private View surfaceView;
-    private JSContextGroup.LoopPreserver m_preserver;
 
     /* -- parcelable privates -- */
     private int surfaceId = View.NO_ID;
