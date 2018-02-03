@@ -101,6 +101,8 @@ jobject SharedWrap<T>::New(JNIEnv *env, boost::shared_ptr<T> shared)
         s_mutex.lock();
         s_jobject_map[&*shared] = env->NewWeakGlobalRef(javao);
         s_mutex.unlock();
+    } else {
+        javao = env->NewLocalRef(javao);
     }
     return javao;
 }

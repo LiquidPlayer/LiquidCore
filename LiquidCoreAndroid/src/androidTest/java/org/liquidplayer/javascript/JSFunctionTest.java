@@ -594,6 +594,34 @@ public class JSFunctionTest {
         context.evaluateScript(script, "script.js", 0);
     }
 
+    @org.junit.Test
+    public void varArgFunctionsTest() throws Exception {
+        JSContext context = new JSContext();
+        JSFunction varArgFunction = new JSFunction(context, "varArgFunction") {
+            public String varArgFunction(int a, String b, JSValue... vars) {
+                StringBuilder result = new StringBuilder();
+                result.append(a).append(" ").append(b);
+
+                if (vars != null) {
+                    for (int i = 0; i < vars.length; ++i) {
+                        result.append(" ").append(vars[i].toObject().toString());
+                    }
+                }
+
+                return result.toString();
+            }
+        };
+
+        context.property("varArgFunction", varArgFunction);
+
+
+        assertTrue(context.evaluateScript("varArgFunction(1, 'test') === '1 test'").toBoolean());
+        assertTrue(context.evaluateScript(
+                "varArgFunction(1, 'test', 'a') === '1 test a'").toBoolean());
+        assertTrue(context.evaluateScript(
+                "varArgFunction(1, 'test', 'a', 2) === '1 test a 2'").toBoolean());
+    }
+
     @org.junit.After
     public void shutDown() {
         Runtime.getRuntime().gc();

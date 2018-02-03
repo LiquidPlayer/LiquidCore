@@ -533,14 +533,36 @@ public class JSFunction extends JSObject {
     protected JSValue function(JSObject thiz, JSValue [] args, final JSObject invokeObject) {
         Class<?>[] pType  = method.getParameterTypes();
         Object [] passArgs = new Object[pType.length];
-        for (int i=0; i<passArgs.length; i++) {
-            if (i<args.length) {
-                if (args[i]==null) passArgs[i] = null;
-                else passArgs[i] = args[i].toJavaObject(pType[i]);
-            } else {
-                passArgs[i] = null;
+        if (pType.length > 0 && args.length >= pType.length && !args[args.length -1].isArray() &&
+                pType[pType.length - 1].isArray()) {
+            int i = 0;
+            for (; i < passArgs.length - 1; i++) {
+                if (i < args.length) {
+                    if (args[i] == null) passArgs[i] = null;
+                    else passArgs[i] = args[i].toJavaObject(pType[i]);
+                } else {
+                    passArgs[i] = null;
+                }
+            }
+
+            JSValue[] varArgs = new JSValue[args.length - pType.length + 1];
+            int varArgsCounter = 0;
+            for (; i < args.length; ++i) {
+                varArgs[varArgsCounter++] = args[i];
+            }
+
+            passArgs[passArgs.length - 1] = varArgs;
+        } else {
+            for (int i=0; i<passArgs.length; i++) {
+                if (i<args.length) {
+                    if (args[i]==null) passArgs[i] = null;
+                    else passArgs[i] = args[i].toJavaObject(pType[i]);
+                } else {
+                    passArgs[i] = null;
+                }
             }
         }
+
         JSValue returnValue;
         JSObject stack=null;
         try {

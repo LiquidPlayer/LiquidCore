@@ -178,6 +178,7 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     objret = env->CallObjectMethod(m_JavaThis, mid, objThis, argsArr);
 
     env->DeleteLocalRef(argsArr);
+    env->DeleteLocalRef(objThis);
     for (int i=0; i<argumentCount; i++) {
         env->DeleteLocalRef(args[i]);
     }
