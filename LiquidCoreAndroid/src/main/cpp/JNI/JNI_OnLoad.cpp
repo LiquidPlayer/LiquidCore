@@ -79,6 +79,7 @@ int start_logger(const char *app_name)
 
 static jobject s_ClassLoader;
 static jmethodID s_FindClassMethod;
+static JavaVM *s_javaVM;
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
@@ -86,6 +87,8 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 #ifdef DEBUG
     start_logger("LiquidCore");
 #endif
+
+    s_javaVM = vm;
 
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
@@ -106,6 +109,13 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 jclass findClass(JNIEnv *env, const char* name)
 {
-    return static_cast<jclass>(env->CallObjectMethod(s_ClassLoader,
-                                                     s_FindClassMethod, env->NewStringUTF(name)));
+    jstring clsname =  env->NewStringUTF(name);
+    jclass clazz = static_cast<jclass>(env->CallObjectMethod(s_ClassLoader, s_FindClassMethod, clsname));
+    env->DeleteLocalRef(clsname);
+    return clazz;
+}
+
+JavaVM *getJavaVM()
+{
+    return s_javaVM;
 }

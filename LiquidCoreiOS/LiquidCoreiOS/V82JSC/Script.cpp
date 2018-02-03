@@ -10,6 +10,7 @@
 #include "Context.h"
 #include "StringImpl.h"
 #include "Value.h"
+#include "Utils.h"
 
 using namespace v8;
 
@@ -44,7 +45,7 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         script->m_startingLineNumber = startingLineNumber;
         script->m_script = JSStringRetain(src->m_string);
         
-        Local<Script> s = Local<Script>(); //LocalImpl<Script>(script);
+        Local<Script> s = Utils::NewScript(script);
         return MaybeLocal<Script>(s);
     }
 }

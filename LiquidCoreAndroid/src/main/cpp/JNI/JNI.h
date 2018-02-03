@@ -42,5 +42,6 @@
 #define PARAMS JNIEnv* env, jobject thiz
 
 jclass findClass(JNIEnv *env, const char* name);
+JavaVM * getJavaVM();
 
 #endif //NODEDROID_JSJNI_H

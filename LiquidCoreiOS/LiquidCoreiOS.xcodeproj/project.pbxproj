@@ -27,6 +27,8 @@
 		076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F5201E80A4004780FD /* StringImpl.cpp */; };
 		076F58F8201E80A4004780FD /* StringImpl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F58F6201E80A4004780FD /* StringImpl.h */; };
 		076F58FA201E8155004780FD /* helloworld.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F9201E8155004780FD /* helloworld.cpp */; };
+		076F58FD201E86A2004780FD /* Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58FB201E86A2004780FD /* Utils.cpp */; };
+		076F58FE201E86A2004780FD /* Utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F58FC201E86A2004780FD /* Utils.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +65,9 @@
 		076F58F5201E80A4004780FD /* StringImpl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StringImpl.cpp; sourceTree = "<group>"; };
 		076F58F6201E80A4004780FD /* StringImpl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringImpl.h; sourceTree = "<group>"; };
 		076F58F9201E8155004780FD /* helloworld.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = helloworld.cpp; sourceTree = "<group>"; };
+		076F58FB201E86A2004780FD /* Utils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Utils.cpp; sourceTree = "<group>"; };
+		076F58FC201E86A2004780FD /* Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
+		076F58FF201FB615004780FD /* helloworld.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = helloworld.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +125,7 @@
 				076F5892201E797F004780FD /* LiquidCoreiOSTests.m */,
 				076F5894201E797F004780FD /* Info.plist */,
 				076F58F9201E8155004780FD /* helloworld.cpp */,
+				076F58FF201FB615004780FD /* helloworld.h */,
 			);
 			path = LiquidCoreiOSTests;
 			sourceTree = "<group>";
@@ -142,6 +148,8 @@
 				076F58EB201E7F96004780FD /* V8.cpp */,
 				076F58DB201E7EF9004780FD /* Value.cpp */,
 				076F58DA201E7EF9004780FD /* Value.h */,
+				076F58FB201E86A2004780FD /* Utils.cpp */,
+				076F58FC201E86A2004780FD /* Utils.h */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -161,6 +169,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				076F58FE201E86A2004780FD /* Utils.h in Headers */,
 				076F58E4201E7EF9004780FD /* Isolate.h in Headers */,
 				076F58EF201E7FCD004780FD /* Script.h in Headers */,
 				076F58E1201E7EF9004780FD /* Value.h in Headers */,
@@ -276,6 +285,7 @@
 				076F58E6201E7F2F004780FD /* ResourceConstraints.cpp in Sources */,
 				076F58EC201E7F97004780FD /* V8.cpp in Sources */,
 				076F58E8201E7F5A004780FD /* ArrayBuffer.cpp in Sources */,
+				076F58FD201E86A2004780FD /* Utils.cpp in Sources */,
 				076F58F0201E7FCD004780FD /* Script.cpp in Sources */,
 				076F58EA201E7F7E004780FD /* platform.cpp in Sources */,
 			);

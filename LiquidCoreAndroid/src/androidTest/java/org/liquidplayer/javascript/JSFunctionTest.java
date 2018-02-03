@@ -579,6 +579,21 @@ public class JSFunctionTest {
         assertEquals(10, context.evaluateScript("instance.log()").toNumber().intValue());
     }
 
+    @org.junit.Test
+    public void Issue44Test() throws Exception {
+        JSContext context = new JSContext();
+        context.property("nativeLog", new JSFunction(context, "nativeLog") {
+            public int nativeLog(String message) {
+                android.util.Log.i("", message);
+                return 0;
+            }
+        });
+
+        String script = "for (var i=0; i < 600; i++) { nativeLog('Call number ' + i); }";
+
+        context.evaluateScript(script, "script.js", 0);
+    }
+
     @org.junit.After
     public void shutDown() {
         Runtime.getRuntime().gc();

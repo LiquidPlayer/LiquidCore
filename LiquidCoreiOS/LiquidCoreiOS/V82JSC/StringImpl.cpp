@@ -17,8 +17,8 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
     StringImpl * string = (StringImpl *) malloc(sizeof(StringImpl));
     memset(string, 0, sizeof(StringImpl));
     
-    char str_[length];
-    if (length) {
+    char str_[length>=0 ? length : 0];
+    if (length>0) {
         strncpy(str_, data, length);
         str_[length-1] = 0;
         data = str_;

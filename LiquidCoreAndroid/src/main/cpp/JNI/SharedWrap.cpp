@@ -43,10 +43,28 @@ SharedWrap<T>::SharedWrap(boost::shared_ptr<T> g) : m_shared(g)
 template<typename T>
 SharedWrap<T>::~SharedWrap()
 {
+    JNIEnv *env;
+    JavaVM *jvm = getJavaVM();
+
     boost::shared_ptr<T> shared = m_shared;
     if (shared) {
         s_mutex.lock();
-        s_jobject_map.erase(&*shared);
+        if (s_jobject_map.count(&*shared) == 1) {
+            jobject javao = s_jobject_map[&*shared];
+
+            int getEnvStat = jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
+            if (getEnvStat == JNI_EDETACHED) {
+                jvm->AttachCurrentThread(&env, NULL);
+            }
+
+            env->DeleteWeakGlobalRef(javao);
+
+            if (getEnvStat == JNI_EDETACHED) {
+                jvm->DetachCurrentThread();
+            }
+
+            s_jobject_map.erase(&*shared);
+        }
         s_mutex.unlock();
 
         shared.reset();
@@ -65,6 +83,7 @@ jobject SharedWrap<T>::New(JNIEnv *env, boost::shared_ptr<T> shared)
         javao = s_jobject_map[&*shared];
         if (env->IsSameObject(javao, nullptr)) {
             // If Finalize() is being called correctly, this shouldn't happen
+            env->DeleteWeakGlobalRef(javao);
             javao = nullptr;
             s_mutex.lock();
             s_jobject_map.erase(&*shared);
@@ -78,6 +97,7 @@ jobject SharedWrap<T>::New(JNIEnv *env, boost::shared_ptr<T> shared)
         jclass classType = findClass(env, ClassName(shared));
         jmethodID cid = env->GetMethodID(classType,"<init>","(J)V");
         javao = env->NewObject(classType, cid, reinterpret_cast<jlong>(wrap));
+        env->DeleteLocalRef(classType);
         s_mutex.lock();
         s_jobject_map[&*shared] = env->NewWeakGlobalRef(javao);
         s_mutex.unlock();
@@ -111,6 +131,7 @@ SharedWrap<T>* SharedWrap<T>::GetWrap(JNIEnv *env, jobject thiz)
     jclass classType = findClass(env, "org/liquidplayer/javascript/JNIObject");
     jfieldID fid = env->GetFieldID(classType, "reference", "J");
     jlong ref = env->GetLongField(thiz, fid);
+    env->DeleteLocalRef(classType);
     return reinterpret_cast<SharedWrap<T> *>(ref);
 }
 

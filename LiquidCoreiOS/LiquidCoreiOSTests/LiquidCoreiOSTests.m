@@ -7,6 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "helloworld.h"
 
 @interface LiquidCoreiOSTests : XCTestCase
 
@@ -34,6 +35,11 @@
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
     }];
+}
+
+- (void)testHelloWorld {
+    char *argv[] = { "foo" };
+    helloworld(1, argv);
 }
 
 @end

@@ -7,7 +7,7 @@
 #include "include/libplatform/libplatform.h"
 #include "include/v8.h"
 using namespace v8;
-int helloworld(int argc, char* argv[]) {
+extern "C" int helloworld(int argc, char* argv[]) {
     // Initialize V8.
     V8::InitializeICUDefaultLocation(argv[0]);
     V8::InitializeExternalStartupData(argv[0]);

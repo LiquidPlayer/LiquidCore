@@ -7,6 +7,7 @@
 //
 
 #include "Value.h"
+#include "Utils.h"
 
 using namespace v8;
 
@@ -18,7 +19,6 @@ Local<Value> ValueImpl::New(ContextImpl *ctx, JSValueRef value)
     impl->m_context = ctx;
     impl->m_value = value;
     
-    //return Local<Value>(impl);
-    return Local<Value>();
+    return Utils::NewValue(impl);
 }
 

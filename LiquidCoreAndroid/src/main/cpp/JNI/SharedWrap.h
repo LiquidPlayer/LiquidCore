@@ -55,6 +55,7 @@ private:
 
     boost::atomic_shared_ptr<T> m_shared;
     bool m_isAsync;
+    JavaVM *m_jvm;
 };
 
 #endif //LIQUIDCORE_SHAREDWRAP_H

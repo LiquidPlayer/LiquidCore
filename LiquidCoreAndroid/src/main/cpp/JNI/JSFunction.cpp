@@ -106,9 +106,10 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     jobject objThis = nullptr;
     jobjectArray argsArr = nullptr;
     jobject *args = nullptr;
-    jmethodID mid;
+    jmethodID mid = nullptr;
     jobject objret = nullptr;
     bool isConstructCall = false;
+    int argumentCount = info.Length();
 
     JNIEnv *env;
     int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
@@ -145,7 +146,6 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
                     }
                     __android_log_assert("FAIL", "FunctionCallback",
                         "Did not find callback method");
-                    return; // Drops out of this context
                 }
                 cls = super;
             } while (true);
@@ -156,45 +156,50 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
                 JSValue::New(ctxt, info.This())
             );
 
-            int argumentCount = info.Length();
-
             jclass claz = findClass(env, "org/liquidplayer/javascript/JNIJSValue");
             argsArr = env->NewObjectArray(argumentCount, claz, nullptr);
+            env->DeleteLocalRef(claz);
             args = new jobject[argumentCount];
             for (int i=0; i<argumentCount; i++) {
+                args[i] = SharedWrap<JSValue>::New(
+                    env,
+                    JSValue::New(ctxt, info[i])
+                );
+
                 env->SetObjectArrayElement(
                     argsArr,
                     i,
-                    SharedWrap<JSValue>::New(
-                        env,
-                        JSValue::New(ctxt, info[i])
-                    )
+                    args[i]
                 );
             }
         V8_UNLOCK()
     }
 
-    // The 'return' statement above only returns from the lambda function buried
-    // in the V8* macro
-    if (!args) return;
-
     objret = env->CallObjectMethod(m_JavaThis, mid, objThis, argsArr);
-    JNIReturnObject ret(env, objret);
+
+    env->DeleteLocalRef(argsArr);
+    for (int i=0; i<argumentCount; i++) {
+        env->DeleteLocalRef(args[i]);
+    }
+    delete [] args;
 
     V8_ISOLATE(grp, isolate)
+        JNIReturnObject ret(env, objret);
         Local<v8::Context> context = ctxt->Value();
         Context::Scope context_scope_(context);
 
         if (isConstructCall) {
             info.GetReturnValue().Set(info.This());
         } else {
-            if (ret.GetReference()) {
+            jobject retval = ret.GetReference();
+            if (retval) {
                 info.GetReturnValue().Set(
                     SharedWrap<JSValue>::Shared(
                         env,
-                        ret.GetReference()
+                        retval
                     )->Value()
                 );
+                env->DeleteLocalRef(retval);
             } else {
                 info.GetReturnValue().SetUndefined();
             }
@@ -207,8 +212,7 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
         }
     V8_UNLOCK()
 
-    delete args;
-    env->DeleteLocalRef(argsArr);
+    env->DeleteLocalRef(objret);
 
     if (getEnvStat == JNI_EDETACHED) {
         m_jvm->DetachCurrentThread();
