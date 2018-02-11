@@ -221,7 +221,7 @@ static void SuggestTestHarness(int tests) {
 }
 
 
-int main(int argc, char* argv[]) {
+int cctest_main(int argc, char* argv[]) {
 #if V8_OS_WIN
     UINT new_flags =
     SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX;

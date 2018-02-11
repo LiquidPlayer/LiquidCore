@@ -108,6 +108,8 @@
 		07F8053A202F925300FDFC27 /* shim.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F80539202F925300FDFC27 /* shim.cpp */; };
 		07F8053C20304B6F00FDFC27 /* cctest.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8053B20304B6F00FDFC27 /* cctest.cc */; };
 		07F8053E203055BA00FDFC27 /* flags.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8053D203055B900FDFC27 /* flags.cc */; };
+		07F805402030969300FDFC27 /* assert-scope.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8053F2030969300FDFC27 /* assert-scope.cc */; };
+		07F805422030A25600FDFC27 /* ostreams.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F805412030A25600FDFC27 /* ostreams.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -227,6 +229,8 @@
 		07F80539202F925300FDFC27 /* shim.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = shim.cpp; sourceTree = "<group>"; };
 		07F8053B20304B6F00FDFC27 /* cctest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cctest.cc; sourceTree = "<group>"; };
 		07F8053D203055B900FDFC27 /* flags.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = flags.cc; path = "../../../deps/node-8.9.3/deps/v8/src/flags.cc"; sourceTree = "<group>"; };
+		07F8053F2030969300FDFC27 /* assert-scope.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "assert-scope.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/assert-scope.cc"; sourceTree = "<group>"; };
+		07F805412030A25600FDFC27 /* ostreams.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ostreams.cc; path = "../../../deps/node-8.9.3/deps/v8/src/ostreams.cc"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +256,8 @@
 		0718F6892025FF0900C588AA /* cctest */ = {
 			isa = PBXGroup;
 			children = (
+				07F805412030A25600FDFC27 /* ostreams.cc */,
+				07F8053F2030969300FDFC27 /* assert-scope.cc */,
 				07F8053D203055B900FDFC27 /* flags.cc */,
 				07F8049720260E3F00FDFC27 /* test-api.cc */,
 				07F80539202F925300FDFC27 /* shim.cpp */,
@@ -638,6 +644,8 @@
 				076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */,
 				07F8049820260E3F00FDFC27 /* test-api.cc in Sources */,
 				07F8053A202F925300FDFC27 /* shim.cpp in Sources */,
+				07F805422030A25600FDFC27 /* ostreams.cc in Sources */,
+				07F805402030969300FDFC27 /* assert-scope.cc in Sources */,
 				076F58FA201E8155004780FD /* helloworld.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
