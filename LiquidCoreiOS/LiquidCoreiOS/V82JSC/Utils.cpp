@@ -19,3 +19,9 @@ Local<Script> v8::Utils::NewScript(ScriptImpl *script)
 {
     return Local<Script>(script);
 }
+
+Local<Object> v8::Utils::NewObject(ObjectImpl *object)
+{
+    return Local<Object>(object);
+}
+

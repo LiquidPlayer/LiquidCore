@@ -65,3 +65,47 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     return MaybeLocal<Value>();
 }
 
+Local<UnboundScript> Script::GetUnboundScript()
+{
+    return Local<UnboundScript>();
+}
+
+
+Local<Script> UnboundScript::BindToCurrentContext()
+{
+    return Local<Script>();
+}
+
+int UnboundScript::GetId()
+{
+    return 0;
+}
+Local<Value> UnboundScript::GetScriptName()
+{
+    return Local<Value>();
+}
+
+/**
+ * Data read from magic sourceURL comments.
+ */
+Local<Value> UnboundScript::GetSourceURL()
+{
+    return Local<Value>();
+}
+/**
+ * Data read from magic sourceMappingURL comments.
+ */
+Local<Value> UnboundScript::GetSourceMappingURL()
+{
+    return Local<Value>();
+}
+
+/**
+ * Returns zero based line number of the code_pos location in the script.
+ * -1 will be returned if no information available.
+ */
+int UnboundScript::GetLineNumber(int code_pos)
+{
+    return 0;
+}
+
