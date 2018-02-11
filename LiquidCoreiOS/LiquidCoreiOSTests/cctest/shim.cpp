@@ -207,7 +207,7 @@ void internal::FatalProcessOutOfMemory(const char* message)
 
 char* internal::StrDup(const char* str)
 {
-    return nullptr;
+    return strdup(str);
 }
 
 void* Malloced::New(size_t size)
