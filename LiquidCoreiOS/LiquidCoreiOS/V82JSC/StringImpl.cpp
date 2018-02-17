@@ -11,11 +11,15 @@
 
 using namespace v8;
 
+#undef THIS
+#define THIS const_cast<StringImpl*>(static_cast<const StringImpl*>(this))
+
 MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
                                        v8::NewStringType type, int length)
 {
     StringImpl * string = (StringImpl *) malloc(sizeof(StringImpl));
     memset(string, 0, sizeof(StringImpl));
+    string->pInternal = (internal::String *)((reinterpret_cast<intptr_t>(string) & ~3) + 1);
     
     char str_[length>=0 ? length : 0];
     if (length>0) {
@@ -66,7 +70,7 @@ String::Value::~Value()
  */
 int String::Length() const
 {
-    return 0;
+    return (int) JSStringGetLength(THIS->m_string);
 }
 
 /**
@@ -75,7 +79,7 @@ int String::Length() const
  */
 int String::Utf8Length() const
 {
-    return 0;
+    return (int) JSStringGetMaximumUTF8CStringSize(THIS->m_string);
 }
 
 /**

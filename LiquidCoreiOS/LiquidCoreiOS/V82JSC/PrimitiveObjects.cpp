@@ -13,7 +13,7 @@ using namespace v8;
 
 Local<Value> NumberObject::New(Isolate* isolate, double value)
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 double NumberObject::ValueOf() const
@@ -23,7 +23,7 @@ double NumberObject::ValueOf() const
 
 Local<Value> BooleanObject::New(Isolate* isolate, bool value)
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 bool BooleanObject::ValueOf() const
 {
@@ -32,7 +32,7 @@ bool BooleanObject::ValueOf() const
 
 Local<Value> StringObject::New(Local<String> value)
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 Local<String> StringObject::ValueOf() const
@@ -42,7 +42,7 @@ Local<String> StringObject::ValueOf() const
 
 Local<Value> SymbolObject::New(Isolate* isolate, Local<Symbol> value)
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 Local<Symbol> SymbolObject::ValueOf() const

@@ -14,6 +14,7 @@
 #include "Object.h"
 #include "TypedArray.h"
 
+/*
 class v8::Utils {
 public:
     static Local<v8::Value> NewValue(ValueImpl *);
@@ -30,5 +31,5 @@ public:
     static Local<v8::Float32Array> NewFloat32Array(Float32ArrayImpl *impl) { return Local<Float32ArrayImpl>(impl); }
     static Local<v8::Float64Array> NewFloat64Array(Float64ArrayImpl *impl) { return Local<Float64ArrayImpl>(impl); }
 };
-
+*/
 #endif /* Utils_hpp */

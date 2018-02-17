@@ -212,12 +212,12 @@ char* internal::StrDup(const char* str)
 
 void* Malloced::New(size_t size)
 {
-    return nullptr;
+    return malloc(size);
 }
 
 void Malloced::Delete(void* p)
 {
-    
+    free(p);
 }
 
 //

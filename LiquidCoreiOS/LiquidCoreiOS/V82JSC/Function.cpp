@@ -42,7 +42,7 @@ void Function::SetName(Local<String> name)
 
 Local<Value> Function::GetName() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**
@@ -53,7 +53,7 @@ Local<Value> Function::GetName() const
  */
 Local<Value> Function::GetInferredName() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**
@@ -62,7 +62,7 @@ Local<Value> Function::GetInferredName() const
  */
 Local<Value> Function::GetDebugName() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**
@@ -71,7 +71,7 @@ Local<Value> Function::GetDebugName() const
  */
 Local<Value> Function::GetDisplayName() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**
@@ -105,11 +105,12 @@ int Function::ScriptId() const
  */
 Local<Value> Function::GetBoundFunction() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 ScriptOrigin Function::GetScriptOrigin() const
 {
-    ScriptOrigin so(Utils::NewValue(nullptr));
+    Local<Value> v = Local<Value>();
+    ScriptOrigin so(v);
     return so;
 }

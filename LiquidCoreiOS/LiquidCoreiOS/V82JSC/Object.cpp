@@ -245,7 +245,7 @@ MaybeLocal<Array> Object::GetOwnPropertyNames(Local<Context> context, PropertyFi
  */
 Local<Value> Object::GetPrototype()
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**
@@ -265,7 +265,7 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
  */
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
-    return Utils::NewObject(nullptr);
+    return Local<Object>();
 }
 
 /**
@@ -436,7 +436,7 @@ int Object::GetIdentityHash()
 // TODO(dcarney): take an isolate and optionally bail out?
 Local<Object> Object::Clone()
 {
-    return Utils::NewObject(nullptr);
+    return Local<Object>();
 }
 
 /**
@@ -490,7 +490,7 @@ MaybeLocal<Value> Object::CallAsConstructor(Local<Context> context,
 
 Local<Object> Object::New(Isolate* isolate)
 {
-    return Utils::NewObject(nullptr);
+    return Local<Object>();
 }
 
 void* Object::SlowGetAlignedPointerFromInternalField(int index)
@@ -500,6 +500,6 @@ void* Object::SlowGetAlignedPointerFromInternalField(int index)
 
 Local<Value> Object::SlowGetInternalField(int index)
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 

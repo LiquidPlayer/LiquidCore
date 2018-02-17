@@ -73,10 +73,47 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> c
         value = Persistent<v8::Value,CopyablePersistentTraits<v8::Value>>(isolate, function);
     V8_UNLOCK()
 
+    if (!s_jnijsvalue_class)
+    s_jnijsvalue_class = (jclass) env->NewGlobalRef(findClass(env, "org/liquidplayer/javascript/JNIJSValue"));
+    m_constructorMid = 0;
+    m_functionMid = 0;
+
     m_isNull = false;
     m_isUndefined = false;
     m_value = value;
     m_context = ctx;
+}
+
+jclass JSFunction::s_jnijsvalue_class = 0;
+
+jmethodID JSFunction::getMethodId(JNIEnv *env, bool isContructCall)
+{
+    auto getMid = [&](const char* cb, const char *signature) -> jmethodID {
+        jmethodID mid;
+        jclass cls = env->GetObjectClass(m_JavaThis);
+        do {
+            mid = env->GetMethodID(cls,cb,signature);
+            if (!env->ExceptionCheck()) break;
+            env->ExceptionClear();
+            jclass super = env->GetSuperclass(cls);
+            env->DeleteLocalRef(cls);
+            if (super == NULL || env->ExceptionCheck()) {
+                if (super != NULL) env->DeleteLocalRef(super);
+                __android_log_assert("FAIL", "FunctionCallback",
+                                     "Did not find callback method");
+            }
+            cls = super;
+        } while (true);
+        env->DeleteLocalRef(cls);
+        return mid;
+    };
+
+    if (isContructCall && !m_constructorMid)
+        m_constructorMid = getMid("constructorCallback","(" JSO "[" JSV ")" JSR);
+    else if (!isContructCall && !m_functionMid)
+        m_functionMid = getMid("functionCallback","(" JSV "[" JSV ")" JSR);
+
+    return (isContructCall) ? m_constructorMid : m_functionMid;
 }
 
 boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_)
@@ -106,9 +143,8 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     jobject objThis = nullptr;
     jobjectArray argsArr = nullptr;
     jobject *args = nullptr;
-    jmethodID mid = nullptr;
+    bool isConstructCall = info.IsConstructCall();
     jobject objret = nullptr;
-    bool isConstructCall = false;
     int argumentCount = info.Length();
 
     JNIEnv *env;
@@ -116,6 +152,8 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     if (getEnvStat == JNI_EDETACHED) {
         m_jvm->AttachCurrentThread(&env, NULL);
     }
+
+    jmethodID mid = getMethodId(env, isConstructCall);
 
     boost::shared_ptr<JSContext> ctxt = m_context;
     boost::shared_ptr<ContextGroup> grp;
@@ -126,39 +164,12 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
             Local<v8::Context> context = ctxt->Value();
             Context::Scope context_scope_(context);
 
-            isConstructCall = info.IsConstructCall();
-
-            jclass cls = env->GetObjectClass(m_JavaThis);
-            do {
-                if (isConstructCall) {
-                    mid = env->GetMethodID(cls,"constructorCallback","(" JSO "[" JSV ")" JSR);
-                } else {
-                    mid = env->GetMethodID(cls,"functionCallback","(" JSV "[" JSV ")" JSR);
-                }
-                if (!env->ExceptionCheck()) break;
-                env->ExceptionClear();
-                jclass super = env->GetSuperclass(cls);
-                env->DeleteLocalRef(cls);
-                if (super == NULL || env->ExceptionCheck()) {
-                    if (super != NULL) env->DeleteLocalRef(super);
-                    if (getEnvStat == JNI_EDETACHED) {
-                        m_jvm->DetachCurrentThread();
-                    }
-                    __android_log_assert("FAIL", "FunctionCallback",
-                        "Did not find callback method");
-                }
-                cls = super;
-            } while (true);
-            env->DeleteLocalRef(cls);
-
             objThis = SharedWrap<JSValue>::New(
                 env,
                 JSValue::New(ctxt, info.This())
             );
 
-            jclass claz = findClass(env, "org/liquidplayer/javascript/JNIJSValue");
-            argsArr = env->NewObjectArray(argumentCount, claz, nullptr);
-            env->DeleteLocalRef(claz);
+            argsArr = env->NewObjectArray(argumentCount, s_jnijsvalue_class, nullptr);
             args = new jobject[argumentCount];
             for (int i=0; i<argumentCount; i++) {
                 args[i] = SharedWrap<JSValue>::New(

@@ -72,8 +72,14 @@ public:
 
     void Dispose();
 
-    static Local<v8::Value> Wrap(JSValue *value);
-    static JSValue* Unwrap(Local<v8::Value>);
+    static inline Local<v8::Value> Wrap(JSValue *value)
+    {
+        return External::New(Isolate::GetCurrent(), value);
+    }
+    static inline JSValue* Unwrap(Local<v8::Value> identifier)
+    {
+        return reinterpret_cast<JSValue*>(identifier.As<External>()->Value());
+    }
 
     static boost::shared_ptr<JSValue> New(boost::shared_ptr<JSContext> context, Local<v8::Value> val);
 

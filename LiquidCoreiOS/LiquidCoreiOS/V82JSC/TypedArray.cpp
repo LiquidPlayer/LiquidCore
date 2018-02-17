@@ -18,7 +18,7 @@ size_t byte_offset, size_t length) \
     T##Impl * impl = (T##Impl *) malloc(sizeof(T##Impl)); \
     memset(impl, 0, sizeof(T##Impl)); \
     impl->m_byte_length = s; \
-    return Utils::New##T(impl); \
+    return Local<T>(); \
 } \
 Local<T> T::New(Local<SharedArrayBuffer> shared_array_buffer, \
                 size_t byte_offset, size_t length) \
@@ -26,7 +26,7 @@ Local<T> T::New(Local<SharedArrayBuffer> shared_array_buffer, \
     T##Impl * impl = (T##Impl *) malloc(sizeof(T##Impl)); \
     memset(impl, 0, sizeof(T##Impl)); \
     impl->m_byte_length = s; \
-    return Utils::New##T(impl); \
+    return Local<T>(); \
 }
 
 size_t TypedArray::Length()

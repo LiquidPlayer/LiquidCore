@@ -50,9 +50,14 @@ public:
 private:
     static void StaticFunctionCallback(const FunctionCallbackInfo< v8::Value > &info);
     virtual void FunctionCallback(const FunctionCallbackInfo< v8::Value > &info);
+    jmethodID getMethodId(JNIEnv *env, bool isContructCall);
 
     JavaVM *m_jvm;
     jobject m_JavaThis;
+    jmethodID m_constructorMid;
+    jmethodID m_functionMid;
+
+    static jclass s_jnijsvalue_class;
 };
 
 #endif //LIQUIDCORE_JSFUNCTION_H

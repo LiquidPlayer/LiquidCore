@@ -289,7 +289,7 @@ Local<Context> Isolate::GetIncumbentContext()
  */
 Local<Value> Isolate::ThrowException(Local<Value> exception)
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**

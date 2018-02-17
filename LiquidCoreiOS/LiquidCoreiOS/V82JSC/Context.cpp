@@ -26,7 +26,7 @@ using namespace v8;
  */
 Local<Object> Context::Global()
 {
-    return Utils::NewObject(nullptr);
+    return Local<Object>();
 }
 
 /**
@@ -138,7 +138,7 @@ void Context::UseDefaultSecurityToken()
 /** Returns the security token of this context.*/
 Local<Value> Context::GetSecurityToken()
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**
@@ -175,7 +175,7 @@ Isolate* Context::GetIsolate()
  */
 Local<Object> Context::GetExtrasBindingObject()
 {
-    return Utils::NewObject(nullptr);
+    return Local<Object>();
 }
 
 /**

@@ -579,19 +579,25 @@ public class JSFunctionTest {
         assertEquals(10, context.evaluateScript("instance.log()").toNumber().intValue());
     }
 
+    int sum = 0;
+
     @org.junit.Test
     public void Issue44Test() throws Exception {
         JSContext context = new JSContext();
         context.property("nativeLog", new JSFunction(context, "nativeLog") {
-            public int nativeLog(String message) {
-                android.util.Log.i("", message);
+            public int nativeLog(int index) {
+                sum += index;
                 return 0;
             }
         });
 
-        String script = "for (var i=0; i < 600; i++) { nativeLog('Call number ' + i); }";
+        String script = "for (var i=0; i < 600; i++) { nativeLog(i); }";
 
+        long start = System.currentTimeMillis();
         context.evaluateScript(script, "script.js", 0);
+        long end = System.currentTimeMillis();
+        android.util.Log.d("Issue44Test", "Total time (ms) = " + (end-start));
+        assertEquals(599*300, sum);
     }
 
     @org.junit.Test

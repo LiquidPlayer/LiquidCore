@@ -19,7 +19,8 @@ Local<Value> ValueImpl::New(ContextImpl *ctx, JSValueRef value)
     impl->m_context = ctx;
     impl->m_value = value;
     
-    return Utils::NewValue(impl);
+    //return Utils::NewValue(impl);
+    return Local<Value>();
 }
 
 

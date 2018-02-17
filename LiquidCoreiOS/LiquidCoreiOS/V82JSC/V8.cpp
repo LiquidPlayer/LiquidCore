@@ -89,7 +89,7 @@ const char* V8::GetVersion()
  */
 bool V8::Initialize()
 {
-    return false;
+    return true;
 }
 
 /**
@@ -122,7 +122,7 @@ void V8::SetReturnAddressLocationResolver(
  */
 bool V8::Dispose()
 {
-    return false;
+    return true;
 }
 
 /**
@@ -198,7 +198,7 @@ bool V8::RegisterDefaultSignalHandler()
 internal::Object** V8::GlobalizeReference(internal::Isolate* isolate,
                                              internal::Object** handle)
 {
-    return nullptr;
+    return handle;
 }
 internal::Object** V8::CopyPersistent(internal::Object** handle)
 {

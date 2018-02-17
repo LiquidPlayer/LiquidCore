@@ -10,6 +10,7 @@
 
 using namespace v8;
 
+/*
 Local<Value> v8::Utils::NewValue(ValueImpl *value)
 {
     return Local<Value>(value);
@@ -24,4 +25,4 @@ Local<Object> v8::Utils::NewObject(ObjectImpl *object)
 {
     return Local<Object>(object);
 }
-
+*/

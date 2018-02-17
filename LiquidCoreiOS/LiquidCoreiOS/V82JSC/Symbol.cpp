@@ -13,7 +13,7 @@ using namespace v8;
 
 Local<Value> Symbol::Name() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 
 /**

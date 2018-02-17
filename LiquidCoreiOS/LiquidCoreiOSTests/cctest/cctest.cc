@@ -221,7 +221,7 @@ static void SuggestTestHarness(int tests) {
 }
 
 
-int cctest_main(int argc, char* argv[]) {
+extern "C" int cctest_main(int argc, char* argv[]) {
 #if V8_OS_WIN
     UINT new_flags =
     SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX;
@@ -310,6 +310,7 @@ int cctest_main(int argc, char* argv[]) {
                         && (strcmp(test->file(), file_or_name) == 0
                             || strcmp(test->name(), file_or_name) == 0)) {
                             SuggestTestHarness(tests_run++);
+                            printf("Running test: %s", test->name());
                             test->Run();
                         }
                     test = test->prev();

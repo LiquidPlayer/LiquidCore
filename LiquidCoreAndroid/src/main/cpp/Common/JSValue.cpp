@@ -35,23 +35,6 @@
 #include "Common/JSValue.h"
 #include "Common/Macros.h"
 
-Local<v8::Value> JSValue::Wrap(JSValue *value)
-{
-    char this_[16];
-    sprintf(this_, "%p", value);
-    Local<v8::Value> data = String::NewFromUtf8(Isolate::GetCurrent(),
-                                                this_,
-                                                NewStringType::kNormal).ToLocalChecked();
-    return data;
-}
-
-JSValue* JSValue::Unwrap(Local<v8::Value> identifier)
-{
-    String::Utf8Value chars(identifier);
-    unsigned long n = strtoul(*chars, NULL, 16);
-    return reinterpret_cast<JSValue*>(n);
-}
-
 boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Local<v8::Value> val)
 {
     boost::shared_ptr<JSValue> value;
@@ -66,7 +49,7 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
         if (result.IsJust() && result.FromJust()) {
             hasPrivate = obj->GetPrivate(context->Value(), privateKey).ToLocal(&identifier);
         }
-        if (hasPrivate && identifier->IsString()) {
+        if (hasPrivate && !identifier->IsUndefined()) {
             // This object is already wrapped, let's re-use it
             return Unwrap(identifier)->shared_from_this();
         } else {

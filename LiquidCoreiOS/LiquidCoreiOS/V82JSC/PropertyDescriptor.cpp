@@ -42,7 +42,7 @@ PropertyDescriptor::~PropertyDescriptor()
 
 Local<Value> PropertyDescriptor::value() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 bool PropertyDescriptor::has_value() const
 {
@@ -51,8 +51,7 @@ bool PropertyDescriptor::has_value() const
 
 Local<Value> PropertyDescriptor::get() const
 {
-    return Utils::NewValue(nullptr);
-
+    return Local<Value>();
 }
 bool PropertyDescriptor::has_get() const
 {
@@ -60,7 +59,7 @@ bool PropertyDescriptor::has_get() const
 }
 Local<Value> PropertyDescriptor::set() const
 {
-    return Utils::NewValue(nullptr);
+    return Local<Value>();
 }
 bool PropertyDescriptor::has_set() const
 {
