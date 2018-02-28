@@ -34,7 +34,7 @@
 #include "JNI/JNI.h"
 #include "JSC/JSC.h"
 
-NATIVE(JNIJSContextGroup,jobject,create) (PARAMS)
+NATIVE(JNIJSContextGroup,jlong,create) (PARAMS)
 {
     // Maintain compatibility at the ContextGroup level with JSC by using JSContextGroupCreate()
     return SharedWrap<ContextGroup>::New(
@@ -43,15 +43,15 @@ NATIVE(JNIJSContextGroup,jobject,create) (PARAMS)
     );
 }
 
-NATIVE(JNIJSContextGroup,jboolean,isManaged) (PARAMS)
+NATIVE(JNIJSContextGroup,jboolean,isManaged) (PARAMS, jlong grpRef)
 {
-    auto group = SharedWrap<ContextGroup>::Shared(env, thiz);
+    auto group = SharedWrap<ContextGroup>::Shared(env, grpRef);
 
     return (jboolean) (group && group->Loop());
 }
 
-NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jobject thisObj, jobject runnable) {
-    auto group = SharedWrap<ContextGroup>::Shared(env, thiz);
+NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jlong grpRef, jobject thisObj, jobject runnable) {
+    auto group = SharedWrap<ContextGroup>::Shared(env, grpRef);
 
     if (group && group->Loop() && std::this_thread::get_id() != group->Thread()) {
         group->schedule_java_runnable(env, thisObj, runnable);
@@ -117,7 +117,7 @@ NATIVE(JNIJSContextGroup,int,createSnapshot) (PARAMS, jstring script_, jstring o
     return rval;
 }
 
-NATIVE(JNIJSContextGroup,jobject,createWithSnapshotFile) (PARAMS, jstring inFile_)
+NATIVE(JNIJSContextGroup,jlong,createWithSnapshotFile) (PARAMS, jstring inFile_)
 {
     const char *_inFile = env->GetStringUTFChars(inFile_, NULL);
 

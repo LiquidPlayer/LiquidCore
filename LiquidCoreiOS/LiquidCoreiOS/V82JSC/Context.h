@@ -9,12 +9,14 @@
 #ifndef Context_h
 #define Context_h
 
-#include <v8.h>
-#include <JavaScriptCore/JavaScript.h>
+#include "Isolate.h"
 
 struct ContextImpl : v8::Context
 {
+    v8::internal::Context *pInternal;
+
     JSContextRef m_context;
+    IsolateImpl *isolate;
 };
 
 #endif /* Context_h */

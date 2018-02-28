@@ -274,7 +274,7 @@ public class Process {
     private ArrayList<EventListener> listeners = new ArrayList<>();
 
     private class ProcessContext extends JSContext {
-        ProcessContext(final Object mainContext, JSContextGroup ctxGroup, long jscCtxRef) {
+        ProcessContext(final long mainContext, JSContextGroup ctxGroup, long jscCtxRef) {
             super(mainContext, ctxGroup);
             mJscCtxRef = jscCtxRef;
         }
@@ -288,12 +288,12 @@ public class Process {
     }
 
     @SuppressWarnings("unused") // called from native code
-    private void onNodeStarted(final Object mainContext, Object ctxGroupRef, long jscCtxRef) {
+    private void onNodeStarted(final long mainContext, long ctxGroupRef, long jscCtxRef) {
         // We will use reflection to create this object.  Ideally the JNI* classes would be
         // package local to this, but since we wanted to split packages, we will do it this way.
         try {
             final Constructor<JSContextGroup> ctor =
-                    JSContextGroup.class.getDeclaredConstructor(Object.class);
+                    JSContextGroup.class.getDeclaredConstructor(long.class);
             ctor.setAccessible(true);
             final JSContextGroup g = ctor.newInstance(ctxGroupRef);
             holdContext = new ProcessContext(mainContext, g, jscCtxRef);
@@ -314,7 +314,7 @@ public class Process {
 
                     // set file system
                     fs = new FileSystem(ctx, androidCtx, uniqueID, mediaAccessMask);
-                    setFileSystem(mainContext, fs.valueRef());
+                    setFileSystem(mainContext, fs.valueHash());
 
                     // set exit handler
                     JSFunction onExit = new JSFunction(context, "onExit") {
@@ -408,5 +408,5 @@ public class Process {
     /* Native JNI functions */
     private native long start();
     private native void dispose(long processRef);
-    private native void setFileSystem(Object contextRef, Object fsObject);
+    private native void setFileSystem(long contextRef, long fsObject);
 }

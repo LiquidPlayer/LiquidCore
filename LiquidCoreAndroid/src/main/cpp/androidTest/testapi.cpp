@@ -1144,7 +1144,7 @@ static void reset_globals() {
 }
 
 extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* env,
-    jobject thiz, jstring testapi_js, jobject group_)
+    jobject thiz, jstring testapi_js, jlong group_)
 {
     auto group = SharedWrap<ContextGroup>::Shared(env, group_);
 

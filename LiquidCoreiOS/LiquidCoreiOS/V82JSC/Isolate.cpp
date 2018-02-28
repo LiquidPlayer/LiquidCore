@@ -8,8 +8,11 @@
 
 #include "Isolate.h"
 #include "Utils.h"
+#include "Primitives.h"
 
 using namespace v8;
+
+Isolate *current = nullptr;
 
 /**
  * Creates a new isolate.  Does not change the currently entered
@@ -25,9 +28,12 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     IsolateImpl * isolate = (IsolateImpl *) malloc(sizeof (IsolateImpl));
     memset(isolate, 0, sizeof(IsolateImpl));
     
+    Primitive *undefined = UndefinedImpl::New(reinterpret_cast<v8::Isolate*>(isolate));
+    isolate->roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);
+
     isolate->m_group = JSContextGroupCreate();
     
-    return isolate;
+    return reinterpret_cast<v8::Isolate*>(isolate);
 }
 
 /**
@@ -38,7 +44,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
  */
 Isolate* Isolate::GetCurrent()
 {
-    return nullptr;
+    return current;
 }
 
 /**
@@ -90,7 +96,7 @@ void Isolate::MemoryPressureNotification(MemoryPressureLevel level)
  */
 void Isolate::Enter()
 {
-    
+    current = this;
 }
 
 /**
@@ -102,7 +108,18 @@ void Isolate::Enter()
  */
 void Isolate::Exit()
 {
-    
+    current = nullptr;
+}
+
+void IsolateImpl::EnterContext(v8::Context *ctx)
+{
+    current_context = ctx;
+}
+
+void IsolateImpl::ExitContext(v8::Context *ctx)
+{
+    // FIXME: Need a stack implementation
+    current_context = nullptr;
 }
 
 /**
@@ -252,7 +269,10 @@ bool Isolate::InContext()
  */
 Local<Context> Isolate::GetCurrentContext()
 {
-    return Local<Context>();
+    IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
+    Local<Context> c;
+    *(reinterpret_cast<Context **>(&c)) = impl->current_context;
+    return c;
 }
 
 /** Returns the last context entered through V8's C++ API. */
@@ -972,4 +992,75 @@ Isolate::SuppressMicrotaskExecutionScope::~SuppressMicrotaskExecutionScope()
     
 }
 
+/*
+internal::Isolate::Isolate(bool enable_serializer)
+    : embedder_data_(),
+    entry_stack_(NULL),
+    stack_trace_nesting_level_(0),
+    incomplete_message_(NULL),
+    bootstrapper_(NULL),
+    runtime_profiler_(NULL),
+    compilation_cache_(NULL),
+    logger_(NULL),
+    load_stub_cache_(NULL),
+    store_stub_cache_(NULL),
+    code_aging_helper_(NULL),
+    deoptimizer_data_(NULL),
+    deoptimizer_lazy_throw_(false),
+    materialized_object_store_(NULL),
+    capture_stack_trace_for_uncaught_exceptions_(false),
+    stack_trace_for_uncaught_exceptions_frame_limit_(0),
+    stack_trace_for_uncaught_exceptions_options_(StackTrace::kOverview),
+    context_slot_cache_(NULL),
+    descriptor_lookup_cache_(NULL),
+    handle_scope_implementer_(NULL),
+    unicode_cache_(NULL),
+    allocator_(new AccountingAllocator()),
+    inner_pointer_to_code_cache_(NULL),
+    global_handles_(NULL),
+    eternal_handles_(NULL),
+    thread_manager_(NULL),
+    setup_delegate_(NULL),
+    regexp_stack_(NULL),
+    date_cache_(NULL),
+    call_descriptor_data_(NULL),
+    // TODO(bmeurer) Initialized lazily because it depends on flags; can
+    // be fixed once the default isolate cleanup is done.
+    random_number_generator_(NULL),
+    rail_mode_(PERFORMANCE_ANIMATION),
+    promise_hook_or_debug_is_active_(false),
+    promise_hook_(NULL),
+    load_start_time_ms_(0),
+    serializer_enabled_(enable_serializer),
+    has_fatal_error_(false),
+    initialized_from_snapshot_(false),
+    is_tail_call_elimination_enabled_(true),
+    is_isolate_in_background_(false),
+    cpu_profiler_(NULL),
+    heap_profiler_(NULL),
+    code_event_dispatcher_(new CodeEventDispatcher()),
+    function_entry_hook_(NULL),
+    deferred_handles_head_(NULL),
+    optimizing_compile_dispatcher_(NULL),
+    stress_deopt_count_(0),
+    next_optimization_id_(0),
+    #if V8_SFI_HAS_UNIQUE_ID
+    next_unique_sfi_id_(0),
+    #endif
+    is_running_microtasks_(false),
+    use_counter_callback_(NULL),
+    basic_block_profiler_(NULL),
+    cancelable_task_manager_(new CancelableTaskManager()),
+    wasm_compilation_manager_(new wasm::CompilationManager()),
+    abort_on_uncaught_exception_callback_(NULL),
+    total_regexp_code_generated_(0)
+{
+    
+}
+
+internal::Isolate::~Isolate()
+{
+    
+}
+*/
 

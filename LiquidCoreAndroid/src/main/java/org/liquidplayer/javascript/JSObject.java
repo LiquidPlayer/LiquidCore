@@ -129,7 +129,9 @@ public class JSObject extends JSValue {
     }
 
     private abstract class JNIReturnClass implements Runnable {
-        JNIReturnObject jni;
+        JNIJSValue exception;
+        JNIJSValue value;
+        boolean bool;
     }
 
     /**
@@ -167,14 +169,14 @@ public class JSObject extends JSValue {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.make(context.ctxRef());
+                valueRef = context.ctxRef().make();
                 addJSExports();
             }
         });
         context.persistObject(this);
     }
 
-    protected void addJSExports() {
+    void addJSExports() {
         try {
             for (Field f : getClass().getDeclaredFields()) {
                 if (f.isAnnotationPresent(jsexport.class)) {
@@ -253,7 +255,7 @@ public class JSObject extends JSValue {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.make(context.ctxRef());
+                valueRef = context.ctxRef().make();
                 addJSExports();
                 Method[] methods = iface.getDeclaredMethods();
                 for (Method m : methods) {
@@ -291,12 +293,11 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = JNI().hasProperty(prop);
+                bool = JNI().hasProperty(prop);
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
 
     /**
@@ -310,42 +311,49 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = JNI().getProperty(prop);
+                try {
+                    value = JNI().getProperty(prop);
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception != null) {
-            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception != null) {
+            context.throwJSException(new JSException(new JSValue(runnable.exception, context)));
             return new JSValue(context);
         }
-        return new JSValue((JNIJSValue)runnable.jni.reference, context);
+        return new JSValue(runnable.value, context);
     }
 
     /**
      * Sets the value of property 'prop'
      *
      * @param prop       The name of the property to set
-     * @param value      The Java object to set.  The Java object will be converted to a JavaScript object
+     * @param val        The Java object to set.  The Java object will be converted to a JavaScript object
      *                   automatically.
      * @param attributes And OR'd list of JSProperty constants
      * @since 0.1.0
      */
-    public void property(final String prop, final Object value, final int attributes) {
+    public void property(final String prop, final Object val, final int attributes) {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                JNIJSValue ref = (value instanceof JSValue) ?
-                        ((JSValue) value).valueRef() : new JSValue(context, value).valueRef();
-                jni = JNI().setProperty(
-                        prop,
-                        ref,
-                        attributes);
+                JNIJSValue ref = (val instanceof JSValue) ?
+                        ((JSValue) val).valueRef() : new JSValue(context, val).valueRef();
+                try {
+                    JNI().setProperty(
+                            prop,
+                            ref,
+                            attributes);
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception != null) {
-            context.throwJSException(
-                    new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception != null) {
+            context.throwJSException(new JSException(new JSValue(runnable.exception, context)));
         }
     }
 
@@ -372,16 +380,20 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = JNI().deleteProperty(prop);
+                try {
+                    bool = JNI().deleteProperty(prop);
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception != null) {
+        if (runnable.exception != null) {
             context.throwJSException(
-                    new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+                    new JSException(new JSValue((JNIJSValue)runnable.exception, context)));
             return false;
         }
-        return runnable.jni.bool;
+        return runnable.bool;
     }
 
     /**
@@ -395,42 +407,51 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = JNI().getPropertyAtIndex(index);
+                try {
+                    value = JNI().getPropertyAtIndex(index);
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception != null) {
+        if (runnable.exception != null) {
             context.throwJSException(
-                    new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+                    new JSException(new JSValue(runnable.exception, context)));
             return new JSValue(context);
         }
-        return new JSValue((JNIJSValue)runnable.jni.reference, context);
+        return new JSValue(runnable.value, context);
     }
 
     /**
      * Sets the property at index 'index'.  Used for arrays.
      *
      * @param index The index of the property to set
-     * @param value The Java object to set, will be automatically converted to a JavaScript value
+     * @param val The Java object to set, will be automatically converted to a JavaScript value
      * @since 0.1.0
      */
-    public void propertyAtIndex(final int index, final Object value) {
+    public void propertyAtIndex(final int index, final Object val) {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = JNI().setPropertyAtIndex(index,
-                        (value instanceof JSValue) ? ((JSValue) value).valueRef() : new JSValue(context, value).valueRef());
+                try {
+                    JNI().setPropertyAtIndex(index,
+                            (val instanceof JSValue) ? ((JSValue) val).valueRef()
+                                    : new JSValue(context, val).valueRef());
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception != null) {
+        if (runnable.exception != null) {
             context.throwJSException(
-                    new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+                    new JSException(new JSValue((JNIJSValue)runnable.exception, context)));
         }
     }
 
     private abstract class StringArrayReturnClass implements Runnable {
-        public String[] sArray;
+        String[] sArray;
     }
 
     /**
@@ -460,12 +481,11 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = JNI().isFunction();
+                bool = JNI().isFunction();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
 
     /**
@@ -478,12 +498,11 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = JNI().isConstructor();
+                bool = JNI().isConstructor();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
 
     @Override
@@ -501,12 +520,11 @@ public class JSObject extends JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.reference = JNI().getPrototype();
+                value = JNI().getPrototype();
             }
         };
         context.sync(runnable);
-        return new JSValue((JNIJSValue)runnable.jni.reference, context);
+        return new JSValue(runnable.value, context);
     }
 
     /**
@@ -528,7 +546,9 @@ public class JSObject extends JSValue {
 
     @Override
     protected void finalize() throws Throwable {
-        context.finalizeObject(this);
+        if (context != null) {
+            context.finalizeObject(this);
+        }
         super.finalize();
     }
 

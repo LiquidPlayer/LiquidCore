@@ -27,9 +27,31 @@
 #include "src/unicode-inl.h"
 #include "src/utils.h"
 #include "src/vm-state.h"
+#include "src/heap/heap.h"
 
-struct IsolateImpl : v8::internal::Isolate, v8::Isolate {
+#define DEF(T,V,F) \
+    v8::internal::Object ** V;
+struct Roots {
+    STRONG_ROOT_LIST(DEF)
+};
+
+struct IsolateImpl {
+    void *i0; // kHeapObjectMapOffset, kIsolateEmbedderDataOffset
+    void *i1; // kForeignAddressOffset
+    void *i2;
+    void *i3;
+    uint64_t i64_0; // kExternalMemoryOffset
+    uint64_t i64_1; // kExternalMemoryLimitOffset
+    uint64_t i64_2;
+    void *i4;
+    void *i5;
+    struct Roots roots; // kIsolateRootsOffset
     JSContextGroupRef m_group;
+    
+    void EnterContext(v8::Context *ctx);
+    void ExitContext(v8::Context *ctx);
+    
+    v8::Context *current_context;
 };
 
 #endif /* Isolate_h */

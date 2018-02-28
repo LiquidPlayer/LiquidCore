@@ -45,7 +45,7 @@ public class JSON extends JSValue {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSValue.makeFromJSONString(context.ctxRef(), str);
+                valueRef = context.ctxRef().makeFromJSONString(str);
             }
         });
     }

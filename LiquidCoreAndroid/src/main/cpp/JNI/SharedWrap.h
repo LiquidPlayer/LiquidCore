@@ -34,6 +34,8 @@
 #define LIQUIDCORE_SHAREDWRAP_H
 
 #include "Common/Common.h"
+#include <mutex>
+#include <shared_mutex>
 
 template<typename T>
 class SharedWrap {
@@ -41,26 +43,15 @@ public:
     SharedWrap(boost::shared_ptr<T> g);
     virtual ~SharedWrap();
 
-    static jobject New(JNIEnv *env, boost::shared_ptr<T> shared);
-    static boost::shared_ptr<T> Shared(JNIEnv *env, jobject thiz);
-    static void Dispose(long reference);
+    static jlong New(JNIEnv *env, boost::shared_ptr<T> shared);
+    static boost::shared_ptr<T> Shared(JNIEnv *env, jlong thiz);
+    static void Dispose(jlong reference);
 
 private:
-    static SharedWrap<T>* GetWrap(JNIEnv *env, jobject thiz);
-    static const char * ClassName();
-    static jclass Class(JNIEnv *env, boost::shared_ptr<T> shared, jmethodID& mid);
-
-    static std::map<T *, jobject> s_jobject_map;
-    static std::mutex s_mutex;
-
-    static jclass s_class;
-    static jclass s_class_object;
-    static jmethodID s_cid;
-    static jmethodID s_cid_object;
+    static SharedWrap<T>* GetWrap(JNIEnv *env, jlong thiz);
 
     boost::atomic_shared_ptr<T> m_shared;
     bool m_isAsync;
-    JavaVM *m_jvm;
 };
 
 #endif //LIQUIDCORE_SHAREDWRAP_H

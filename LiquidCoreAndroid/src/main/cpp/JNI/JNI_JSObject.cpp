@@ -38,18 +38,18 @@
 #include "JNI/JSFunction.h"
 #include "JNI/JNIReturnObject.h"
 
-#define VALUE_ISOLATE(valueRef,isolate,context,value) \
-    auto valueRef = SharedWrap<JSValue>::Shared(env, thiz); \
+#define VALUE_ISOLATE(objRef,valueRef,isolate,context,value) \
+    auto valueRef = SharedWrap<JSValue>::Shared(env, objRef); \
     V8_ISOLATE_CTX(valueRef->Context(),isolate,context); \
     Local<Value> value = valueRef->Value();
 
-#define V8_ISOLATE_OBJ(object,isolate,context,o) \
-    VALUE_ISOLATE(object,isolate,context,__v__) \
+#define V8_ISOLATE_OBJ(objRef,object,isolate,context,o) \
+    VALUE_ISOLATE(objRef,object,isolate,context,__v__) \
     Local<Object> o = __v__->ToObject(context).ToLocalChecked();
 
-NATIVE(JNIJSObject,jobject,make) (PARAMS, jobject context_)
+NATIVE(JNIJSObject,jlong,make) (PARAMS, jlong context_)
 {
-    jobject value = nullptr;
+    jlong value = 0;
     auto ctx = SharedWrap<JSContext>::Shared(env, context_);
     V8_ISOLATE_CTX(ctx,isolate,context)
         value = SharedWrap<JSValue>::New(
@@ -60,7 +60,7 @@ NATIVE(JNIJSObject,jobject,make) (PARAMS, jobject context_)
     return value;
 }
 
-NATIVE(JNIJSFunction,jobject,makeFunctionWithCallback) (PARAMS, jobject jsfthis, jobject ctx, jstring name)
+NATIVE(JNIJSFunction,jlong,makeFunctionWithCallback) (PARAMS, jobject jsfthis, jlong ctx, jstring name)
 {
     return SharedWrap<JSValue>::New(
         env,
@@ -68,7 +68,7 @@ NATIVE(JNIJSFunction,jobject,makeFunctionWithCallback) (PARAMS, jobject jsfthis,
     );
 }
 
-NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jobject context_, jobjectArray args)
+NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jlong context_, jlongArray args)
 {
     JNIReturnObject ret(env);
     auto ctx = SharedWrap<JSContext>::Shared(env, context_);
@@ -82,16 +82,20 @@ NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jobject context_, jobjectArray ar
 
         TryCatch trycatch(isolate);
 
+        jlong *args_ = env->GetLongArrayElements(args,nullptr);
+
         uint32_t i;
         for (i=0; !exception && (jsize)i<len; i++) {
             Local<Value> element = SharedWrap<JSValue>::Shared(
                 env,
-                env->GetObjectArrayElement(args, i)
+                args_[i]
             )->Value();
             if (array->Set(context, i, element).IsNothing()) {
                 exception = JSValue::New(ctx, trycatch.Exception());
             }
         }
+
+        env->ReleaseLongArrayElements(args, args_, 0);
 
         if (!exception) {
             ret.SetReference(SharedWrap<JSValue>::New(
@@ -108,10 +112,10 @@ NATIVE(JNIJSObject,jobject,makeArray) (PARAMS, jobject context_, jobjectArray ar
     return ret.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,makeDate) (PARAMS, jobject context_, jlongArray args)
+NATIVE(JNIJSObject,jlong,makeDate) (PARAMS, jlong context_, jlongArray args)
 {
     auto ctx = SharedWrap<JSContext>::Shared(env, context_);
-    jobject out = nullptr;
+    jlong out = 0;
 
     V8_ISOLATE_CTX(ctx,isolate,context)
         jsize len = env->GetArrayLength(args);
@@ -138,10 +142,10 @@ NATIVE(JNIJSObject,jobject,makeDate) (PARAMS, jobject context_, jlongArray args)
     return out;
 }
 
-NATIVE(JNIJSObject,jobject,makeError) (PARAMS, jobject context_, jstring message)
+NATIVE(JNIJSObject,jlong,makeError) (PARAMS, jlong context_, jstring message)
 {
     auto ctx = SharedWrap<JSContext>::Shared(env, context_);
-    jobject out = nullptr;
+    jlong out = 0;
 
     V8_ISOLATE_CTX(ctx,isolate,context)
         const char *c_string = env->GetStringUTFChars(message, NULL);
@@ -155,7 +159,7 @@ NATIVE(JNIJSObject,jobject,makeError) (PARAMS, jobject context_, jstring message
     return out;
 }
 
-NATIVE(JNIJSObject,jobject,makeRegExp) (PARAMS, jobject context_, jstring pattern_, jstring flags_)
+NATIVE(JNIJSObject,jobject,makeRegExp) (PARAMS, jlong context_, jstring pattern_, jstring flags_)
 {
     JNIReturnObject out(env);
     auto ctx = SharedWrap<JSContext>::Shared(env, context_);
@@ -197,7 +201,7 @@ NATIVE(JNIJSObject,jobject,makeRegExp) (PARAMS, jobject context_, jstring patter
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,makeFunction) (PARAMS, jobject context_, jstring name_,
+NATIVE(JNIJSObject,jobject,makeFunction) (PARAMS, jlong context_, jstring name_,
         jstring func_, jstring sourceURL_, jint startingLineNumber)
 {
     JNIReturnObject out(env);
@@ -251,11 +255,11 @@ NATIVE(JNIJSObject,jobject,makeFunction) (PARAMS, jobject context_, jstring name
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,getPrototype) (PARAMS)
+NATIVE(JNIJSObject,jlong,getPrototype) (PARAMS, jlong objRef)
 {
-    jobject out;
+    jlong out;
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         out = SharedWrap<JSValue>::New(env,
             JSValue::New(object->Context(), o->GetPrototype()));
     V8_UNLOCK()
@@ -263,18 +267,18 @@ NATIVE(JNIJSObject,jobject,getPrototype) (PARAMS)
     return out;
 }
 
-NATIVE(JNIJSObject,void,setPrototype) (PARAMS, jobject value)
+NATIVE(JNIJSObject,void,setPrototype) (PARAMS, jlong objRef, jlong valueRef)
 {
-    V8_ISOLATE_OBJ(object,isolate,context,o)
-        o->SetPrototype(context, SharedWrap<JSValue>::Shared(env, value)->Value());
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
+        o->SetPrototype(context, SharedWrap<JSValue>::Shared(env, valueRef)->Value());
     V8_UNLOCK()
 }
 
-NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jstring propertyName)
+NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jlong objRef, jstring propertyName)
 {
     bool v;
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef, object,isolate,context,o)
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
         Maybe<bool> has = o->HasOwnProperty(context, String::NewFromUtf8(isolate, c_string));
         env->ReleaseStringUTFChars(propertyName, c_string);
@@ -285,11 +289,11 @@ NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jstring propertyName)
     return (jboolean)v;
 }
 
-NATIVE(JNIJSObject,jobject,getProperty) (PARAMS, jstring propertyName)
+NATIVE(JNIJSObject,jobject,getProperty) (PARAMS, jlong objRef, jstring propertyName)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
         TryCatch trycatch(isolate);
@@ -312,11 +316,11 @@ NATIVE(JNIJSObject,jobject,getProperty) (PARAMS, jstring propertyName)
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,setProperty) (PARAMS, jstring propertyName, jobject value, jint attributes)
+NATIVE(JNIJSObject,jobject,setProperty) (PARAMS, jlong objRef, jstring propertyName, jlong value, jint attributes)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         enum {
             kJSPropertyAttributeReadOnly = 1 << 1,
             kJSPropertyAttributeDontEnum = 1 << 2,
@@ -357,11 +361,11 @@ NATIVE(JNIJSObject,jobject,setProperty) (PARAMS, jstring propertyName, jobject v
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,deleteProperty) (PARAMS, jstring propertyName)
+NATIVE(JNIJSObject,jobject,deleteProperty) (PARAMS, jlong objRef, jstring propertyName)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef, object,isolate,context,o)
         const char *c_string = env->GetStringUTFChars(propertyName, NULL);
 
         TryCatch trycatch(isolate);
@@ -370,6 +374,8 @@ NATIVE(JNIJSObject,jobject,deleteProperty) (PARAMS, jstring propertyName)
         Maybe<bool> deleted = o->Delete(context, String::NewFromUtf8(isolate, c_string));
         if (deleted.IsNothing()) {
             exception = JSValue::New(object->Context(), trycatch.Exception());
+        } else {
+            out.SetBool(deleted.FromJust());
         }
 
         if (exception) {
@@ -382,11 +388,11 @@ NATIVE(JNIJSObject,jobject,deleteProperty) (PARAMS, jstring propertyName)
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,getPropertyAtIndex) (PARAMS, jint propertyIndex)
+NATIVE(JNIJSObject,jobject,getPropertyAtIndex) (PARAMS, jlong objRef, jint propertyIndex)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef, object,isolate,context,o)
         TryCatch trycatch(isolate);
         boost::shared_ptr<JSValue> exception;
 
@@ -406,11 +412,11 @@ NATIVE(JNIJSObject,jobject,getPropertyAtIndex) (PARAMS, jint propertyIndex)
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobject,setPropertyAtIndex) (PARAMS, jint propertyIndex, jobject value)
+NATIVE(JNIJSObject,jobject,setPropertyAtIndex) (PARAMS, jlong objRef, jint propertyIndex, jlong value)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         TryCatch trycatch(isolate);
         boost::shared_ptr<JSValue> exception;
 
@@ -429,32 +435,34 @@ NATIVE(JNIJSObject,jobject,setPropertyAtIndex) (PARAMS, jint propertyIndex, jobj
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jboolean,isFunction) (PARAMS) {
+NATIVE(JNIJSObject,jboolean,isFunction) (PARAMS, jlong objRef)
+{
     bool v;
 
-    VALUE_ISOLATE(object,isolate,context,value)
+    VALUE_ISOLATE(objRef,object,isolate,context,value)
         v = value->IsFunction();
     V8_UNLOCK()
 
     return (jboolean) v;
 }
 
-NATIVE(JNIJSObject,jobject,callAsFunction) (PARAMS, jobject thisObject, jobjectArray args)
+NATIVE(JNIJSObject,jobject,callAsFunction) (PARAMS, jlong objRef, jlong thisObject, jlongArray args)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         Local<Value> this_ = thisObject ?
             SharedWrap<JSValue>::Shared(env, thisObject)->Value() :
             Local<Value>::New(isolate,Null(isolate));
 
         int i;
         jsize len = env->GetArrayLength(args);
-        Local<Value> *elements = new Local<Value>[len];
+        Local<Value> elements[len];
+        jlong *args_ = env->GetLongArrayElements(args,nullptr);
         for (i=0; i<len; i++) {
-            elements[i] =
-                SharedWrap<JSValue>::Shared(env, env->GetObjectArrayElement(args,i))->Value();
+            elements[i] = SharedWrap<JSValue>::Shared(env, args_[i])->Value();
         }
+        env->ReleaseLongArrayElements(args, args_, 0);
 
         TryCatch trycatch(isolate);
         boost::shared_ptr<JSValue> exception;
@@ -470,37 +478,37 @@ NATIVE(JNIJSObject,jobject,callAsFunction) (PARAMS, jobject thisObject, jobjectA
         } else {
             out.SetException(SharedWrap<JSValue>::New(env, exception));
         }
-        delete [] elements;
     V8_UNLOCK()
 
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jboolean,isConstructor) (PARAMS)
+NATIVE(JNIJSObject,jboolean,isConstructor) (PARAMS, jlong objRef)
 {
     // All functions can be constructors, yeah?  This is left over legacy from
     // JavaScriptCore.
     bool v;
 
-    VALUE_ISOLATE(object,isolate,context,value)
+    VALUE_ISOLATE(objRef,object,isolate,context,value)
         v = value->IsFunction();
     V8_UNLOCK()
 
     return (jboolean)v;
 }
 
-NATIVE(JNIJSObject,jobject,callAsConstructor) (PARAMS, jobjectArray args)
+NATIVE(JNIJSObject,jobject,callAsConstructor) (PARAMS, jlong objRef, jlongArray args)
 {
     JNIReturnObject out(env);
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         int i;
         jsize len = env->GetArrayLength(args);
-        Local<Value> *elements = new Local<Value>[len];
+        Local<Value> elements[len];
+        jlong *args_ = env->GetLongArrayElements(args,nullptr);
         for (i=0; i<len; i++) {
-            elements[i] =
-                SharedWrap<JSValue>::Shared(env, env->GetObjectArrayElement(args,i))->Value();
+            elements[i] = SharedWrap<JSValue>::Shared(env, args_[i])->Value();
         }
+        env->ReleaseLongArrayElements(args, args_, 0);
 
         TryCatch trycatch(isolate);
         boost::shared_ptr<JSValue> exception;
@@ -516,17 +524,15 @@ NATIVE(JNIJSObject,jobject,callAsConstructor) (PARAMS, jobjectArray args)
         } else {
             out.SetException(SharedWrap<JSValue>::New(env, exception));
         }
-
-        delete [] elements;
     V8_UNLOCK()
 
     return out.ToJava();
 }
 
-NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (PARAMS) {
+NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong objRef) {
     jobjectArray ret;
 
-    V8_ISOLATE_OBJ(object,isolate,context,o)
+    V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         Local<Array> names = o->GetPropertyNames(context).ToLocalChecked();
 
         ret = (jobjectArray) env->NewObjectArray(

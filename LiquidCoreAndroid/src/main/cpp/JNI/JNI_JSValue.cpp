@@ -38,7 +38,7 @@
 #include "JNI/JNIReturnObject.h"
 
 template <typename F>
-jboolean boolean_func(JNIEnv* env, jobject thiz, F&& lambda, bool defValue){
+jboolean boolean_func(JNIEnv* env, jlong thiz, F&& lambda, bool defValue){
     auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
     if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
             !valueRef->Group()->IsDefunct()) {
@@ -51,7 +51,7 @@ jboolean boolean_func(JNIEnv* env, jobject thiz, F&& lambda, bool defValue){
 }
 
 template <typename F>
-jobject exception_func(JNIEnv* env, jobject thiz, F&& lambda){
+jobject exception_func(JNIEnv* env, jlong thiz, F&& lambda){
     JNIReturnObject out(env);
     auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
     if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
@@ -73,138 +73,138 @@ jobject exception_func(JNIEnv* env, jobject thiz, F&& lambda){
     return out.ToJava();
 }
 
-NATIVE(JNIJSValue,jboolean,isUndefined) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isUndefined) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUndefined();
     }, true);
 }
 
-NATIVE(JNIJSValue,jboolean,isNull) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isNull) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsNull();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isBoolean) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isBoolean) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsBoolean();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isNumber) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isNumber) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsNumber();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isString) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isString) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsString();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isObject) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isObject) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsObject();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isArray) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isArray) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsArray();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isDate) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isDate) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsDate();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isTypedArray) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isTypedArray) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsTypedArray();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isInt8Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isInt8Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsInt8Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isInt16Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isInt16Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsInt16Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isInt32Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isInt32Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsInt32Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint8Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isUint8Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint8Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint8ClampedArray) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isUint8ClampedArray) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint8ClampedArray();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint16Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isUint16Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint16Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint32Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isUint32Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint32Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isFloat32Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isFloat32Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsFloat32Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isFloat64Array) (PARAMS)
+NATIVE(JNIJSValue,jboolean,isFloat64Array) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsFloat64Array();
     }, false);
 }
 
 /* Comparing values */
 
-NATIVE(JNIJSValue,jobject,isEqual) (PARAMS, jobject b)
+NATIVE(JNIJSValue,jobject,isEqual) (PARAMS, jlong valueRef, jlong b)
 {
     JNIReturnObject out1(env);
-    auto a = SharedWrap<JSValue>::Shared(env, thiz);
+    auto a = SharedWrap<JSValue>::Shared(env, valueRef);
     if (!a->IsDefunct()) {
         return exception_func(env, b, [a](Local<Value> b_, Local<Context> context,
                                            Isolate *isolate, JNIReturnObject out) {
@@ -224,9 +224,9 @@ NATIVE(JNIJSValue,jobject,isEqual) (PARAMS, jobject b)
     }
 }
 
-NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jobject b)
+NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jlong valueRef, jlong b)
 {
-    return boolean_func(env, thiz, [env, b](Local<Value> a_, Local<Context> context) {
+    return boolean_func(env, valueRef, [env, b](Local<Value> a_, Local<Context> context) {
         return boolean_func(env, b, [a_](Local<Value> b_, Local<Context> context_) {
             return a_->StrictEquals(b_);
         }, false);
@@ -235,11 +235,11 @@ NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jobject b)
 
 /* Creating values */
 
-NATIVE(JNIJSValue,jobject,makeUndefined) (PARAMS, jobject ctx)
+NATIVE(JNIJSValue,jlong,makeUndefined) (PARAMS, jlong ctxRef)
 {
-    jobject value = nullptr;
+    jlong value = 0;
 
-    auto context_ = SharedWrap<JSContext>::Shared(env, ctx);
+    auto context_ = SharedWrap<JSContext>::Shared(env, ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
         value = SharedWrap<JSValue>::New(env,
             JSValue::New(context_,Local<Value>::New(isolate,Undefined(isolate))));
@@ -248,11 +248,11 @@ NATIVE(JNIJSValue,jobject,makeUndefined) (PARAMS, jobject ctx)
     return value;
 }
 
-NATIVE(JNIJSValue,jobject,makeNull) (PARAMS, jobject ctx)
+NATIVE(JNIJSValue,jlong,makeNull) (PARAMS, jlong ctxRef)
 {
-    jobject value = nullptr;
+    jlong value = 0;
 
-    auto context_ = SharedWrap<JSContext>::Shared(env, ctx);
+    auto context_ = SharedWrap<JSContext>::Shared(env, ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
         value = SharedWrap<JSValue>::New(env,
             JSValue::New(context_,Local<Value>::New(isolate,Null(isolate))));
@@ -261,11 +261,11 @@ NATIVE(JNIJSValue,jobject,makeNull) (PARAMS, jobject ctx)
     return value;
 }
 
-NATIVE(JNIJSValue,jobject,makeBoolean) (PARAMS, jobject ctx, jboolean boolean)
+NATIVE(JNIJSValue,jlong,makeBoolean) (PARAMS, jlong ctxRef, jboolean boolean)
 {
-    jobject value = nullptr;
+    jlong value = 0;
 
-    auto context_ = SharedWrap<JSContext>::Shared(env, ctx);
+    auto context_ = SharedWrap<JSContext>::Shared(env, ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
         value = SharedWrap<JSValue>::New(env,
             JSValue::New(
@@ -277,11 +277,11 @@ NATIVE(JNIJSValue,jobject,makeBoolean) (PARAMS, jobject ctx, jboolean boolean)
     return value;
 }
 
-NATIVE(JNIJSValue,jobject,makeNumber) (PARAMS, jobject ctx, jdouble number)
+NATIVE(JNIJSValue,jlong,makeNumber) (PARAMS, jlong ctxRef, jdouble number)
 {
-    jobject value = nullptr;
+    jlong value = 0;
 
-    auto context_ = SharedWrap<JSContext>::Shared(env, ctx);
+    auto context_ = SharedWrap<JSContext>::Shared(env, ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
         value = SharedWrap<JSValue>::New(
             env,
@@ -292,11 +292,11 @@ NATIVE(JNIJSValue,jobject,makeNumber) (PARAMS, jobject ctx, jdouble number)
     return value;
 }
 
-NATIVE(JNIJSValue,jobject,makeString) (PARAMS, jobject ctx, jstring string)
+NATIVE(JNIJSValue,jlong,makeString) (PARAMS, jlong ctxRef, jstring string)
 {
-    jobject value = nullptr;
+    jlong value = 0;
 
-    auto context_ = SharedWrap<JSContext>::Shared(env, ctx);
+    auto context_ = SharedWrap<JSContext>::Shared(env, ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
         const char *c_string = env->GetStringUTFChars(string, NULL);
 
@@ -320,11 +320,11 @@ NATIVE(JNIJSValue,jobject,makeString) (PARAMS, jobject ctx, jstring string)
 
 /* Converting to and from JSON formatted strings */
 
-NATIVE(JNIJSValue,jobject,makeFromJSONString) (PARAMS, jobject ctx, jstring string)
+NATIVE(JNIJSValue,jlong,makeFromJSONString) (PARAMS, jlong ctxRef, jstring string)
 {
-    jobject value = nullptr;
+    jlong value = 0;
 
-    auto context_ = SharedWrap<JSContext>::Shared(env, ctx);
+    auto context_ = SharedWrap<JSContext>::Shared(env, ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
         const char *c_string = env->GetStringUTFChars(string, NULL);
         MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
@@ -352,18 +352,18 @@ NATIVE(JNIJSValue,jobject,makeFromJSONString) (PARAMS, jobject ctx, jstring stri
     return value;
 }
 
-NATIVE(JNIJSValue,jobject,createJSONString) (PARAMS)
+NATIVE(JNIJSValue,jobject,createJSONString) (PARAMS, jlong valueRef)
 {
-    return exception_func(env, thiz, [env, thiz](Local<Value> inValue, Local<Context> context,
+    return exception_func(env, valueRef, [env, valueRef](Local<Value> inValue, Local<Context> context,
                                               Isolate *isolate, JNIReturnObject out) {
-        auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
+        auto value = SharedWrap<JSValue>::Shared(env, valueRef);
         Local<Object> json = context->Global()->Get(String::NewFromUtf8(isolate, "JSON"))->ToObject();
         Local<Function> stringify = json->Get(String::NewFromUtf8(isolate, "stringify")).As<Function>();
 
         Local<Value> result = stringify->Call(json, 1, &inValue);
         out.SetReference(SharedWrap<JSValue>::New(
                 env,
-                JSValue::New(valueRef->Context(), result))
+                JSValue::New(value->Context(), result))
         );
         return false;
     });
@@ -371,19 +371,18 @@ NATIVE(JNIJSValue,jobject,createJSONString) (PARAMS)
 
 /* Converting to primitive values */
 
-NATIVE(JNIJSValue,jboolean,toBoolean) (PARAMS)
+NATIVE(JNIJSValue,jboolean,toBoolean) (PARAMS, jlong valueRef)
 {
-    return boolean_func(env, thiz, [](Local<Value> value, Local<Context> context) {
+    return boolean_func(env, valueRef, [](Local<Value> value, Local<Context> context) {
         MaybeLocal<Boolean> boolean = value->ToBoolean(context);
         return !boolean.IsEmpty() && boolean.ToLocalChecked()->Value();
     }, false);
 }
 
-NATIVE(JNIJSValue,jobject,toNumber) (PARAMS) {
-    return exception_func(env, thiz, [](Local<Value> value, Local<Context> context,
+NATIVE(JNIJSValue,jobject,toNumber) (PARAMS, jlong valueRef) {
+    return exception_func(env, valueRef, [](Local<Value> value, Local<Context> context,
                                         Isolate *isolate, JNIReturnObject out) {
         MaybeLocal<Number> number = value->ToNumber(context);
-        double result = 0.0;
         if (!number.IsEmpty()) {
             out.SetNumber(number.ToLocalChecked()->Value());
         }
@@ -391,9 +390,9 @@ NATIVE(JNIJSValue,jobject,toNumber) (PARAMS) {
     });
 }
 
-NATIVE(JNIJSValue,jobject,toStringCopy) (PARAMS)
+NATIVE(JNIJSValue,jobject,toStringCopy) (PARAMS, jlong valueRef)
 {
-    return exception_func(env, thiz, [env](Local<Value> value, Local<Context> context,
+    return exception_func(env, valueRef, [env](Local<Value> value, Local<Context> context,
                                            Isolate *isolate, JNIReturnObject out) {
         MaybeLocal<String> string = value->ToString(context);
         if (!string.IsEmpty()) {
@@ -406,16 +405,16 @@ NATIVE(JNIJSValue,jobject,toStringCopy) (PARAMS)
     });
 }
 
-NATIVE(JNIJSValue,jobject,toObject) (PARAMS)
+NATIVE(JNIJSValue,jobject,toObject) (PARAMS, jlong valueRef)
 {
-    return exception_func(env, thiz, [env, thiz](Local<Value> value, Local<Context> context,
+    return exception_func(env, valueRef, [env, valueRef](Local<Value> value, Local<Context> context,
                                                  Isolate *isolate, JNIReturnObject out) {
 
         MaybeLocal<Object> obj = value->ToObject(context);
         if (!obj.IsEmpty()) {
-            auto valueRef = SharedWrap<JSValue>::Shared(env, thiz);
+            auto v = SharedWrap<JSValue>::Shared(env, valueRef);
             out.SetReference(SharedWrap<JSValue>::New(
-                    env, JSValue::New(valueRef->Context(), value->ToObject())));
+                    env, JSValue::New(v->Context(), value->ToObject())));
         }
         return obj.IsEmpty();
     });

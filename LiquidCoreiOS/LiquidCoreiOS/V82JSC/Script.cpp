@@ -17,8 +17,8 @@ using namespace v8;
 MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
                                    ScriptOrigin* origin)
 {
-    ContextImpl * ctx = nullptr; //static_cast<ContextImpl *>(*context);
-    StringImpl * src = nullptr; //static_cast<StringImpl *>(*source);
+    ContextImpl * ctx = static_cast<ContextImpl *>(*context);
+    StringImpl * src = static_cast<StringImpl *>(*source);
     JSStringRef sourceURL = nullptr;
     int startingLineNumber = 0;
     JSValueRef exception;
@@ -45,8 +45,10 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         script->m_startingLineNumber = startingLineNumber;
         script->m_script = JSStringRetain(src->m_string);
         
-        //Local<Script> s = Utils::NewScript(script);
+        // HACK!
         Local<Script> s = Local<Script>();
+        *(reinterpret_cast<Script **>(&s)) = script;
+        
         return MaybeLocal<Script>(s);
     }
 }
@@ -56,7 +58,7 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     ContextImpl * ctx = static_cast<ContextImpl *>(*context);
     ScriptImpl * script = static_cast<ScriptImpl *>(this);
 
-    JSValueRef exception;
+    JSValueRef exception = nullptr;
     JSValueRef value = JSEvaluateScript(ctx->m_context, script->m_script, nullptr, script->m_sourceURL,
                                         script->m_startingLineNumber, &exception);
     if (!exception) {

@@ -210,16 +210,6 @@ char* internal::StrDup(const char* str)
     return strdup(str);
 }
 
-void* Malloced::New(size_t size)
-{
-    return malloc(size);
-}
-
-void Malloced::Delete(void* p)
-{
-    free(p);
-}
-
 //
 // internal::HandleScope
 //

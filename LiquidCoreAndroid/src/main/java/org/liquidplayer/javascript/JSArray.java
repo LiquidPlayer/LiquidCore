@@ -68,16 +68,6 @@ public class JSArray<T> extends JSBaseArray<T> {
         JSValue callback(T currentValue, int index, JSArray<T> array);
     }
 
-    private JNIJSValue testException(JNIReturnObject jni) {
-        if (jni.exception!=null) {
-            valueRef = JNIJSObject.make(context.ctxRef());
-            context.throwJSException(new JSException(new JSValue((JNIJSValue)jni.exception, context)));
-            return valueRef;
-        } else {
-            return (JNIJSValue) jni.reference;
-        }
-    }
-
     /**
      * Creates a JavaScript array object, initialized with 'array' JSValues
      * @param ctx  The JSContext to create the array in
@@ -95,7 +85,12 @@ public class JSArray<T> extends JSBaseArray<T> {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = testException(JNIJSObject.makeArray(context.ctxRef(), valueRefs));
+                try {
+                    valueRef = context.ctxRef().makeArray(valueRefs);
+                } catch (JNIJSValue excp) {
+                    context.throwJSException(new JSException(new JSValue(excp, context)));
+                    valueRef = context.ctxRef().make();
+                }
                 addJSExports();
             }
         });
@@ -114,7 +109,12 @@ public class JSArray<T> extends JSBaseArray<T> {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = testException(JNIJSObject.makeArray(context.ctxRef(), valueRefs));
+                try {
+                    valueRef = context.ctxRef().makeArray(valueRefs);
+                } catch (JNIJSValue excp) {
+                    context.throwJSException(new JSException(new JSValue(excp, context)));
+                    valueRef = context.ctxRef().make();
+                }
                 addJSExports();
             }
         });
@@ -139,7 +139,12 @@ public class JSArray<T> extends JSBaseArray<T> {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = testException(JNIJSObject.makeArray(context.ctxRef(), valueRefs));
+                try {
+                    valueRef = context.ctxRef().makeArray(valueRefs);
+                } catch (JNIJSValue excp) {
+                    context.throwJSException(new JSException(new JSValue(excp, context)));
+                    valueRef = context.ctxRef().make();
+                }
                 addJSExports();
             }
         });
@@ -221,7 +226,7 @@ public class JSArray<T> extends JSBaseArray<T> {
         return new JSArray(this,fromIndex,size()-toIndex,mType);
     }
 
-    /** JavaScript methods **/
+    /* JavaScript methods */
 
     /**
      * JavaScript Array.from(), see:

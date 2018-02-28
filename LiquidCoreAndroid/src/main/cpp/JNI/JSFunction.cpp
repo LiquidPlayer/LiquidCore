@@ -41,8 +41,6 @@
 
 using namespace v8;
 
-#define JSO "Lorg/liquidplayer/javascript/JNIJSObject;"
-#define JSV "Lorg/liquidplayer/javascript/JNIJSValue;"
 #define JSR "Lorg/liquidplayer/javascript/JNIReturnObject;"
 
 JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> ctx, jstring name_)
@@ -109,14 +107,14 @@ jmethodID JSFunction::getMethodId(JNIEnv *env, bool isContructCall)
     };
 
     if (isContructCall && !m_constructorMid)
-        m_constructorMid = getMid("constructorCallback","(" JSO "[" JSV ")" JSR);
+        m_constructorMid = getMid("constructorCallback","(J[J)" JSR);
     else if (!isContructCall && !m_functionMid)
-        m_functionMid = getMid("functionCallback","(" JSV "[" JSV ")" JSR);
+        m_functionMid = getMid("functionCallback","(J[J)" JSR);
 
     return (isContructCall) ? m_constructorMid : m_functionMid;
 }
 
-boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jobject javaContext, jstring name_)
+boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jlong javaContext, jstring name_)
 {
     auto ctx = SharedWrap<JSContext>::Shared(env, javaContext);
     auto p = boost::make_shared<JSFunction>(env, thiz, ctx, name_);
@@ -140,11 +138,11 @@ void JSFunction::StaticFunctionCallback(const FunctionCallbackInfo< v8::Value > 
 
 void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
 {
-    jobject objThis = nullptr;
-    jobjectArray argsArr = nullptr;
-    jobject *args = nullptr;
+    jlong objThis = 0;
+    jlongArray argsArr = nullptr;
+    jlong *args = nullptr;
     bool isConstructCall = info.IsConstructCall();
-    jobject objret = nullptr;
+    jobject objret = 0;
     int argumentCount = info.Length();
 
     JNIEnv *env;
@@ -169,30 +167,35 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
                 JSValue::New(ctxt, info.This())
             );
 
-            argsArr = env->NewObjectArray(argumentCount, s_jnijsvalue_class, nullptr);
-            args = new jobject[argumentCount];
+            argsArr = env->NewLongArray(argumentCount);
+            args = new jlong[argumentCount];
             for (int i=0; i<argumentCount; i++) {
                 args[i] = SharedWrap<JSValue>::New(
                     env,
                     JSValue::New(ctxt, info[i])
                 );
 
+                /*
                 env->SetObjectArrayElement(
                     argsArr,
                     i,
                     args[i]
                 );
+                */
             }
+        env->SetLongArrayRegion(argsArr,0,argumentCount,args);
         V8_UNLOCK()
     }
 
     objret = env->CallObjectMethod(m_JavaThis, mid, objThis, argsArr);
 
     env->DeleteLocalRef(argsArr);
-    env->DeleteLocalRef(objThis);
+    //env->DeleteLocalRef(objThis);
+    /*
     for (int i=0; i<argumentCount; i++) {
         env->DeleteLocalRef(args[i]);
     }
+    */
     delete [] args;
 
     V8_ISOLATE(grp, isolate)
@@ -203,7 +206,7 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
         if (isConstructCall) {
             info.GetReturnValue().Set(info.This());
         } else {
-            jobject retval = ret.GetReference();
+            jlong retval = ret.GetReference();
             if (retval) {
                 info.GetReturnValue().Set(
                     SharedWrap<JSValue>::Shared(
@@ -211,7 +214,7 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
                         retval
                     )->Value()
                 );
-                env->DeleteLocalRef(retval);
+                //env->DeleteLocalRef(retval);
             } else {
                 info.GetReturnValue().SetUndefined();
             }

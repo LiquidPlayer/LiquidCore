@@ -35,21 +35,69 @@
 */
 package org.liquidplayer.javascript;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.LongSparseArray;
+
+import java.lang.ref.WeakReference;
+
 class JNIJSContextGroup extends JNIObject {
-    JNIJSContextGroup(long ref) {
+    private JNIJSContextGroup(long ref) {
         super(ref);
+        m_groups.put(ref, new WeakReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
+        m_groups.remove(reference);
         Finalize(reference);
     }
 
-    static native JNIJSContextGroup create();
-    static native JNIJSContextGroup createWithSnapshotFile(String snapshotFile);
+    @NonNull static JNIJSContextGroup createGroup()
+    {
+        return new JNIJSContextGroup(create());
+    }
+
+    @NonNull static JNIJSContextGroup createGroupWithSnapshot(String snapshotFile)
+    {
+        return new JNIJSContextGroup(createWithSnapshotFile(snapshotFile));
+    }
+
+    @Nullable static JNIJSContextGroup fromRef(long groupRef)
+    {
+        if (groupRef == 0) return null;
+        WeakReference<JNIJSContextGroup> wr = m_groups.get(groupRef);
+        if (wr == null || wr.get() == null) {
+            return new JNIJSContextGroup(groupRef);
+        } else {
+            return wr.get();
+        }
+    }
+    private static LongSparseArray<WeakReference<JNIJSContextGroup>> m_groups =
+            new LongSparseArray<>();
+
+    boolean isManaged()
+    {
+        return isManaged(reference);
+    }
+
+    void runInContextGroup(Object thisObject, Runnable runnable)
+    {
+        runInContextGroup(reference, thisObject, runnable);
+    }
+
+    JNILoopPreserver newLoopPreserver()
+    {
+        return new JNILoopPreserver(JNILoopPreserver.create(reference));
+    }
+
+    /* Natives */
     static native int createSnapshot(String script, String snapshotFile);
-    native boolean isManaged();
-    native void runInContextGroup(Object thisObject, Runnable runnable);
-    native void Finalize(long reference);
+
+    private static native long create();
+    private static native long createWithSnapshotFile(String snapshotFile);
+    private static native boolean isManaged(long groupRef);
+    private static native void runInContextGroup(long groupRef, Object thisObject, Runnable runnable);
+    private static native void Finalize(long groupRef);
 }

@@ -172,6 +172,7 @@ list (APPEND CFLAGS_RELEASE
     -Wno-mismatched-tags
     -Wno-unused-result
     -fno-rtti
+    -std=c++1y
     )
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)

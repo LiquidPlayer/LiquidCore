@@ -38,12 +38,12 @@
 #include "JSC/JSC.h"
 #include "JNI/JNIReturnObject.h"
 
-extern "C" jobject Java_org_liquidplayer_javascript_JNIJSContextGroup_create(JNIEnv *, jobject);
+extern "C" jlong Java_org_liquidplayer_javascript_JNIJSContextGroup_create(JNIEnv *, jobject);
 
-NATIVE(JNIJSContext,jobject,createInGroup) (PARAMS,jobject grp)
+NATIVE(JNIJSContext,jlong,createInGroup) (PARAMS,jlong grp)
 {
     auto group = SharedWrap<ContextGroup>::Shared(env, grp);
-    jobject ctx;
+    jlong ctx;
     { V8_ISOLATE(group,isolate)
         ctx = SharedWrap<JSContext>::New(env, JSContext::New(group, Context::New(isolate)));
     V8_UNLOCK() }
@@ -51,9 +51,9 @@ NATIVE(JNIJSContext,jobject,createInGroup) (PARAMS,jobject grp)
     return ctx;
 }
 
-NATIVE(JNIJSContext,jobject,create) (PARAMS)
+NATIVE(JNIJSContext,jlong,create) (PARAMS)
 {
-    jobject jGroup = Java_org_liquidplayer_javascript_JNIJSContextGroup_create(env, thiz);
+    jlong jGroup = Java_org_liquidplayer_javascript_JNIJSContextGroup_create(env, thiz);
     return Java_org_liquidplayer_javascript_JNIJSContext_createInGroup(env, thiz, jGroup);
 }
 
@@ -62,10 +62,10 @@ NATIVE(JNIJSContext,void,Finalize) (PARAMS, long reference)
     SharedWrap<JSContext>::Dispose(reference);
 }
 
-NATIVE(JNIJSContext,jobject,getGlobalObject) (PARAMS)
+NATIVE(JNIJSContext,jlong,getGlobalObject) (PARAMS, jlong ctxRef)
 {
-    jobject v=nullptr;
-    auto ctx = SharedWrap<JSContext>::Shared(env, thiz);
+    jlong v=0;
+    auto ctx = SharedWrap<JSContext>::Shared(env, ctxRef);
 
     V8_ISOLATE_CTX(ctx,isolate,Ctx)
         v = SharedWrap<JSValue>::New(env, ctx->Global());
@@ -74,16 +74,16 @@ NATIVE(JNIJSContext,jobject,getGlobalObject) (PARAMS)
     return v;
 }
 
-NATIVE(JNIJSContext,jobject,getGroup) (PARAMS)
+NATIVE(JNIJSContext,jlong,getGroup) (PARAMS, jlong grpRef)
 {
-    auto context = SharedWrap<JSContext>::Shared(env, thiz);
+    auto context = SharedWrap<JSContext>::Shared(env, grpRef);
     return SharedWrap<ContextGroup>::New(env, context->Group());
 }
 
-NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jstring script_,
+NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jlong ctxRef, jstring script_,
     jstring sourceURL_, jint startingLineNumber)
 {
-    auto ctx = SharedWrap<JSContext>::Shared(env, thiz);
+    auto ctx = SharedWrap<JSContext>::Shared(env, ctxRef);
 
     const char *_script = env->GetStringUTFChars(script_, NULL);
     const char *_sourceURL = env->GetStringUTFChars(sourceURL_, NULL);

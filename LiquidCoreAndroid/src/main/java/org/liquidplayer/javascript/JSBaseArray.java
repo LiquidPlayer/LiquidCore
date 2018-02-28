@@ -51,16 +51,16 @@ import java.util.NoSuchElementException;
  */
 public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
-    protected Class<T> mType;
-    protected int mLeftBuffer = 0;
-    protected int mRightBuffer = 0;
-    protected JSBaseArray<T> mSuperList = null;
+    Class<T> mType;
+    int mLeftBuffer = 0;
+    int mRightBuffer = 0;
+    JSBaseArray<T> mSuperList = null;
 
-    protected JSBaseArray(JNIJSObject valueRef, JSContext ctx, Class<T> cls) {
+    JSBaseArray(JNIJSObject valueRef, JSContext ctx, Class<T> cls) {
         super(valueRef,ctx);
         mType = cls;
     }
-    protected JSBaseArray(JSBaseArray<T> superList, int leftBuffer, int rightBuffer, Class<T> cls) {
+    JSBaseArray(JSBaseArray<T> superList, int leftBuffer, int rightBuffer, Class<T> cls) {
         mType = cls;
         mLeftBuffer = leftBuffer;
         mRightBuffer = rightBuffer;
@@ -68,7 +68,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
         valueRef = superList.valueRef();
         mSuperList = superList;
     }
-    protected JSBaseArray(JSContext ctx, Class<T> cls) {
+    JSBaseArray(JSContext ctx, Class<T> cls) {
         context = ctx;
         mType = cls;
     }
@@ -152,14 +152,14 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
         propertyAtIndex(index,value);
     }
 
-    protected JSValue elementAtIndex(final int index) {
+    JSValue elementAtIndex(final int index) {
         if (mSuperList == null)
             return arrayElement(index);
         else
             return mSuperList.elementAtIndex(index + mLeftBuffer);
     }
 
-    protected void elementAtIndex(final int index, final T value) {
+    void elementAtIndex(final int index, final T value) {
         if (mSuperList == null)
             arrayElement(index, value);
         else

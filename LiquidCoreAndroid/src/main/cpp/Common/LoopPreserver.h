@@ -35,6 +35,7 @@
 #define LIQUIDCORE_LOOPPRESERVER_H
 
 #include <memory>
+#include <jni.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
@@ -51,11 +52,14 @@ public:
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
     inline boost::shared_ptr<ContextGroup> Group() { return m_group; }
+    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
+    inline jlong getJavaReference() { return m_javaReference; }
 
 private:
     bool m_isDefunct;
     uv_async_t * m_async_handle;
     boost::atomic_shared_ptr<ContextGroup> m_group;
+    jlong m_javaReference;
 };
 
 #endif //LIQUIDCORE_LOOPPRESERVER_H

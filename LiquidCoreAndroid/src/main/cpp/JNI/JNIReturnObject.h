@@ -56,23 +56,23 @@ public:
         return m_out;
     }
 
-    inline void SetReference(jobject ref)
+    inline void SetReference(jlong ref)
     {
-        m_env->SetObjectField(m_out, m_referenceFid, ref);
+        m_env->SetLongField(m_out, m_referenceFid, ref);
     }
 
-    inline jobject GetReference()
+    inline jlong GetReference()
     {
-        return m_env->GetObjectField(m_out, m_referenceFid);
+        return m_env->GetLongField(m_out, m_referenceFid);
     }
 
-    inline void SetException(jobject ref) {
-        m_env->SetObjectField(m_out, m_exceptionFid, ref);
+    inline void SetException(jlong ref) {
+        m_env->SetLongField(m_out, m_exceptionFid, ref);
     }
 
-    inline jobject GetException()
+    inline jlong GetException()
     {
-        return m_env->GetObjectField(m_out, m_exceptionFid);
+        return m_env->GetLongField(m_out, m_exceptionFid);
     }
 
     inline void SetBool(bool b)
@@ -97,10 +97,8 @@ private:
             m_clazz = (jclass) m_env->NewGlobalRef(
                     findClass(m_env, "org/liquidplayer/javascript/JNIReturnObject"));
             m_cid = m_env->GetMethodID(m_clazz, "<init>", "()V");
-            m_referenceFid = m_env->GetFieldID(m_clazz, "reference",
-                                               "Lorg/liquidplayer/javascript/JNIObject;");
-            m_exceptionFid = m_env->GetFieldID(m_clazz, "exception",
-                                               "Lorg/liquidplayer/javascript/JNIObject;");
+            m_referenceFid = m_env->GetFieldID(m_clazz, "reference", "J");
+            m_exceptionFid = m_env->GetFieldID(m_clazz, "exception", "J");
             m_boolFid = m_env->GetFieldID(m_clazz, "bool", "Z");
             m_numberFid = m_env->GetFieldID(m_clazz, "number", "D");
             m_stringFid = m_env->GetFieldID(m_clazz, "string", "Ljava/lang/String;");

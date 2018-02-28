@@ -45,71 +45,28 @@ SharedWrap<T>::SharedWrap(boost::shared_ptr<T> g) : m_shared(g)
 template<typename T>
 SharedWrap<T>::~SharedWrap()
 {
-    JNIEnv *env;
-    JavaVM *jvm = getJavaVM();
-
     boost::shared_ptr<T> shared = m_shared;
     if (shared) {
-        s_mutex.lock();
-        if (s_jobject_map.count(&*shared) == 1) {
-            jobject javao = s_jobject_map[&*shared];
-
-            int getEnvStat = jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
-            if (getEnvStat == JNI_EDETACHED) {
-                jvm->AttachCurrentThread(&env, NULL);
-            }
-
-            env->DeleteWeakGlobalRef(javao);
-
-            if (getEnvStat == JNI_EDETACHED) {
-                jvm->DetachCurrentThread();
-            }
-
-            s_jobject_map.erase(&*shared);
-        }
-        s_mutex.unlock();
-
         shared.reset();
     }
 }
 
 template<typename T>
-jobject SharedWrap<T>::New(JNIEnv *env, boost::shared_ptr<T> shared)
+jlong SharedWrap<T>::New(JNIEnv *env, boost::shared_ptr<T> shared)
 {
-    if (!shared) return nullptr;
+    if (!shared) return 0L;
 
-    jobject javao = nullptr;
-
-    s_mutex.lock();
-    if (s_jobject_map.count(&*shared) == 1) {
-        javao = s_jobject_map[&*shared];
-        if (env->IsSameObject(javao, nullptr)) {
-            // If Finalize() is being called correctly, this shouldn't happen
-            env->DeleteWeakGlobalRef(javao);
-            javao = nullptr;
-            s_mutex.lock();
-            s_jobject_map.erase(&*shared);
-            s_mutex.unlock();
-        }
-    }
-    s_mutex.unlock();
-
+    jlong javao = shared->getJavaReference();
     if (!javao) {
         SharedWrap<T> *wrap = new SharedWrap<T>(shared);
-        jmethodID cid;
-        jclass classType = Class(env, shared, cid);
-        javao = env->NewObject(classType, cid, reinterpret_cast<jlong>(wrap));
-        s_mutex.lock();
-        s_jobject_map[&*shared] = env->NewWeakGlobalRef(javao);
-        s_mutex.unlock();
-    } else {
-        javao = env->NewLocalRef(javao);
+        javao = reinterpret_cast<jlong>(wrap);
+        shared->setJavaReference(javao);
     }
     return javao;
 }
 
 template<typename T>
-boost::shared_ptr<T> SharedWrap<T>::Shared(JNIEnv *env, jobject thiz)
+boost::shared_ptr<T> SharedWrap<T>::Shared(JNIEnv *env, jlong thiz)
 {
     if (!thiz) return boost::shared_ptr<T>();
     boost::shared_ptr<T> w = GetWrap(env, thiz)->m_shared;
@@ -117,11 +74,12 @@ boost::shared_ptr<T> SharedWrap<T>::Shared(JNIEnv *env, jobject thiz)
 }
 
 template<typename T>
-void SharedWrap<T>::Dispose(long reference)
+void SharedWrap<T>::Dispose(jlong reference)
 {
     const auto valueWrap = reinterpret_cast<SharedWrap<T>*>(reference);
 
     boost::shared_ptr<T> shared = valueWrap->m_shared;
+    shared->setJavaReference(0);
     if (valueWrap->m_isAsync && !shared->IsDefunct()) {
         shared->Group()->MarkZombie(valueWrap->m_shared);
     }
@@ -129,73 +87,11 @@ void SharedWrap<T>::Dispose(long reference)
 }
 
 template<typename T>
-SharedWrap<T>* SharedWrap<T>::GetWrap(JNIEnv *env, jobject thiz)
+SharedWrap<T>* SharedWrap<T>::GetWrap(JNIEnv *env, jlong thiz)
 {
-    if (!s_fid) {
-        jclass classType = findClass(env, "org/liquidplayer/javascript/JNIObject");
-        s_fid = env->GetFieldID(classType, "reference", "J");
-        env->DeleteLocalRef(classType);
-    }
-    jlong ref = env->GetLongField(thiz, s_fid);
-    return reinterpret_cast<SharedWrap<T> *>(ref);
+    return reinterpret_cast<SharedWrap<T> *>(thiz);
 }
 
-template<typename T>
-const char * SharedWrap<T>::ClassName()
-{
-    if (std::is_same<T,ContextGroup>::value) {
-        return "org/liquidplayer/javascript/JNIJSContextGroup";
-    } else if (std::is_same<T,JSContext>::value) {
-        return "org/liquidplayer/javascript/JNIJSContext";
-    } else if (std::is_same<T,JSValue>::value) {
-        return "org/liquidplayer/javascript/JNIJSValue";
-    } else if (std::is_same<T,LoopPreserver>::value) {
-        return "org/liquidplayer/javascript/JNILoopPreserver";
-    }
-    return nullptr;
-}
-
-template<typename T>
-jclass SharedWrap<T>::Class(JNIEnv *env, boost::shared_ptr<T> shared, jmethodID& mid)
-{
-    if (!s_class) {
-        s_class = (jclass) env->NewGlobalRef(findClass(env, ClassName()));
-        s_cid = env->GetMethodID(s_class,"<init>","(J)V");
-    }
-    mid = s_cid;
-    return s_class;
-}
-
-template<>
-jclass SharedWrap<JSValue>::Class(JNIEnv *env, boost::shared_ptr<JSValue> shared, jmethodID& mid)
-{
-    if (!s_class) {
-        s_class = (jclass) env->NewGlobalRef(
-                findClass(env, "org/liquidplayer/javascript/JNIJSValue"));
-        s_cid = env->GetMethodID(s_class, "<init>", "(J)V");
-    }
-    if (!s_class_object) {
-        s_class_object = (jclass) env->NewGlobalRef(
-                findClass(env, "org/liquidplayer/javascript/JNIJSObject"));
-        s_cid_object = env->GetMethodID(s_class_object,"<init>","(J)V");
-    }
-    jclass classType = s_class;
-    mid = s_cid;
-    V8_ISOLATE_CTX(shared->Context(), isolate, ctx)
-    if (shared && shared->Value()->IsObject()) {
-        classType = s_class_object;
-        mid = s_cid_object;
-    }
-    V8_UNLOCK()
-    return classType;
-}
-
-template<typename T> std::map<T *, jobject> SharedWrap<T>::s_jobject_map;
-template<typename T> std::mutex SharedWrap<T>::s_mutex;
-template<typename T> jclass SharedWrap<T>::s_class;
-template<typename T> jclass SharedWrap<T>::s_class_object;
-template<typename T> jmethodID SharedWrap<T>::s_cid;
-template<typename T> jmethodID SharedWrap<T>::s_cid_object;
 
 template class SharedWrap<ContextGroup>;
 template class SharedWrap<JSContext>;

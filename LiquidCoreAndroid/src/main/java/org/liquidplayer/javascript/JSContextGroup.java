@@ -53,13 +53,13 @@ public class JSContextGroup {
     private JNIJSContextGroup group;
 
     public class LoopPreserver {
-        private JNILoopPreserver m_preserver;
-        LoopPreserver(JNILoopPreserver jniLoopPreserver) {
-            m_preserver = jniLoopPreserver;
+        private JNILoopPreserver m_reference;
+        LoopPreserver(JNILoopPreserver reference) {
+            m_reference = reference;
         }
 
         public void release() {
-            if (m_preserver != null) m_preserver.release();
+            if (m_reference != null) m_reference.release();
         }
     }
 
@@ -68,7 +68,7 @@ public class JSContextGroup {
      * @since 0.1.0
      */
     public JSContextGroup() {
-        group = JNIJSContextGroup.create();
+        group = JNIJSContextGroup.createGroup();
         hasDedicatedThread = false;
     }
 
@@ -77,10 +77,15 @@ public class JSContextGroup {
      * @param groupRef  the JavaScriptCore context group reference
      * @since 0.1.0
      */
-    JSContextGroup(Object groupRef)
+    JSContextGroup(JNIJSContextGroup groupRef)
     {
-        group = (JNIJSContextGroup)groupRef;
+        group = groupRef;
         hasDedicatedThread = group.isManaged();
+    }
+
+    JSContextGroup(long groupRef)
+    {
+        this(JNIJSContextGroup.fromRef(groupRef));
     }
 
     /**
@@ -91,7 +96,7 @@ public class JSContextGroup {
      */
     public JSContextGroup(File snapshot)
     {
-        group = JNIJSContextGroup.createWithSnapshotFile(snapshot.getAbsolutePath());
+        group = JNIJSContextGroup.createGroupWithSnapshot(snapshot.getAbsolutePath());
         hasDedicatedThread = false;
     }
 
@@ -132,6 +137,7 @@ public class JSContextGroup {
     public JNIJSContextGroup groupRef() {
         return group;
     }
+    public long groupHash() { return group.reference; }
 
     boolean isOnThread() {
         return (!hasDedicatedThread() ||
@@ -150,7 +156,7 @@ public class JSContextGroup {
     }
 
     public LoopPreserver keepAlive() {
-        return new LoopPreserver(JNILoopPreserver.create(groupRef()));
+        return new LoopPreserver(group.newLoopPreserver());
     }
 
     /**

@@ -35,14 +35,22 @@
 */
 package org.liquidplayer.javascript;
 
+import android.util.LongSparseArray;
+
+import org.liquidplayer.node.BuildConfig;
+
+import java.lang.ref.WeakReference;
+
 class JNIJSValue extends JNIObject {
-    JNIJSValue(long ref) {
+    protected JNIJSValue(long ref) {
         super(ref);
+        m_values.put(ref, new WeakReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
+        m_values.remove(reference);
         Finalize(reference);
     }
 
@@ -51,40 +59,182 @@ class JNIJSValue extends JNIObject {
         return (int) reference;
     }
 
-    static native JNIJSValue makeUndefined(JNIJSContext ctx);
-    static native JNIJSValue makeNull(JNIJSContext ctx);
-    static native JNIJSValue makeBoolean(JNIJSContext ctx, boolean bool);
-    static native JNIJSValue makeNumber(JNIJSContext ctx, double number);
-    static native JNIJSValue makeString(JNIJSContext ctx, String string);
-    static native JNIJSValue makeFromJSONString(JNIJSContext ctx, String string);
+    boolean isUndefined()
+    {
+        return isUndefined(reference);
+    }
+    boolean isNull()
+    {
+        return isNull(reference);
+    }
+    boolean isBoolean()
+    {
+        return isBoolean(reference);
+    }
+    boolean isNumber()
+    {
+        return isNumber(reference);
+    }
+    boolean isString()
+    {
+        return isString(reference);
+    }
+    boolean isObject()
+    {
+        return isObject(reference);
+    }
+    boolean isArray()
+    {
+        return isArray(reference);
+    }
+    boolean isDate()
+    {
+        return isDate(reference);
+    }
+    boolean isTypedArray()
+    {
+        return isTypedArray(reference);
+    }
+    boolean isInt8Array()
+    {
+        return isInt8Array(reference);
+    }
+    boolean isInt16Array()
+    {
+        return isInt16Array(reference);
+    }
+    boolean isInt32Array()
+    {
+        return isInt32Array(reference);
+    }
+    boolean isUint8Array()
+    {
+        return isUint8Array(reference);
+    }
+    boolean isUint8ClampedArray()
+    {
+        return isUint8ClampedArray(reference);
+    }
+    boolean isUint32Array()
+    {
+        return isUint32Array(reference);
+    }
+    boolean isUint16Array()
+    {
+        return isUint16Array(reference);
+    }
+    boolean isFloat32Array()
+    {
+        return isFloat32Array(reference);
+    }
+    boolean isFloat64Array()
+    {
+        return isFloat64Array(reference);
+    }
 
-    native boolean isUndefined();
-    native boolean isNull();
-    native boolean isBoolean();
-    native boolean isNumber();
-    native boolean isString();
-    native boolean isObject();
-    native boolean isArray();
-    native boolean isDate();
-    native boolean isTypedArray();
-    native boolean isInt8Array();
-    native boolean isInt16Array();
-    native boolean isInt32Array();
-    native boolean isUint8Array();
-    native boolean isUint8ClampedArray();
-    native boolean isUint16Array();
-    native boolean isUint32Array();
-    native boolean isFloat32Array();
-    native boolean isFloat64Array();
+    boolean isEqual(JNIJSValue b) throws JNIJSValue
+    {
+        JNIReturnObject r = isEqual(reference, b.reference);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return r.bool;
+    }
+    boolean isStrictEqual(JNIJSValue b)
+    {
+        return isStrictEqual(reference, b.reference);
+    }
 
-    native JNIReturnObject isEqual(JNIJSValue b);
-    native boolean isStrictEqual(JNIJSValue b);
+    JNIJSValue createJSONString() throws JNIJSValue
+    {
+        JNIReturnObject r = createJSONString(reference);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return JNIJSValue.fromRef(r.reference);
+    }
+    boolean toBoolean()
+    {
+        return toBoolean(reference);
+    }
+    double toNumber() throws JNIJSValue
+    {
+        JNIReturnObject r = toNumber(reference);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return r.number;
+    }
+    String toStringCopy() throws JNIJSValue
+    {
+        JNIReturnObject r = toStringCopy(reference);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return r.string;
+    }
+    JNIJSObject toObject() throws JNIJSValue
+    {
+        JNIReturnObject r = toObject(reference);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return JNIJSObject.fromRef(r.reference);
+    }
 
-    native JNIReturnObject createJSONString();
-    native boolean toBoolean();
-    native JNIReturnObject toNumber();
-    native JNIReturnObject toStringCopy();
-    native JNIReturnObject toObject();
+    static JNIJSValue fromRef(long valueRef)
+    {
+        if (BuildConfig.DEBUG && valueRef == 0) {
+            throw new AssertionError();
+        }
+        WeakReference<JNIJSValue> wr = m_values.get(valueRef);
+        if (wr == null || wr.get() == null) {
+            if (isObject(valueRef)) {
+                return new JNIJSObject(valueRef);
+            }
+            return new JNIJSValue(valueRef);
+        } else {
+            return wr.get();
+        }
+    }
+    private static LongSparseArray<WeakReference<JNIJSValue>> m_values = new LongSparseArray<>();
 
-    native void Finalize(long reference);
+    /* Natives */
+
+    static native long makeUndefined(long ctxRef);
+    static native long makeNull(long ctxRef);
+    static native long makeBoolean(long ctxRef, boolean bool);
+    static native long makeNumber(long ctxRef, double number);
+    static native long makeString(long ctxRef, String string);
+    static native long makeFromJSONString(long ctxRef, String string);
+
+    private static native boolean isUndefined(long valueRef);
+    private static native boolean isNull(long valueRef);
+    private static native boolean isBoolean(long valueRef);
+    private static native boolean isNumber(long valueRef);
+    private static native boolean isString(long valueRef);
+    private static native boolean isObject(long valueRef);
+    private static native boolean isArray(long valueRef);
+    private static native boolean isDate(long valueRef);
+    private static native boolean isTypedArray(long valueRef);
+    private static native boolean isInt8Array(long valueRef);
+    private static native boolean isInt16Array(long valueRef);
+    private static native boolean isInt32Array(long valueRef);
+    private static native boolean isUint8Array(long valueRef);
+    private static native boolean isUint8ClampedArray(long valueRef);
+    private static native boolean isUint32Array(long valueRef);
+    private static native boolean isUint16Array(long valueRef);
+    private static native boolean isFloat32Array(long valueRef);
+    private static native boolean isFloat64Array(long valueRef);
+
+    private static native JNIReturnObject isEqual(long valueRef, long b);
+    private static native boolean isStrictEqual(long valueRef, long b);
+
+    private static native JNIReturnObject createJSONString(long valueRef);
+    private static native boolean toBoolean(long valueRef);
+    private static native JNIReturnObject toNumber(long valueRef);
+    private static native JNIReturnObject toStringCopy(long valueRef);
+    private static native JNIReturnObject toObject(long valueRef);
+
+    private native void Finalize(long valueRef);
 }

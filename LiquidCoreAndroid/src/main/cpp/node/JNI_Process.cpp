@@ -51,7 +51,7 @@ NATIVE(Process,void,dispose) (PARAMS, jlong ref)
     delete reinterpret_cast<NodeInstance*>(ref);
 }
 
-NATIVE(Process,void,setFileSystem) (PARAMS, jobject contextRef, jobject fsObjectRef)
+NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
 {
     auto ctx = SharedWrap<JSContext>::Shared(env, contextRef);
     auto fs = SharedWrap<JSValue>::Shared(env, fsObjectRef);

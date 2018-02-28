@@ -1,6 +1,6 @@
 package org.liquidplayer.javascript;
 
-abstract class JNIObject {
+abstract class JNIObject extends Throwable {
     JNIObject(long reference) {
         this.reference = reference;
     }

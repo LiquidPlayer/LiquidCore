@@ -31,7 +31,8 @@ internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
                                        internal::Object* value)
 {
     m_handles.push_back(value);
-    return &* (m_handles.end());
+    //return &(*m_handles.end());
+    return reinterpret_cast<internal::Object**>(value);
 }
 
 internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,
@@ -40,7 +41,6 @@ internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,
     m_handles.push_back(value);
     return &* (m_handles.end());
 }
-
 
 EscapableHandleScope::EscapableHandleScope(Isolate* isolate)
 {

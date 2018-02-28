@@ -56,6 +56,8 @@ public:
         boost::shared_ptr<ContextGroup> sp = m_isolate;
         return sp;
     }
+    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
+    inline jlong getJavaReference() { return m_javaReference; }
 
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
@@ -68,6 +70,7 @@ private:
     bool m_isDefunct;
     std::vector<boost::shared_ptr<JSValue>> m_value_set;
     std::recursive_mutex m_set_mutex;
+    jlong m_javaReference;
 };
 
 #endif //LIQUIDCORE_JSCONTEXT_H

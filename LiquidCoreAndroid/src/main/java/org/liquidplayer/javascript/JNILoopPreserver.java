@@ -45,9 +45,12 @@ class JNILoopPreserver extends JNIObject {
         Finalize(reference);
     }
 
-    static native JNILoopPreserver create(JNIJSContextGroup group);
+    void release()
+    {
+        release(reference);
+    }
 
-    native void release();
-
-    native void Finalize(long reference);
+    static native long create(long groupRef);
+    private static native void release(long loopRef);
+    private native void Finalize(long loopRef);
 }

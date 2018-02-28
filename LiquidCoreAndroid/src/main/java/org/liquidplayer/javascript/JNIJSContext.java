@@ -35,21 +35,150 @@
 */
 package org.liquidplayer.javascript;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.LongSparseArray;
+
+import java.lang.ref.WeakReference;
+
 class JNIJSContext extends JNIObject {
-    JNIJSContext(long ref) {
+    private JNIJSContext(long ref) {
         super(ref);
+        m_contexts.put(ref, new WeakReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
+        m_contexts.remove(reference);
         Finalize(reference);
     }
 
-    static native JNIJSContext create();
-    static native JNIJSContext createInGroup(JNIJSContextGroup group);
-    native JNIJSContextGroup getGroup();
-    native JNIObject getGlobalObject();
-    native JNIReturnObject evaluateScript(String script, String sourceURL, int startingLineNumber);
-    native void Finalize(long reference);
+    @NonNull static JNIJSContext createContext()
+    {
+        return new JNIJSContext(create());
+    }
+
+    @NonNull static JNIJSContext createContext(JNIJSContextGroup group)
+    {
+        return new JNIJSContext(createInGroup(group.reference));
+    }
+
+    JNIJSContextGroup getGroup()
+    {
+        return JNIJSContextGroup.fromRef(getGroup(reference));
+    }
+
+    JNIJSObject getGlobalObject()
+    {
+        return JNIJSObject.fromRef(getGlobalObject(reference));
+    }
+
+    JNIJSValue makeUndefined()
+    {
+        return JNIJSValue.fromRef(JNIJSValue.makeUndefined(reference));
+    }
+
+    JNIJSValue makeNull()
+    {
+        return JNIJSValue.fromRef(JNIJSValue.makeNull(reference));
+    }
+
+    JNIJSValue makeBoolean(boolean bool)
+    {
+        return JNIJSValue.fromRef(JNIJSValue.makeBoolean(reference, bool));
+    }
+
+    JNIJSValue makeNumber(double number)
+    {
+        return JNIJSValue.fromRef(JNIJSValue.makeNumber(reference, number));
+    }
+
+    JNIJSValue makeString(String string)
+    {
+        return JNIJSValue.fromRef(JNIJSValue.makeString(reference, string));
+    }
+
+    JNIJSValue makeFromJSONString(String string)
+    {
+        return JNIJSValue.fromRef(JNIJSValue.makeFromJSONString(reference, string));
+    }
+
+    JNIJSObject make()
+    {
+        return JNIJSObject.fromRef(JNIJSObject.make(reference));
+    }
+    JNIJSObject makeArray(JNIJSValue[] args) throws JNIJSValue
+    {
+        long [] args_ = new long[args.length];
+        for (int i=0; i<args.length; i++) {
+            args_[i] = args[i].reference;
+        }
+        JNIReturnObject r = JNIJSObject.makeArray(reference, args_);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return JNIJSObject.fromRef(r.reference);
+    }
+    JNIJSObject makeDate(long[] args)
+    {
+        return JNIJSObject.fromRef(JNIJSObject.makeDate(reference, args));
+    }
+    JNIJSObject makeError(String message)
+    {
+        return JNIJSObject.fromRef(JNIJSObject.makeError(reference, message));
+    }
+    JNIJSObject makeRegExp(String pattern, String flags) throws JNIJSValue
+    {
+        JNIReturnObject r = JNIJSObject.makeRegExp(reference, pattern, flags);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return JNIJSObject.fromRef(r.reference);
+    }
+    JNIJSFunction makeFunction(String name, String func, String sourceURL, int startingLineNumber) throws JNIJSValue
+    {
+        JNIReturnObject r = JNIJSObject.makeFunction(reference, name, func, sourceURL,
+                startingLineNumber);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return new JNIJSFunction(r.reference);
+    }
+    JNIJSFunction makeFunctionWithCallback(JSFunction thiz, String name)
+    {
+        return new JNIJSFunction(JNIJSFunction.makeFunctionWithCallback(thiz, reference, name));
+    }
+
+    JNIJSValue evaluateScript(String script, String sourceURL, int startingLineNumber) throws JNIJSValue
+    {
+        JNIReturnObject r = evaluateScript(reference, script, sourceURL, startingLineNumber);
+        if (r.exception != 0) {
+            throw JNIJSValue.fromRef(r.exception);
+        }
+        return JNIJSValue.fromRef(r.reference);
+    }
+
+    @Nullable
+    static JNIJSContext fromRef(long ctxRef)
+    {
+        if (ctxRef == 0) return null;
+        WeakReference<JNIJSContext> wr = m_contexts.get(ctxRef);
+        if (wr == null || wr.get() == null) {
+            return new JNIJSContext(ctxRef);
+        } else {
+            return wr.get();
+        }
+    }
+    private static LongSparseArray<WeakReference<JNIJSContext>> m_contexts =
+            new LongSparseArray<>();
+
+    /* Natives */
+    private static native long create();
+    private static native long createInGroup(long group);
+    private static native long getGroup(long ctxRef);
+    private static native long getGlobalObject(long ctxRef);
+    private static native JNIReturnObject evaluateScript(long ctxRef, String script, String sourceURL,
+                                                 int startingLineNumber);
+    private static native void Finalize(long ctxRef);
 }

@@ -36,7 +36,6 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
-import android.support.v4.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -46,7 +45,6 @@ import java.util.concurrent.Semaphore;
 /**
  * Wraps a JavaScriptCore context
  */
-@SuppressWarnings("JniMissingFunction")
 public class JSContext extends JSObject {
 
     static {
@@ -83,8 +81,7 @@ public class JSContext extends JSObject {
     }
 
     private boolean isOnThread() {
-        if (jniContext == null) return true;
-        else return getGroup().isOnThread();
+        return ctxRef == null || getGroup().isOnThread();
     }
 
     public long getJSCContext() {
@@ -106,14 +103,16 @@ public class JSContext extends JSObject {
         void handle(JSException exception);
     }
 
-    private JNIJSContext jniContext;
+    private JNIJSContext ctxRef;
     private IJSExceptionHandler exceptionHandler;
 
-    protected JSContext(Object ctxHandle, JSContextGroup group) {
+    protected JSContext(long ctxHandle, JSContextGroup group) {
         context = this;
         contextGroup = group;
-        jniContext = (JNIJSContext)ctxHandle;
-        valueRef = (JNIJSValue) jniContext.getGlobalObject();
+        ctxRef = JNIJSContext.fromRef(ctxHandle);
+        if (ctxRef != null) {
+            valueRef = ctxRef.getGlobalObject();
+        }
         addJSExports();
     }
 
@@ -135,8 +134,8 @@ public class JSContext extends JSObject {
 
         sync(new Runnable() {
             @Override public void run() {
-                jniContext = JNIJSContext.createInGroup(inGroup.groupRef());
-                valueRef = (JNIJSValue) jniContext.getGlobalObject();
+                ctxRef = JNIJSContext.createContext(inGroup.groupRef());
+                valueRef = ctxRef.getGlobalObject();
                 addJSExports();
             }
         });
@@ -211,9 +210,12 @@ public class JSContext extends JSObject {
      * @return  The context group to which this context belongs
      */
     public JSContextGroup getGroup() {
-        JNIJSContextGroup g = jniContext.getGroup();
-        if (g==null) return null;
-        return new JSContextGroup(g);
+        if (contextGroup == null) {
+            JNIJSContextGroup g = ctxRef.getGroup();
+            if (g == null) return null;
+            contextGroup = new JSContextGroup(g);
+        }
+        return contextGroup;
     }
 
     /**
@@ -222,11 +224,12 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      */
     public JNIJSContext ctxRef() {
-        return jniContext;
+        return ctxRef;
     }
 
     private abstract class JNIReturnClass implements Runnable {
-        JNIReturnObject jni;
+        JNIJSValue value;
+        JNIJSValue exception;
     }
 
     /**
@@ -243,16 +246,20 @@ public class JSContext extends JSObject {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override public void run() {
                 String src = (sourceURL==null) ? "<code>" : sourceURL;
-                jni = jniContext.evaluateScript(script, src, startingLineNumber);
+                try {
+                    value = ctxRef.evaluateScript(script, src, startingLineNumber);
+                } catch (JNIJSValue excp){
+                    exception = excp;
+                }
             }
         };
         sync(runnable);
 
-        if (runnable.jni.exception!=null) {
-            throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception!=null) {
+            throwJSException(new JSException(new JSValue(runnable.exception, context)));
             return new JSValue(this);
         }
-        return new JSValue((JNIJSValue)runnable.jni.reference,this);
+        return new JSValue(runnable.value,this);
     }
 
     /**
@@ -265,7 +272,7 @@ public class JSContext extends JSObject {
         return evaluateScript(script,null,0);
     }
 
-    private final HashMap<JNIJSObject, WeakReference<JSObject>> objects = new HashMap<>();
+    private final HashMap<JNIJSValue, WeakReference<JSObject>> objects = new HashMap<>();
     private final Object objectsMutex = new Object();
 
     /**
@@ -276,11 +283,9 @@ public class JSContext extends JSObject {
      * @param obj  The object with which to associate with this context
      * @since 0.1.0
      */
-    protected void persistObject(JSObject obj) {
+    void persistObject(JSObject obj) {
         synchronized (objectsMutex) {
-            if (JNIJSObject.class.isAssignableFrom(obj.valueRef().getClass())) {
-                objects.put((JNIJSObject) obj.valueRef(), new WeakReference<>(obj));
-            }
+            objects.put(obj.valueRef(), new WeakReference<>(obj));
         }
     }
     /**
@@ -289,11 +294,9 @@ public class JSContext extends JSObject {
      * @param obj the JSObject to dereference
      * @since 0.1.0
      */
-    protected void finalizeObject(JSObject obj) {
+    void finalizeObject(JSObject obj) {
         synchronized (objectsMutex) {
-            if (JNIJSObject.class.isAssignableFrom(obj.valueRef().getClass())) {
-                objects.remove((JNIJSObject) obj.valueRef());
-            }
+            objects.remove(obj.valueRef());
         }
     }
     /**
@@ -304,8 +307,8 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      * @return The JSObject representing the reference
      */
-    protected JSObject getObjectFromRef(final JNIJSObject objRef, boolean create) {
-        if (objRef == valueRef()) {
+    JSObject getObjectFromRef(final JNIJSObject objRef, boolean create) {
+        if (objRef.equals(valueRef())) {
             return this;
         }
         WeakReference<JSObject> wr;
@@ -318,17 +321,17 @@ public class JSContext extends JSObject {
         }
         if (obj==null && create) {
             obj = new JSObject(objRef,this);
-            if (objRef.isArray()) {
+            if (obj.isArray()) {
                 obj = new JSArray(objRef, this);
             } else if (obj.isTypedArray()) {
                 obj = JSTypedArray.from(obj);
-            } else if (objRef.isFunction()) {
+            } else if (obj.isFunction()) {
                 obj = new JSFunction(objRef, this);
             }
         }
         return obj;
     }
-    protected JSObject getObjectFromRef(JNIJSObject objRef) {
+    JSObject getObjectFromRef(JNIJSObject objRef) {
         return getObjectFromRef(objRef,true);
     }
 }

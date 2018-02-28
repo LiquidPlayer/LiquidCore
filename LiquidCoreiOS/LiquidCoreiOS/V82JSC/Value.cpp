@@ -19,8 +19,9 @@ Local<Value> ValueImpl::New(ContextImpl *ctx, JSValueRef value)
     impl->m_context = ctx;
     impl->m_value = value;
     
-    //return Utils::NewValue(impl);
-    return Local<Value>();
+    Local<Value> v;
+    *(reinterpret_cast<Value**>(&v)) = impl;
+    return v;
 }
 
 
@@ -253,11 +254,30 @@ bool Value::IsProxy() const { return false; }
 
 bool Value::IsWebAssemblyCompiledModule() const { return false; }
 
+template <class T>
+class _maybe {
+public:
+    bool has_value_;
+    T value_;
+};
+
 Maybe<bool> Value::BooleanValue(Local<Context> context) const { return Nothing<bool>(); }
 Maybe<double> Value::NumberValue(Local<Context> context) const { return Nothing<double>(); }
 Maybe<int64_t> Value::IntegerValue(Local<Context> context) const { return Nothing<int64_t>(); }
 Maybe<uint32_t> Value::Uint32Value(Local<Context> context) const { return Nothing<uint32_t>(); }
-Maybe<int32_t> Value::Int32Value(Local<Context> context) const { return Nothing<int32_t>(); }
+Maybe<int32_t> Value::Int32Value(Local<Context> context) const {
+    ValueImpl *impl = const_cast<ValueImpl*>(static_cast<const ValueImpl*>(this));
+    JSValueRef exception;
+    ContextImpl *ctx = static_cast<ContextImpl *>(*context);
+    double value = JSValueToNumber(ctx->m_context, impl->m_value, &exception);
+    if (!exception) {
+        _maybe<int32_t> maybe;
+        maybe.has_value_ = true;
+        maybe.value_ = (uint32_t)value;
+        return *(reinterpret_cast<Maybe<int32_t> *>(&maybe));
+    }
+    return Nothing<int32_t>();
+}
 Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const { return Nothing<bool>(); }
 bool Value::StrictEquals(Local<Value> that) const { return false; }
 bool Value::SameValue(Local<Value> that) const { return false; }

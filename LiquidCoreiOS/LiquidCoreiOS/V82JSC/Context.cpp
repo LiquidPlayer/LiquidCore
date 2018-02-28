@@ -62,8 +62,11 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
 {
     ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
     memset(context, 0, sizeof(ContextImpl));
+    context->pInternal = reinterpret_cast<internal::Context *>(context);
+    //context->pInternal = (internal::Context *)((reinterpret_cast<intptr_t>(context) & ~3) + 1);
     
     context->m_context = JSGlobalContextCreateInGroup(((IsolateImpl *)isolate)->m_group, nullptr);
+    context->isolate = reinterpret_cast<IsolateImpl *>(isolate);
     
     return Local<Context>(context);
 }
@@ -149,7 +152,9 @@ Local<Value> Context::GetSecurityToken()
  */
 void Context::Enter()
 {
+    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
     
+    impl->isolate->EnterContext(this);
 }
 
 /**
@@ -158,7 +163,9 @@ void Context::Enter()
  */
 void Context::Exit()
 {
+    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
     
+    impl->isolate->ExitContext(this);
 }
 
 /** Returns an isolate associated with a current context. */

@@ -53,7 +53,7 @@ public class JSError extends JSObject {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.makeError(context.ctxRef(), message);
+                valueRef = context.ctxRef().makeError(message);
                 addJSExports();
             }
         });

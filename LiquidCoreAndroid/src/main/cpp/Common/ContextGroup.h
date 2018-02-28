@@ -67,8 +67,17 @@ public:
     inline bool IsDefunct() { return m_isDefunct; }
     inline std::thread::id Thread() { return m_thread_id; }
     inline boost::shared_ptr<ContextGroup> Group() { return shared_from_this(); }
+    inline void sync(std::function<void()> runnable)
+    {
+        if (!Loop() || std::this_thread::get_id() == Thread()) {
+            runnable();
+        } else {
+            sync_(runnable);
+        }
+    }
+    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
+    inline jlong getJavaReference() { return m_javaReference; }
 
-    void sync(std::function<void()> runnable);
     void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
     void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
     void Manage(boost::shared_ptr<JSValue> obj);
@@ -100,6 +109,8 @@ private:
     static std::mutex s_mutex;
     static std::map<Isolate *, ContextGroup *> s_isolate_map;
 
+    void sync_(std::function<void()> runnable);
+
     Isolate *m_isolate;
     Isolate::CreateParams m_create_params;
     bool m_manage_isolate;
@@ -111,6 +122,7 @@ private:
     std::vector<boost::shared_ptr<JSContext>> m_context_zombies;
     std::mutex m_zombie_mutex;
     bool m_isDefunct;
+    jlong m_javaReference;
 
     struct GCCallback {
         void (*cb)(GCType type, GCCallbackFlags flags, void*);
@@ -121,7 +133,6 @@ private:
     uv_async_t *m_async_handle;
     std::vector<void *> m_runnables;
     std::mutex m_async_mutex;
-    std::recursive_mutex m_scheduling_mutex;
 
     v8::StartupData m_startup_data;
 };

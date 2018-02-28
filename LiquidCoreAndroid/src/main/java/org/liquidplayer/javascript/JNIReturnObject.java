@@ -1,7 +1,7 @@
 package org.liquidplayer.javascript;
 
 /**
- * Used in communicating with JavaScriptCore JNI.
+ * Used in communicating with native code.
  * Clients do not need to use this.
  */
 class JNIReturnObject {
@@ -16,11 +16,11 @@ class JNIReturnObject {
     /**
      * The reference return value
      */
-    JNIObject reference;
+    long reference;
     /**
      * The exception reference if one was thrown, otherwise 0L
      */
-    JNIObject exception;
+    long exception;
 
     public String string;
 }

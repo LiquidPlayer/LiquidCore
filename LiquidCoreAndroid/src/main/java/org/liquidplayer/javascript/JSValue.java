@@ -45,7 +45,11 @@ import java.util.Map;
 public class JSValue {
 
     private abstract class JNIReturnClass implements Runnable {
-        JNIReturnObject jni;
+        JNIJSValue exception;
+        JNIJSValue value;
+        boolean bool;
+        String string;
+        double number;
     }
 
     protected JNIJSValue valueRef;
@@ -69,7 +73,7 @@ public class JSValue {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSValue.makeUndefined(context.ctxRef());
+                valueRef = ctx.ctxRef().makeUndefined();
             }
         });
     }
@@ -88,7 +92,7 @@ public class JSValue {
             @Override
             public void run() {
                 if (val == null) {
-                    valueRef = JNIJSValue.makeNull(context.ctxRef());
+                    valueRef = context.ctxRef().makeNull();
                 } else if (val instanceof JSValue) {
                     valueRef = ((JSValue) val).valueRef();
                 } else if (val instanceof Map) {
@@ -98,23 +102,23 @@ public class JSValue {
                 } else if (val.getClass().isArray()) {
                     valueRef = new JSArray<>(context, (Object[])val, JSValue.class).valueRef();
                 } else if (val instanceof Boolean) {
-                    valueRef = JNIJSValue.makeBoolean(context.ctxRef(), (Boolean)val);
+                    valueRef = context.ctxRef().makeBoolean((Boolean)val);
                 } else if (val instanceof Double) {
-                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), (Double)val);
+                    valueRef = context.ctxRef().makeNumber((Double)val);
                 } else if (val instanceof Float) {
-                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), Double.valueOf(val.toString()));
+                    valueRef = context.ctxRef().makeNumber(Double.valueOf(val.toString()));
                 } else if (val instanceof Integer ) {
-                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Integer)val).doubleValue());
+                    valueRef = context.ctxRef().makeNumber(((Integer)val).doubleValue());
                 } else if (val instanceof Long) {
-                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Long)val).doubleValue());
+                    valueRef = context.ctxRef().makeNumber(((Long)val).doubleValue());
                 } else if (val instanceof Byte) {
-                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Byte)val).doubleValue());
+                    valueRef = context.ctxRef().makeNumber(((Byte)val).doubleValue());
                 } else if (val instanceof Short) {
-                    valueRef = JNIJSValue.makeNumber(context.ctxRef(), ((Short)val).doubleValue());
+                    valueRef = context.ctxRef().makeNumber(((Short)val).doubleValue());
                 } else if (val instanceof String) {
-                    valueRef = JNIJSValue.makeString(context.ctxRef(), (String)val);
+                    valueRef = context.ctxRef().makeString((String)val);
                 } else {
-                    valueRef = JNIJSValue.makeUndefined(context.ctxRef());
+                    valueRef = context.ctxRef().makeUndefined();
                 }
             }
         });
@@ -126,7 +130,7 @@ public class JSValue {
      * @param ctx  The context in which the value exists
      * @since 0.1.0
      */
-    protected JSValue(final JNIJSValue valueRef, JSContext ctx) {
+    protected JSValue(final JNIJSValue valueRef, final JSContext ctx) {
         context = ctx;
         if (valueRef != null) {
             this.valueRef = valueRef;
@@ -134,7 +138,7 @@ public class JSValue {
             context.sync(new Runnable() {
                 @Override
                 public void run() {
-                    JSValue.this.valueRef = JNIJSValue.makeUndefined(context.ctxRef());
+                    JSValue.this.valueRef = ctx.ctxRef().makeUndefined();
                 }
             });
         }
@@ -150,12 +154,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isUndefined();
+                bool = valueRef().isUndefined();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is null
@@ -166,12 +169,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isNull();
+                bool = valueRef().isNull();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is boolean
@@ -182,12 +184,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isBoolean();
+                bool = valueRef().isBoolean();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is a number
@@ -198,12 +199,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isNumber();
+                bool = valueRef().isNumber();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is a string
@@ -214,12 +214,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isString();
+                bool = valueRef().isString();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an array
@@ -230,12 +229,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isArray();
+                bool = valueRef().isArray();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is a date object
@@ -246,12 +244,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isDate();
+                bool = valueRef().isDate();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is a typed array
@@ -262,12 +259,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isTypedArray();
+                bool = valueRef().isTypedArray();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an Int8 typed array
@@ -278,12 +274,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isInt8Array();
+                bool = valueRef().isInt8Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an Int16 typed array
@@ -294,12 +289,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isInt16Array();
+                bool = valueRef().isInt16Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an Int32 typed array
@@ -310,12 +304,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isInt32Array();
+                bool = valueRef().isInt32Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an unsigned Int8 clamped typed array
@@ -326,12 +319,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isUint8ClampedArray();
+                bool = valueRef().isUint8ClampedArray();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an unsigned Int8 typed array
@@ -342,12 +334,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isUint8Array();
+                bool = valueRef().isUint8Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an unsigned Int16 typed array
@@ -358,12 +349,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isUint16Array();
+                bool = valueRef().isUint16Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an unsigned Int32 typed array
@@ -374,12 +364,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isUint32Array();
+                bool = valueRef().isUint32Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an float32 typed array
@@ -390,12 +379,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isFloat32Array();
+                bool = valueRef().isFloat32Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether the value is an float64 typed array
@@ -406,12 +394,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isFloat64Array();
+                bool = valueRef().isFloat64Array();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
 
     /**
@@ -423,12 +410,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isObject();
+                bool = valueRef().isObject();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Tests whether a value in an instance of a constructor object
@@ -477,11 +463,15 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = valueRef().isEqual(ojsv.valueRef);
+                try {
+                    bool = valueRef().isEqual(ojsv.valueRef);
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        return runnable.jni.exception==null && runnable.jni.bool;
+        return runnable.exception==null && runnable.bool;
     }
 
     /**
@@ -502,12 +492,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().isStrictEqual(ojsv.valueRef);
+                bool = valueRef().isStrictEqual(ojsv.valueRef);
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
 
     /* Getters */
@@ -520,12 +509,11 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = new JNIReturnObject();
-                jni.bool = valueRef().toBoolean();
+                bool = valueRef().toBoolean();
             }
         };
         context.sync(runnable);
-        return runnable.jni.bool;
+        return runnable.bool;
     }
     /**
      * Gets the numeric value of this JS value
@@ -536,30 +524,38 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = valueRef().toNumber();
+                try {
+                    number = valueRef().toNumber();
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=null) {
-            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception!=null) {
+            context.throwJSException(new JSException(new JSValue(runnable.exception, context)));
             return 0.0;
         }
-        return runnable.jni.number;
+        return runnable.number;
     }
     @Override
     public String toString() {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = valueRef().toStringCopy();
+                try {
+                    string = valueRef().toStringCopy();
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=null) {
-            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception!=null) {
+            context.throwJSException(new JSException(new JSValue(runnable.exception, context)));
             return null;
         }
-        return runnable.jni.string;
+        return runnable.string;
     }
     /**
      * If the JS value is an object, gets the JSObject
@@ -572,15 +568,19 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = valueRef().toObject();
+                try {
+                    value = valueRef().toObject();
+                } catch (JNIJSValue excp) {
+                    exception = excp;
+                }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=null) {
-            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception!=null) {
+            context.throwJSException(new JSException(new JSValue(runnable.exception, context)));
             return new JSObject(context);
         }
-        return context.getObjectFromRef((JNIJSObject)runnable.jni.reference);
+        return context.getObjectFromRef((JNIJSObject)runnable.value);
     }
 
     /**
@@ -620,26 +620,27 @@ public class JSValue {
         JNIReturnClass runnable = new JNIReturnClass() {
             @Override
             public void run() {
-                jni = valueRef().createJSONString();
-                if (jni.exception == null) {
-                    JSValue json = new JSValue((JNIJSValue)jni.reference,context);
+                try {
+                    JSValue json = new JSValue(valueRef().createJSONString(),context);
                     if (json.isUndefined())
-                        jni.string = null;
+                        string = null;
                     else
-                        jni.string = json.toString();
+                        string = json.toString();
+                } catch (JNIJSValue excp) {
+                    exception = excp;
                 }
             }
         };
         context.sync(runnable);
-        if (runnable.jni.exception!=null) {
-            context.throwJSException(new JSException(new JSValue((JNIJSValue)runnable.jni.exception, context)));
+        if (runnable.exception!=null) {
+            context.throwJSException(new JSException(new JSValue(runnable.exception, context)));
             return null;
         }
-        return runnable.jni.string;
+        return runnable.string;
     }
 
     @SuppressWarnings("unchecked")
-    protected Object toJavaObject(Class clazz) {
+    Object toJavaObject(Class clazz) {
         if (clazz == Object.class)
             return this;
         else if (clazz == Map.class)
@@ -698,4 +699,6 @@ public class JSValue {
     public JNIJSValue valueRef() {
         return valueRef;
     }
+    public long valueHash() { return valueRef().reference; }
+
 }

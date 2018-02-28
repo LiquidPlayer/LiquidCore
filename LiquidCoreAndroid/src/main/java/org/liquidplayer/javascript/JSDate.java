@@ -54,7 +54,7 @@ public class JSDate extends JSObject {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.makeDate(context.ctxRef(), new long[0]);
+                valueRef = context.ctxRef().makeDate(new long[0]);
                 addJSExports();
             }
         });
@@ -72,7 +72,7 @@ public class JSDate extends JSObject {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.makeDate(context.ctxRef(), args);
+                valueRef = context.ctxRef().makeDate(args);
                 addJSExports();
             }
         });
@@ -90,7 +90,7 @@ public class JSDate extends JSObject {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.makeDate(context.ctxRef(), args);
+                valueRef = context.ctxRef().makeDate(args);
                 addJSExports();
             }
         });
@@ -122,7 +122,7 @@ public class JSDate extends JSObject {
         context.sync(new Runnable() {
             @Override
             public void run() {
-                valueRef = JNIJSObject.makeDate(context.ctxRef(), new long[] { calendar.getTime().getTime() });
+                valueRef = context.ctxRef().makeDate(new long[] { calendar.getTime().getTime() });
             }
         });
         context.persistObject(this);

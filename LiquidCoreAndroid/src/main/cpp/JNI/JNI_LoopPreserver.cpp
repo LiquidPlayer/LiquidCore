@@ -34,9 +34,9 @@
 #include "JNI/JNI.h"
 #include "Common/LoopPreserver.h"
 
-NATIVE(JNILoopPreserver,jobject,create) (PARAMS, jobject grp)
+NATIVE(JNILoopPreserver,jlong,create) (PARAMS, jlong grpRef)
 {
-    auto group = SharedWrap<ContextGroup>::Shared(env, grp);
+    auto group = SharedWrap<ContextGroup>::Shared(env, grpRef);
 
     if (group && group->Loop()) {
         return SharedWrap<LoopPreserver>::New(
@@ -45,16 +45,16 @@ NATIVE(JNILoopPreserver,jobject,create) (PARAMS, jobject grp)
         );
     }
 
-    return nullptr;
+    return 0;
 }
 
-NATIVE(JNILoopPreserver,void,release) (PARAMS)
+NATIVE(JNILoopPreserver,void,release) (PARAMS, jlong loopRef)
 {
-    SharedWrap<LoopPreserver>::Shared(env, thiz)->Dispose();
+    SharedWrap<LoopPreserver>::Shared(env, loopRef)->Dispose();
 }
 
-NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, long reference)
+NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, jlong loopRef)
 {
-    delete reinterpret_cast<SharedWrap<LoopPreserver>*>(reference);
+    delete reinterpret_cast<SharedWrap<LoopPreserver>*>(loopRef);
 }
 

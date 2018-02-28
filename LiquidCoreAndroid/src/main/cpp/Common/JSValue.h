@@ -69,6 +69,8 @@ public:
     }
     inline boost::shared_ptr<JSContext> Context()  { return m_context; }
     inline bool IsDefunct() { return m_isDefunct; }
+    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
+    inline jlong getJavaReference() { return m_javaReference; }
 
     void Dispose();
 
@@ -92,6 +94,7 @@ protected:
 
 private:
     bool m_isDefunct;
+    jlong m_javaReference;
 };
 
 #endif //LIQUIDCORE_JSVALUE_H
