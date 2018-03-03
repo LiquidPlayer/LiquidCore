@@ -39,18 +39,20 @@ import android.util.LongSparseArray;
 
 import org.liquidplayer.node.BuildConfig;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
 class JNIJSValue extends JNIObject {
     protected JNIJSValue(long ref) {
         super(ref);
-        m_values.put(ref, new WeakReference<>(this));
+        m_values.put(ref, new SoftReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        m_values.remove(reference);
+        m_values.delete(reference);
         Finalize(reference);
     }
 
@@ -167,9 +169,12 @@ class JNIJSValue extends JNIObject {
         if (BuildConfig.DEBUG && valueRef == 0) {
             throw new AssertionError();
         }
-        WeakReference<JNIJSValue> wr = m_values.get(valueRef);
+        Reference<JNIJSValue> wr = m_values.get(valueRef);
         if (wr == null || wr.get() == null) {
-            if (isObject(valueRef)) {
+            if (JNIJSValue.isObject(valueRef)) {
+                if (JNIJSObject.isFunction(valueRef)) {
+                    return new JNIJSFunction(valueRef);
+                }
                 return new JNIJSObject(valueRef);
             }
             return new JNIJSValue(valueRef);
@@ -177,7 +182,7 @@ class JNIJSValue extends JNIObject {
             return wr.get();
         }
     }
-    private static LongSparseArray<WeakReference<JNIJSValue>> m_values = new LongSparseArray<>();
+    private static LongSparseArray<Reference<JNIJSValue>> m_values = new LongSparseArray<>();
 
     /* Natives */
 

@@ -377,10 +377,6 @@ public class JSObject extends JSValue {
         }
     }
 
-    private abstract class StringArrayReturnClass implements Runnable {
-        String[] sArray;
-    }
-
     /**
      * Gets the list of set property names on the object
      *

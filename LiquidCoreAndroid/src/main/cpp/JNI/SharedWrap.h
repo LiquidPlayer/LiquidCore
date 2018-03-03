@@ -42,12 +42,16 @@ class SharedWrap {
 public:
     inline SharedWrap(boost::shared_ptr<T> g) : m_shared(g)
     {
-
+        g->setJavaReference(reinterpret_cast<jlong>(this));
     }
     inline ~SharedWrap()
     {
         boost::shared_ptr<T> shared = m_shared;
         if (shared) {
+            if (shared->Group()->Loop() != nullptr && !shared->IsDefunct()) {
+                shared->Group()->MarkZombie(shared);
+            }
+            shared->setJavaReference(0);
             shared.reset();
         }
     }
@@ -60,34 +64,23 @@ public:
         if (!javao) {
             SharedWrap<T> *wrap = new SharedWrap<T>(shared);
             javao = reinterpret_cast<jlong>(wrap);
-            shared->setJavaReference(javao);
         }
         return javao;
     }
     inline static boost::shared_ptr<T> Shared(jlong thiz)
     {
         if (!thiz) return boost::shared_ptr<T>();
-        boost::shared_ptr<T> w = GetWrap(thiz)->m_shared;
+        auto p = reinterpret_cast<SharedWrap<T> *>(thiz);
+        boost::shared_ptr<T> w = p->m_shared;
         return w;
     }
     inline static void Dispose(jlong reference)
     {
         const auto valueWrap = reinterpret_cast<SharedWrap<T>*>(reference);
-
-        boost::shared_ptr<T> shared = valueWrap->m_shared;
-        shared->setJavaReference(0);
-        if (shared->Group()->Loop() != nullptr && !shared->IsDefunct()) {
-            shared->Group()->MarkZombie(shared);
-        }
         delete valueWrap;
     }
 
 private:
-    inline static SharedWrap<T>* GetWrap(jlong thiz)
-    {
-        return reinterpret_cast<SharedWrap<T> *>(thiz);
-    }
-
     boost::atomic_shared_ptr<T> m_shared;
 };
 

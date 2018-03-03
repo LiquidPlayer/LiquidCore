@@ -36,10 +36,10 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
+import android.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -250,8 +250,7 @@ public class JSContext extends JSObject {
         return evaluateScript(script,null,0);
     }
 
-    private final HashMap<JNIJSValue, WeakReference<JSObject>> objects = new HashMap<>();
-    private final Object objectsMutex = new Object();
+    private final LongSparseArray<WeakReference<JSObject>> objects = new LongSparseArray<>();
 
     /**
      * Keeps a reference to an object in this context.  This is used so that only one
@@ -262,9 +261,7 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      */
     void persistObject(JSObject obj) {
-        synchronized (objectsMutex) {
-            objects.put(obj.valueRef(), new WeakReference<>(obj));
-        }
+        objects.put(obj.valueRef().reference, new WeakReference<>(obj));
     }
     /**
      * Removes a reference to an object in this context.  Should only be used from the 'finalize'
@@ -273,9 +270,7 @@ public class JSContext extends JSObject {
      * @since 0.1.0
      */
     void finalizeObject(JSObject obj) {
-        synchronized (objectsMutex) {
-            objects.remove(obj.valueRef());
-        }
+        objects.remove(obj.valueRef().reference);
     }
     /**
      * Reuses a stored reference to a JavaScript object if it exists, otherwise, it creates the
@@ -289,10 +284,7 @@ public class JSContext extends JSObject {
         if (objRef.equals(valueRef())) {
             return this;
         }
-        WeakReference<JSObject> wr;
-        synchronized (objectsMutex) {
-            wr = objects.get(objRef);
-        }
+        WeakReference<JSObject> wr = objects.get(objRef.reference);
         JSObject obj = null;
         if (wr != null) {
             obj = wr.get();

@@ -39,12 +39,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.LongSparseArray;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
 class JNIJSContext extends JNIObject {
     private JNIJSContext(long ref) {
         super(ref);
-        m_contexts.put(ref, new WeakReference<>(this));
+        m_contexts.put(ref, new SoftReference<>(this));
     }
 
     @Override
@@ -56,12 +58,12 @@ class JNIJSContext extends JNIObject {
 
     @NonNull static JNIJSContext createContext()
     {
-        return new JNIJSContext(create());
+        return fromRef(create());
     }
 
     @NonNull static JNIJSContext createContext(JNIJSContextGroup group)
     {
-        return new JNIJSContext(createInGroup(group.reference));
+        return fromRef(createInGroup(group.reference));
     }
 
     JNIJSContextGroup getGroup()
@@ -130,12 +132,12 @@ class JNIJSContext extends JNIObject {
     }
     JNIJSFunction makeFunction(String name, String func, String sourceURL, int startingLineNumber) throws JNIJSException
     {
-        return new JNIJSFunction(JNIJSObject.makeFunction(reference, name, func, sourceURL,
+        return JNIJSFunction.fromRef(JNIJSObject.makeFunction(reference, name, func, sourceURL,
                 startingLineNumber));
     }
     JNIJSFunction makeFunctionWithCallback(JSFunction thiz, String name)
     {
-        return new JNIJSFunction(JNIJSFunction.makeFunctionWithCallback(thiz, reference, name));
+        return JNIJSFunction.fromRef(JNIJSFunction.makeFunctionWithCallback(thiz, reference, name));
     }
 
     JNIJSValue evaluateScript(String script, String sourceURL, int startingLineNumber) throws JNIJSException
@@ -143,19 +145,17 @@ class JNIJSContext extends JNIObject {
         return JNIJSValue.fromRef(evaluateScript(reference, script, sourceURL, startingLineNumber));
     }
 
-    @Nullable
+    @NonNull
     static JNIJSContext fromRef(long ctxRef)
     {
-        if (ctxRef == 0) return null;
-        WeakReference<JNIJSContext> wr = m_contexts.get(ctxRef);
+        Reference<JNIJSContext> wr = m_contexts.get(ctxRef);
         if (wr == null || wr.get() == null) {
             return new JNIJSContext(ctxRef);
         } else {
             return wr.get();
         }
     }
-    private static LongSparseArray<WeakReference<JNIJSContext>> m_contexts =
-            new LongSparseArray<>();
+    private static LongSparseArray<Reference<JNIJSContext>> m_contexts = new LongSparseArray<>();
 
     /* Natives */
     private static native long create();

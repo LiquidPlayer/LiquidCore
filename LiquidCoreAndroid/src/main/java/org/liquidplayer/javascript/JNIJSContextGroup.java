@@ -39,12 +39,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.LongSparseArray;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
 class JNIJSContextGroup extends JNIObject {
     private JNIJSContextGroup(long ref) {
         super(ref);
-        m_groups.put(ref, new WeakReference<>(this));
+        m_groups.put(ref, new SoftReference<>(this));
     }
 
     @Override
@@ -67,15 +69,14 @@ class JNIJSContextGroup extends JNIObject {
     @Nullable static JNIJSContextGroup fromRef(long groupRef)
     {
         if (groupRef == 0) return null;
-        WeakReference<JNIJSContextGroup> wr = m_groups.get(groupRef);
+        Reference<JNIJSContextGroup> wr = m_groups.get(groupRef);
         if (wr == null || wr.get() == null) {
             return new JNIJSContextGroup(groupRef);
         } else {
             return wr.get();
         }
     }
-    private static LongSparseArray<WeakReference<JNIJSContextGroup>> m_groups =
-            new LongSparseArray<>();
+    private static LongSparseArray<Reference<JNIJSContextGroup>> m_groups = new LongSparseArray<>();
 
     boolean isManaged()
     {

@@ -121,6 +121,7 @@ class JNIJSObject extends JNIJSValue {
     static native long makeRegExp(long ctxRef, String pattern, String flags) throws JNIJSException;
     static native long makeFunction(long ctxRef, String name, String func, String sourceURL,
                                                int startingLineNumber) throws JNIJSException;
+    static native boolean isFunction(long objRef);
 
     private static native long getPrototype(long objRef);
     private static native void setPrototype(long objRef, long value);
@@ -130,7 +131,6 @@ class JNIJSObject extends JNIJSValue {
     private static native boolean deleteProperty(long objRef, String propertyName) throws JNIJSException;
     private static native long getPropertyAtIndex(long objRef, int propertyIndex) throws JNIJSException;
     private static native void setPropertyAtIndex(long objRef, int propertyIndex, long valueRef) throws JNIJSException;
-    private static native boolean isFunction(long objRef);
     private static native long callAsFunction(long objRef, long thisObject, long[] args) throws JNIJSException;
     private static native boolean isConstructor(long objRef);
     private static native long callAsConstructor(long objRef, long []args) throws JNIJSException;
