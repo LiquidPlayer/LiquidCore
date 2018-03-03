@@ -471,34 +471,8 @@ public class JSFunction extends JSObject {
         }
     }
 
-    /*
-    public static class Profiler {
-        public static HashMap<String,Long> profiles = new HashMap<>();
-        private long startNanos;
-        private final String profile;
-
-        Profiler(final String profile) {
-            this.profile = profile;
-        }
-
-        void start() {
-            startNanos = System.nanoTime();
-        }
-        void end() {
-            long nanos = System.nanoTime() - startNanos;
-            if (profiles.containsKey(profile)) {
-                profiles.put(profile, profiles.get(profile) + nanos);
-            } else {
-                profiles.put(profile, nanos);
-            }
-        }
-    }
-    */
-
     @SuppressWarnings("unused") // This is called directly from native code
     private long functionCallback(long thisObjectRef, long argumentsValueRef[]) {
-        //Profiler profiler = new Profiler("functionCallbackJava");
-        //profiler.start();
         long reference = 0;
         try {
             JSValue [] args = new JSValue[argumentsValueRef.length];
@@ -512,11 +486,9 @@ public class JSFunction extends JSObject {
             }
             JNIJSObject thizRef = JNIJSObject.fromRef(thisObjectRef);
             JSObject thiz = thizRef == null ? null : context.getObjectFromRef(thizRef);
-            //profiler.end();
             JSValue value = function(thiz,args,invokeObject);
             reference = value==null ? 0: value.valueRef().reference;
         } catch (JSException e) {
-            //profiler.end();
             e.printStackTrace();
             JNIJSFunction.setException(valueRef().reference, e.getError().valueRef().reference);
         }
@@ -529,8 +501,6 @@ public class JSFunction extends JSObject {
     }
 
     protected JSValue function(JSObject thiz, JSValue [] args, final JSObject invokeObject) {
-        //Profiler profiler = new Profiler("functionJava");
-        //profiler.start();
         Object [] passArgs = new Object[pType.length];
         if (pType.length > 0 && args.length >= pType.length && !args[args.length -1].isArray() &&
                 pType[pType.length - 1].isArray()) {
@@ -567,9 +537,7 @@ public class JSFunction extends JSObject {
         try {
             stack = invokeObject.getThis();
             invokeObject.setThis(thiz);
-            //profiler.end();
             Object ret = method.invoke(invokeObject, passArgs);
-            //profiler.start();
             if (ret == null) {
                 returnValue = null;
             } else if (ret instanceof JSValue) {
@@ -586,7 +554,6 @@ public class JSFunction extends JSObject {
             returnValue = null;
         } finally {
             invokeObject.setThis(stack);
-            //profiler.end();
         }
         return returnValue;
     }

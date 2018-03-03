@@ -42,6 +42,7 @@ import org.liquidplayer.node.BuildConfig;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 
 class JNIJSValue extends JNIObject {
     protected JNIJSValue(long ref) {
@@ -52,7 +53,7 @@ class JNIJSValue extends JNIObject {
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        m_values.delete(reference);
+        m_values.remove(reference);
         Finalize(reference);
     }
 
@@ -182,7 +183,7 @@ class JNIJSValue extends JNIObject {
             return wr.get();
         }
     }
-    private static LongSparseArray<Reference<JNIJSValue>> m_values = new LongSparseArray<>();
+    private static HashMap<Long,Reference<JNIJSValue>> m_values = new HashMap<>();
 
     /* Natives */
 

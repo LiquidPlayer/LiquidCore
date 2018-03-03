@@ -37,11 +37,10 @@ package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.LongSparseArray;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
+import java.util.HashMap;
 
 class JNIJSContextGroup extends JNIObject {
     private JNIJSContextGroup(long ref) {
@@ -76,7 +75,7 @@ class JNIJSContextGroup extends JNIObject {
             return wr.get();
         }
     }
-    private static LongSparseArray<Reference<JNIJSContextGroup>> m_groups = new LongSparseArray<>();
+    private static HashMap<Long,Reference<JNIJSContextGroup>> m_groups = new HashMap<>();
 
     boolean isManaged()
     {

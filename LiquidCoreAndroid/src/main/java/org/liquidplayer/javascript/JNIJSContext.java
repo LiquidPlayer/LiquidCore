@@ -42,6 +42,7 @@ import android.util.LongSparseArray;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 
 class JNIJSContext extends JNIObject {
     private JNIJSContext(long ref) {
@@ -155,7 +156,7 @@ class JNIJSContext extends JNIObject {
             return wr.get();
         }
     }
-    private static LongSparseArray<Reference<JNIJSContext>> m_contexts = new LongSparseArray<>();
+    private static HashMap<Long,Reference<JNIJSContext>> m_contexts = new HashMap<>();
 
     /* Natives */
     private static native long create();

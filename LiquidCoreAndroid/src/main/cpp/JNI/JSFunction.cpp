@@ -136,21 +136,16 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     Isolate *isolate = info.GetIsolate();
 
     boost::shared_ptr<JSContext> ctxt = m_context;
-    boost::shared_ptr<ContextGroup> grp;
-    if (ctxt) {
-        grp = ctxt->Group();
+    Local<v8::Context> context = ctxt->Value();
+    Context::Scope context_scope_(context);
 
-        Local<v8::Context> context = ctxt->Value();
-        Context::Scope context_scope_(context);
+    objThis = SharedWrap<JSValue>::New(JSValue::New(ctxt, info.This()));
 
-        objThis = SharedWrap<JSValue>::New(JSValue::New(ctxt, info.This()));
-
-        argsArr = env->NewLongArray(argumentCount);
-        for (int i=0; i<argumentCount; i++) {
-            args[i] = SharedWrap<JSValue>::New(JSValue::New(ctxt, info[i]));
-        }
-        env->SetLongArrayRegion(argsArr,0,argumentCount,args);
+    argsArr = env->NewLongArray(argumentCount);
+    for (int i=0; i<argumentCount; i++) {
+        args[i] = SharedWrap<JSValue>::New(JSValue::New(ctxt, info[i]));
     }
+    env->SetLongArrayRegion(argsArr,0,argumentCount,args);
 
     clearException();
     if (isConstructCall) {
@@ -160,9 +155,6 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     }
 
     env->DeleteLocalRef(argsArr);
-
-    Local<v8::Context> context = ctxt->Value();
-    Context::Scope context_scope_(context);
 
     if (isConstructCall) {
         info.GetReturnValue().Set(info.This());

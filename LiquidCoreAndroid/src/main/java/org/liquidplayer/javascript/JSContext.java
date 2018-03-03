@@ -36,10 +36,10 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
-import android.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -250,7 +250,7 @@ public class JSContext extends JSObject {
         return evaluateScript(script,null,0);
     }
 
-    private final LongSparseArray<WeakReference<JSObject>> objects = new LongSparseArray<>();
+    private final HashMap<Long, WeakReference<JSObject>> objects = new HashMap<>();
 
     /**
      * Keeps a reference to an object in this context.  This is used so that only one

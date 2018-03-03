@@ -38,6 +38,8 @@ package org.liquidplayer.javascript;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.lang.ref.Reference;
+
 class JNIJSObject extends JNIJSValue {
     protected JNIJSObject(long ref) {
         super(ref);
