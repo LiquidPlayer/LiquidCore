@@ -585,20 +585,11 @@ public class JSFunctionTest {
     public void Issue44Test() throws Exception {
         JSContext context = new JSContext();
         final JSValue zero = new JSValue(context, 0);
-        /*
         context.property("nativeLog", new JSFunction(context, "nativeLog") {
             public int nativeLog(int index) {
                 sum += index;
                 return 0;
             }
-        });
-        */
-        context.property("nativeLog", new JSFastFunction(context, "nativeLog") {
-           @Override
-           public JSValue callback(JSObject thiz, JSValue[] args) {
-               sum += args[0].toNumber().intValue();
-               return zero;
-           }
         });
 
         String script = "for (var i=0; i < 600; i++) { nativeLog(i); }";
@@ -607,11 +598,6 @@ public class JSFunctionTest {
         context.evaluateScript(script, "script.js", 0);
         long end = System.currentTimeMillis();
         android.util.Log.d("Issue44Test", "Total time (ms) = " + (end-start));
-        /*
-        for (String profile : JSFunction.Profiler.profiles.keySet()) {
-            android.util.Log.d("Issue44Test", profile + " (ms) = " + JSFunction.Profiler.profiles.get(profile) / 1000000);
-        }
-        */
         assertEquals(599*300, sum);
     }
 
