@@ -183,15 +183,7 @@ public class Process {
     public void exit(final int exitc) {
         JSContext ctx = jscontext.get();
         if (isActive() && ctx != null) {
-            ctx.sync(new Runnable() {
-                @Override
-                public void run() {
-                    JSContext ctx = jscontext.get();
-                    if (isActive() && ctx != null) {
-                        ctx.evaluateScript("process.exit(" + exitc + ");");
-                    }
-                }
-            });
+            ctx.evaluateScript("process.exit(" + exitc + ");");
         }
     }
 

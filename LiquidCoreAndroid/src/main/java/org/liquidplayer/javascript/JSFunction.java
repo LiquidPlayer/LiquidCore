@@ -49,11 +49,6 @@ import java.util.ArrayList;
  */
 public class JSFunction extends JSObject {
 
-    private abstract class JNIReturnClass implements Runnable {
-        JNIJSValue exception;
-        JNIJSValue value;
-    }
-
     /**
      * Creates a JavaScript function that takes parameters 'parameterNames' and executes the
      * JS code in 'body'.
@@ -70,34 +65,29 @@ public class JSFunction extends JSObject {
                       final @NonNull String body, final String sourceURL, final int startingLineNumber)
     {
         context = ctx;
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                StringBuilder func = new StringBuilder("(function(");
-                for (int i=0; i<parameterNames.length; i++) {
-                    func.append(parameterNames[i]);
-                    if (i<parameterNames.length-1) {
-                        func.append(",");
-                    }
-                }
-                func.append("){");
-                func.append(body);
-                func.append("})");
-                final String function = func.toString();
-
-                try {
-                    valueRef = context.ctxRef().makeFunction(
-                            name,
-                            function,
-                            (sourceURL == null) ? "<anonymous>" : sourceURL,
-                            startingLineNumber);
-                } catch (JNIJSValue excp) {
-                    valueRef = testException(excp);
-                }
-
-                addJSExports();
+        StringBuilder func = new StringBuilder("(function(");
+        for (int i=0; i<parameterNames.length; i++) {
+            func.append(parameterNames[i]);
+            if (i<parameterNames.length-1) {
+                func.append(",");
             }
-        });
+        }
+        func.append("){");
+        func.append(body);
+        func.append("})");
+        final String function = func.toString();
+
+        try {
+            valueRef = context.ctxRef().makeFunction(
+                    name,
+                    function,
+                    (sourceURL == null) ? "<anonymous>" : sourceURL,
+                    startingLineNumber);
+        } catch (JNIJSException excp) {
+            valueRef = testException(excp.exception);
+        }
+
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -168,15 +158,9 @@ public class JSFunction extends JSObject {
         this.method.setAccessible(true);
         this.pType  = this.method.getParameterTypes();
         this.invokeObject = (invokeObject==null) ? this: invokeObject;
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeFunctionWithCallback(JSFunction.this, method.getName());
-                subclass = instanceClass;
-                addJSExports();
-            }
-        });
-
+        valueRef = context.ctxRef().makeFunctionWithCallback(JSFunction.this, method.getName());
+        subclass = instanceClass;
+        addJSExports();
         context.persistObject(this);
         context.zombies.add(this);
     }
@@ -326,24 +310,14 @@ public class JSFunction extends JSObject {
             }
         }
         if (method == null) {
-            context.sync(new Runnable() {
-                @Override
-                public void run() {
-                    valueRef = context.ctxRef().makeUndefined();
-                }
-            });
+            valueRef = context.ctxRef().makeUndefined();
             context.throwJSException(new JSException(context,"No such method. Did you make it public?"));
         } else {
             this.method.setAccessible(true);
             this.pType = this.method.getParameterTypes();
-            context.sync(new Runnable() {
-                @Override
-                public void run() {
-                    valueRef = context.ctxRef().makeFunctionWithCallback(JSFunction.this, method.getName());
-                    subclass = instanceClass;
-                    addJSExports();
-                }
-            });
+            valueRef = context.ctxRef().makeFunctionWithCallback(JSFunction.this, method.getName());
+            subclass = instanceClass;
+            addJSExports();
         }
 
         context.persistObject(this);
@@ -463,24 +437,15 @@ public class JSFunction extends JSObject {
      * @since 0.1.0
      */
     public JSValue apply(final JSObject thiz, final Object [] args) {
-        JNIReturnClass runnable = new JNIReturnClass() {
-            @Override
-            public void run() {
-                try {
-                    value = JNI().callAsFunction((thiz == null) ? null : (JNIJSObject) thiz.valueRef(),
-                            argsToValueRefs(args));
-                } catch (JNIJSValue excp) {
-                    exception = excp;
-                }
-            }
-        };
-        context.sync(runnable);
-        if (runnable.exception!=null) {
+        try {
+            return new JSValue(JNI().callAsFunction(
+                    (thiz == null) ? null : (JNIJSObject) thiz.valueRef(),
+                    argsToValueRefs(args)), context);
+        } catch (JNIJSException excp) {
             context.throwJSException(
-                    new JSException(new JSValue(runnable.exception,context)));
+                    new JSException(new JSValue(excp.exception,context)));
             return new JSValue(context);
         }
-        return new JSValue(runnable.value,context);
     }
     /**
      * Calls this JavaScript function with no args and 'this' as null
@@ -498,21 +463,12 @@ public class JSFunction extends JSObject {
      * @since 0.1.0
      */
     public JSObject newInstance(final Object ... args) {
-        JNIReturnClass runnable = new JNIReturnClass() {
-            @Override
-            public void run() {
-                try {
-                    value = JNI().callAsConstructor(argsToValueRefs(args));
-                } catch (JNIJSValue excp) {
-                    exception = excp;
-                }
-            }
-        };
-        context.sync(runnable);
-        if (runnable.exception == null) {
-            return context.getObjectFromRef((JNIJSObject)runnable.value);
+        try {
+            return context.getObjectFromRef(
+                    (JNIJSObject)JNI().callAsConstructor(argsToValueRefs(args)));
+        } catch (JNIJSException excp) {
+            return new JSObject(testException(excp.exception), context);
         }
-        return new JSObject(testException(runnable.exception), context);
     }
 
     /*
@@ -540,10 +496,10 @@ public class JSFunction extends JSObject {
     */
 
     @SuppressWarnings("unused") // This is called directly from native code
-    private JNIReturnObject functionCallback(long thisObjectRef, long argumentsValueRef[]) {
+    private long functionCallback(long thisObjectRef, long argumentsValueRef[]) {
         //Profiler profiler = new Profiler("functionCallbackJava");
         //profiler.start();
-        JNIReturnObject ret = new JNIReturnObject();
+        long reference = 0;
         try {
             JSValue [] args = new JSValue[argumentsValueRef.length];
             for (int i=0; i<argumentsValueRef.length; i++) {
@@ -558,16 +514,14 @@ public class JSFunction extends JSObject {
             JSObject thiz = thizRef == null ? null : context.getObjectFromRef(thizRef);
             //profiler.end();
             JSValue value = function(thiz,args,invokeObject);
-            ret.exception = 0;
-            ret.reference = value==null ? 0: value.valueRef().reference;
+            reference = value==null ? 0: value.valueRef().reference;
         } catch (JSException e) {
             //profiler.end();
             e.printStackTrace();
-            ret.exception = e.getError().valueRef().reference;
-            ret.reference = 0;
+            JNIJSFunction.setException(valueRef().reference, e.getError().valueRef().reference);
         }
 
-        return ret;
+        return reference;
     }
 
     protected JSValue function(JSObject thiz, JSValue [] args) {
@@ -638,40 +592,32 @@ public class JSFunction extends JSObject {
     }
 
     protected void constructor(final JNIJSObject thisObj, final JSValue [] args) {
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Constructor<?> defaultConstructor = subclass.getConstructor();
-                    final JSObject thiz = (JSObject) defaultConstructor.newInstance();
-                    thiz.context = context;
-                    thiz.valueRef = thisObj;
-                    thiz.addJSExports();
-                    function(thiz,args);
-                    context.persistObject(thiz);
-                    context.zombies.add(thiz);
-                } catch (NoSuchMethodException e) {
-                    String error = e.toString() + "If " + subclass.getName() + " is an embedded " +
-                            "class, did you specify it as 'static'?";
-                    context.throwJSException(new JSException(context, error));
-                } catch (InvocationTargetException e) {
-                    String error = e.toString() + "; Did you remember to call super?";
-                    context.throwJSException(new JSException(context, error));
-                } catch (IllegalAccessException e) {
-                    String error = e.toString() + "; Is your constructor public?";
-                    context.throwJSException(new JSException(context, error));
-                } catch (InstantiationException e) {
-                    context.throwJSException(new JSException(context, e.toString()));
-                }
-            }
-        };
-        context.sync(runnable);
+        try {
+            Constructor<?> defaultConstructor = subclass.getConstructor();
+            final JSObject thiz = (JSObject) defaultConstructor.newInstance();
+            thiz.context = context;
+            thiz.valueRef = thisObj;
+            thiz.addJSExports();
+            function(thiz,args);
+            context.persistObject(thiz);
+            context.zombies.add(thiz);
+        } catch (NoSuchMethodException e) {
+            String error = e.toString() + "If " + subclass.getName() + " is an embedded " +
+                    "class, did you specify it as 'static'?";
+            context.throwJSException(new JSException(context, error));
+        } catch (InvocationTargetException e) {
+            String error = e.toString() + "; Did you remember to call super?";
+            context.throwJSException(new JSException(context, error));
+        } catch (IllegalAccessException e) {
+            String error = e.toString() + "; Is your constructor public?";
+            context.throwJSException(new JSException(context, error));
+        } catch (InstantiationException e) {
+            context.throwJSException(new JSException(context, e.toString()));
+        }
     }
 
     @SuppressWarnings("unused") // This is called directly from native code
-    private JNIReturnObject constructorCallback(long thisObjectRef, long argumentsValueRef[]) {
-        JNIReturnObject ret = new JNIReturnObject();
-
+    private void constructorCallback(long thisObjectRef, long argumentsValueRef[]) {
         try {
             JSValue [] args = new JSValue[argumentsValueRef.length];
             for (int i=0; i<argumentsValueRef.length; i++) {
@@ -683,12 +629,9 @@ public class JSFunction extends JSObject {
                 }
             }
             constructor(JNIJSObject.fromRef(thisObjectRef),args);
-            ret.exception = 0;
         } catch (JSException e) {
-            ret.exception = e.getError().valueRef().reference;
+            JNIJSFunction.setException(valueRef().reference,e.getError().valueRef().reference);
         }
-
-        return ret;
     }
 
     private Class<? extends JSObject> subclass = null;

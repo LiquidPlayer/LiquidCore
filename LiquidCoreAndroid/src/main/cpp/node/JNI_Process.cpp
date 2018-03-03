@@ -53,8 +53,8 @@ NATIVE(Process,void,dispose) (PARAMS, jlong ref)
 
 NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
 {
-    auto ctx = SharedWrap<JSContext>::Shared(env, contextRef);
-    auto fs = SharedWrap<JSValue>::Shared(env, fsObjectRef);
+    auto ctx = SharedWrap<JSContext>::Shared(contextRef);
+    auto fs = SharedWrap<JSValue>::Shared(fsObjectRef);
     V8_ISOLATE_CTX(ctx,isolate,context)
 
         Local<Object> globalObj = context->Global();

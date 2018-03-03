@@ -36,16 +36,16 @@
 
 #include "JNI/JNI.h"
 #include "JSC/JSC.h"
-#include "JNI/JNIReturnObject.h"
+#include "JNIJSException.h"
 
 extern "C" jlong Java_org_liquidplayer_javascript_JNIJSContextGroup_create(JNIEnv *, jobject);
 
 NATIVE(JNIJSContext,jlong,createInGroup) (PARAMS,jlong grp)
 {
-    auto group = SharedWrap<ContextGroup>::Shared(env, grp);
+    auto group = SharedWrap<ContextGroup>::Shared(grp);
     jlong ctx;
     { V8_ISOLATE(group,isolate)
-        ctx = SharedWrap<JSContext>::New(env, JSContext::New(group, Context::New(isolate)));
+        ctx = SharedWrap<JSContext>::New(JSContext::New(group, Context::New(isolate)));
     V8_UNLOCK() }
 
     return ctx;
@@ -65,10 +65,10 @@ NATIVE(JNIJSContext,void,Finalize) (PARAMS, long reference)
 NATIVE(JNIJSContext,jlong,getGlobalObject) (PARAMS, jlong ctxRef)
 {
     jlong v=0;
-    auto ctx = SharedWrap<JSContext>::Shared(env, ctxRef);
+    auto ctx = SharedWrap<JSContext>::Shared(ctxRef);
 
     V8_ISOLATE_CTX(ctx,isolate,Ctx)
-        v = SharedWrap<JSValue>::New(env, ctx->Global());
+        v = SharedWrap<JSValue>::New(ctx->Global());
     V8_UNLOCK()
 
     return v;
@@ -76,70 +76,69 @@ NATIVE(JNIJSContext,jlong,getGlobalObject) (PARAMS, jlong ctxRef)
 
 NATIVE(JNIJSContext,jlong,getGroup) (PARAMS, jlong grpRef)
 {
-    auto context = SharedWrap<JSContext>::Shared(env, grpRef);
-    return SharedWrap<ContextGroup>::New(env, context->Group());
+    auto context = SharedWrap<JSContext>::Shared(grpRef);
+    return SharedWrap<ContextGroup>::New(context->Group());
 }
 
-NATIVE(JNIJSContext,jobject,evaluateScript) (PARAMS, jlong ctxRef, jstring script_,
+NATIVE(JNIJSContext,jlong,evaluateScript) (PARAMS, jlong ctxRef, jstring script_,
     jstring sourceURL_, jint startingLineNumber)
 {
-    auto ctx = SharedWrap<JSContext>::Shared(env, ctxRef);
+    auto ctx = SharedWrap<JSContext>::Shared(ctxRef);
 
     const char *_script = env->GetStringUTFChars(script_, NULL);
     const char *_sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
 
-    JNIReturnObject ret(env);
-    {
-        V8_ISOLATE(ctx->Group(), isolate)
-            TryCatch trycatch(isolate);
-            Local<Context> context;
+    jlong ret = 0;
+    boost::shared_ptr<JSValue> exception;
 
-            context = ctx->Value();
-            Context::Scope context_scope_(context);
+    V8_ISOLATE(ctx->Group(), isolate)
+        TryCatch trycatch(isolate);
+        Local<Context> context;
 
-            boost::shared_ptr<JSValue> exception;
+        context = ctx->Value();
+        Context::Scope context_scope_(context);
 
-            ScriptOrigin script_origin(
-                String::NewFromUtf8(isolate, _sourceURL, NewStringType::kNormal).ToLocalChecked(),
-                Integer::New(isolate, startingLineNumber)
-            );
+        ScriptOrigin script_origin(
+            String::NewFromUtf8(isolate, _sourceURL, NewStringType::kNormal).ToLocalChecked(),
+            Integer::New(isolate, startingLineNumber)
+        );
 
-            MaybeLocal<String> source = String::NewFromUtf8(isolate, _script, NewStringType::kNormal);
-            MaybeLocal<Script> script;
+        MaybeLocal<String> source = String::NewFromUtf8(isolate, _script, NewStringType::kNormal);
+        MaybeLocal<Script> script;
 
-            MaybeLocal<Value>  result;
-            if (source.IsEmpty()) {
+        MaybeLocal<Value>  result;
+        if (source.IsEmpty()) {
+            exception = JSValue::New(ctx, trycatch.Exception());
+        }
+
+        if (!exception) {
+            script = Script::Compile(context, source.ToLocalChecked(), &script_origin);
+            if (script.IsEmpty()) {
                 exception = JSValue::New(ctx, trycatch.Exception());
             }
+        }
 
-            if (!exception) {
-                script = Script::Compile(context, source.ToLocalChecked(), &script_origin);
-                if (script.IsEmpty()) {
-                    exception = JSValue::New(ctx, trycatch.Exception());
-                }
+        if (!exception) {
+            result = script.ToLocalChecked()->Run(context);
+            if (result.IsEmpty()) {
+                exception = JSValue::New(ctx, trycatch.Exception());
             }
+        }
 
-            if (!exception) {
-                result = script.ToLocalChecked()->Run(context);
-                if (result.IsEmpty()) {
-                    exception = JSValue::New(ctx, trycatch.Exception());
-                }
-            }
+        if (!exception) {
+            boost::shared_ptr<JSValue> value =
+                JSValue::New(ctx, result.ToLocalChecked());
+            ret = SharedWrap<JSValue>::New(value);
+        }
 
-            if (!exception) {
-                boost::shared_ptr<JSValue> value =
-                    JSValue::New(ctx, result.ToLocalChecked());
-                ret.SetReference(SharedWrap<JSValue>::New(env, value));
-            }
-
-            if (exception) {
-                ret.SetException(SharedWrap<JSValue>::New(env, exception));
-            }
-        V8_UNLOCK()
-    }
+    V8_UNLOCK()
 
     env->ReleaseStringUTFChars(script_, _script);
     env->ReleaseStringUTFChars(sourceURL_, _sourceURL);
 
-    return ret.ToJava();
+    if (exception) {
+        JNIJSException(env, SharedWrap<JSValue>::New(exception)).Throw();
+    }
+
+    return ret;
 }

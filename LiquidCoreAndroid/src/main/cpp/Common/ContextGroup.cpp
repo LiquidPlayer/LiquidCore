@@ -359,7 +359,8 @@ void ContextGroup::Dispose()
         // Make sure we don't get destructed during the managed values/context disposal process
         auto wait = shared_from_this();
 
-        ASSERTJSC(m_runnables.empty());
+        //ASSERTJSC(m_runnables.empty());
+        m_runnables.clear();
 
         m_isolate->RemoveGCPrologueCallback(StaticGCPrologueCallback);
 

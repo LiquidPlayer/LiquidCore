@@ -132,54 +132,34 @@ class JNIJSValue extends JNIObject {
         return isFloat64Array(reference);
     }
 
-    boolean isEqual(JNIJSValue b) throws JNIJSValue
+    boolean isEqual(JNIJSValue b) throws JNIJSException
     {
-        JNIReturnObject r = isEqual(reference, b.reference);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return r.bool;
+        return isEqual(reference, b.reference);
     }
     boolean isStrictEqual(JNIJSValue b)
     {
         return isStrictEqual(reference, b.reference);
     }
 
-    JNIJSValue createJSONString() throws JNIJSValue
+    JNIJSValue createJSONString() throws JNIJSException
     {
-        JNIReturnObject r = createJSONString(reference);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return JNIJSValue.fromRef(r.reference);
+        return JNIJSValue.fromRef(createJSONString(reference));
     }
     boolean toBoolean()
     {
         return toBoolean(reference);
     }
-    double toNumber() throws JNIJSValue
+    double toNumber() throws JNIJSException
     {
-        JNIReturnObject r = toNumber(reference);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return r.number;
+        return toNumber(reference);
     }
-    String toStringCopy() throws JNIJSValue
+    String toStringCopy() throws JNIJSException
     {
-        JNIReturnObject r = toStringCopy(reference);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return r.string;
+        return toStringCopy(reference);
     }
-    JNIJSObject toObject() throws JNIJSValue
+    JNIJSObject toObject() throws JNIJSException
     {
-        JNIReturnObject r = toObject(reference);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return JNIJSObject.fromRef(r.reference);
+        return JNIJSObject.fromRef(toObject(reference));
     }
 
     static JNIJSValue fromRef(long valueRef)
@@ -227,14 +207,14 @@ class JNIJSValue extends JNIObject {
     private static native boolean isFloat32Array(long valueRef);
     private static native boolean isFloat64Array(long valueRef);
 
-    private static native JNIReturnObject isEqual(long valueRef, long b);
+    private static native boolean isEqual(long valueRef, long b) throws JNIJSException;
     private static native boolean isStrictEqual(long valueRef, long b);
 
-    private static native JNIReturnObject createJSONString(long valueRef);
+    private static native long createJSONString(long valueRef) throws JNIJSException;
     private static native boolean toBoolean(long valueRef);
-    private static native JNIReturnObject toNumber(long valueRef);
-    private static native JNIReturnObject toStringCopy(long valueRef);
-    private static native JNIReturnObject toObject(long valueRef);
+    private static native double toNumber(long valueRef) throws JNIJSException;
+    private static native String toStringCopy(long valueRef) throws JNIJSException;
+    private static native long toObject(long valueRef) throws JNIJSException;
 
     private native void Finalize(long valueRef);
 }

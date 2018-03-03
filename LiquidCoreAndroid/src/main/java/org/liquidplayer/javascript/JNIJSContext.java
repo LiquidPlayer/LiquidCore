@@ -108,17 +108,13 @@ class JNIJSContext extends JNIObject {
     {
         return JNIJSObject.fromRef(JNIJSObject.make(reference));
     }
-    JNIJSObject makeArray(JNIJSValue[] args) throws JNIJSValue
+    JNIJSObject makeArray(JNIJSValue[] args) throws JNIJSException
     {
         long [] args_ = new long[args.length];
         for (int i=0; i<args.length; i++) {
             args_[i] = args[i].reference;
         }
-        JNIReturnObject r = JNIJSObject.makeArray(reference, args_);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return JNIJSObject.fromRef(r.reference);
+        return JNIJSObject.fromRef(JNIJSObject.makeArray(reference, args_));
     }
     JNIJSObject makeDate(long[] args)
     {
@@ -128,35 +124,23 @@ class JNIJSContext extends JNIObject {
     {
         return JNIJSObject.fromRef(JNIJSObject.makeError(reference, message));
     }
-    JNIJSObject makeRegExp(String pattern, String flags) throws JNIJSValue
+    JNIJSObject makeRegExp(String pattern, String flags) throws JNIJSException
     {
-        JNIReturnObject r = JNIJSObject.makeRegExp(reference, pattern, flags);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return JNIJSObject.fromRef(r.reference);
+        return JNIJSObject.fromRef(JNIJSObject.makeRegExp(reference, pattern, flags));
     }
-    JNIJSFunction makeFunction(String name, String func, String sourceURL, int startingLineNumber) throws JNIJSValue
+    JNIJSFunction makeFunction(String name, String func, String sourceURL, int startingLineNumber) throws JNIJSException
     {
-        JNIReturnObject r = JNIJSObject.makeFunction(reference, name, func, sourceURL,
-                startingLineNumber);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return new JNIJSFunction(r.reference);
+        return new JNIJSFunction(JNIJSObject.makeFunction(reference, name, func, sourceURL,
+                startingLineNumber));
     }
     JNIJSFunction makeFunctionWithCallback(JSFunction thiz, String name)
     {
         return new JNIJSFunction(JNIJSFunction.makeFunctionWithCallback(thiz, reference, name));
     }
 
-    JNIJSValue evaluateScript(String script, String sourceURL, int startingLineNumber) throws JNIJSValue
+    JNIJSValue evaluateScript(String script, String sourceURL, int startingLineNumber) throws JNIJSException
     {
-        JNIReturnObject r = evaluateScript(reference, script, sourceURL, startingLineNumber);
-        if (r.exception != 0) {
-            throw JNIJSValue.fromRef(r.exception);
-        }
-        return JNIJSValue.fromRef(r.reference);
+        return JNIJSValue.fromRef(evaluateScript(reference, script, sourceURL, startingLineNumber));
     }
 
     @Nullable
@@ -178,7 +162,7 @@ class JNIJSContext extends JNIObject {
     private static native long createInGroup(long group);
     private static native long getGroup(long ctxRef);
     private static native long getGlobalObject(long ctxRef);
-    private static native JNIReturnObject evaluateScript(long ctxRef, String script, String sourceURL,
-                                                 int startingLineNumber);
+    private static native long evaluateScript(long ctxRef, String script, String sourceURL,
+                                                 int startingLineNumber) throws JNIJSException;
     private static native void Finalize(long ctxRef);
 }

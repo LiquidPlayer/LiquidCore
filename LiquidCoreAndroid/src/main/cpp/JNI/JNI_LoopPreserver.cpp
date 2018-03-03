@@ -36,13 +36,10 @@
 
 NATIVE(JNILoopPreserver,jlong,create) (PARAMS, jlong grpRef)
 {
-    auto group = SharedWrap<ContextGroup>::Shared(env, grpRef);
+    auto group = SharedWrap<ContextGroup>::Shared(grpRef);
 
     if (group && group->Loop()) {
-        return SharedWrap<LoopPreserver>::New(
-                env,
-                LoopPreserver::New(group)
-        );
+        return SharedWrap<LoopPreserver>::New(LoopPreserver::New(group));
     }
 
     return 0;
@@ -50,7 +47,7 @@ NATIVE(JNILoopPreserver,jlong,create) (PARAMS, jlong grpRef)
 
 NATIVE(JNILoopPreserver,void,release) (PARAMS, jlong loopRef)
 {
-    SharedWrap<LoopPreserver>::Shared(env, loopRef)->Dispose();
+    SharedWrap<LoopPreserver>::Shared(loopRef)->Dispose();
 }
 
 NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, jlong loopRef)

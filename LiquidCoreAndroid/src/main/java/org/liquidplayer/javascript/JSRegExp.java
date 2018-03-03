@@ -52,18 +52,13 @@ public class JSRegExp extends JSObject {
      */
     public JSRegExp(JSContext ctx, final String pattern, final String flags) {
         context = ctx;
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    valueRef = context.ctxRef().makeRegExp(pattern, flags);
-                } catch (JNIJSValue excp){
-                    context.throwJSException(new JSException(new JSValue(excp, context)));
-                    valueRef = context.ctxRef().make();
-                }
-                addJSExports();
-            }
-        });
+        try {
+            valueRef = context.ctxRef().makeRegExp(pattern, flags);
+        } catch (JNIJSException excp){
+            context.throwJSException(new JSException(new JSValue(excp.exception, context)));
+            valueRef = context.ctxRef().make();
+        }
+        addJSExports();
     }
     /**
      * Creates a new JavaScript regular expression

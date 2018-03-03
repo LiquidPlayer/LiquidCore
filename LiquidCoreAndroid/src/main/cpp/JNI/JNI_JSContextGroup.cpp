@@ -38,20 +38,19 @@ NATIVE(JNIJSContextGroup,jlong,create) (PARAMS)
 {
     // Maintain compatibility at the ContextGroup level with JSC by using JSContextGroupCreate()
     return SharedWrap<ContextGroup>::New(
-            env,
             const_cast<OpaqueJSContextGroup*>(JSContextGroupCreate())->ContextGroup::shared_from_this()
     );
 }
 
 NATIVE(JNIJSContextGroup,jboolean,isManaged) (PARAMS, jlong grpRef)
 {
-    auto group = SharedWrap<ContextGroup>::Shared(env, grpRef);
+    auto group = SharedWrap<ContextGroup>::Shared(grpRef);
 
     return (jboolean) (group && group->Loop());
 }
 
 NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jlong grpRef, jobject thisObj, jobject runnable) {
-    auto group = SharedWrap<ContextGroup>::Shared(env, grpRef);
+    auto group = SharedWrap<ContextGroup>::Shared(grpRef);
 
     if (group && group->Loop() && std::this_thread::get_id() != group->Thread()) {
         group->schedule_java_runnable(env, thisObj, runnable);
@@ -126,10 +125,7 @@ NATIVE(JNIJSContextGroup,jlong,createWithSnapshotFile) (PARAMS, jstring inFile_)
     env->ReleaseStringUTFChars(inFile_, _inFile);
 
     // Maintain compatibility at the ContextGroup level with JSC by using JSContextGroupCreate()
-    return SharedWrap<ContextGroup>::New(
-            env,
-            group
-    );
+    return SharedWrap<ContextGroup>::New(group);
 }
 
 NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, long reference)

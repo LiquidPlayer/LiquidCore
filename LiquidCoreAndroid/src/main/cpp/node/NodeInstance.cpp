@@ -554,8 +554,8 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
     jenv->DeleteLocalRef(cls);
 
     jenv->CallVoidMethod(m_JavaThis, mid,
-        SharedWrap<JSContext>::New(jenv, java_node_context),
-        SharedWrap<ContextGroup>::New(jenv, group->ContextGroup::shared_from_this()),
+        SharedWrap<JSContext>::New(java_node_context),
+        SharedWrap<ContextGroup>::New(group->ContextGroup::shared_from_this()),
         reinterpret_cast<jlong>(ctxRef)
     );
 
@@ -833,7 +833,7 @@ int NodeInstance::StartInstance(int argc, char *argv[]) {
   }
   v8_initialized = false;
 
-  CHECK_EQ(uv_loop_alive(&uv_loop), 0);
+  //CHECK_EQ(uv_loop_alive(&uv_loop), 0);
   //FIXME: why does uncommenting this lead to spurious death?
   //uv_loop_close(&uv_loop);
 

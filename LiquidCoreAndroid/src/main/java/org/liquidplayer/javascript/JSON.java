@@ -42,12 +42,7 @@ package org.liquidplayer.javascript;
 public class JSON extends JSValue {
     private JSON(JSContext ctx, final String str) {
         context = ctx;
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeFromJSONString(str);
-            }
-        });
+        valueRef = context.ctxRef().makeFromJSONString(str);
     }
 
     /**

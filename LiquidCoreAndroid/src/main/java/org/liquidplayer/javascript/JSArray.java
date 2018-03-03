@@ -82,18 +82,13 @@ public class JSArray<T> extends JSBaseArray<T> {
         for (int i=0; i<array.length; i++) {
             valueRefs[i] = array[i].valueRef();
         }
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    valueRef = context.ctxRef().makeArray(valueRefs);
-                } catch (JNIJSValue excp) {
-                    context.throwJSException(new JSException(new JSValue(excp, context)));
-                    valueRef = context.ctxRef().make();
-                }
-                addJSExports();
-            }
-        });
+        try {
+            valueRef = context.ctxRef().makeArray(valueRefs);
+        } catch (JNIJSException excp) {
+            context.throwJSException(new JSException(new JSValue(excp.exception, context)));
+            valueRef = context.ctxRef().make();
+        }
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -106,18 +101,13 @@ public class JSArray<T> extends JSBaseArray<T> {
     public JSArray(JSContext ctx, Class<T> cls) {
         super(ctx,cls);
         final JNIJSValue [] valueRefs = new JNIJSValue[0];
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    valueRef = context.ctxRef().makeArray(valueRefs);
-                } catch (JNIJSValue excp) {
-                    context.throwJSException(new JSException(new JSValue(excp, context)));
-                    valueRef = context.ctxRef().make();
-                }
-                addJSExports();
-            }
-        });
+        try {
+            valueRef = context.ctxRef().makeArray(valueRefs);
+        } catch (JNIJSException excp) {
+            context.throwJSException(new JSException(new JSValue(excp.exception, context)));
+            valueRef = context.ctxRef().make();
+        }
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -136,18 +126,13 @@ public class JSArray<T> extends JSBaseArray<T> {
             JSValue v = new JSValue(context,array[i]);
             valueRefs[i] = v.valueRef();
         }
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    valueRef = context.ctxRef().makeArray(valueRefs);
-                } catch (JNIJSValue excp) {
-                    context.throwJSException(new JSException(new JSValue(excp, context)));
-                    valueRef = context.ctxRef().make();
-                }
-                addJSExports();
-            }
-        });
+        try {
+            valueRef = context.ctxRef().makeArray(valueRefs);
+        } catch (JNIJSException excp) {
+            context.throwJSException(new JSException(new JSValue(excp.exception, context)));
+            valueRef = context.ctxRef().make();
+        }
+        addJSExports();
         context.persistObject(this);
     }
 

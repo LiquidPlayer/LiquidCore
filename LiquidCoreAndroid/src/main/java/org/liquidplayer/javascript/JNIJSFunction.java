@@ -41,4 +41,5 @@ class JNIJSFunction extends JNIJSObject  {
     }
 
     static native long makeFunctionWithCallback(JSFunction thiz, long ctxRef, String name);
+    static native void setException(long funcRef, long valueRef);
 }

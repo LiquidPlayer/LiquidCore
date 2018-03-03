@@ -1,8 +1,5 @@
 //
-// JNIReturnObject.cpp
-//
-// AndroidJSCore project
-// https://github.com/ericwlange/AndroidJSCore/
+// JNIJSException.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -33,12 +30,42 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "JNIReturnObject.h"
+#ifndef LIQUIDCORE_JNIJSEXCEPTION_H
+#define LIQUIDCORE_JNIJSEXCEPTION_H
 
-jfieldID JNIReturnObject::m_referenceFid = 0;
-jfieldID JNIReturnObject::m_exceptionFid = 0;
-jfieldID JNIReturnObject::m_boolFid = 0;
-jfieldID JNIReturnObject::m_numberFid = 0;
-jfieldID JNIReturnObject::m_stringFid = 0;
-jmethodID JNIReturnObject::m_cid = 0;
-jclass JNIReturnObject::m_clazz = 0;
+#include "JNI/JNI.h"
+
+class JNIJSException {
+public:
+    inline JNIJSException(JNIEnv *env, jlong exception) : m_env(env), m_exception(exception)
+    {
+        if (!m_clazz) {
+            m_clazz = (jclass) m_env->NewGlobalRef(
+                    findClass(m_env, "org/liquidplayer/javascript/JNIJSException"));
+            m_cid = m_env->GetMethodID(m_clazz, "<init>", "(J)V");
+        }
+        if (m_exception) {
+            m_out = (jthrowable) m_env->NewObject(m_clazz, m_cid, exception);
+        } else {
+            m_out = nullptr;
+        }
+    }
+
+    void Throw()
+    {
+        if (m_exception) {
+            m_env->Throw(m_out);
+        }
+    }
+
+private:
+    static jmethodID m_cid;
+    static jclass m_clazz;
+
+    JNIEnv *m_env;
+    jthrowable m_out;
+    jlong m_exception;
+};
+
+
+#endif //LIQUIDCORE_JNIJSEXCEPTION_H

@@ -51,13 +51,8 @@ public class JSDate extends JSObject {
      */
     public JSDate(JSContext ctx) {
         context = ctx;
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeDate(new long[0]);
-                addJSExports();
-            }
-        });
+        valueRef = context.ctxRef().makeDate(new long[0]);
+        addJSExports();
         context.persistObject(this);
     }
     /**
@@ -69,13 +64,8 @@ public class JSDate extends JSObject {
     public JSDate(JSContext ctx, Date date) {
         context = ctx;
         final long [] args = { date.getTime() };
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeDate(args);
-                addJSExports();
-            }
-        });
+        valueRef = context.ctxRef().makeDate(args);
+        addJSExports();
         context.persistObject(this);
     }
     /**
@@ -87,13 +77,8 @@ public class JSDate extends JSObject {
     public JSDate(JSContext ctx, Long epoch) {
         context = ctx;
         final long [] args = { epoch };
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeDate(args);
-                addJSExports();
-            }
-        });
+        valueRef = context.ctxRef().makeDate(args);
+        addJSExports();
         context.persistObject(this);
     }
 
@@ -119,12 +104,7 @@ public class JSDate extends JSObject {
             if (i<params.length) calendar.set(fields[i],params[i]);
             else calendar.set(fields[i],0);
         }
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeDate(new long[] { calendar.getTime().getTime() });
-            }
-        });
+        valueRef = context.ctxRef().makeDate(new long[] { calendar.getTime().getTime() });
         context.persistObject(this);
     }
 

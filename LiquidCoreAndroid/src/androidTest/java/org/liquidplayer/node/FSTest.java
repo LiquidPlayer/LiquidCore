@@ -130,9 +130,7 @@ public class FSTest {
 
         final String script = "" +
                 "var fs = require('fs');" +
-                "console.log('Did we get this far1?');" +
                 "process.chdir('./local');" +
-                "console.log('Did we get this far?');" +
                 "fs.writeFile('test.txt', 'Hello, World!', function(err) {" +
                 "   if(err) {" +
                 "       return console.log(err);" +

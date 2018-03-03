@@ -1,15 +1,9 @@
 package org.liquidplayer.javascript;
 
 public class JSFastFunction extends JSFunction {
-    JSFastFunction(JSContext ctx, final String name) {
+    public JSFastFunction(JSContext ctx, final String name) {
         context = ctx;
-        context.sync(new Runnable() {
-            @Override
-            public void run() {
-                valueRef = context.ctxRef().makeFunctionWithCallback(JSFastFunction.this, name);
-            }
-        });
-
+        valueRef = context.ctxRef().makeFunctionWithCallback(JSFastFunction.this, name);
         context.persistObject(this);
         context.zombies.add(this);
     }

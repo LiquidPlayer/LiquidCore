@@ -72,6 +72,5 @@
 -keep class org.liquidplayer.javascript.JNIJSContext { *; }
 -keep class org.liquidplayer.javascript.JNIJSContextGroup { *; }
 -keep class org.liquidplayer.javascript.JNILoopPreserver { *; }
--keep class org.liquidplayer.javascript.JNIReturnObject { *; }
 -keep class org.liquidplayer.javascript.JSFunction { *; }
 -keep class org.liquidplayer.javascript.JSContextGroup { *; }

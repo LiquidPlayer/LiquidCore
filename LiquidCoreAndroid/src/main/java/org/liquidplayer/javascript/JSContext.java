@@ -72,14 +72,6 @@ public class JSContext extends JSObject {
         }
     }
 
-    public void async(final Runnable runnable) {
-        if (isOnThread()) {
-            runnable.run();
-        } else {
-            getGroup().schedule(runnable);
-        }
-    }
-
     private boolean isOnThread() {
         return ctxRef == null || getGroup().isOnThread();
     }
@@ -132,13 +124,9 @@ public class JSContext extends JSObject {
         context = this;
         contextGroup = inGroup;
 
-        sync(new Runnable() {
-            @Override public void run() {
-                ctxRef = JNIJSContext.createContext(inGroup.groupRef());
-                valueRef = ctxRef.getGlobalObject();
-                addJSExports();
-            }
-        });
+        ctxRef = JNIJSContext.createContext(inGroup.groupRef());
+        valueRef = ctxRef.getGlobalObject();
+        addJSExports();
     }
     /**
      * Creates a JavaScript context, and defines the global object with interface 'iface'.  This
@@ -243,23 +231,13 @@ public class JSContext extends JSObject {
     public JSValue evaluateScript(final @NonNull String script,
                                   final String sourceURL, final int startingLineNumber) {
 
-        JNIReturnClass runnable = new JNIReturnClass() {
-            @Override public void run() {
-                String src = (sourceURL==null) ? "<code>" : sourceURL;
-                try {
-                    value = ctxRef.evaluateScript(script, src, startingLineNumber);
-                } catch (JNIJSValue excp){
-                    exception = excp;
-                }
-            }
-        };
-        sync(runnable);
-
-        if (runnable.exception!=null) {
-            throwJSException(new JSException(new JSValue(runnable.exception, context)));
+        String src = (sourceURL==null) ? "<code>" : sourceURL;
+        try {
+            return new JSValue(ctxRef.evaluateScript(script, src, startingLineNumber), context);
+        } catch (JNIJSException excp){
+            throwJSException(new JSException(new JSValue(excp.exception, context)));
             return new JSValue(this);
         }
-        return new JSValue(runnable.value,this);
     }
 
     /**
