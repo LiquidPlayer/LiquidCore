@@ -439,8 +439,7 @@ public class JSFunction extends JSObject {
     public JSValue apply(final JSObject thiz, final Object [] args) {
         try {
             return new JSValue(JNI().callAsFunction(
-                    (thiz == null) ? null : (JNIJSObject) thiz.valueRef(),
-                    argsToValueRefs(args)), context);
+                    (thiz == null) ? null : thiz.JNI(), argsToValueRefs(args)), context);
         } catch (JNIJSException excp) {
             context.throwJSException(
                     new JSException(new JSValue(excp.exception,context)));
@@ -464,8 +463,7 @@ public class JSFunction extends JSObject {
      */
     public JSObject newInstance(final Object ... args) {
         try {
-            return context.getObjectFromRef(
-                    (JNIJSObject)JNI().callAsConstructor(argsToValueRefs(args)));
+            return context.getObjectFromRef(JNI().callAsConstructor(argsToValueRefs(args)));
         } catch (JNIJSException excp) {
             return new JSObject(testException(excp.exception), context);
         }
@@ -478,8 +476,13 @@ public class JSFunction extends JSObject {
             JSValue [] args = new JSValue[argumentsValueRef.length];
             for (int i=0; i<argumentsValueRef.length; i++) {
                 JNIJSValue ref = JNIJSValue.fromRef(argumentsValueRef[i]);
-                if (ref instanceof JNIJSObject) {
-                    args[i] = context.getObjectFromRef((JNIJSObject)ref, true);
+                if (ref.isObject()) {
+                    try {
+                        args[i] = context.getObjectFromRef(ref.toObject(), true);
+                    } catch (JNIJSException e) {
+                        e.printStackTrace();
+                        throw new AssertionError();
+                    }
                 } else {
                     args[i] = new JSValue(ref,context);
                 }
@@ -589,8 +592,13 @@ public class JSFunction extends JSObject {
             JSValue [] args = new JSValue[argumentsValueRef.length];
             for (int i=0; i<argumentsValueRef.length; i++) {
                 JNIJSValue ref = JNIJSValue.fromRef(argumentsValueRef[i]);
-                if (ref instanceof JNIJSObject) {
-                    args[i] = context.getObjectFromRef((JNIJSObject)ref, true);
+                if (ref.isObject()) {
+                    try {
+                        args[i] = context.getObjectFromRef(ref.toObject(), true);
+                    } catch (JNIJSException e) {
+                        e.printStackTrace();
+                        throw new AssertionError();
+                    }
                 } else {
                     args[i] = new JSValue(ref,context);
                 }

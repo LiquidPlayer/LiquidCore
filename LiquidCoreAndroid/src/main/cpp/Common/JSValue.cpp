@@ -69,7 +69,7 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
 }
 
 JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val) :
-    m_wrapped(false), m_isDefunct(false), m_javaReference(0)
+    m_wrapped(false), m_isDefunct(false), m_count(0)
 {
     if (val->IsUndefined()) {
         m_isUndefined = true;
@@ -85,7 +85,7 @@ JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val) :
     m_context = context;
 }
 
-JSValue::JSValue() : m_wrapped(false), m_isDefunct(false), m_javaReference(0)
+JSValue::JSValue() : m_wrapped(false), m_isDefunct(false)
 {
 }
 

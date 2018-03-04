@@ -130,7 +130,7 @@ ContextGroup::ContextGroup()
     m_isDefunct = false;
     m_startup_data.data = nullptr;
     m_startup_data.raw_size = 0;
-    m_javaReference = 0;
+    m_count = 0;
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
@@ -147,7 +147,7 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_isDefunct = false;
     m_startup_data.data = nullptr;
     m_startup_data.raw_size = 0;
-    m_javaReference = 0;
+    m_count = 0;
 
     s_mutex.lock();
     s_isolate_map[m_isolate] = this;
@@ -172,7 +172,7 @@ ContextGroup::ContextGroup(char *snapshot, int size)
     m_thread_id = std::this_thread::get_id();
     m_async_handle = nullptr;
     m_isDefunct = false;
-    m_javaReference = 0;
+    m_count = 0;
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();

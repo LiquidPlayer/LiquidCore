@@ -36,22 +36,15 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.util.HashMap;
 
 class JNIJSContextGroup extends JNIObject {
     private JNIJSContextGroup(long ref) {
         super(ref);
-        m_groups.put(ref, new SoftReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        m_groups.remove(reference);
         Finalize(reference);
     }
 
@@ -65,17 +58,10 @@ class JNIJSContextGroup extends JNIObject {
         return new JNIJSContextGroup(createWithSnapshotFile(snapshotFile));
     }
 
-    @Nullable static JNIJSContextGroup fromRef(long groupRef)
+    static JNIJSContextGroup fromRef(long groupRef)
     {
-        if (groupRef == 0) return null;
-        Reference<JNIJSContextGroup> wr = m_groups.get(groupRef);
-        if (wr == null || wr.get() == null) {
-            return new JNIJSContextGroup(groupRef);
-        } else {
-            return wr.get();
-        }
+        return new JNIJSContextGroup(groupRef);
     }
-    private static HashMap<Long,Reference<JNIJSContextGroup>> m_groups = new HashMap<>();
 
     boolean isManaged()
     {

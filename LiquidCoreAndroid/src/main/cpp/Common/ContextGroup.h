@@ -45,6 +45,7 @@
 #include <list>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
+#include <boost/atomic.hpp>
 
 #define CONTEXT_GARBAGE_COLLECTED_BUT_PROCESS_STILL_ACTIVE 222
 
@@ -75,8 +76,22 @@ public:
             sync_(runnable);
         }
     }
-    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
-    inline jlong getJavaReference() { return m_javaReference; }
+    inline void retainJavaReference()
+    {
+        m_self = shared_from_this();
+        m_count++;
+    }
+    inline void releaseJavaReference()
+    {
+        if (--m_count==0) {
+            boost::shared_ptr<ContextGroup> self = m_self;
+            self.reset();
+        }
+    }
+    inline boost::shared_ptr<ContextGroup> javaReference()
+    {
+        return m_self;
+    }
 
     void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
     void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
@@ -122,13 +137,14 @@ private:
     std::vector<boost::shared_ptr<JSContext>> m_context_zombies;
     std::mutex m_zombie_mutex;
     bool m_isDefunct;
-    jlong m_javaReference;
 
     struct GCCallback {
         void (*cb)(GCType type, GCCallbackFlags flags, void*);
         void *data;
     };
     std::list<std::unique_ptr<struct GCCallback>> m_gc_callbacks;
+    boost::atomic_shared_ptr<ContextGroup> m_self;
+    boost::atomic<int> m_count;
 
     uv_async_t *m_async_handle;
     std::vector<void *> m_runnables;

@@ -36,9 +36,6 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
-import java.lang.ref.Reference;
 
 class JNIJSObject extends JNIJSValue {
     protected JNIJSObject(long ref) {
@@ -94,24 +91,22 @@ class JNIJSObject extends JNIJSValue {
     {
         return isConstructor(reference);
     }
-    JNIJSValue callAsConstructor(JNIJSValue[] args) throws JNIJSException
+    JNIJSObject callAsConstructor(JNIJSValue[] args) throws JNIJSException
     {
         long [] args_ = new long[args.length];
         for (int i=0; i<args.length; i++) {
             args_[i] = args[i].reference;
         }
-        return JNIJSValue.fromRef(callAsConstructor(reference, args_));
+        return JNIJSObject.fromRef(callAsConstructor(reference, args_));
     }
     String[] copyPropertyNames()
     {
         return copyPropertyNames(reference);
     }
 
-    @Nullable static JNIJSObject fromRef(long valueRef)
+    static JNIJSObject fromRef(long valueRef)
     {
-        JNIJSValue v = JNIJSValue.fromRef(valueRef);
-        if (v instanceof JNIJSObject) return (JNIJSObject)v;
-        else return null;
+        return new JNIJSObject(valueRef);
     }
 
     /* Native Methods */

@@ -46,7 +46,7 @@ JSContext::JSContext(boost::shared_ptr<ContextGroup> isolate, Local<Context> val
     m_isolate = isolate;
     m_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate->isolate(), val);
     m_isDefunct = false;
-    m_javaReference = 0;
+    m_count = 0;
 }
 
 JSContext::~JSContext() {

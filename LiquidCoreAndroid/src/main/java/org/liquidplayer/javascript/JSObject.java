@@ -457,7 +457,11 @@ public class JSObject extends JSValue {
 
     private JSObject thiz = null;
 
+    private JNIJSObject jnijsObject = null;
     protected JNIJSObject JNI() {
-        return (JNIJSObject)valueRef();
+        if (jnijsObject == null) {
+            jnijsObject = new JNIJSObject(valueRef().reference);
+        }
+        return jnijsObject;
     }
 }

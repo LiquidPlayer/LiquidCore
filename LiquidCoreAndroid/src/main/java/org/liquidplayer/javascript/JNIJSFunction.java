@@ -35,21 +35,14 @@
 */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.Nullable;
-
-import java.lang.ref.Reference;
-
 class JNIJSFunction extends JNIJSObject  {
     JNIJSFunction(long ref) {
         super(ref);
     }
 
-    @Nullable
     static JNIJSFunction fromRef(long valueRef)
     {
-        JNIJSValue v = JNIJSValue.fromRef(valueRef);
-        if (v instanceof JNIJSFunction) return (JNIJSFunction) v;
-        else return null;
+        return new JNIJSFunction(valueRef);
     }
 
     static native long makeFunctionWithCallback(JSFunction thiz, long ctxRef, String name);

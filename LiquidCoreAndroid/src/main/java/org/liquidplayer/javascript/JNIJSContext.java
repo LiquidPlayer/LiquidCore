@@ -36,24 +36,15 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.util.LongSparseArray;
-
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.util.HashMap;
 
 class JNIJSContext extends JNIObject {
     private JNIJSContext(long ref) {
         super(ref);
-        m_contexts.put(ref, new SoftReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        m_contexts.remove(reference);
         Finalize(reference);
     }
 
@@ -131,7 +122,8 @@ class JNIJSContext extends JNIObject {
     {
         return JNIJSObject.fromRef(JNIJSObject.makeRegExp(reference, pattern, flags));
     }
-    JNIJSFunction makeFunction(String name, String func, String sourceURL, int startingLineNumber) throws JNIJSException
+    JNIJSFunction makeFunction(@NonNull String name, @NonNull String func,
+                               @NonNull String sourceURL, int startingLineNumber) throws JNIJSException
     {
         return JNIJSFunction.fromRef(JNIJSObject.makeFunction(reference, name, func, sourceURL,
                 startingLineNumber));
@@ -149,14 +141,8 @@ class JNIJSContext extends JNIObject {
     @NonNull
     static JNIJSContext fromRef(long ctxRef)
     {
-        Reference<JNIJSContext> wr = m_contexts.get(ctxRef);
-        if (wr == null || wr.get() == null) {
-            return new JNIJSContext(ctxRef);
-        } else {
-            return wr.get();
-        }
+        return new JNIJSContext(ctxRef);
     }
-    private static HashMap<Long,Reference<JNIJSContext>> m_contexts = new HashMap<>();
 
     /* Natives */
     private static native long create();

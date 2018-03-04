@@ -34,54 +34,33 @@
 #define LIQUIDCORE_SHAREDWRAP_H
 
 #include "Common/Common.h"
-#include <mutex>
 #include <shared_mutex>
 
 template<typename T>
 class SharedWrap {
 public:
-    inline SharedWrap(boost::shared_ptr<T> g) : m_shared(g)
-    {
-        g->setJavaReference(reinterpret_cast<jlong>(this));
-    }
-    inline ~SharedWrap()
-    {
-        boost::shared_ptr<T> shared = m_shared;
-        if (shared) {
-            if (shared->Group()->Loop() != nullptr && !shared->IsDefunct()) {
-                shared->Group()->MarkZombie(shared);
-            }
-            shared->setJavaReference(0);
-            shared.reset();
-        }
-    }
-
     inline static jlong New(boost::shared_ptr<T> shared)
     {
         if (!shared) return 0L;
-
-        jlong javao = shared->getJavaReference();
-        if (!javao) {
-            SharedWrap<T> *wrap = new SharedWrap<T>(shared);
-            javao = reinterpret_cast<jlong>(wrap);
-        }
-        return javao;
+        shared->retainJavaReference();
+        return reinterpret_cast<jlong>(&* shared);
     }
     inline static boost::shared_ptr<T> Shared(jlong thiz)
     {
         if (!thiz) return boost::shared_ptr<T>();
-        auto p = reinterpret_cast<SharedWrap<T> *>(thiz);
-        boost::shared_ptr<T> w = p->m_shared;
-        return w;
+        return reinterpret_cast<T*>(thiz)->javaReference();
     }
     inline static void Dispose(jlong reference)
     {
-        const auto valueWrap = reinterpret_cast<SharedWrap<T>*>(reference);
-        delete valueWrap;
+        auto shared = reinterpret_cast<T*>(reference)->javaReference();
+        if (shared) {
+            if (shared->Group()->Loop() != nullptr && !shared->IsDefunct()) {
+                shared->Group()->MarkZombie(shared);
+            }
+            shared->releaseJavaReference();
+            shared.reset();
+        }
     }
-
-private:
-    boost::atomic_shared_ptr<T> m_shared;
 };
 
 #endif //LIQUIDCORE_SHAREDWRAP_H

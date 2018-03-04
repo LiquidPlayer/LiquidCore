@@ -69,8 +69,22 @@ public:
     }
     inline boost::shared_ptr<JSContext> Context()  { return m_context; }
     inline bool IsDefunct() { return m_isDefunct; }
-    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
-    inline jlong getJavaReference() { return m_javaReference; }
+    inline void retainJavaReference()
+    {
+        m_self = shared_from_this();
+        m_count++;
+    }
+    inline void releaseJavaReference()
+    {
+        if (--m_count == 0) {
+            boost::shared_ptr<JSValue> self = m_self;
+            self.reset();
+        }
+    }
+    inline boost::shared_ptr<JSValue> javaReference()
+    {
+        return m_self;
+    }
 
     void Dispose();
 
@@ -94,7 +108,8 @@ protected:
 
 private:
     bool m_isDefunct;
-    jlong m_javaReference;
+    boost::atomic<int> m_count;
+    boost::atomic_shared_ptr<JSValue> m_self;
 };
 
 #endif //LIQUIDCORE_JSVALUE_H

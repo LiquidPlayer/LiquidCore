@@ -380,7 +380,7 @@ public class JSValue {
         if (this instanceof JSObject) return (JSObject)this;
 
         try {
-            return context.getObjectFromRef((JNIJSObject)valueRef().toObject());
+            return context.getObjectFromRef(valueRef().toObject());
         } catch (JNIJSException excp) {
             context.throwJSException(new JSException(new JSValue(excp.exception, context)));
             return new JSObject(context);

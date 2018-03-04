@@ -35,25 +35,14 @@
 */
 package org.liquidplayer.javascript;
 
-import android.util.LongSparseArray;
-
-import org.liquidplayer.node.BuildConfig;
-
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.util.HashMap;
-
 class JNIJSValue extends JNIObject {
     protected JNIJSValue(long ref) {
         super(ref);
-        m_values.put(ref, new SoftReference<>(this));
     }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        m_values.remove(reference);
         Finalize(reference);
     }
 
@@ -167,23 +156,16 @@ class JNIJSValue extends JNIObject {
 
     static JNIJSValue fromRef(long valueRef)
     {
-        if (BuildConfig.DEBUG && valueRef == 0) {
-            throw new AssertionError();
-        }
-        Reference<JNIJSValue> wr = m_values.get(valueRef);
-        if (wr == null || wr.get() == null) {
-            if (JNIJSValue.isObject(valueRef)) {
-                if (JNIJSObject.isFunction(valueRef)) {
-                    return new JNIJSFunction(valueRef);
-                }
-                return new JNIJSObject(valueRef);
+        /*
+        if (JNIJSValue.isObject(valueRef)) {
+            if (JNIJSObject.isFunction(valueRef)) {
+                return new JNIJSFunction(valueRef);
             }
-            return new JNIJSValue(valueRef);
-        } else {
-            return wr.get();
+            return new JNIJSObject(valueRef);
         }
+        */
+        return new JNIJSValue(valueRef);
     }
-    private static HashMap<Long,Reference<JNIJSValue>> m_values = new HashMap<>();
 
     /* Natives */
 

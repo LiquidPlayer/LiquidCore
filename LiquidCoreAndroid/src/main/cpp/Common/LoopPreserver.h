@@ -39,6 +39,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/smart_ptr/atomic_shared_ptr.hpp>
 #include <boost/smart_ptr/enable_shared_from_this.hpp>
+#include <boost/atomic.hpp>
 #include "uv.h"
 
 class ContextGroup;
@@ -52,14 +53,29 @@ public:
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
     inline boost::shared_ptr<ContextGroup> Group() { return m_group; }
-    inline void setJavaReference(jlong javao) { m_javaReference = javao; }
-    inline jlong getJavaReference() { return m_javaReference; }
+    inline void retainJavaReference()
+    {
+        m_self = shared_from_this();
+        m_count++;
+    }
+    inline void releaseJavaReference()
+    {
+        if (--m_count==0) {
+            boost::shared_ptr<LoopPreserver> self = m_self;
+            self.reset();
+        }
+    }
+    inline boost::shared_ptr<LoopPreserver> javaReference()
+    {
+        return m_self;
+    }
 
 private:
     bool m_isDefunct;
     uv_async_t * m_async_handle;
     boost::atomic_shared_ptr<ContextGroup> m_group;
-    jlong m_javaReference;
+    boost::atomic_shared_ptr<LoopPreserver> m_self;
+    boost::atomic<int> m_count;
 };
 
 #endif //LIQUIDCORE_LOOPPRESERVER_H
