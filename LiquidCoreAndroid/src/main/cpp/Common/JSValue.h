@@ -71,8 +71,8 @@ public:
     inline bool IsDefunct() { return m_isDefunct; }
     inline void retainJavaReference()
     {
-        m_self = shared_from_this();
         m_count++;
+        m_self = shared_from_this();
     }
     inline void releaseJavaReference()
     {

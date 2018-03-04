@@ -52,6 +52,6 @@ NATIVE(JNILoopPreserver,void,release) (PARAMS, jlong loopRef)
 
 NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, jlong loopRef)
 {
-    delete reinterpret_cast<SharedWrap<LoopPreserver>*>(loopRef);
+    SharedWrap<LoopPreserver>::Dispose(loopRef);
 }
 
