@@ -46,6 +46,7 @@ import java.io.IOException;
  * threads, explicit synchronization is required.
  *
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSContextGroup {
     static {
         JSContext.init();

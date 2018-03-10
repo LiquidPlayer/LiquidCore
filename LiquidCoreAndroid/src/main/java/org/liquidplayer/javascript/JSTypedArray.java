@@ -35,10 +35,6 @@
 */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.NonNull;
-
-import java.util.List;
-
 /**
  * A convenience base class for JavaScript typed arrays.  This is an abstract class, and is
  * subclassed by JSInt8Array, JSInt16Array, JSInt32Array, JSUint8Array, JSUint16Array,
@@ -133,7 +129,7 @@ public abstract class JSTypedArray<T> extends JSBaseArray<T> {
      * @since 0.1.0
      */
     public static JSTypedArray from(JSObject obj) {
-        JSTypedArray arr = null;
+        JSTypedArray arr;
         if     (obj.isInt8Array())  arr = new JSInt8Array(obj.toObject().JNI(),obj.getContext());
         else if(obj.isUint8Array()) arr = new JSUint8Array(obj.toObject().JNI(),obj.getContext());
         else if(obj.isUint8ClampedArray()) arr = new JSUint8ClampedArray(obj.toObject().JNI(),obj.getContext());

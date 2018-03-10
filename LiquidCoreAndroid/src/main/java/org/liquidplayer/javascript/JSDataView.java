@@ -40,6 +40,7 @@ package org.liquidplayer.javascript;
  * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSDataView extends JSObjectWrapper {
 
     /**

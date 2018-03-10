@@ -41,6 +41,7 @@ import android.support.annotation.NonNull;
  * A convenience class for managing JavaScript error objects
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSError extends JSObject {
     /**
      * Generates a JavaScript throwable exception object

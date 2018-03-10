@@ -42,6 +42,7 @@ package org.liquidplayer.javascript;
  *  for details on JavaScript regexp.
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSRegExp extends JSObject {
     /**
      * Creates a new JavaScript regular expression

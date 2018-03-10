@@ -611,7 +611,7 @@ public class JSFunctionTest {
 
                 if (vars != null) {
                     for (int i = 0; i < vars.length; ++i) {
-                        result.append(" ").append(vars[i].toObject().toString());
+                        result.append(" ").append(vars[i].toString());
                     }
                 }
 

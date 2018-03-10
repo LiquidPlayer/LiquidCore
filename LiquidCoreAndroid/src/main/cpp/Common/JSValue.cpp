@@ -60,16 +60,32 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
 
             obj->SetPrivate(context->Value(), privateKey, Wrap(&* value));
         }
+        value->m_reference = TOOBJPTR(&*value);
     } else {
         value = boost::make_shared<JSValue>(context,val);
+        value->m_reference =
+                (value->m_isUndefined) ? ODDBALL_UNDEFINED :
+                (value->m_isNull) ? ODDBALL_NULL :
+                (val->IsBoolean() && val->IsTrue()) ? ODDBALL_TRUE :
+                (val->IsBoolean()) ? ODDBALL_FALSE : -1;
+        if (value->m_reference == -1 && val->IsNumber()) {
+            double v = val->ToNumber(context->isolate())->Value();
+            jlong *pv = (jlong *) &v;
+            if (CANPRIMITIVE(*pv)) {
+                value->m_reference = *pv;
+            } else {
+                value->m_reference = TOPTR(&*value);
+            }
+        } else {
+            value->m_reference = TOPTR(&*value);
+        }
     }
 
     context->Group()->Manage(value);
     return value;
 }
 
-JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val) :
-    m_wrapped(false), m_isDefunct(false), m_count(0)
+JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val)
 {
     if (val->IsUndefined()) {
         m_isUndefined = true;
@@ -83,6 +99,9 @@ JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val) :
         m_isNull = false;
     }
     m_context = context;
+    m_wrapped = false;
+    m_isDefunct = false;
+    m_count = 0;
 }
 
 JSValue::JSValue() : m_wrapped(false), m_isDefunct(false)

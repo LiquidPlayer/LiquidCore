@@ -41,6 +41,7 @@ package org.liquidplayer.javascript;
  * @since 0.1.0
  *
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 

@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 /**
  * Provides static initialization for projects that require the JavaScriptCore -> V8 bridge
  */
-@SuppressWarnings("JniMissingFunction")
 public class JSCShim {
     /* Ensure the shared libraries get loaded first */
     static {
@@ -33,5 +32,7 @@ public class JSCShim {
     }
 
     private static native long getJSCShimToken();
+
+    @SuppressWarnings("JniMissingFunction")
     private static native void setJSCShimToken(long token);
 }

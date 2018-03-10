@@ -128,7 +128,7 @@ NATIVE(JNIJSContextGroup,jlong,createWithSnapshotFile) (PARAMS, jstring inFile_)
     return SharedWrap<ContextGroup>::New(group);
 }
 
-NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, long reference)
+NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, jlong reference)
 {
     SharedWrap<ContextGroup>::Dispose(reference);
 }

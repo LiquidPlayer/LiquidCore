@@ -33,6 +33,7 @@
 package org.liquidplayer.node;
 
 import android.content.Context;
+import android.support.annotation.Keep;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
@@ -40,12 +41,12 @@ import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class Process {
 
     final public static int kMediaAccessPermissionsNone = 0;
@@ -280,6 +281,7 @@ public class Process {
     }
 
     @SuppressWarnings("unused") // called from native code
+    @Keep
     private void onNodeStarted(final long mainContext, long ctxGroupRef, long jscCtxRef) {
         // We will use reflection to create this object.  Ideally the JNI* classes would be
         // package local to this, but since we wanted to split packages, we will do it this way.
@@ -368,6 +370,7 @@ public class Process {
     }
 
     @SuppressWarnings("unused") // called from native code
+    @Keep
     private void onNodeExit(long exitCode) {
         isActive = false;
         jscontext = null;

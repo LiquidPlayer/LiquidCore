@@ -49,6 +49,7 @@ import java.util.NoSuchElementException;
  * simple integration with Java methods.
  *
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     Class<T> mType;
@@ -473,7 +474,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
      * @see List#listIterator()
      * @since 0.1.0
      */
-    @Override
+    @Override @NonNull
     public ListIterator<T> listIterator() {
         return listIterator(0);
     }

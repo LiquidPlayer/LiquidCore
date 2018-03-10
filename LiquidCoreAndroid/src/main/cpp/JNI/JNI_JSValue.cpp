@@ -39,7 +39,10 @@
 
 template <typename F>
 jboolean boolean_func(jlong thiz, F&& lambda, bool defValue){
-    auto valueRef = SharedWrap<JSValue>::Shared(thiz);
+    if (!ISPOINTER(thiz)) {
+        __android_log_assert("!ISPOINTER", "boolean_func", "SharedWrap<JSValue> is not a pointer");
+    }
+    auto valueRef = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), thiz);
     if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
             !valueRef->Group()->IsDefunct()) {
         V8_ISOLATE_CTX(valueRef->Context(), isolate, context)
@@ -180,12 +183,15 @@ NATIVE(JNIJSValue,jboolean,isFloat64Array) (PARAMS, jlong valueRef)
 
 NATIVE(JNIJSValue,jboolean,isEqual) (PARAMS, jlong a_, jlong b_)
 {
-    auto a = SharedWrap<JSValue>::Shared(a_);
-    auto b = SharedWrap<JSValue>::Shared(b_);
+    if (!ISPOINTER(a_)) {
+        __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "a_ must be pointer");
+    }
+    auto a = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), a_);
     boost::shared_ptr<JSValue> exception;
     bool out = false;
     if (!a->IsDefunct()) {
         V8_ISOLATE_CTX(a->Context(), isolate, context)
+            auto b = SharedWrap<JSValue>::Shared(a->Context(), b_);
             Local<Value> value = a->Value();
 
             TryCatch trycatch(isolate);
@@ -209,11 +215,19 @@ NATIVE(JNIJSValue,jboolean,isEqual) (PARAMS, jlong a_, jlong b_)
 
 NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jlong valueRef, jlong b)
 {
-    return boolean_func(valueRef, [b](Local<Value> a_, Local<Context> context) {
-        return boolean_func(b, [a_](Local<Value> b_, Local<Context> context_) {
-            return a_->StrictEquals(b_);
-        }, false);
-    }, false);
+    if (!ISPOINTER(valueRef)) {
+        __android_log_assert("!ISPOINTER(valueRef)", "JNIJSValue.isStrictEqual", "valueRef must be pointer");
+    }
+    bool ret = false;
+    auto a = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
+    if (a && !a->IsDefunct() && !a->Context()->IsDefunct() && !a->Group()->IsDefunct()) {
+        V8_ISOLATE_CTX(a->Context(), isolate, context)
+            auto b_ = SharedWrap<JSValue>::Shared(a->Context(), b);
+            ret = a->Value()->StrictEquals(b_->Value());
+        V8_UNLOCK()
+    }
+
+    return (jboolean) ret;
 }
 
 /* Creating values */
@@ -333,7 +347,10 @@ NATIVE(JNIJSValue,jlong,makeFromJSONString) (PARAMS, jlong ctxRef, jstring strin
 
 NATIVE(JNIJSValue,jlong,createJSONString) (PARAMS, jlong valueRef)
 {
-    auto value = SharedWrap<JSValue>::Shared(valueRef);
+    if (!ISPOINTER(valueRef)) {
+        __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "valueRef must be pointer");
+    }
+    auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     jlong out = 0;
 
     if (!value->IsDefunct()) {
@@ -364,7 +381,10 @@ NATIVE(JNIJSValue,jboolean,toBoolean) (PARAMS, jlong valueRef)
 
 NATIVE(JNIJSValue,jdouble,toNumber) (PARAMS, jlong valueRef) {
     double out = 0.0;
-    auto value = SharedWrap<JSValue>::Shared(valueRef);
+    if (!ISPOINTER(valueRef)) {
+        __android_log_assert("!ISPOINTER", "toNumber", "SharedWrap<JSValue> is not a pointer");
+    }
+    auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
 
     V8_ISOLATE_CTX(value->Context(), isolate, context)
@@ -386,7 +406,10 @@ NATIVE(JNIJSValue,jdouble,toNumber) (PARAMS, jlong valueRef) {
 
 NATIVE(JNIJSValue,jstring,toStringCopy) (PARAMS, jlong valueRef) {
     jstring out = nullptr;
-    auto value = SharedWrap<JSValue>::Shared(valueRef);
+    if (!ISPOINTER(valueRef)) {
+        __android_log_assert("!ISPOINTER", "toStringCopy", "SharedWrap<JSValue> is not a pointer");
+    }
+    auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
     const char *s = nullptr;
 
@@ -416,7 +439,10 @@ NATIVE(JNIJSValue,jstring,toStringCopy) (PARAMS, jlong valueRef) {
 
 NATIVE(JNIJSValue,jlong,toObject) (PARAMS, jlong valueRef) {
     jlong out = 0;
-    auto value = SharedWrap<JSValue>::Shared(valueRef);
+    if (!ISPOINTER(valueRef)) {
+        __android_log_assert("!ISPOINTER", "toObject", "SharedWrap<JSValue> is not a pointer");
+    }
+    auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
 
     V8_ISOLATE_CTX(value->Context(), isolate, context)
@@ -425,7 +451,7 @@ NATIVE(JNIJSValue,jlong,toObject) (PARAMS, jlong valueRef) {
 
         MaybeLocal<Object> obj = value->Value()->ToObject(context);
         if (!obj.IsEmpty()) {
-            auto v = SharedWrap<JSValue>::Shared(valueRef);
+            auto v = SharedWrap<JSValue>::Shared(value->Context(), valueRef);
             out = SharedWrap<JSValue>::New(
                     JSValue::New(v->Context(), value->Value()->ToObject()));
         } else {
@@ -438,7 +464,10 @@ NATIVE(JNIJSValue,jlong,toObject) (PARAMS, jlong valueRef) {
     return out;
 }
 
-NATIVE(JNIJSValue,void,Finalize) (PARAMS, long reference)
+NATIVE(JNIJSValue,void,Finalize) (PARAMS, jlong reference)
 {
+    if (!ISPOINTER(reference)) {
+        __android_log_assert("!ISPOINTER", "Finalize", "reference is not a pointer");
+    }
     SharedWrap<JSValue>::Dispose(reference);
 }

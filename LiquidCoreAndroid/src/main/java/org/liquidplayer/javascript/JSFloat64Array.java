@@ -41,6 +41,7 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Float64Array
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSFloat64Array extends JSTypedArray<Double> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'

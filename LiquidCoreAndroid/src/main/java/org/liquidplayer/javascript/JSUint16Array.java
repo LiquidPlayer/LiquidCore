@@ -41,6 +41,7 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Uint16Array
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSUint16Array extends JSTypedArray<Short> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'

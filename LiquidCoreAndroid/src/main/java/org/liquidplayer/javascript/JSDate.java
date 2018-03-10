@@ -43,6 +43,7 @@ import java.util.Date;
  * Convenience class for managing JavaScript date objects
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSDate extends JSObject {
     /**
      * Creates a new date object with the current date and time

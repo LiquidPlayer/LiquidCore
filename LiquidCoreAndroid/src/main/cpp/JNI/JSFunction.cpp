@@ -85,6 +85,7 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> c
             String::NewFromUtf8(isolate, "__JSValue_ptr"));
         function->SetPrivate(context, privateKey, data);
         m_wrapped = true;
+        m_reference = TOOBJPTR(this);
 
         value = Persistent<v8::Value,CopyablePersistentTraits<v8::Value>>(isolate, function);
     V8_UNLOCK()
@@ -95,6 +96,7 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> c
     m_isUndefined = false;
     m_value = value;
     m_context = ctx;
+    m_count = 0;
 }
 
 boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jlong javaContext, jstring name_)
@@ -125,7 +127,6 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     jlong objThis = 0;
     jlongArray argsArr = nullptr;
     bool isConstructCall = info.IsConstructCall();
-    jlong retval = 0;
     int argumentCount = info.Length();
     jlong args[argumentCount];
 
@@ -150,23 +151,15 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     clearException();
     if (isConstructCall) {
         env->CallVoidMethod(m_JavaThis, m_constructorMid, objThis, argsArr);
+        info.GetReturnValue().Set(info.This());
     } else {
-        retval = env->CallLongMethod(m_JavaThis, m_functionMid, objThis, argsArr);
+        jlong retval = env->CallLongMethod(m_JavaThis, m_functionMid, objThis, argsArr);
+        info.GetReturnValue().Set(
+                SharedWrap<JSValue>::Shared(ctxt, retval)->Value()
+        );
     }
 
     env->DeleteLocalRef(argsArr);
-
-    if (isConstructCall) {
-        info.GetReturnValue().Set(info.This());
-    } else {
-        if (retval) {
-            info.GetReturnValue().Set(
-                SharedWrap<JSValue>::Shared(retval)->Value()
-            );
-        } else {
-            info.GetReturnValue().SetUndefined();
-        }
-    }
 
     boost::shared_ptr<JSValue> exception = m_exception;
     if (exception) {

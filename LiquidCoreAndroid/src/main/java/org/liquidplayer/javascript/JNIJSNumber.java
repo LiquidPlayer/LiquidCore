@@ -1,8 +1,5 @@
 //
-// JNIJSFunction.java
-//
-// AndroidJSCore project
-// https://github.com/ericwlange/AndroidJSCore/
+// JNIJSNumber.java
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -35,16 +32,45 @@
 */
 package org.liquidplayer.javascript;
 
-class JNIJSFunction extends JNIJSObject  {
-    private JNIJSFunction(long ref) {
-        super(ref);
-    }
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
-    static JNIJSFunction fromRef(long valueRef)
+class JNIJSNumber extends JNIJSPrimitive {
+    JNIJSNumber(long ref)
     {
-        return new JNIJSFunction(valueRef);
+        super(ref);
+        value = Double.longBitsToDouble(ref);
+    }
+    final private double value;
+
+    @Override boolean isNumber() { return true; }
+
+    @Override protected boolean primitiveEqual(JNIJSPrimitive b)
+    {
+        return ((b instanceof JNIJSNumber) &&
+            ((JNIJSNumber) b).value == value) ||
+            ((b instanceof JNIJSBoolean) &&
+                    (((JNIJSBoolean) b).reference == ODDBALL_TRUE && toBoolean() ||
+                    ((JNIJSBoolean) b).reference == ODDBALL_FALSE && !toBoolean()));
+    }
+    @Override protected boolean primitiveStrictEqual(JNIJSPrimitive b)
+    {
+        return (b instanceof JNIJSNumber) && ((JNIJSNumber) b).value == value;
     }
 
-    static native long makeFunctionWithCallback(JSFunction thiz, long ctxRef, String name);
-    static native void setException(long funcRef, long valueRef);
+    @Override JNIJSValue createJSONString() throws JNIJSException { /* FIXME! */ return this; }
+    @Override boolean toBoolean() { return value!=0; }
+    @Override double toNumber() throws JNIJSException { return value; }
+    @Override String toStringCopy() throws JNIJSException
+    {
+        return df.format(value);
+    }
+
+    private final static DecimalFormat df = new DecimalFormat("0",
+            DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+    static {
+        df.setMaximumFractionDigits(340); //340 = DecimalFormat.DOUBLE_FRACTION_DIGITS
+    }
+
 }

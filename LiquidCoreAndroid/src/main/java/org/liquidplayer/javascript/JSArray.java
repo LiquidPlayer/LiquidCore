@@ -49,6 +49,7 @@ import java.util.Map;
  * simple integration with Java methods.
  *
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSArray<T> extends JSBaseArray<T> {
 
     /**
@@ -397,7 +398,7 @@ public class JSArray<T> extends JSBaseArray<T> {
         return property("unshift").toFunction().apply(this,elements).toNumber().intValue();
     }
 
-    /** JavaScript methods **/
+    /* JavaScript methods */
 
     /**
      * Interface containing a condition test callback function

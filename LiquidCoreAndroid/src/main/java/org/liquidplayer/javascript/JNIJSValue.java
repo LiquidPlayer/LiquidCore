@@ -40,10 +40,17 @@ class JNIJSValue extends JNIObject {
         super(ref);
     }
 
+    static final long ODDBALL_UNDEFINED = 0x2;
+    static final long ODDBALL_NULL = 0x6;
+    static final long ODDBALL_FALSE = 0xa;
+    static final long ODDBALL_TRUE = 0xe;
+
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        Finalize(reference);
+        if ((reference & 0x1) == 1) {
+            Finalize(reference);
+        }
     }
 
     @Override
@@ -73,7 +80,8 @@ class JNIJSValue extends JNIObject {
     }
     boolean isObject()
     {
-        return isObject(reference);
+        //return isObject(reference);
+        return (reference & 0x3) == 0x3;
     }
     boolean isArray()
     {
@@ -151,19 +159,23 @@ class JNIJSValue extends JNIObject {
     }
     JNIJSObject toObject() throws JNIJSException
     {
+        if (this instanceof JNIJSObject)
+            return (JNIJSObject) this;
+
         return JNIJSObject.fromRef(toObject(reference));
     }
 
     static JNIJSValue fromRef(long valueRef)
     {
-        /*
-        if (JNIJSValue.isObject(valueRef)) {
-            if (JNIJSObject.isFunction(valueRef)) {
-                return new JNIJSFunction(valueRef);
-            }
+        if ((valueRef & 0x1L) == 0) {
+            return (valueRef == ODDBALL_FALSE || valueRef == ODDBALL_TRUE) ? new JNIJSBoolean(valueRef) :
+                    (valueRef == ODDBALL_NULL) ? new JNIJSNull(valueRef) :
+                    (valueRef == ODDBALL_UNDEFINED) ? new JNIJSUndefined(valueRef) :
+                        new JNIJSNumber(valueRef);
+        }
+        if ((valueRef & 0x3) == 0x3) {
             return new JNIJSObject(valueRef);
         }
-        */
         return new JNIJSValue(valueRef);
     }
 

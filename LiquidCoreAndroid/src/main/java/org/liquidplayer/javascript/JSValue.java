@@ -42,6 +42,7 @@ import java.util.Map;
  * A JavaScript value
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSValue {
 
     protected JNIJSValue valueRef;
@@ -357,10 +358,6 @@ public class JSValue {
             context.throwJSException(new JSException(new JSValue(excp.exception, context)));
             return 0.0;
         }
-    }
-    private abstract static class foo implements Runnable {
-        String string;
-        JSValue exception;
     }
     @Override
     public String toString() {

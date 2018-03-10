@@ -41,6 +41,7 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Uint8ClampedArray
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSUint8ClampedArray extends JSTypedArray<Byte> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'

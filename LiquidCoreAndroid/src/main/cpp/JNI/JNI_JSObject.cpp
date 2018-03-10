@@ -39,7 +39,10 @@
 #include "JNI/JNIJSException.h"
 
 #define VALUE_ISOLATE(objRef,valueRef,isolate,context,value) \
-    auto valueRef = SharedWrap<JSValue>::Shared(objRef); \
+    if (!ISPOINTER(objRef)) { \
+        __android_log_assert("!ISPOINTER(##objRef)", "VALUE_ISOLATE", "##ojbRef must be pointer"); \
+    } \
+    auto valueRef = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), objRef); \
     V8_ISOLATE_CTX(valueRef->Context(),isolate,context); \
     Local<Value> value = valueRef->Value();
 
@@ -66,9 +69,12 @@ NATIVE(JNIJSFunction,jlong,makeFunctionWithCallback) (PARAMS, jobject jsfthis, j
 
 NATIVE(JNIJSFunction,void,setException) (PARAMS, jlong funcRef, jlong valueRef)
 {
-    auto func = SharedWrap<JSValue>::Shared(funcRef);
+    if (!ISPOINTER(funcRef)) {
+        __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "funcRef must be pointer");
+    }
+    auto func = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), funcRef);
     JSFunction *jsfunc = static_cast<JSFunction*>(&* func);
-    jsfunc->setException(SharedWrap<JSValue>::Shared(valueRef));
+    jsfunc->setException(SharedWrap<JSValue>::Shared(func->Context(), valueRef));
 }
 
 NATIVE(JNIJSObject,jlong,makeArray) (PARAMS, jlong context_, jlongArray args)
@@ -87,7 +93,7 @@ NATIVE(JNIJSObject,jlong,makeArray) (PARAMS, jlong context_, jlongArray args)
 
         uint32_t i;
         for (i=0; !exception && (jsize)i<len; i++) {
-            Local<Value> element = SharedWrap<JSValue>::Shared(args_[i])->Value();
+            Local<Value> element = SharedWrap<JSValue>::Shared(ctx, args_[i])->Value();
             if (array->Set(context, i, element).IsNothing()) {
                 exception = JSValue::New(ctx, trycatch.Exception());
             }
@@ -267,7 +273,7 @@ NATIVE(JNIJSObject,jlong,getPrototype) (PARAMS, jlong objRef)
 NATIVE(JNIJSObject,void,setPrototype) (PARAMS, jlong objRef, jlong valueRef)
 {
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
-        o->SetPrototype(context, SharedWrap<JSValue>::Shared(valueRef)->Value());
+        o->SetPrototype(context, SharedWrap<JSValue>::Shared(object->Context(), valueRef)->Value());
     V8_UNLOCK()
 }
 
@@ -338,11 +344,11 @@ NATIVE(JNIJSObject,void,setProperty) (PARAMS, jlong objRef, jstring propertyName
             o->DefineOwnProperty(
                 context,
                 String::NewFromUtf8(isolate, c_string),
-                SharedWrap<JSValue>::Shared(value)->Value(),
+                SharedWrap<JSValue>::Shared(object->Context(), value)->Value(),
                 static_cast<PropertyAttribute>(v8_attr))
             :
             o->Set(context, String::NewFromUtf8(isolate, c_string),
-                SharedWrap<JSValue>::Shared(value)->Value());
+                SharedWrap<JSValue>::Shared(object->Context(), value)->Value());
 
         if (defined.IsNothing()) {
             exception = JSValue::New(object->Context(), trycatch.Exception());
@@ -415,7 +421,8 @@ NATIVE(JNIJSObject,void,setPropertyAtIndex) (PARAMS, jlong objRef, jint property
         TryCatch trycatch(isolate);
 
         Maybe<bool> defined =
-            o->Set(context, (uint32_t) propertyIndex,SharedWrap<JSValue>::Shared(value)->Value());
+            o->Set(context, (uint32_t) propertyIndex,
+                   SharedWrap<JSValue>::Shared(object->Context(), value)->Value());
 
         if (defined.IsNothing()) {
             exception = JSValue::New(object->Context(), trycatch.Exception());
@@ -448,13 +455,13 @@ NATIVE(JNIJSObject,jlong,callAsFunction) (PARAMS, jlong objRef, jlong thisObject
 
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         Local<Value> this_ = thisObject ?
-            SharedWrap<JSValue>::Shared(thisObject)->Value() :
+            SharedWrap<JSValue>::Shared(object->Context(), thisObject)->Value() :
             Local<Value>::New(isolate,Null(isolate));
 
         int i;
         Local<Value> elements[len];
         for (i=0; i<len; i++) {
-            elements[i] = SharedWrap<JSValue>::Shared(args_[i])->Value();
+            elements[i] = SharedWrap<JSValue>::Shared(object->Context(), args_[i])->Value();
         }
 
         TryCatch trycatch(isolate);
@@ -502,7 +509,7 @@ NATIVE(JNIJSObject,jlong,callAsConstructor) (PARAMS, jlong objRef, jlongArray ar
         int i;
         Local<Value> elements[len];
         for (i=0; i<len; i++) {
-            elements[i] = SharedWrap<JSValue>::Shared(args_[i])->Value();
+            elements[i] = SharedWrap<JSValue>::Shared(object->Context(), args_[i])->Value();
         }
 
         TryCatch trycatch(isolate);

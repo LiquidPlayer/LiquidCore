@@ -49,6 +49,7 @@ import android.database.sqlite.SQLiteMisuseException;
 import android.database.sqlite.SQLiteOutOfMemoryException;
 import android.database.sqlite.SQLiteReadOnlyDatabaseException;
 import android.database.sqlite.SQLiteTableLockedException;
+import android.support.annotation.Keep;
 
 import static org.liquidplayer.node.SQLite3Shim.CODES.SQLITE_ERROR;
 import static org.liquidplayer.node.SQLite3Shim.CODES.SQLITE_OK;
@@ -139,7 +140,6 @@ class SQLite3Shim {
 
     private static SQLite3Shim sShim;
 
-    @SuppressWarnings("JniMissingFunction")
     private native void initNative();
 
     private SQLite3Shim() {
@@ -153,6 +153,7 @@ class SQLite3Shim {
     }
 
     @SuppressWarnings("unused")
+    @Keep
     JNIReturnObject sqlite3_open_v2(String path, int flags, String jVFS) {
         try {
             SQLite3Database db = new SQLite3Database(path, flags, jVFS);

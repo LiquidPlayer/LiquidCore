@@ -49,6 +49,7 @@ import java.util.Map;
  * @since 0.1.0
  *
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSObject extends JSValue {
 
     @Retention(RetentionPolicy.RUNTIME)

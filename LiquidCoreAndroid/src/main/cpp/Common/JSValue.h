@@ -37,6 +37,34 @@
 
 using namespace v8;
 
+/*
+ * In order to limit back-and-forth through JNI, for those primitive values that can be
+ * represented by a jlong (64-bit integer), we will pass the actual value.  We use the following
+ * encoding (2 least significant bits):
+ *
+ * xxx 00 = 62-bit double
+ * xxx 10 = oddball value
+ * xxx 01 = 4-byte aligned pointer to non-Object JSValue (63/64-bit double or String)
+ * xxx 11 = 4-byte aligned pointer to Object JSValue
+ *
+ * Oddball values (ending in 10):
+ * 0010 (0x2) = Undefined
+ * 0110 (0x6) = Null
+ * 1010 (0xa) = False
+ * 1110 (0xe) = True
+ */
+#define ODDBALL_UNDEFINED 0x2
+#define ODDBALL_NULL 0x6
+#define ODDBALL_FALSE 0xa
+#define ODDBALL_TRUE 0xe
+
+#define CANPRIMITIVE(x) ((x&3)==0)
+#define TOPTR(x) ((reinterpret_cast<long>(x)&~3)+1)
+#define TOOBJPTR(x) ((reinterpret_cast<long>(x)&~3)+3)
+#define TOJSVALUE(x) (reinterpret_cast<JSValue*>((long)x&~3))
+#define ISPOINTER(x) ((x&1)==1)
+#define ISODDBALL(x) ((x&3)==2)
+
 class JSValue : public boost::enable_shared_from_this<JSValue> {
 public:
     JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val);
@@ -85,6 +113,10 @@ public:
     {
         return m_self;
     }
+    inline jlong jniReference()
+    {
+        return m_reference;
+    }
 
     void Dispose();
 
@@ -105,10 +137,11 @@ protected:
     bool m_isUndefined;
     bool m_isNull;
     bool m_wrapped;
+    jlong m_reference;
+    boost::atomic<int> m_count;
 
 private:
-    bool m_isDefunct;
-    boost::atomic<int> m_count;
+    bool m_isDefunct = false;
     boost::atomic_shared_ptr<JSValue> m_self;
 };
 

@@ -42,6 +42,7 @@ import java.util.Iterator;
  * @since 0.1.0
  * @param <T> Parameterized type of iterator elements
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
     /**
      * Represents the object returned by 'next'

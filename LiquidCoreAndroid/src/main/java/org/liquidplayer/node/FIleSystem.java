@@ -42,14 +42,12 @@ import android.support.v4.content.ContextCompat;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
-import org.liquidplayer.javascript.JSValue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.Semaphore;
 
 /**
  * This creates a JavaScript object that is used by nodedroid_file.cc in the native code
@@ -145,14 +143,11 @@ import java.util.concurrent.Semaphore;
  *
  * Everything else will result in a ENOACES (access denied) error
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 class FileSystem extends JSObject {
 
     private class JSBuilder {
         private StringBuilder js = new StringBuilder();
-
-        private void add(String s) {
-            js.append(s);
-        }
 
         private void realDir(final String android) {
             js.append("(function(){try {return fs.realpathSync('");

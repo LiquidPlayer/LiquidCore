@@ -47,8 +47,13 @@ public:
     }
     inline static boost::shared_ptr<T> Shared(jlong thiz)
     {
+        static_assert(!std::is_same<T, JSValue>::value, "SharedWrap<JSValue> requires a JSContext");
         if (!thiz) return boost::shared_ptr<T>();
         return reinterpret_cast<T*>(thiz)->javaReference();
+    }
+    inline static boost::shared_ptr<T> Shared(boost::shared_ptr<JSContext> context, jlong thiz)
+    {
+        return Shared(thiz);
     }
     inline static void Dispose(jlong reference)
     {
@@ -62,5 +67,60 @@ public:
         }
     }
 };
+
+
+template<>
+inline jlong SharedWrap<JSValue>::New(boost::shared_ptr<JSValue> shared)
+{
+    if (!shared) return 0L;
+    if (ISPOINTER(shared->jniReference())) {
+        shared->retainJavaReference();
+    }
+
+    return shared->jniReference();
+}
+template<>
+inline boost::shared_ptr<JSValue> SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext> context,
+                                                              jlong thiz)
+{
+    if (ISPOINTER(thiz)) {
+        JSValue *ptr = TOJSVALUE(thiz);
+        return ptr->javaReference();
+    }
+
+    Isolate::Scope isolate_scope_(Isolate::GetCurrent());
+    HandleScope handle_scope_(Isolate::GetCurrent());
+
+    Local<Value> value;
+
+    if (ISODDBALL(thiz)) {
+        switch (thiz) {
+            case ODDBALL_FALSE:     value = False(Isolate::GetCurrent()); break;
+            case ODDBALL_TRUE:      value = True (Isolate::GetCurrent()); break;
+            case ODDBALL_UNDEFINED: value = Undefined(Isolate::GetCurrent()); break;
+            case ODDBALL_NULL:      value = Null(Isolate::GetCurrent());; break;
+            default: break;
+        }
+    } else {
+        double dval = * (double *) &thiz;
+        value = Number::New(Isolate::GetCurrent(), dval);
+    }
+
+    return JSValue::New(context, value);
+}
+template<>
+inline void SharedWrap<JSValue>::Dispose(jlong reference)
+{
+    if (ISPOINTER(reference)) {
+        auto shared = TOJSVALUE(reference)->javaReference();
+        if (shared) {
+            if (shared->Group()->Loop() != nullptr && !shared->IsDefunct()) {
+                shared->Group()->MarkZombie(shared);
+            }
+            shared->releaseJavaReference();
+            shared.reset();
+        }
+    }
+}
 
 #endif //LIQUIDCORE_SHAREDWRAP_H

@@ -45,6 +45,7 @@ import java.util.concurrent.Semaphore;
 /**
  * Wraps a JavaScriptCore context
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSContext extends JSObject {
 
     static {

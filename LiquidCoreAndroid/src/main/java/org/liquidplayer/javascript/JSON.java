@@ -39,6 +39,7 @@ package org.liquidplayer.javascript;
  * A convenience class for creating JavaScript values from JSON
  * @since 0.1.0
  */
+@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSON extends JSValue {
     private JSON(JSContext ctx, final String str) {
         context = ctx;

@@ -1,5 +1,5 @@
 //
-// JNI_Process.cpp
+// JNIJSBoolean.java
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -30,42 +30,27 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package org.liquidplayer.javascript;
 
-#include "JNI/JNI.h"
-#include "NodeInstance.h"
+class JNIJSBoolean extends JNIJSPrimitive {
+    JNIJSBoolean(long ref) { super(ref); }
 
-#undef NATIVE
-#define NATIVE(package,rt,f) extern "C" JNIEXPORT \
-    rt JNICALL Java_org_liquidplayer_node_##package##_##f
-#undef PARAMS
-#define PARAMS JNIEnv* env, jobject thiz
+    @Override boolean isBoolean() { return true; }
 
-NATIVE(Process,jlong,start) (PARAMS)
-{
-    NodeInstance *instance = new NodeInstance(env, thiz);
-    return reinterpret_cast<jlong>(instance);
-}
-
-NATIVE(Process,void,dispose) (PARAMS, jlong ref)
-{
-    delete reinterpret_cast<NodeInstance*>(ref);
-}
-
-NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
-{
-    auto ctx = SharedWrap<JSContext>::Shared(contextRef);
-    if (!ISPOINTER(fsObjectRef)) {
-        __android_log_assert("!ISPOINTER", "setFileSystem", "SharedWrap<JSValue> is not a pointer");
+    @Override protected boolean primitiveEqual(JNIJSPrimitive b)
+    {
+        return (b instanceof JNIJSNumber) ? b.primitiveEqual(this) :
+                (b instanceof JNIJSBoolean) && ((JNIJSBoolean) b).reference == reference;
     }
-    auto fs = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(),fsObjectRef);
-    V8_ISOLATE_CTX(ctx,isolate,context)
+    @Override protected boolean primitiveStrictEqual(JNIJSPrimitive b) {
+        return (b instanceof JNIJSBoolean) && ((JNIJSBoolean) b).reference == reference;
+    }
 
-        Local<Object> globalObj = context->Global();
-        Local<Object> fsObj = fs->Value()->ToObject(context).ToLocalChecked();
-
-        Local<Private> privateKey = v8::Private::ForApi(isolate,
-                                                        String::NewFromUtf8(isolate, "__fs"));
-        globalObj->SetPrivate(context, privateKey, fsObj);
-
-    V8_UNLOCK();
+    @Override JNIJSValue createJSONString() throws JNIJSException { /* FIXME! */ return this; }
+    @Override boolean toBoolean() { return reference==ODDBALL_TRUE; }
+    @Override double toNumber() throws JNIJSException { return (reference==ODDBALL_TRUE) ? 1 : 0; }
+    @Override String toStringCopy() throws JNIJSException
+    {
+        return (reference==ODDBALL_TRUE) ? "true" : "false";
+    }
 }

@@ -574,7 +574,8 @@ public class JSArrayTest {
                 .map(new JSArray.MapCallback<Map>() {
                     @Override
                     public JSValue callback(Map map, int i, JSArray<Map> jsArray) {
-                        return new JSValue(context,map.get("quantity"));
+                        JSValue val = new JSValue(context,map.get("quantity"));
+                        return val;
                     }
                 });
         assertEquals(new JSArray<>(context,inventoryMap,Integer.class),Arrays.asList(2,0,5));
