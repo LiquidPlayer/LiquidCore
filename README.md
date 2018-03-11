@@ -9,13 +9,13 @@ LiquidCore is currently only available on Android, but will be ported to iOS.
 
 Version
 -------
-[0.4.5](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.4.5) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.4.5)
+[0.4.6](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.4.6) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.4.6)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.4.4](https://liquidplayer.github.io/LiquidCoreAndroid/0.4.4/index.html)
+[Version 0.4.6](https://liquidplayer.github.io/LiquidCoreAndroid/0.4.6/index.html)
 
 # Table of Contents
 
@@ -268,7 +268,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.4.5'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.4.6'
 }
 
 ```
