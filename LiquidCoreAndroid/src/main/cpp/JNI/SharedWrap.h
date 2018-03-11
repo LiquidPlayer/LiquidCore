@@ -83,30 +83,7 @@ template<>
 inline boost::shared_ptr<JSValue> SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext> context,
                                                               jlong thiz)
 {
-    if (ISPOINTER(thiz)) {
-        JSValue *ptr = TOJSVALUE(thiz);
-        return ptr->javaReference();
-    }
-
-    Isolate::Scope isolate_scope_(Isolate::GetCurrent());
-    HandleScope handle_scope_(Isolate::GetCurrent());
-
-    Local<Value> value;
-
-    if (ISODDBALL(thiz)) {
-        switch (thiz) {
-            case ODDBALL_FALSE:     value = False(Isolate::GetCurrent()); break;
-            case ODDBALL_TRUE:      value = True (Isolate::GetCurrent()); break;
-            case ODDBALL_UNDEFINED: value = Undefined(Isolate::GetCurrent()); break;
-            case ODDBALL_NULL:      value = Null(Isolate::GetCurrent());; break;
-            default: break;
-        }
-    } else {
-        double dval = * (double *) &thiz;
-        value = Number::New(Isolate::GetCurrent(), dval);
-    }
-
-    return JSValue::New(context, value);
+    return JSValue::New(context, thiz);
 }
 template<>
 inline void SharedWrap<JSValue>::Dispose(jlong reference)

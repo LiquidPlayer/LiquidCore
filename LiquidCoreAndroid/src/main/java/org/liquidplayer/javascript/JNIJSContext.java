@@ -70,22 +70,26 @@ class JNIJSContext extends JNIObject {
 
     JNIJSValue makeUndefined()
     {
-        return JNIJSValue.fromRef(JNIJSValue.makeUndefined(reference));
+        return JNIJSValue.fromRef(JNIJSValue.ODDBALL_UNDEFINED);
     }
 
     JNIJSValue makeNull()
     {
-        return JNIJSValue.fromRef(JNIJSValue.makeNull(reference));
+        return JNIJSValue.fromRef(JNIJSValue.ODDBALL_NULL);
     }
 
     JNIJSValue makeBoolean(boolean bool)
     {
-        return JNIJSValue.fromRef(JNIJSValue.makeBoolean(reference, bool));
+        return JNIJSValue.fromRef(bool ? JNIJSValue.ODDBALL_TRUE : JNIJSValue.ODDBALL_FALSE);
     }
 
     JNIJSValue makeNumber(double number)
     {
-        return JNIJSValue.fromRef(JNIJSValue.makeNumber(reference, number));
+        long ref = Double.doubleToLongBits(number);
+        if (!JNIJSValue.isReferencePrimitiveNumber(ref)) {
+            ref = JNIJSValue.makeNumber(reference, number);
+        }
+        return JNIJSValue.fromRef(ref);
     }
 
     JNIJSValue makeString(String string)

@@ -52,6 +52,8 @@ using namespace v8;
  * 0110 (0x6) = Null
  * 1010 (0xa) = False
  * 1110 (0xe) = True
+ *
+ * See src/main/java/org/liquidplayer/javascript/JNIJSValue.java for Java mirror
  */
 #define ODDBALL_UNDEFINED 0x2
 #define ODDBALL_NULL 0x6
@@ -130,6 +132,7 @@ public:
     }
 
     static boost::shared_ptr<JSValue> New(boost::shared_ptr<JSContext> context, Local<v8::Value> val);
+    static boost::shared_ptr<JSValue> New(boost::shared_ptr<JSContext> context, jlong thiz);
 
 protected:
     Persistent<v8::Value, CopyablePersistentTraits<v8::Value>> m_value;

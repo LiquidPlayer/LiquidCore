@@ -85,6 +85,34 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
     return value;
 }
 
+boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, jlong thiz)
+{
+    if (ISPOINTER(thiz)) {
+        JSValue *ptr = TOJSVALUE(thiz);
+        return ptr->javaReference();
+    }
+
+    Isolate::Scope isolate_scope_(Isolate::GetCurrent());
+    HandleScope handle_scope_(Isolate::GetCurrent());
+
+    Local<v8::Value> value;
+
+    if (ISODDBALL(thiz)) {
+        switch (thiz) {
+            case ODDBALL_FALSE:     value = False(Isolate::GetCurrent()); break;
+            case ODDBALL_TRUE:      value = True (Isolate::GetCurrent()); break;
+            case ODDBALL_UNDEFINED: value = Undefined(Isolate::GetCurrent()); break;
+            case ODDBALL_NULL:      value = Null(Isolate::GetCurrent());; break;
+            default: break;
+        }
+    } else {
+        double dval = * (double *) &thiz;
+        value = Number::New(Isolate::GetCurrent(), dval);
+    }
+
+    return New(context, value);
+}
+
 JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val)
 {
     if (val->IsUndefined()) {

@@ -490,8 +490,8 @@ public class JSFunction extends JSObject {
                     args[i] = new JSValue(ref,context);
                 }
             }
-            // FIXME: Don't do the constant thing here
-            JNIJSObject thizRef = ((thisObjectRef&3) !=3) ? null : JNIJSObject.fromRef(thisObjectRef);
+            JNIJSObject thizRef = (!JNIJSValue.isReferenceObject(thisObjectRef)) ? null :
+                    JNIJSObject.fromRef(thisObjectRef);
             JSObject thiz = thizRef == null ? null : context.getObjectFromRef(thizRef);
             JSValue value = function(thiz,args,invokeObject);
             reference = value==null ? JNIJSValue.ODDBALL_UNDEFINED: value.valueRef().reference;

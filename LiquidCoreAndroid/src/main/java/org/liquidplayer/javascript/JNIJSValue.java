@@ -36,102 +36,63 @@
 package org.liquidplayer.javascript;
 
 class JNIJSValue extends JNIObject {
-    protected JNIJSValue(long ref) {
-        super(ref);
-    }
+    protected JNIJSValue(long ref) { super(ref); }
 
+    /*
+     * In order to limit back-and-forth through JNI, for those primitive values that can be
+     * represented by a jlong (64-bit integer), we will pass the actual value.  We use the following
+     * encoding (2 least significant bits):
+     *
+     * xxx 00 = 62-bit double
+     * xxx 10 = oddball value
+     * xxx 01 = 4-byte aligned pointer to non-Object JSValue (63/64-bit double or String)
+     * xxx 11 = 4-byte aligned pointer to Object JSValue
+     *
+     * Oddball values (ending in 10):
+     * 0010 (0x2) = Undefined
+     * 0110 (0x6) = Null
+     * 1010 (0xa) = False
+     * 1110 (0xe) = True
+     *
+     * See src/main/cpp/Common/JSValue.h for native mirror
+     */
     static final long ODDBALL_UNDEFINED = 0x2;
     static final long ODDBALL_NULL = 0x6;
     static final long ODDBALL_FALSE = 0xa;
     static final long ODDBALL_TRUE = 0xe;
+    static boolean isReferencePrimitiveNumber(long ref) { return ((ref&3)==0); }
+    private static boolean isReferenceJNI(long ref) { return ((ref&1)==1); }
+    static boolean isReferenceObject(long ref) { return ((ref&3)==3); }
 
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        if ((reference & 0x1) == 1) {
+        if (isReferenceJNI(reference)) {
             Finalize(reference);
         }
     }
 
     @Override
-    public int hashCode() {
-        return (int) reference;
-    }
+    public int hashCode() { return (int) reference; }
 
-    boolean isUndefined()
-    {
-        return isUndefined(reference);
-    }
-    boolean isNull()
-    {
-        return isNull(reference);
-    }
-    boolean isBoolean()
-    {
-        return isBoolean(reference);
-    }
-    boolean isNumber()
-    {
-        return isNumber(reference);
-    }
-    boolean isString()
-    {
-        return isString(reference);
-    }
-    boolean isObject()
-    {
-        //return isObject(reference);
-        return (reference & 0x3) == 0x3;
-    }
-    boolean isArray()
-    {
-        return isArray(reference);
-    }
-    boolean isDate()
-    {
-        return isDate(reference);
-    }
-    boolean isTypedArray()
-    {
-        return isTypedArray(reference);
-    }
-    boolean isInt8Array()
-    {
-        return isInt8Array(reference);
-    }
-    boolean isInt16Array()
-    {
-        return isInt16Array(reference);
-    }
-    boolean isInt32Array()
-    {
-        return isInt32Array(reference);
-    }
-    boolean isUint8Array()
-    {
-        return isUint8Array(reference);
-    }
-    boolean isUint8ClampedArray()
-    {
-        return isUint8ClampedArray(reference);
-    }
-    boolean isUint32Array()
-    {
-        return isUint32Array(reference);
-    }
-    boolean isUint16Array()
-    {
-        return isUint16Array(reference);
-    }
-    boolean isFloat32Array()
-    {
-        return isFloat32Array(reference);
-    }
-    boolean isFloat64Array()
-    {
-        return isFloat64Array(reference);
-    }
-
+    boolean isUndefined() { return isUndefined(reference); }
+    boolean isNull() { return isNull(reference); }
+    boolean isBoolean() { return isBoolean(reference); }
+    boolean isNumber() { return isNumber(reference); }
+    boolean isString() { return isString(reference); }
+    boolean isObject() { return isReferenceObject(reference); }
+    boolean isArray() { return isArray(reference); }
+    boolean isDate() { return isDate(reference); }
+    boolean isTypedArray() { return isTypedArray(reference); }
+    boolean isInt8Array() { return isInt8Array(reference); }
+    boolean isInt16Array() { return isInt16Array(reference); }
+    boolean isInt32Array() { return isInt32Array(reference); }
+    boolean isUint8Array() { return isUint8Array(reference); }
+    boolean isUint8ClampedArray() { return isUint8ClampedArray(reference); }
+    boolean isUint32Array() { return isUint32Array(reference); }
+    boolean isUint16Array() { return isUint16Array(reference); }
+    boolean isFloat32Array() { return isFloat32Array(reference); }
+    boolean isFloat64Array() { return isFloat64Array(reference); }
     boolean isEqual(JNIJSValue b) throws JNIJSException
     {
         return isEqual(reference, b.reference);
@@ -145,10 +106,7 @@ class JNIJSValue extends JNIObject {
     {
         return JNIJSValue.fromRef(createJSONString(reference));
     }
-    boolean toBoolean()
-    {
-        return toBoolean(reference);
-    }
+    boolean toBoolean() { return toBoolean(reference); }
     double toNumber() throws JNIJSException
     {
         return toNumber(reference);
@@ -167,13 +125,13 @@ class JNIJSValue extends JNIObject {
 
     static JNIJSValue fromRef(long valueRef)
     {
-        if ((valueRef & 0x1L) == 0) {
+        if (!isReferenceJNI(valueRef)) {
             return (valueRef == ODDBALL_FALSE || valueRef == ODDBALL_TRUE) ? new JNIJSBoolean(valueRef) :
                     (valueRef == ODDBALL_NULL) ? new JNIJSNull(valueRef) :
                     (valueRef == ODDBALL_UNDEFINED) ? new JNIJSUndefined(valueRef) :
                         new JNIJSNumber(valueRef);
         }
-        if ((valueRef & 0x3) == 0x3) {
+        if (isReferenceObject(valueRef)) {
             return new JNIJSObject(valueRef);
         }
         return new JNIJSValue(valueRef);
@@ -181,9 +139,13 @@ class JNIJSValue extends JNIObject {
 
     /* Natives */
 
+    /* Unused
     static native long makeUndefined(long ctxRef);
     static native long makeNull(long ctxRef);
     static native long makeBoolean(long ctxRef, boolean bool);
+    private static native boolean isObject(long valueRef);
+    */
+
     static native long makeNumber(long ctxRef, double number);
     static native long makeString(long ctxRef, String string);
     static native long makeFromJSONString(long ctxRef, String string);
@@ -193,7 +155,6 @@ class JNIJSValue extends JNIObject {
     private static native boolean isBoolean(long valueRef);
     private static native boolean isNumber(long valueRef);
     private static native boolean isString(long valueRef);
-    private static native boolean isObject(long valueRef);
     private static native boolean isArray(long valueRef);
     private static native boolean isDate(long valueRef);
     private static native boolean isTypedArray(long valueRef);
