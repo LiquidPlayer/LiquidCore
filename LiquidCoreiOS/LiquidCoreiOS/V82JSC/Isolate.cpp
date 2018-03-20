@@ -6,9 +6,7 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include "Isolate.h"
-#include "Utils.h"
-#include "Primitives.h"
+#include "V82JSC.h"
 
 using namespace v8;
 
@@ -58,7 +56,7 @@ Isolate* Isolate::GetCurrent()
  */
 void Isolate::SetAbortOnUncaughtExceptionCallback(AbortOnUncaughtExceptionCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -70,7 +68,7 @@ void Isolate::SetAbortOnUncaughtExceptionCallback(AbortOnUncaughtExceptionCallba
  */
 void Isolate::SetHostImportModuleDynamicallyCallback(HostImportModuleDynamicallyCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -81,7 +79,7 @@ void Isolate::SetHostImportModuleDynamicallyCallback(HostImportModuleDynamically
  */
 void Isolate::MemoryPressureNotification(MemoryPressureLevel level)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -140,7 +138,7 @@ void Isolate::Dispose()
  */
 void Isolate::DumpAndResetStats()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -152,7 +150,7 @@ void Isolate::DumpAndResetStats()
  */
 void Isolate::DiscardThreadSpecificMetadata()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -160,7 +158,7 @@ void Isolate::DiscardThreadSpecificMetadata()
  */
 void Isolate::GetHeapStatistics(HeapStatistics* heap_statistics)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -168,6 +166,7 @@ void Isolate::GetHeapStatistics(HeapStatistics* heap_statistics)
  */
 size_t Isolate::NumberOfHeapSpaces()
 {
+    throw "Not implemented";
     return 0;
 }
 
@@ -183,6 +182,7 @@ size_t Isolate::NumberOfHeapSpaces()
 bool Isolate::GetHeapSpaceStatistics(HeapSpaceStatistics* space_statistics,
                             size_t index)
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -191,6 +191,7 @@ bool Isolate::GetHeapSpaceStatistics(HeapSpaceStatistics* space_statistics,
  */
 size_t Isolate::NumberOfTrackedHeapObjectTypes()
 {
+    throw "Not implemented";
     return 0;
 }
 
@@ -206,6 +207,7 @@ size_t Isolate::NumberOfTrackedHeapObjectTypes()
 bool Isolate::GetHeapObjectStatisticsAtLastGC(HeapObjectStatistics* object_statistics,
                                      size_t type_index)
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -218,6 +220,7 @@ bool Isolate::GetHeapObjectStatisticsAtLastGC(HeapObjectStatistics* object_stati
  */
 bool Isolate::GetHeapCodeAndMetadataStatistics(HeapCodeStatistics* object_statistics)
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -236,7 +239,7 @@ bool Isolate::GetHeapCodeAndMetadataStatistics(HeapCodeStatistics* object_statis
 void Isolate::GetStackSample(const RegisterState& state, void** frames,
                     size_t frames_limit, SampleInfo* sample_info)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -245,6 +248,7 @@ void Isolate::GetStackSample(const RegisterState& state, void** frames,
  */
 size_t Isolate::NumberOfPhantomHandleResetsSinceLastCall()
 {
+    throw "Not implemented";
     return 0;
 }
 
@@ -254,13 +258,15 @@ size_t Isolate::NumberOfPhantomHandleResetsSinceLastCall()
  */
 HeapProfiler* Isolate::GetHeapProfiler()
 {
+    throw "Not implemented";
     return nullptr;
 }
 
 /** Returns true if this isolate has a current context. */
 bool Isolate::InContext()
 {
-    return false;
+    IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
+    return impl->current_context != nullptr;
 }
 
 /**
@@ -278,6 +284,7 @@ Local<Context> Isolate::GetCurrentContext()
 /** Returns the last context entered through V8's C++ API. */
 Local<Context> Isolate::GetEnteredContext()
 {
+    throw "Not implemented";
     return Local<Context>();
 }
 
@@ -289,6 +296,7 @@ Local<Context> Isolate::GetEnteredContext()
  */
 Local<Context> Isolate::GetEnteredOrMicrotaskContext()
 {
+    throw "Not implemented";
     return Local<Context>();
 }
 
@@ -298,6 +306,7 @@ Local<Context> Isolate::GetEnteredOrMicrotaskContext()
  */
 Local<Context> Isolate::GetIncumbentContext()
 {
+    throw "Not implemented";
     return Local<Context>();
 }
 
@@ -324,12 +333,12 @@ Local<Value> Isolate::ThrowException(Local<Value> exception)
 void Isolate::AddGCPrologueCallback(GCCallbackWithData callback, void* data,
                            GCType gc_type_filter)
 {
-    
+    throw "Not implemented";
 }
 void Isolate::AddGCPrologueCallback(GCCallback callback,
                            GCType gc_type_filter)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -338,11 +347,11 @@ void Isolate::AddGCPrologueCallback(GCCallback callback,
  */
 void Isolate::RemoveGCPrologueCallback(GCCallbackWithData, void* data)
 {
-    
+    throw "Not implemented";
 }
 void Isolate::RemoveGCPrologueCallback(GCCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -350,7 +359,7 @@ void Isolate::RemoveGCPrologueCallback(GCCallback callback)
  */
 void Isolate::SetEmbedderHeapTracer(EmbedderHeapTracer* tracer)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -365,12 +374,12 @@ void Isolate::SetEmbedderHeapTracer(EmbedderHeapTracer* tracer)
 void Isolate::AddGCEpilogueCallback(GCCallbackWithData callback, void* data,
                            GCType gc_type_filter)
 {
-    
+    throw "Not implemented";
 }
 void Isolate::AddGCEpilogueCallback(GCCallback callback,
                            GCType gc_type_filter)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -380,11 +389,11 @@ void Isolate::AddGCEpilogueCallback(GCCallback callback,
 void Isolate::RemoveGCEpilogueCallback(GCCallbackWithData callback,
                               void* data)
 {
-    
+    throw "Not implemented";
 }
 void Isolate::RemoveGCEpilogueCallback(GCCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -396,7 +405,7 @@ void Isolate::RemoveGCEpilogueCallback(GCCallback callback)
 void Isolate::SetGetExternallyAllocatedMemoryInBytesCallback(
                                                     GetExternallyAllocatedMemoryInBytesCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -408,7 +417,7 @@ void Isolate::SetGetExternallyAllocatedMemoryInBytesCallback(
  */
 void Isolate::TerminateExecution()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -421,6 +430,7 @@ void Isolate::TerminateExecution()
  */
 bool Isolate::IsExecutionTerminating()
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -440,7 +450,7 @@ bool Isolate::IsExecutionTerminating()
  */
 void Isolate::CancelTerminateExecution()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -453,7 +463,7 @@ void Isolate::CancelTerminateExecution()
  */
 void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -468,7 +478,7 @@ void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
  */
 void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -476,7 +486,7 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
  */
 void Isolate::SetEventLogger(LogEventCallback that)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -487,7 +497,7 @@ void Isolate::SetEventLogger(LogEventCallback that)
  */
 void Isolate::AddBeforeCallEnteredCallback(BeforeCallEnteredCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -495,7 +505,7 @@ void Isolate::AddBeforeCallEnteredCallback(BeforeCallEnteredCallback callback)
  */
 void Isolate::RemoveBeforeCallEnteredCallback(BeforeCallEnteredCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -507,7 +517,7 @@ void Isolate::RemoveBeforeCallEnteredCallback(BeforeCallEnteredCallback callback
  */
 void Isolate::AddCallCompletedCallback(CallCompletedCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -515,7 +525,7 @@ void Isolate::AddCallCompletedCallback(CallCompletedCallback callback)
  */
 void Isolate::RemoveCallCompletedCallback(CallCompletedCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -524,7 +534,7 @@ void Isolate::RemoveCallCompletedCallback(CallCompletedCallback callback)
  */
 void Isolate::SetPromiseHook(PromiseHook hook)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -533,7 +543,7 @@ void Isolate::SetPromiseHook(PromiseHook hook)
  */
 void Isolate::SetPromiseRejectCallback(PromiseRejectCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -542,7 +552,7 @@ void Isolate::SetPromiseRejectCallback(PromiseRejectCallback callback)
  */
 void Isolate::RunMicrotasks()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -550,7 +560,7 @@ void Isolate::RunMicrotasks()
  */
 void Isolate::EnqueueMicrotask(Local<Function> microtask)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -558,7 +568,7 @@ void Isolate::EnqueueMicrotask(Local<Function> microtask)
  */
 void Isolate::EnqueueMicrotask(MicrotaskCallback microtask, void* data)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -567,7 +577,7 @@ void Isolate::EnqueueMicrotask(MicrotaskCallback microtask, void* data)
  */
 void Isolate::SetMicrotasksPolicy(MicrotasksPolicy policy)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -575,6 +585,7 @@ void Isolate::SetMicrotasksPolicy(MicrotasksPolicy policy)
  */
 MicrotasksPolicy Isolate::GetMicrotasksPolicy() const
 {
+    throw "Not implemented";
     return MicrotasksPolicy();
 }
 
@@ -592,7 +603,7 @@ MicrotasksPolicy Isolate::GetMicrotasksPolicy() const
  */
 void Isolate::AddMicrotasksCompletedCallback(MicrotasksCompletedCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -600,7 +611,7 @@ void Isolate::AddMicrotasksCompletedCallback(MicrotasksCompletedCallback callbac
  */
 void Isolate::RemoveMicrotasksCompletedCallback(MicrotasksCompletedCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -608,7 +619,7 @@ void Isolate::RemoveMicrotasksCompletedCallback(MicrotasksCompletedCallback call
  */
 void Isolate::SetUseCounterCallback(UseCounterCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -617,7 +628,7 @@ void Isolate::SetUseCounterCallback(UseCounterCallback callback)
  */
 void Isolate::SetCounterFunction(CounterLookupCallback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -628,11 +639,11 @@ void Isolate::SetCounterFunction(CounterLookupCallback)
  */
 void Isolate::SetCreateHistogramFunction(CreateHistogramCallback)
 {
-    
+    throw "Not implemented";
 }
 void Isolate::SetAddHistogramSampleFunction(AddHistogramSampleCallback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -651,6 +662,7 @@ void Isolate::SetAddHistogramSampleFunction(AddHistogramSampleCallback)
  */
 bool Isolate::IdleNotificationDeadline(double deadline_in_seconds)
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -660,7 +672,7 @@ bool Isolate::IdleNotificationDeadline(double deadline_in_seconds)
  */
 void Isolate::LowMemoryNotification()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -674,6 +686,7 @@ void Isolate::LowMemoryNotification()
  */
 int Isolate::ContextDisposedNotification(bool dependant_context)
 {
+    throw "Not implemented";
     return 0;
 }
 
@@ -683,7 +696,7 @@ int Isolate::ContextDisposedNotification(bool dependant_context)
  */
 void Isolate::IsolateInForegroundNotification()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -692,7 +705,7 @@ void Isolate::IsolateInForegroundNotification()
  */
 void Isolate::IsolateInBackgroundNotification()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -704,7 +717,7 @@ void Isolate::IsolateInBackgroundNotification()
  */
 void Isolate::SetRAILMode(RAILMode rail_mode)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -713,7 +726,7 @@ void Isolate::SetRAILMode(RAILMode rail_mode)
  */
 void Isolate::IncreaseHeapLimitForDebugging()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -721,7 +734,7 @@ void Isolate::IncreaseHeapLimitForDebugging()
  */
 void Isolate::RestoreOriginalHeapLimit()
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -730,6 +743,7 @@ void Isolate::RestoreOriginalHeapLimit()
  */
 bool Isolate::IsHeapLimitIncreasedForDebugging()
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -758,7 +772,7 @@ bool Isolate::IsHeapLimitIncreasedForDebugging()
 void Isolate::SetJitCodeEventHandler(JitCodeEventOptions options,
                             JitCodeEventHandler event_handler)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -772,7 +786,7 @@ void Isolate::SetJitCodeEventHandler(JitCodeEventOptions options,
  */
 void Isolate::SetStackLimit(uintptr_t stack_limit)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -790,19 +804,19 @@ void Isolate::SetStackLimit(uintptr_t stack_limit)
  */
 void Isolate::GetCodeRange(void** start, size_t* length_in_bytes)
 {
-    
+    throw "Not implemented";
 }
 
 /** Set the callback to invoke in case of fatal errors. */
 void Isolate::SetFatalErrorHandler(FatalErrorCallback that)
 {
-    
+    throw "Not implemented";
 }
 
 /** Set the callback to invoke in case of OOM errors. */
 void Isolate::SetOOMErrorHandler(OOMErrorCallback that)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -812,7 +826,7 @@ void Isolate::SetOOMErrorHandler(OOMErrorCallback that)
 void Isolate::SetAllowCodeGenerationFromStringsCallback(
                                                FreshNewAllowCodeGenerationFromStringsCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -821,16 +835,16 @@ void Isolate::SetAllowCodeGenerationFromStringsCallback(
  */
 void Isolate::SetWasmModuleCallback(ExtensionCallback callback)
 {
-    
+    throw "Not implemented";
 }
 void Isolate::SetWasmInstanceCallback(ExtensionCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 void Isolate::SetWasmCompileStreamingCallback(ApiImplementationCallback callback)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -839,6 +853,7 @@ void Isolate::SetWasmCompileStreamingCallback(ApiImplementationCallback callback
  */
 bool Isolate::IsDead()
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -854,6 +869,7 @@ bool Isolate::IsDead()
 bool Isolate::AddMessageListener(MessageCallback that,
                         Local<Value> data)
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -872,6 +888,7 @@ bool Isolate::AddMessageListenerWithErrorLevel(MessageCallback that,
                                       int message_levels,
                                       Local<Value> data)
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -880,7 +897,7 @@ bool Isolate::AddMessageListenerWithErrorLevel(MessageCallback that,
  */
 void Isolate::RemoveMessageListeners(MessageCallback that)
 {
-    
+    throw "Not implemented";
 }
 
 /** Callback function for reporting failed access checks.*/
@@ -897,7 +914,7 @@ void Isolate::SetCaptureStackTraceForUncaughtExceptions(
                                                bool capture, int frame_limit,
                                                StackTrace::StackTraceOptions options)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -907,7 +924,7 @@ void Isolate::SetCaptureStackTraceForUncaughtExceptions(
  */
 void Isolate::VisitExternalResources(ExternalResourceVisitor* visitor)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -916,7 +933,7 @@ void Isolate::VisitExternalResources(ExternalResourceVisitor* visitor)
  */
 void Isolate::VisitHandlesWithClassIds(PersistentHandleVisitor* visitor)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -928,7 +945,7 @@ void Isolate::VisitHandlesWithClassIds(PersistentHandleVisitor* visitor)
  */
 void Isolate::VisitHandlesForPartialDependence(PersistentHandleVisitor* visitor)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -938,7 +955,7 @@ void Isolate::VisitHandlesForPartialDependence(PersistentHandleVisitor* visitor)
  */
 void Isolate::VisitWeakHandles(PersistentHandleVisitor* visitor)
 {
-    
+    throw "Not implemented";
 }
 
 /**
@@ -947,6 +964,7 @@ void Isolate::VisitWeakHandles(PersistentHandleVisitor* visitor)
  */
 bool Isolate::IsInUse()
 {
+    throw "Not implemented";
     return false;
 }
 
@@ -957,39 +975,39 @@ bool Isolate::IsInUse()
  */
 void Isolate::SetAllowAtomicsWait(bool allow)
 {
-    
+    throw "Not implemented";
 }
 
 void Isolate::ReportExternalAllocationLimitReached()
 {
-    
+    throw "Not implemented";
 }
 
 Isolate::DisallowJavascriptExecutionScope::DisallowJavascriptExecutionScope(Isolate* isolate, OnFailure on_failure)
 {
-    
+    throw "Not implemented";
 }
 Isolate::DisallowJavascriptExecutionScope::~DisallowJavascriptExecutionScope()
 {
-    
+    throw "Not implemented";
 }
 
 Isolate::AllowJavascriptExecutionScope::AllowJavascriptExecutionScope(Isolate* isolate)
 {
-    
+    throw "Not implemented";
 }
 Isolate::AllowJavascriptExecutionScope::~AllowJavascriptExecutionScope()
 {
-    
+    throw "Not implemented";
 }
 
 Isolate::SuppressMicrotaskExecutionScope::SuppressMicrotaskExecutionScope(Isolate* isolate) : isolate_(nullptr)
 {
-    
+    throw "Not implemented";
 }
 Isolate::SuppressMicrotaskExecutionScope::~SuppressMicrotaskExecutionScope()
 {
-    
+    throw "Not implemented";
 }
 
 /*

@@ -6,35 +6,8 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include <climits>
-#include <csignal>
-#include <map>
-#include <memory>
-#include <string>
+#include "V82JSC.h"
 
-#include "test/cctest/test-api.h"
-
-#if V8_OS_POSIX
-#include <unistd.h>  // NOLINT
-#endif
-
-#include "include/v8-util.h"
-#include "src/api.h"
-#include "src/arguments.h"
-#include "src/base/platform/platform.h"
-#include "src/code-stubs.h"
-#include "src/compilation-cache.h"
-#include "src/debug/debug.h"
-#include "src/execution.h"
-#include "src/futex-emulation.h"
-#include "src/heap/incremental-marking.h"
-#include "src/lookup.h"
-#include "src/objects-inl.h"
-#include "src/parsing/preparse-data.h"
-#include "src/profiler/cpu-profiler.h"
-#include "src/unicode-inl.h"
-#include "src/utils.h"
-#include "src/vm-state.h"
 #include "test/cctest/heap/heap-tester.h"
 #include "test/cctest/heap/heap-utils.h"
 #include "test/cctest/profiler-extension.h"
@@ -107,7 +80,9 @@ bool internal::String::MakeExternal(v8::String::ExternalStringResource* resource
 
 internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, internal::Handle<internal::String> string)
 {
-    return Handle<internal::String>();
+    StringImpl *impl = reinterpret_cast<StringImpl *>(reinterpret_cast<uintptr_t>(*string) & ~3);
+    impl->pMap->set_instance_type(v8::internal::INTERNALIZED_STRING_TYPE);
+    return string;
 }
 
 //
@@ -271,7 +246,6 @@ base::RandomNumberGenerator* internal::Isolate::random_number_generator()
     return nullptr;
 }
 const intptr_t internal::Isolate::is_profiling_debug_offset_ = 0;
-const intptr_t internal::Isolate::per_isolate_assert_data_debug_offset_ = 0;
 
 //
 // internal::CpuFeatures
@@ -378,7 +352,8 @@ void CompilationCache::Clear() {}
 //
 // internal::V8
 //
-Platform* internal::V8::GetCurrentPlatform() { return nullptr; }
+extern Platform* currentPlatform;
+Platform* internal::V8::GetCurrentPlatform() { return currentPlatform; }
 
 //
 // Extensions

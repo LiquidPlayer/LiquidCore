@@ -168,13 +168,16 @@ void V8::InitializeExternalStartupData(const char* natives_blob,
 {
     
 }
+
+Platform *currentPlatform = nullptr;
+
 /**
  * Sets the v8::Platform to use. This should be invoked before V8 is
  * initialized.
  */
 void V8::InitializePlatform(Platform* platform)
 {
-    
+    currentPlatform = platform;
 }
 
 /**

@@ -6,9 +6,7 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include "Context.h"
-#include "Isolate.h"
-#include "Utils.h"
+#include "V82JSC.h"
 
 using namespace v8;
 
@@ -171,7 +169,9 @@ void Context::Exit()
 /** Returns an isolate associated with a current context. */
 Isolate* Context::GetIsolate()
 {
-    return nullptr;
+    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
+    
+    return reinterpret_cast<Isolate*>(impl->isolate);
 }
 
 /**

@@ -6,8 +6,7 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include "Primitives.h"
-#include "Utils.h"
+#include "V82JSC.h"
 
 using namespace v8;
 
@@ -68,7 +67,6 @@ v8::Primitive * UndefinedImpl::New(v8::Isolate *isolate)
     undefined->pMap = &undefined->map;
     undefined->map.set_instance_type(v8::internal::ODDBALL_TYPE);
     internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(reinterpret_cast<intptr_t>(undefined) + 1);
-    
     oddball_handle->set_kind(internal::Internals::kUndefinedOddballKind);
     
     // init m_undefined?

@@ -6,11 +6,7 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include "Script.h"
-#include "Context.h"
-#include "StringImpl.h"
-#include "Value.h"
-#include "Utils.h"
+#include "V82JSC.h"
 
 using namespace v8;
 
@@ -18,10 +14,10 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
                                    ScriptOrigin* origin)
 {
     ContextImpl * ctx = static_cast<ContextImpl *>(*context);
-    StringImpl * src = static_cast<StringImpl *>(*source);
+    StringImpl * src = reinterpret_cast<StringImpl *>(*source);
     JSStringRef sourceURL = nullptr;
     int startingLineNumber = 0;
-    JSValueRef exception;
+    JSValueRef exception = nullptr;
     
     if (origin) {
         if (*origin->ResourceName()) {
