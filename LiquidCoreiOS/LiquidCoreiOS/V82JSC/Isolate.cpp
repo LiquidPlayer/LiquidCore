@@ -35,12 +35,20 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
 
     Primitive *undefined = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
     isolate->i.roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);
+    Primitive *the_hole = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
+    isolate->i.roots.the_hole_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(the_hole) & ~3) +1);
     Primitive *null = ValueImpl::NewNull(reinterpret_cast<v8::Isolate*>(isolate));
     isolate->i.roots.null_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(null) & ~3) +1);
     Primitive *yup = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), true);
     isolate->i.roots.true_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(yup) & ~3) +1);
     Primitive *nope = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), false);
     isolate->i.roots.false_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(nope) & ~3) +1);
+    
+    JSStringRef empty_string = JSStringCreateWithUTF8CString("");
+    Local<String> esv = ValueImpl::New(V82JSC::ToIsolate(isolate), empty_string);
+    ValueImpl *es = V82JSC::ToImpl<ValueImpl>(esv);
+    isolate->i.roots.empty_string = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(es) & ~3) +1);;
+    JSStringRelease(empty_string);
 
     return reinterpret_cast<v8::Isolate*>(isolate);
 }

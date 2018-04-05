@@ -420,6 +420,9 @@ struct ObjectTemplateImpl : ValueImpl
     ObjectTemplateImpl *m_parent;
     JSValueRef m_data;
     std::string m_name;
+    int m_length;
+    ObjectTemplateImpl *m_constructor_template;
+    JSObjectRef m_function;
     
     static JSValueRef callAsFunctionCallback(JSContextRef ctx,
                                              JSObjectRef function,
@@ -531,6 +534,22 @@ struct V82JSC {
             return that_->m_context;
         }
     }
+    template <class I, class T>
+    static inline I* ToImpl(v8::Local<T> v)
+    {
+        if (v.IsEmpty()) return nullptr;
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(*v);
+        if (!obj->IsSmi()) {
+            I *that_ = reinterpret_cast<I*>(reinterpret_cast<intptr_t>(obj) & ~3);
+            return that_;
+        }
+        return nullptr;
+    }
+    template <class I, class T>
+    static inline I* ToImpl(const T* thiz)
+    {
+        return ToImpl<I>(_local<T>(const_cast<T*>(thiz)).toLocal());
+    }
     template <class T>
     static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Isolate *isolate)
     {
@@ -570,6 +589,10 @@ struct V82JSC {
     static inline IsolateImpl* ToIsolateImpl(v8::Isolate *isolate)
     {
         return reinterpret_cast<IsolateImpl*>(isolate);
+    }
+    static inline v8::Isolate* ToIsolate(IsolateImpl *isolate)
+    {
+        return reinterpret_cast<v8::Isolate*>(isolate);
     }
     static inline JSObjectRef jsfunc__(const char *name_, const char *code_, ContextImpl *c, int index)
     {

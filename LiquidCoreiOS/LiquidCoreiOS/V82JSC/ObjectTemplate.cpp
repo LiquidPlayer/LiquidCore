@@ -15,7 +15,20 @@ Local<ObjectTemplate> ObjectTemplate::New(
                                  Isolate* isolate,
                                  Local<FunctionTemplate> constructor)
 {
-    return Local<ObjectTemplate>();
+    Local<FunctionTemplate> templ = FunctionTemplate::New(isolate, nullptr);
+    ObjectTemplateImpl *otempl = V82JSC::ToImpl<ObjectTemplateImpl>(templ);
+    otempl->pMap->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
+    ObjectTemplateImpl *ctor = nullptr;
+    if (!constructor.IsEmpty()) {
+        ctor = V82JSC::ToImpl<ObjectTemplateImpl>(constructor);
+    }
+    otempl->m_definition.callAsFunction = nullptr;
+    otempl->m_definition.callAsConstructor = nullptr;
+    if (ctor) {
+        otempl->m_constructor_template = ctor;
+    }
+
+    return _local<ObjectTemplate>(otempl).toLocal();
 }
 
 /** Get a template included in the snapshot by index. */
@@ -36,19 +49,49 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     ObjectTemplateWrap *wrap = new ObjectTemplateWrap();
     wrap->m_template = impl;
     wrap->m_context = ctx;
-    JSValueRef exception = nullptr;
+    LocalException exception(ctx->isolate);
 
-    JSObjectRef instance = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
+    JSObjectRef instance = 0;
+    if (impl->m_constructor_template) {
+        MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(context);
+        if (!ctor.IsEmpty()) {
+            JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
+            JSValueRef args[0];
+            instance = (JSObjectRef) JSObjectCallAsConstructor(ctx->m_context, (JSObjectRef)ctor_func, 0, args, &exception);
+        }
+    } else {
+        instance = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
+    }
+    if (!instance) {
+        return MaybeLocal<Object>();
+    }
     
+    if (impl->m_length) {
+        JSStringRef length = JSStringCreateWithUTF8CString("length");
+        JSValueRef exp = nullptr;
+        JSObjectSetProperty(ctx->m_context, instance, length, JSValueMakeNumber(ctx->m_context, impl->m_length), kJSPropertyAttributeNone, &exp);
+        assert(exp==nullptr);
+        JSStringRelease(length);
+    }
+    if (impl->m_name.length()) {
+        JSStringRef name = JSStringCreateWithUTF8CString("name");
+        JSStringRef name_ = JSStringCreateWithUTF8CString(impl->m_name.c_str());
+        JSValueRef exp = nullptr;
+        JSObjectSetProperty(ctx->m_context, instance, name, JSValueMakeString(ctx->m_context, name_), kJSPropertyAttributeDontEnum, &exp);
+        JSStringRelease(name);
+        JSStringRelease(name_);
+        assert(exp==nullptr);
+    }
+
     if (impl->m_parent) {
         MaybeLocal<Object> proto = reinterpret_cast<ObjectTemplate*>(impl->m_parent)->NewInstance(context);
         if (!proto.IsEmpty()) {
             JSObjectSetPrototype(ctx->m_context, instance, V82JSC::ToJSValueRef<Object>(proto.ToLocalChecked(), context));
-            
             JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
-            JSObjectSetProperty(ctx->m_context, instance, sprototype, V82JSC::ToJSValueRef<Object>(proto.ToLocalChecked(), context), kJSPropertyAttributeNone, &exception);
+            JSValueRef exp = nullptr;
+            JSObjectSetProperty(ctx->m_context, instance, sprototype, V82JSC::ToJSValueRef<Object>(proto.ToLocalChecked(), context), kJSPropertyAttributeNone, &exp);
             JSStringRelease(sprototype);
-            assert(exception==nullptr);
+            assert(exp==nullptr);
         }
     }
     
@@ -59,14 +102,17 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         int t = I::GetInstanceType(obj);
         JSValueRef v = i->second->m_value;
         if (t == v8::internal::FUNCTION_TEMPLATE_INFO_TYPE) {
+            MaybeLocal<Function> o = reinterpret_cast<FunctionTemplate*>(i->second)->GetFunction(context);
+            if (!o.IsEmpty()) {
+                v = V82JSC::ToJSValueRef<Function>(o.ToLocalChecked(), context);
+            }
+        } else if (t == v8::internal::OBJECT_TEMPLATE_INFO_TYPE) {
             MaybeLocal<Object> o = reinterpret_cast<ObjectTemplate*>(i->second)->NewInstance(context);
             if (!o.IsEmpty()) {
-                v = reinterpret_cast<ValueImpl*>(*o.ToLocalChecked())->m_value;
+                v = V82JSC::ToJSValueRef<Object>(o.ToLocalChecked(), context);
             }
         }
-        JSValueRef exception = nullptr;
         JSObjectSetProperty(ctx->m_context, instance, i->first, v, kJSPropertyAttributeNone, &exception);
-        assert(exception==nullptr);
     }
     
     JSStringRef getset = JSStringCreateWithUTF8CString(
@@ -81,16 +127,17 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         JSStringCreateWithUTF8CString("__getter__"),
         JSStringCreateWithUTF8CString("__setter__"),
     };
+    JSValueRef exp = nullptr;
     JSObjectRef getsetF = JSObjectMakeFunction(ctx->m_context,
                                                name,
                                                sizeof paramNames / sizeof (JSStringRef),
                                                paramNames,
                                                getset, 0, 0, &exception);
-    assert(exception==nullptr);
+    assert(exp==nullptr);
     
     for (auto i=impl->m_property_accessors.begin(); i!=impl->m_property_accessors.end(); ++i) {
-        Local<ObjectTemplate> getter = _local<ObjectTemplate>(i->second.m_getter).toLocal();
-        Local<ObjectTemplate> setter = _local<ObjectTemplate>(i->second.m_setter).toLocal();
+        Local<FunctionTemplate> getter = _local<FunctionTemplate>(i->second.m_getter).toLocal();
+        Local<FunctionTemplate> setter = _local<FunctionTemplate>(i->second.m_setter).toLocal();
         if (getter.IsEmpty() && setter.IsEmpty()) continue;
         
         JSValueRef params[] = {
@@ -100,18 +147,18 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
             0
         };
         if (!getter.IsEmpty()) {
-            params[2] = V82JSC::ToJSValueRef<Object>(getter->NewInstance(context).ToLocalChecked(), context);
+            params[2] = V82JSC::ToJSValueRef<Function>(getter->GetFunction(context).ToLocalChecked(), context);
         }
         if (!setter.IsEmpty()) {
-            params[3] = V82JSC::ToJSValueRef<Object>(setter->NewInstance(context).ToLocalChecked(), context);
+            params[3] = V82JSC::ToJSValueRef<Function>(setter->GetFunction(context).ToLocalChecked(), context);
         }
         JSObjectCallAsFunction(ctx->m_context,
                                getsetF,
                                0,
                                sizeof params / sizeof (JSValueRef),
                                params,
-                               &exception);
-        assert(exception==nullptr);
+                               &exp);
+        assert(exp==nullptr);
     }
 
     for (auto i=impl->m_obj_accessors.begin(); i!=impl->m_obj_accessors.end(); ++i) {
@@ -152,8 +199,8 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
                                0,
                                sizeof params / sizeof (JSValueRef),
                                params,
-                               &exception);
-        assert(exception==nullptr);
+                               &exp);
+        assert(exp==nullptr);
     }
 
     JSStringRelease(getset);
@@ -183,7 +230,7 @@ JSValueRef ObjectTemplateImpl::objectGetterCallback(JSContextRef ctx,
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
         O(wrap->m_context->isolate),                         // kIsolateIndex = 2;
         O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 3;
-        nullptr /*written by callee*/,                       // kReturnValueIndex = 4;
+        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 4;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
     };

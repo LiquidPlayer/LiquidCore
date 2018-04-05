@@ -43,7 +43,12 @@ JSObjectRef ObjectTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     ObjectTemplateWrap *wrap = reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate(constructor));
     Isolate *isolate = reinterpret_cast<Isolate*>(wrap->m_context->isolate);
     
-    Local<ObjectTemplate> ot = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template)).toLocal();
+    Local<ObjectTemplate> ot;
+    if (wrap->m_template->m_constructor_template) {
+        ot = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template->m_constructor_template)).toLocal();
+    } else {
+        ot = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template)).toLocal();
+    }
     Local<Context> context = _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal();
     Local<Object> thiz;
     {
@@ -57,8 +62,13 @@ JSObjectRef ObjectTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         }
         thiz = thiz_.ToLocalChecked();
     }
-    
+
     JSObjectRef thisObject = (JSObjectRef) V82JSC::ToJSValueRef<Object>(thiz, isolate);
+    JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
+    JSValueRef excp = nullptr;
+    JSObjectSetProperty(ctx, thisObject, ctor, constructor, kJSPropertyAttributeDontEnum, &excp);
+    assert(excp==nullptr);
+    
     // FIXME: Whatever needs to be done to make instanceof work, signature, etc.
     
     /*
@@ -95,7 +105,7 @@ JSObjectRef ObjectTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
         O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
         O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
-        nullptr /*written by callee*/,                       // kReturnValueIndex = 3;
+        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
@@ -115,7 +125,7 @@ JSObjectRef ObjectTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         wrap->m_template->m_callback(info);
     }
     
-    if(implicit[3]) {
+    if(!implicit[3]->IsUndefined(reinterpret_cast<v8::internal::Isolate*>(isolate))) {
         Local<Value> ret = info.GetReturnValue().Get();
         return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
     }
@@ -166,7 +176,7 @@ JSValueRef ObjectTemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
         O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
         O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
-        nullptr /*written by callee*/,                       // kReturnValueIndex = 3;
+        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
@@ -210,6 +220,7 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
     templ->m_callback = callback;
     templ->m_signature = reinterpret_cast<SignatureImpl*>(*signature);
     templ->m_behavior = behavior;
+    templ->m_length = length;
     if (!*data) {
         data = Undefined(isolate);
     }
@@ -218,7 +229,9 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
     
     templ->m_definition = kJSClassDefinitionEmpty;
     templ->m_definition.callAsFunction = ObjectTemplateImpl::callAsFunctionCallback;
-    templ->m_definition.callAsConstructor = ObjectTemplateImpl::callAsConstructorCallback;
+    if (behavior == ConstructorBehavior::kAllow) {
+        templ->m_definition.callAsConstructor = ObjectTemplateImpl::callAsConstructorCallback;
+    }
     if (templ->m_signature) {
         templ->m_definition.parentClass = templ->m_signature->m_template->m_class;
     }
@@ -249,7 +262,16 @@ Local<FunctionTemplate> FunctionTemplate::NewWithCache(
 MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 {
     ObjectTemplate *templ = reinterpret_cast<ObjectTemplate*>(this);
+    ObjectTemplateImpl *impl =  V82JSC::ToImpl<ObjectTemplateImpl,FunctionTemplate>(this);
+    JSObjectRef function = impl->m_function;
+    if (function) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), function).As<Function>();
+    }
     MaybeLocal<Object> v = templ->NewInstance(context);
+    if (!v.IsEmpty()) {
+        impl->m_function = (JSObjectRef) V82JSC::ToJSValueRef<Object>(v.ToLocalChecked(), context);
+        JSValueProtect(V82JSC::ToContextRef(context), impl->m_function);
+    }
     return * reinterpret_cast<MaybeLocal<Function> *>(reinterpret_cast<void *>(&v));
 }
 
@@ -284,7 +306,8 @@ void FunctionTemplate::SetCallHandler(FunctionCallback callback,
 /** Set the predefined length property for the FunctionTemplate. */
 void FunctionTemplate::SetLength(int length)
 {
-    
+    ObjectTemplateImpl *impl = reinterpret_cast<ObjectTemplateImpl*>(this);
+    impl->m_length = length;
 }
 
 /** Get the InstanceTemplate. */
@@ -337,7 +360,7 @@ void FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> prot
  */
 void FunctionTemplate::SetClassName(Local<String> name)
 {
-    ObjectTemplateImpl *this_ = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(this));
+    ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,FunctionTemplate>(this);
     String::Utf8Value str(name);
     this_->m_name = std::string(*str);
     this_->m_definition.className = this_->m_name.c_str();

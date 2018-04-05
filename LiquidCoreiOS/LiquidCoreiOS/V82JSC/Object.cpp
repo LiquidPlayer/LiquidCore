@@ -388,6 +388,22 @@ MaybeLocal<String> Object::ObjectProtoToString(Local<Context> context)
  */
 Local<String> Object::GetConstructorName()
 {
+    ValueImpl* obj = V82JSC::ToImpl<ValueImpl,Object>(this);
+    if (obj) {
+        JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
+        JSValueRef excp = nullptr;
+        JSValueRef vctor = JSObjectGetProperty(obj->m_context->m_context, (JSObjectRef) obj->m_value, ctor, &excp);
+        JSStringRelease(ctor);
+        assert(excp==nullptr);
+        if (JSValueIsObject(obj->m_context->m_context, vctor)) {
+            JSStringRef name = JSStringCreateWithUTF8CString("name");
+            JSValueRef vname = JSObjectGetProperty(obj->m_context->m_context, (JSObjectRef) vctor, name, &excp);
+            JSStringRelease(name);
+            assert(excp==nullptr);
+            return ValueImpl::New(obj->m_context, vname)->ToString(_local<Context>(obj->m_context).toLocal()).ToLocalChecked();
+        }
+    }
+
     return Local<String>(nullptr);
 }
 

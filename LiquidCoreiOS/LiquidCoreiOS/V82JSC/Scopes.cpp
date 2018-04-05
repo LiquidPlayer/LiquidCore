@@ -49,7 +49,7 @@ EscapableHandleScope::EscapableHandleScope(Isolate* isolate)
 
 internal::Object** EscapableHandleScope::Escape(internal::Object** escape_value)
 {
-    return nullptr;
+    return HandleScope::CreateHandle((internal::Isolate*)nullptr, *escape_value);
 }
 
 SealHandleScope::~SealHandleScope()

@@ -50,12 +50,10 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     ScriptImpl * script = static_cast<ScriptImpl *>(this);
 
     LocalException exception(ctx->isolate);
+    JSValueRef value = JSEvaluateScript(ctx->m_context, script->m_script, nullptr, script->m_sourceURL,
+                                        script->m_startingLineNumber, &exception);
     if (!exception.ShouldThow()) {
-        JSValueRef value = JSEvaluateScript(ctx->m_context, script->m_script, nullptr, script->m_sourceURL,
-                                            script->m_startingLineNumber, &exception);
-        if (!exception.ShouldThow()) {
-            return MaybeLocal<Value>(ValueImpl::New(ctx, value));
-        }
+        return MaybeLocal<Value>(ValueImpl::New(ctx, value));
     }
 
     return MaybeLocal<Value>();

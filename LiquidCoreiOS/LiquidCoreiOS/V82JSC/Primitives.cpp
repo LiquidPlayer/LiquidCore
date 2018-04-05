@@ -79,10 +79,6 @@ v8::Primitive * ValueImpl::NewUndefined(v8::Isolate *isolate)
     memset(undefined, 0, sizeof(ValueImpl));
     undefined->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&undefined->map) & ~3) + 1);
     undefined->pMap->set_instance_type(v8::internal::ODDBALL_TYPE);
-/*
-    undefined->pMap = &undefined->map;
-    undefined->map.set_instance_type(v8::internal::ODDBALL_TYPE);
-*/
     internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(reinterpret_cast<intptr_t>(undefined) + 1);
     oddball_handle->set_kind(internal::Internals::kUndefinedOddballKind);
     undefined->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
@@ -96,12 +92,12 @@ v8::Primitive * ValueImpl::NewNull(v8::Isolate *isolate)
 {
     ValueImpl *null = (ValueImpl*) malloc(sizeof(ValueImpl));
     memset(null, 0, sizeof(ValueImpl));
-    null->pMap = &null->map;
-    null->map.set_instance_type(v8::internal::ODDBALL_TYPE);
+    null->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&null->map) & ~3) + 1);
+    null->pMap->set_instance_type(v8::internal::ODDBALL_TYPE);
     internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(reinterpret_cast<intptr_t>(null) + 1);
     oddball_handle->set_kind(internal::Internals::kNullOddballKind);
     null->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
-    null->m_value = JSValueMakeUndefined(null->m_context->m_context);
+    null->m_value = JSValueMakeNull(null->m_context->m_context);
     JSValueProtect(null->m_context->m_context, null->m_value);
     
     return reinterpret_cast<v8::Primitive*>(null);
@@ -111,7 +107,7 @@ v8::Primitive * ValueImpl::NewBoolean(v8::Isolate *isolate, bool value)
 {
     ValueImpl *is = (ValueImpl*) malloc(sizeof(ValueImpl));
     memset(is, 0, sizeof(ValueImpl));
-    is->pMap = &is->map;
+    is->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&is->map) & ~3) + 1);
     is->map.set_instance_type(v8::internal::JS_VALUE_TYPE);
     is->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
     is->m_value = JSValueMakeBoolean(is->m_context->m_context, value);
