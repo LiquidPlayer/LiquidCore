@@ -13,12 +13,12 @@ using namespace v8;
 MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
                                    ScriptOrigin* origin)
 {
-    ContextImpl * ctx = static_cast<ContextImpl *>(*context);
-    StringImpl * src = reinterpret_cast<StringImpl *>(*source);
+    ContextImpl * ctx = V82JSC::ToContextImpl(context);
+    ValueImpl * src = reinterpret_cast<ValueImpl *>(*source);
     JSStringRef sourceURL = nullptr;
     int startingLineNumber = 0;
-    JSValueRef exception = nullptr;
-    
+    LocalException exception(ctx->isolate);
+
     if (origin) {
         if (*origin->ResourceName()) {
             ValueImpl * v = static_cast<ValueImpl *>(*origin->ResourceName());
@@ -29,9 +29,8 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         }
     }
     
-    bool success = JSCheckScriptSyntax(ctx->m_context, src->m_string, sourceURL, startingLineNumber, &exception);
+    bool success = !exception.ShouldThow() && JSCheckScriptSyntax(ctx->m_context, src->m_string, sourceURL, startingLineNumber, &exception);
     if (!success) {
-        // FIXME: Do something with exception
         return MaybeLocal<Script>();
     } else {
         ScriptImpl * script = (ScriptImpl *) malloc(sizeof(ScriptImpl));
@@ -41,26 +40,24 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         script->m_startingLineNumber = startingLineNumber;
         script->m_script = JSStringRetain(src->m_string);
         
-        // HACK!
-        Local<Script> s = Local<Script>();
-        *(reinterpret_cast<Script **>(&s)) = script;
-        
-        return MaybeLocal<Script>(s);
+        return MaybeLocal<Script>(_local<Script>(script).toLocal());
     }
 }
 
 MaybeLocal<Value> Script::Run(Local<Context> context)
 {
-    ContextImpl * ctx = static_cast<ContextImpl *>(*context);
+    ContextImpl * ctx = V82JSC::ToContextImpl(context);
     ScriptImpl * script = static_cast<ScriptImpl *>(this);
 
-    JSValueRef exception = nullptr;
-    JSValueRef value = JSEvaluateScript(ctx->m_context, script->m_script, nullptr, script->m_sourceURL,
-                                        script->m_startingLineNumber, &exception);
-    if (!exception) {
-        return MaybeLocal<Value>(ValueImpl::New(ctx, value));
+    LocalException exception(ctx->isolate);
+    if (!exception.ShouldThow()) {
+        JSValueRef value = JSEvaluateScript(ctx->m_context, script->m_script, nullptr, script->m_sourceURL,
+                                            script->m_startingLineNumber, &exception);
+        if (!exception.ShouldThow()) {
+            return MaybeLocal<Value>(ValueImpl::New(ctx, value));
+        }
     }
-    // FIXME: Do something with the exception
+
     return MaybeLocal<Value>();
 }
 

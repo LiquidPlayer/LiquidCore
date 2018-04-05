@@ -11,23 +11,17 @@
 using namespace v8;
 
 #undef THIS
-#define THIS const_cast<StringImpl*>(reinterpret_cast<const StringImpl*>(this))
+#define THIS const_cast<ValueImpl*>(reinterpret_cast<const ValueImpl*>(this))
 
-template <class T>
-class _local {
-public:
-    T* val_;
-    Local<T> toLocal() { return *(reinterpret_cast<Local<T> *>(this)); }
-    _local(void *v) { val_ = reinterpret_cast<T*>(v); }
-};
-
-Local<String> StringImpl::New(JSStringRef str, v8::internal::InstanceType type, void *resource)
+Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal::InstanceType type, void *resource)
 {
-    StringImpl * string = (StringImpl *) malloc(sizeof(StringImpl));
+    ValueImpl * string = (ValueImpl *) malloc(sizeof(ValueImpl));
     _local<String> local(string);
-    memset(string, 0, sizeof(StringImpl));
+    memset(string, 0, sizeof(ValueImpl));
     string->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&string->map) & ~3) + 1);
     string->m_string = str;
+    string->m_value = JSValueMakeString(reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext->m_context, str);
+    string->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
     if (type == v8::internal::FIRST_NONSTRING_TYPE) {
         if (local.val_->ContainsOnlyOneByte()) {
             string->pMap->set_instance_type(v8::internal::ONE_BYTE_STRING_TYPE);
@@ -54,7 +48,7 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         str_[length-1] = 0;
         data = str_;
     }
-    return MaybeLocal<String>(StringImpl::New(JSStringCreateWithUTF8CString(data)));
+    return MaybeLocal<String>(ValueImpl::New(isolate, JSStringCreateWithUTF8CString(data)));
 }
 
 String::Utf8Value::~Utf8Value()
@@ -68,15 +62,17 @@ String::Utf8Value::~Utf8Value()
 
 String::Utf8Value::Utf8Value(Local<v8::Value> obj)
 {
-    ValueImpl *value = static_cast<ValueImpl *>(*obj);
+    
+    JSValueRef value = V82JSC::ToJSValueRef(obj, Isolate::GetCurrent());
+    JSContextRef context = V82JSC::ToContextRef(Isolate::GetCurrent());
     JSValueRef exception = nullptr;
-    auto str = JSValueToStringCopy(value->m_context->m_context, value->m_value, &exception);
+    auto str = JSValueToStringCopy(context, value, &exception);
     if (exception) {
         str_ = nullptr;
     } else {
-        length_ = (int) JSStringGetLength(str);
-        str_ = (char *) malloc(length_ + 1);
-        JSStringGetUTF8CString(str, str_, length_ + 1);
+        length_ = (int) JSStringGetMaximumUTF8CStringSize(str);
+        str_ = (char *) malloc(length_);
+        JSStringGetUTF8CString(str, str_, length_);
     }
 }
 
@@ -200,8 +196,13 @@ int String::WriteUtf8(char* buffer,
               int* nchars_ref,
               int options) const
 {
+    if (length < 0) {
+        length = (int) JSStringGetMaximumUTF8CStringSize(THIS->m_string);
+    }
     size_t chars = JSStringGetUTF8CString(THIS->m_string, buffer, length);
-    *nchars_ref = (int) chars;
+    if (nchars_ref) {
+        *nchars_ref = (int) chars;
+    }
     return (int) chars;
 }
 
@@ -251,7 +252,7 @@ MaybeLocal<String> String::NewFromOneByte(Isolate* isolate, const uint8_t* data,
     }
     uint16_t str[length];
     for (int i=0; i<length; i++) str[i] = data[i];
-    return StringImpl::New(JSStringCreateWithCharacters(str, length), v8::internal::ONE_BYTE_STRING_TYPE);
+    return ValueImpl::New(isolate, JSStringCreateWithCharacters(str, length), v8::internal::ONE_BYTE_STRING_TYPE);
 }
 
 /** Allocates a new string from UTF-16 data. Only returns an empty value when
@@ -262,7 +263,7 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
     if (length < 0) {
         for (length = 0; data[length] != 0; length++);
     }
-    return StringImpl::New(JSStringCreateWithCharacters(data, length));
+    return ValueImpl::New(isolate, JSStringCreateWithCharacters(data, length));
 }
 
 /**
@@ -271,14 +272,15 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
  */
 Local<String> String::Concat(Local<String> left, Local<String> right)
 {
-    auto left_ = const_cast<StringImpl*>(reinterpret_cast<const StringImpl*>(*left));
-    auto right_ = const_cast<StringImpl*>(reinterpret_cast<const StringImpl*>(*right));
+    auto left_ = reinterpret_cast<ValueImpl*>(*left);
+    auto right_ = reinterpret_cast<ValueImpl*>(*right);
     size_t length_left = JSStringGetLength(left_->m_string);
     size_t length_right = JSStringGetLength(right_->m_string);
     uint16_t concat[length_left + length_right];
     memcpy(concat, JSStringGetCharactersPtr(left_->m_string), sizeof(uint16_t) * length_left);
     memcpy(&concat[length_left], JSStringGetCharactersPtr(right_->m_string), sizeof(uint16_t) * length_right);
-    return StringImpl::New(JSStringCreateWithCharacters(concat,length_left+length_right));
+    Isolate *isolate = reinterpret_cast<Isolate*>(left_->m_context->isolate);
+    return ValueImpl::New(isolate, JSStringCreateWithCharacters(concat,length_left+length_right));
 }
 
 /**
@@ -294,7 +296,7 @@ MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::External
     if (resource->length() > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
-    return StringImpl::New(JSStringCreateWithCharacters(resource->data(), resource->length()),
+    return ValueImpl::New(isolate, JSStringCreateWithCharacters(resource->data(), resource->length()),
                            v8::internal::EXTERNAL_STRING_TYPE, resource);
 }
 
@@ -334,7 +336,7 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
     uint16_t str[resource->length()];
     for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
     
-    return StringImpl::New(JSStringCreateWithCharacters(str, resource->length()),
+    return ValueImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
                            v8::internal::EXTERNAL_ONE_BYTE_STRING_TYPE, resource);
 }
 

@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0717F102205EAC2E00AA75A7 /* assert-scope.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0717F100205EAC2E00AA75A7 /* assert-scope.cc */; };
-		0717F103205EAC2E00AA75A7 /* ostreams.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0717F101205EAC2E00AA75A7 /* ostreams.cc */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
 		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -49,37 +47,39 @@
 		07F804F6202DD5AD00FDFC27 /* Exception.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804F4202DD5AD00FDFC27 /* Exception.cpp */; };
 		07F804FA202DD85D00FDFC27 /* TryCatch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804F8202DD85D00FDFC27 /* TryCatch.cpp */; };
 		07F804FE202DDA4400FDFC27 /* Locker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804FC202DDA4400FDFC27 /* Locker.cpp */; };
-		07F80502202F878900FDFC27 /* time.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80501202F878900FDFC27 /* time.cc */; };
-		07F80504202F87F600FDFC27 /* logging.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80503202F87F600FDFC27 /* logging.cc */; };
-		07F80506202F888C00FDFC27 /* platform-posix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80505202F888C00FDFC27 /* platform-posix.cc */; };
-		07F8050A202F890700FDFC27 /* mutex.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80507202F890600FDFC27 /* mutex.cc */; };
-		07F8050B202F890700FDFC27 /* condition-variable.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80508202F890700FDFC27 /* condition-variable.cc */; };
-		07F8050C202F890700FDFC27 /* semaphore.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80509202F890700FDFC27 /* semaphore.cc */; };
-		07F80515202F89BA00FDFC27 /* once.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8050D202F89B900FDFC27 /* once.cc */; };
-		07F80516202F89BA00FDFC27 /* file-utils.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8050E202F89B900FDFC27 /* file-utils.cc */; };
-		07F80517202F89BA00FDFC27 /* division-by-constant.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8050F202F89B900FDFC27 /* division-by-constant.cc */; };
-		07F80518202F89BA00FDFC27 /* cpu.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80510202F89B900FDFC27 /* cpu.cc */; };
-		07F80519202F89BA00FDFC27 /* bits.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80511202F89BA00FDFC27 /* bits.cc */; };
-		07F8051A202F89BA00FDFC27 /* functional.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80512202F89BA00FDFC27 /* functional.cc */; };
-		07F8051B202F89BA00FDFC27 /* sys-info.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80513202F89BA00FDFC27 /* sys-info.cc */; };
-		07F8051C202F89BA00FDFC27 /* ieee754.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80514202F89BA00FDFC27 /* ieee754.cc */; };
-		07F8051F202F8A5900FDFC27 /* random-number-generator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8051E202F8A5900FDFC27 /* random-number-generator.cc */; };
-		07F80521202F8C9100FDFC27 /* platform-macos.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80520202F8C9100FDFC27 /* platform-macos.cc */; };
-		07F80523202F8CE000FDFC27 /* platform-posix-time.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80522202F8CDF00FDFC27 /* platform-posix-time.cc */; };
-		07F8052B202F8DEE00FDFC27 /* worker-thread.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80524202F8DED00FDFC27 /* worker-thread.cc */; };
-		07F8052C202F8DEE00FDFC27 /* trace-config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80525202F8DEE00FDFC27 /* trace-config.cc */; };
-		07F8052D202F8DEE00FDFC27 /* default-platform.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80526202F8DEE00FDFC27 /* default-platform.cc */; };
-		07F8052E202F8DEE00FDFC27 /* trace-buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80527202F8DEE00FDFC27 /* trace-buffer.cc */; };
-		07F8052F202F8DEE00FDFC27 /* tracing-controller.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80528202F8DEE00FDFC27 /* tracing-controller.cc */; };
-		07F80530202F8DEE00FDFC27 /* task-queue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80529202F8DEE00FDFC27 /* task-queue.cc */; };
-		07F80531202F8DEE00FDFC27 /* trace-writer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8052A202F8DEE00FDFC27 /* trace-writer.cc */; };
-		07F80533202F8E8E00FDFC27 /* trace-object.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80532202F8E8E00FDFC27 /* trace-object.cc */; };
-		07F80536202F8EFE00FDFC27 /* stack_trace_posix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80534202F8EFE00FDFC27 /* stack_trace_posix.cc */; };
-		07F80537202F8EFE00FDFC27 /* stack_trace.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F80535202F8EFE00FDFC27 /* stack_trace.cc */; };
 		07F8053A202F925300FDFC27 /* shim.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F80539202F925300FDFC27 /* shim.cpp */; };
 		07F8053C20304B6F00FDFC27 /* cctest.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8053B20304B6F00FDFC27 /* cctest.cc */; };
 		07F8053E203055BA00FDFC27 /* flags.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8053D203055B900FDFC27 /* flags.cc */; };
 		07F8054420395FA700FDFC27 /* internals.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F8054320395FA700FDFC27 /* internals.cpp */; };
+		07FE85792075F52F0013E1B4 /* assert-scope.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85772075F52F0013E1B4 /* assert-scope.cc */; };
+		07FE857A2075F52F0013E1B4 /* ostreams.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85782075F52F0013E1B4 /* ostreams.cc */; };
+		07FE857D2075F5970013E1B4 /* random-number-generator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE857C2075F5970013E1B4 /* random-number-generator.cc */; };
+		07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE857F2075F6730013E1B4 /* platform-macos.cc */; };
+		07FE85872075F6730013E1B4 /* condition-variable.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85802075F6730013E1B4 /* condition-variable.cc */; };
+		07FE85882075F6730013E1B4 /* semaphore.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85812075F6730013E1B4 /* semaphore.cc */; };
+		07FE85892075F6730013E1B4 /* mutex.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85822075F6730013E1B4 /* mutex.cc */; };
+		07FE858A2075F6730013E1B4 /* platform-posix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85832075F6730013E1B4 /* platform-posix.cc */; };
+		07FE858B2075F6730013E1B4 /* time.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85842075F6730013E1B4 /* time.cc */; };
+		07FE858C2075F6730013E1B4 /* platform-posix-time.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85852075F6730013E1B4 /* platform-posix-time.cc */; };
+		07FE85952075F6D40013E1B4 /* trace-buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE858D2075F6D40013E1B4 /* trace-buffer.cc */; };
+		07FE85962075F6D40013E1B4 /* trace-config.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE858E2075F6D40013E1B4 /* trace-config.cc */; };
+		07FE85972075F6D40013E1B4 /* default-platform.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE858F2075F6D40013E1B4 /* default-platform.cc */; };
+		07FE85982075F6D40013E1B4 /* trace-object.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85902075F6D40013E1B4 /* trace-object.cc */; };
+		07FE85992075F6D40013E1B4 /* trace-writer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85912075F6D40013E1B4 /* trace-writer.cc */; };
+		07FE859A2075F6D40013E1B4 /* worker-thread.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85922075F6D40013E1B4 /* worker-thread.cc */; };
+		07FE859B2075F6D40013E1B4 /* task-queue.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85932075F6D40013E1B4 /* task-queue.cc */; };
+		07FE859C2075F6D40013E1B4 /* tracing-controller.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85942075F6D40013E1B4 /* tracing-controller.cc */; };
+		07FE85A62075F7A90013E1B4 /* cpu.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE859D2075F7A80013E1B4 /* cpu.cc */; };
+		07FE85A72075F7A90013E1B4 /* ieee754.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE859E2075F7A80013E1B4 /* ieee754.cc */; };
+		07FE85A82075F7A90013E1B4 /* functional.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE859F2075F7A80013E1B4 /* functional.cc */; };
+		07FE85A92075F7A90013E1B4 /* division-by-constant.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85A02075F7A80013E1B4 /* division-by-constant.cc */; };
+		07FE85AA2075F7A90013E1B4 /* bits.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85A12075F7A90013E1B4 /* bits.cc */; };
+		07FE85AB2075F7A90013E1B4 /* logging.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85A22075F7A90013E1B4 /* logging.cc */; };
+		07FE85AC2075F7A90013E1B4 /* file-utils.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85A32075F7A90013E1B4 /* file-utils.cc */; };
+		07FE85AD2075F7A90013E1B4 /* once.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85A42075F7A90013E1B4 /* once.cc */; };
+		07FE85AE2075F7A90013E1B4 /* sys-info.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85A52075F7A90013E1B4 /* sys-info.cc */; };
+		07FE85B12075F92A0013E1B4 /* stack_trace_posix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85AF2075F92A0013E1B4 /* stack_trace_posix.cc */; };
+		07FE85B22075F92A0013E1B4 /* stack_trace.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07FE85B02075F92A0013E1B4 /* stack_trace.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,8 +94,6 @@
 
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
-		0717F100205EAC2E00AA75A7 /* assert-scope.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "assert-scope.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/assert-scope.cc"; sourceTree = "<group>"; };
-		0717F101205EAC2E00AA75A7 /* ostreams.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ostreams.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/ostreams.cc"; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -140,37 +138,39 @@
 		07F804F4202DD5AD00FDFC27 /* Exception.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exception.cpp; sourceTree = "<group>"; };
 		07F804F8202DD85D00FDFC27 /* TryCatch.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TryCatch.cpp; sourceTree = "<group>"; };
 		07F804FC202DDA4400FDFC27 /* Locker.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Locker.cpp; sourceTree = "<group>"; };
-		07F80501202F878900FDFC27 /* time.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = time.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/time.cc"; sourceTree = "<group>"; };
-		07F80503202F87F600FDFC27 /* logging.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logging.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/logging.cc"; sourceTree = "<group>"; };
-		07F80505202F888C00FDFC27 /* platform-posix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "platform-posix.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/platform-posix.cc"; sourceTree = "<group>"; };
-		07F80507202F890600FDFC27 /* mutex.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mutex.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/mutex.cc"; sourceTree = "<group>"; };
-		07F80508202F890700FDFC27 /* condition-variable.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "condition-variable.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/condition-variable.cc"; sourceTree = "<group>"; };
-		07F80509202F890700FDFC27 /* semaphore.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = semaphore.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/semaphore.cc"; sourceTree = "<group>"; };
-		07F8050D202F89B900FDFC27 /* once.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = once.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/once.cc"; sourceTree = "<group>"; };
-		07F8050E202F89B900FDFC27 /* file-utils.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "file-utils.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/file-utils.cc"; sourceTree = "<group>"; };
-		07F8050F202F89B900FDFC27 /* division-by-constant.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "division-by-constant.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/division-by-constant.cc"; sourceTree = "<group>"; };
-		07F80510202F89B900FDFC27 /* cpu.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cpu.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/cpu.cc"; sourceTree = "<group>"; };
-		07F80511202F89BA00FDFC27 /* bits.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bits.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/bits.cc"; sourceTree = "<group>"; };
-		07F80512202F89BA00FDFC27 /* functional.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = functional.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/functional.cc"; sourceTree = "<group>"; };
-		07F80513202F89BA00FDFC27 /* sys-info.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sys-info.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/sys-info.cc"; sourceTree = "<group>"; };
-		07F80514202F89BA00FDFC27 /* ieee754.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ieee754.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/ieee754.cc"; sourceTree = "<group>"; };
-		07F8051E202F8A5900FDFC27 /* random-number-generator.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "random-number-generator.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/utils/random-number-generator.cc"; sourceTree = "<group>"; };
-		07F80520202F8C9100FDFC27 /* platform-macos.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "platform-macos.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/platform-macos.cc"; sourceTree = "<group>"; };
-		07F80522202F8CDF00FDFC27 /* platform-posix-time.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "platform-posix-time.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/base/platform/platform-posix-time.cc"; sourceTree = "<group>"; };
-		07F80524202F8DED00FDFC27 /* worker-thread.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "worker-thread.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/worker-thread.cc"; sourceTree = "<group>"; };
-		07F80525202F8DEE00FDFC27 /* trace-config.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-config.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-config.cc"; sourceTree = "<group>"; };
-		07F80526202F8DEE00FDFC27 /* default-platform.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "default-platform.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/default-platform.cc"; sourceTree = "<group>"; };
-		07F80527202F8DEE00FDFC27 /* trace-buffer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-buffer.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-buffer.cc"; sourceTree = "<group>"; };
-		07F80528202F8DEE00FDFC27 /* tracing-controller.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "tracing-controller.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/tracing-controller.cc"; sourceTree = "<group>"; };
-		07F80529202F8DEE00FDFC27 /* task-queue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "task-queue.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/task-queue.cc"; sourceTree = "<group>"; };
-		07F8052A202F8DEE00FDFC27 /* trace-writer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-writer.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-writer.cc"; sourceTree = "<group>"; };
-		07F80532202F8E8E00FDFC27 /* trace-object.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-object.cc"; path = "../../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-object.cc"; sourceTree = "<group>"; };
-		07F80534202F8EFE00FDFC27 /* stack_trace_posix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stack_trace_posix.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/debug/stack_trace_posix.cc"; sourceTree = "<group>"; };
-		07F80535202F8EFE00FDFC27 /* stack_trace.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stack_trace.cc; path = "../../../../deps/node-8.9.3/deps/v8/src/base/debug/stack_trace.cc"; sourceTree = "<group>"; };
 		07F80539202F925300FDFC27 /* shim.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = shim.cpp; sourceTree = "<group>"; };
 		07F8053B20304B6F00FDFC27 /* cctest.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cctest.cc; sourceTree = "<group>"; };
 		07F8053D203055B900FDFC27 /* flags.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = flags.cc; path = "../../../deps/node-8.9.3/deps/v8/src/flags.cc"; sourceTree = "<group>"; };
 		07F8054320395FA700FDFC27 /* internals.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = internals.cpp; sourceTree = "<group>"; };
+		07FE85772075F52F0013E1B4 /* assert-scope.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "assert-scope.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/assert-scope.cc"; sourceTree = "<group>"; };
+		07FE85782075F52F0013E1B4 /* ostreams.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ostreams.cc; path = "../../../deps/node-8.9.3/deps/v8/src/ostreams.cc"; sourceTree = "<group>"; };
+		07FE857C2075F5970013E1B4 /* random-number-generator.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "random-number-generator.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/utils/random-number-generator.cc"; sourceTree = "<group>"; };
+		07FE857F2075F6730013E1B4 /* platform-macos.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "platform-macos.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/platform-macos.cc"; sourceTree = "<group>"; };
+		07FE85802075F6730013E1B4 /* condition-variable.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "condition-variable.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/condition-variable.cc"; sourceTree = "<group>"; };
+		07FE85812075F6730013E1B4 /* semaphore.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = semaphore.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/semaphore.cc"; sourceTree = "<group>"; };
+		07FE85822075F6730013E1B4 /* mutex.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mutex.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/mutex.cc"; sourceTree = "<group>"; };
+		07FE85832075F6730013E1B4 /* platform-posix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "platform-posix.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/platform-posix.cc"; sourceTree = "<group>"; };
+		07FE85842075F6730013E1B4 /* time.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = time.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/time.cc"; sourceTree = "<group>"; };
+		07FE85852075F6730013E1B4 /* platform-posix-time.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "platform-posix-time.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/platform/platform-posix-time.cc"; sourceTree = "<group>"; };
+		07FE858D2075F6D40013E1B4 /* trace-buffer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-buffer.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-buffer.cc"; sourceTree = "<group>"; };
+		07FE858E2075F6D40013E1B4 /* trace-config.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-config.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-config.cc"; sourceTree = "<group>"; };
+		07FE858F2075F6D40013E1B4 /* default-platform.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "default-platform.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/default-platform.cc"; sourceTree = "<group>"; };
+		07FE85902075F6D40013E1B4 /* trace-object.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-object.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-object.cc"; sourceTree = "<group>"; };
+		07FE85912075F6D40013E1B4 /* trace-writer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "trace-writer.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/trace-writer.cc"; sourceTree = "<group>"; };
+		07FE85922075F6D40013E1B4 /* worker-thread.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "worker-thread.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/worker-thread.cc"; sourceTree = "<group>"; };
+		07FE85932075F6D40013E1B4 /* task-queue.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "task-queue.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/task-queue.cc"; sourceTree = "<group>"; };
+		07FE85942075F6D40013E1B4 /* tracing-controller.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "tracing-controller.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/libplatform/tracing/tracing-controller.cc"; sourceTree = "<group>"; };
+		07FE859D2075F7A80013E1B4 /* cpu.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cpu.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/cpu.cc"; sourceTree = "<group>"; };
+		07FE859E2075F7A80013E1B4 /* ieee754.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ieee754.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/ieee754.cc"; sourceTree = "<group>"; };
+		07FE859F2075F7A80013E1B4 /* functional.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = functional.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/functional.cc"; sourceTree = "<group>"; };
+		07FE85A02075F7A80013E1B4 /* division-by-constant.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "division-by-constant.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/division-by-constant.cc"; sourceTree = "<group>"; };
+		07FE85A12075F7A90013E1B4 /* bits.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bits.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/bits.cc"; sourceTree = "<group>"; };
+		07FE85A22075F7A90013E1B4 /* logging.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logging.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/logging.cc"; sourceTree = "<group>"; };
+		07FE85A32075F7A90013E1B4 /* file-utils.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "file-utils.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/file-utils.cc"; sourceTree = "<group>"; };
+		07FE85A42075F7A90013E1B4 /* once.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = once.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/once.cc"; sourceTree = "<group>"; };
+		07FE85A52075F7A90013E1B4 /* sys-info.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "sys-info.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/base/sys-info.cc"; sourceTree = "<group>"; };
+		07FE85AF2075F92A0013E1B4 /* stack_trace_posix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stack_trace_posix.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/debug/stack_trace_posix.cc"; sourceTree = "<group>"; };
+		07FE85B02075F92A0013E1B4 /* stack_trace.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stack_trace.cc; path = "../../../deps/node-8.9.3/deps/v8/src/base/debug/stack_trace.cc"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -248,9 +248,9 @@
 		076F589E201E79F0004780FD /* V82JSC */ = {
 			isa = PBXGroup;
 			children = (
-				07F8054520398DCD00FDFC27 /* v8 */,
-				07F8051D202F8A3700FDFC27 /* utils */,
-				07F80500202F872400FDFC27 /* platform */,
+				07FE857E2075F5BB0013E1B4 /* platform */,
+				07FE857B2075F53C0013E1B4 /* utils */,
+				07FE85762075F4E80013E1B4 /* v8 */,
 				0717F0FF205EA81D00AA75A7 /* V82JSC.h */,
 				076F58E7201E7F5A004780FD /* ArrayBuffer.cpp */,
 				076F58D7201E7EF9004780FD /* Context.cpp */,
@@ -262,6 +262,9 @@
 				076F58EB201E7F96004780FD /* V8.cpp */,
 				076F58DB201E7EF9004780FD /* Value.cpp */,
 				07F804992027147F00FDFC27 /* Object.cpp */,
+				07F804E8202D9F4300FDFC27 /* FunctionTemplate.cpp */,
+				07F804EC202D9F5300FDFC27 /* ObjectTemplate.cpp */,
+				07F804E4202D9F3100FDFC27 /* Template.cpp */,
 				07F804A120277DC700FDFC27 /* TypedArray.cpp */,
 				07F804A52027AD6D00FDFC27 /* Function.cpp */,
 				07F804A92028380800FDFC27 /* PropertyDescriptor.cpp */,
@@ -279,9 +282,6 @@
 				07F804D8202D8D1100FDFC27 /* Proxy.cpp */,
 				07F804DC202D8DF800FDFC27 /* Date.cpp */,
 				07F804E0202D8E2900FDFC27 /* RegExp.cpp */,
-				07F804E4202D9F3100FDFC27 /* Template.cpp */,
-				07F804E8202D9F4300FDFC27 /* FunctionTemplate.cpp */,
-				07F804EC202D9F5300FDFC27 /* ObjectTemplate.cpp */,
 				07F804F0202DA7AF00FDFC27 /* Extension.cpp */,
 				07F804F4202DD5AD00FDFC27 /* Exception.cpp */,
 				07F804F8202DD85D00FDFC27 /* TryCatch.cpp */,
@@ -299,54 +299,54 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		07F80500202F872400FDFC27 /* platform */ = {
+		07FE85762075F4E80013E1B4 /* v8 */ = {
 			isa = PBXGroup;
 			children = (
-				07F80534202F8EFE00FDFC27 /* stack_trace_posix.cc */,
-				07F80535202F8EFE00FDFC27 /* stack_trace.cc */,
-				07F80532202F8E8E00FDFC27 /* trace-object.cc */,
-				07F80526202F8DEE00FDFC27 /* default-platform.cc */,
-				07F80529202F8DEE00FDFC27 /* task-queue.cc */,
-				07F80527202F8DEE00FDFC27 /* trace-buffer.cc */,
-				07F80525202F8DEE00FDFC27 /* trace-config.cc */,
-				07F8052A202F8DEE00FDFC27 /* trace-writer.cc */,
-				07F80528202F8DEE00FDFC27 /* tracing-controller.cc */,
-				07F80524202F8DED00FDFC27 /* worker-thread.cc */,
-				07F80522202F8CDF00FDFC27 /* platform-posix-time.cc */,
-				07F80520202F8C9100FDFC27 /* platform-macos.cc */,
-				07F80511202F89BA00FDFC27 /* bits.cc */,
-				07F80510202F89B900FDFC27 /* cpu.cc */,
-				07F8050F202F89B900FDFC27 /* division-by-constant.cc */,
-				07F8050E202F89B900FDFC27 /* file-utils.cc */,
-				07F80512202F89BA00FDFC27 /* functional.cc */,
-				07F80514202F89BA00FDFC27 /* ieee754.cc */,
-				07F8050D202F89B900FDFC27 /* once.cc */,
-				07F80513202F89BA00FDFC27 /* sys-info.cc */,
-				07F80508202F890700FDFC27 /* condition-variable.cc */,
-				07F80507202F890600FDFC27 /* mutex.cc */,
-				07F80509202F890700FDFC27 /* semaphore.cc */,
-				07F80505202F888C00FDFC27 /* platform-posix.cc */,
-				07F80503202F87F600FDFC27 /* logging.cc */,
-				07F80501202F878900FDFC27 /* time.cc */,
+				07FE85772075F52F0013E1B4 /* assert-scope.cc */,
+				07FE85782075F52F0013E1B4 /* ostreams.cc */,
 			);
-			path = platform;
+			name = v8;
 			sourceTree = "<group>";
 		};
-		07F8051D202F8A3700FDFC27 /* utils */ = {
+		07FE857B2075F53C0013E1B4 /* utils */ = {
 			isa = PBXGroup;
 			children = (
-				07F8051E202F8A5900FDFC27 /* random-number-generator.cc */,
+				07FE857C2075F5970013E1B4 /* random-number-generator.cc */,
 			);
-			path = utils;
+			name = utils;
 			sourceTree = "<group>";
 		};
-		07F8054520398DCD00FDFC27 /* v8 */ = {
+		07FE857E2075F5BB0013E1B4 /* platform */ = {
 			isa = PBXGroup;
 			children = (
-				0717F100205EAC2E00AA75A7 /* assert-scope.cc */,
-				0717F101205EAC2E00AA75A7 /* ostreams.cc */,
+				07FE85AF2075F92A0013E1B4 /* stack_trace_posix.cc */,
+				07FE85B02075F92A0013E1B4 /* stack_trace.cc */,
+				07FE85A12075F7A90013E1B4 /* bits.cc */,
+				07FE859D2075F7A80013E1B4 /* cpu.cc */,
+				07FE85A02075F7A80013E1B4 /* division-by-constant.cc */,
+				07FE85A32075F7A90013E1B4 /* file-utils.cc */,
+				07FE859F2075F7A80013E1B4 /* functional.cc */,
+				07FE859E2075F7A80013E1B4 /* ieee754.cc */,
+				07FE85A22075F7A90013E1B4 /* logging.cc */,
+				07FE85A42075F7A90013E1B4 /* once.cc */,
+				07FE85A52075F7A90013E1B4 /* sys-info.cc */,
+				07FE858F2075F6D40013E1B4 /* default-platform.cc */,
+				07FE85932075F6D40013E1B4 /* task-queue.cc */,
+				07FE858D2075F6D40013E1B4 /* trace-buffer.cc */,
+				07FE858E2075F6D40013E1B4 /* trace-config.cc */,
+				07FE85902075F6D40013E1B4 /* trace-object.cc */,
+				07FE85912075F6D40013E1B4 /* trace-writer.cc */,
+				07FE85942075F6D40013E1B4 /* tracing-controller.cc */,
+				07FE85922075F6D40013E1B4 /* worker-thread.cc */,
+				07FE85802075F6730013E1B4 /* condition-variable.cc */,
+				07FE85822075F6730013E1B4 /* mutex.cc */,
+				07FE857F2075F6730013E1B4 /* platform-macos.cc */,
+				07FE85852075F6730013E1B4 /* platform-posix-time.cc */,
+				07FE85832075F6730013E1B4 /* platform-posix.cc */,
+				07FE85812075F6730013E1B4 /* semaphore.cc */,
+				07FE85842075F6730013E1B4 /* time.cc */,
 			);
-			path = v8;
+			name = platform;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -458,69 +458,69 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				07F80517202F89BA00FDFC27 /* division-by-constant.cc in Sources */,
-				07F80515202F89BA00FDFC27 /* once.cc in Sources */,
+				07FE85962075F6D40013E1B4 /* trace-config.cc in Sources */,
+				07FE85B12075F92A0013E1B4 /* stack_trace_posix.cc in Sources */,
+				07FE857D2075F5970013E1B4 /* random-number-generator.cc in Sources */,
+				07FE859B2075F6D40013E1B4 /* task-queue.cc in Sources */,
 				07F804FA202DD85D00FDFC27 /* TryCatch.cpp in Sources */,
 				07F804B320298A7F00FDFC27 /* PrimitiveObjects.cpp in Sources */,
-				07F8051A202F89BA00FDFC27 /* functional.cc in Sources */,
-				0717F102205EAC2E00AA75A7 /* assert-scope.cc in Sources */,
+				07FE85792075F52F0013E1B4 /* assert-scope.cc in Sources */,
+				07FE85992075F6D40013E1B4 /* trace-writer.cc in Sources */,
 				076F58E0201E7EF9004780FD /* Scopes.cpp in Sources */,
-				07F80519202F89BA00FDFC27 /* bits.cc in Sources */,
-				07F8050B202F890700FDFC27 /* condition-variable.cc in Sources */,
-				07F80531202F8DEE00FDFC27 /* trace-writer.cc in Sources */,
 				076F58DE201E7EF9004780FD /* Context.cpp in Sources */,
 				07F804CE202D85DC00FDFC27 /* ValueSerializer.cpp in Sources */,
-				07F80521202F8C9100FDFC27 /* platform-macos.cc in Sources */,
 				07F804CA202D852500FDFC27 /* JSON.cpp in Sources */,
 				07F804E2202D8E2900FDFC27 /* RegExp.cpp in Sources */,
-				07F8051C202F89BA00FDFC27 /* ieee754.cc in Sources */,
+				07FE85A72075F7A90013E1B4 /* ieee754.cc in Sources */,
 				07F8049B2027147F00FDFC27 /* Object.cpp in Sources */,
 				076F58DF201E7EF9004780FD /* Isolate.cpp in Sources */,
-				07F80533202F8E8E00FDFC27 /* trace-object.cc in Sources */,
 				076F58E2201E7EF9004780FD /* Value.cpp in Sources */,
+				07FE85982075F6D40013E1B4 /* trace-object.cc in Sources */,
+				07FE85A82075F7A90013E1B4 /* functional.cc in Sources */,
 				07F804C2202C2EDF00FDFC27 /* Set.cpp in Sources */,
+				07FE858C2075F6730013E1B4 /* platform-posix-time.cc in Sources */,
 				07F804BE202C2D7500FDFC27 /* Map.cpp in Sources */,
 				07F804BB202B81FC00FDFC27 /* HeapStatistics.cpp in Sources */,
-				07F8050C202F890700FDFC27 /* semaphore.cc in Sources */,
+				07FE85AB2075F7A90013E1B4 /* logging.cc in Sources */,
+				07FE85AD2075F7A90013E1B4 /* once.cc in Sources */,
+				07FE859C2075F6D40013E1B4 /* tracing-controller.cc in Sources */,
 				07F804DE202D8DF800FDFC27 /* Date.cpp in Sources */,
-				07F80536202F8EFE00FDFC27 /* stack_trace_posix.cc in Sources */,
-				07F8052D202F8DEE00FDFC27 /* default-platform.cc in Sources */,
 				07F804D6202D8B8E00FDFC27 /* Promise.cpp in Sources */,
-				07F8050A202F890700FDFC27 /* mutex.cc in Sources */,
-				07F80518202F89BA00FDFC27 /* cpu.cc in Sources */,
-				07F80530202F8DEE00FDFC27 /* task-queue.cc in Sources */,
+				07FE85AE2075F7A90013E1B4 /* sys-info.cc in Sources */,
+				07FE85972075F6D40013E1B4 /* default-platform.cc in Sources */,
+				07FE85B22075F92A0013E1B4 /* stack_trace.cc in Sources */,
 				07F804DA202D8D1100FDFC27 /* Proxy.cpp in Sources */,
-				07F8052C202F8DEE00FDFC27 /* trace-config.cc in Sources */,
-				07F8052F202F8DEE00FDFC27 /* tracing-controller.cc in Sources */,
+				07FE859A2075F6D40013E1B4 /* worker-thread.cc in Sources */,
 				07F804F6202DD5AD00FDFC27 /* Exception.cpp in Sources */,
-				07F80523202F8CE000FDFC27 /* platform-posix-time.cc in Sources */,
+				07FE85AC2075F7A90013E1B4 /* file-utils.cc in Sources */,
+				07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */,
 				07F804C6202CCC3800FDFC27 /* ScriptCompiler.cpp in Sources */,
 				076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
 				07F804FE202DDA4400FDFC27 /* Locker.cpp in Sources */,
+				07FE85A62075F7A90013E1B4 /* cpu.cc in Sources */,
 				07F804A72027AD6D00FDFC27 /* Function.cpp in Sources */,
+				07FE85892075F6730013E1B4 /* mutex.cc in Sources */,
 				07F804D2202D8A8B00FDFC27 /* Array.cpp in Sources */,
-				07F80502202F878900FDFC27 /* time.cc in Sources */,
-				07F80516202F89BA00FDFC27 /* file-utils.cc in Sources */,
 				07F804EA202D9F4300FDFC27 /* FunctionTemplate.cpp in Sources */,
-				0717F103205EAC2E00AA75A7 /* ostreams.cc in Sources */,
+				07FE857A2075F52F0013E1B4 /* ostreams.cc in Sources */,
 				076F58E6201E7F2F004780FD /* ResourceConstraints.cpp in Sources */,
-				07F80537202F8EFE00FDFC27 /* stack_trace.cc in Sources */,
 				07F804A320277DC700FDFC27 /* TypedArray.cpp in Sources */,
 				07F804EE202D9F5300FDFC27 /* ObjectTemplate.cpp in Sources */,
-				07F8051F202F8A5900FDFC27 /* random-number-generator.cc in Sources */,
-				07F8052E202F8DEE00FDFC27 /* trace-buffer.cc in Sources */,
 				07F804B720298D3000FDFC27 /* Symbol.cpp in Sources */,
 				07F804F2202DA7AF00FDFC27 /* Extension.cpp in Sources */,
+				07FE85952075F6D40013E1B4 /* trace-buffer.cc in Sources */,
 				076F58EC201E7F97004780FD /* V8.cpp in Sources */,
-				07F80506202F888C00FDFC27 /* platform-posix.cc in Sources */,
-				07F8051B202F89BA00FDFC27 /* sys-info.cc in Sources */,
+				07FE85A92075F7A90013E1B4 /* division-by-constant.cc in Sources */,
+				07FE858B2075F6730013E1B4 /* time.cc in Sources */,
 				07F804AB2028380800FDFC27 /* PropertyDescriptor.cpp in Sources */,
-				07F80504202F87F600FDFC27 /* logging.cc in Sources */,
 				076F58E8201E7F5A004780FD /* ArrayBuffer.cpp in Sources */,
+				07FE85872075F6730013E1B4 /* condition-variable.cc in Sources */,
+				07FE858A2075F6730013E1B4 /* platform-posix.cc in Sources */,
+				07FE85882075F6730013E1B4 /* semaphore.cc in Sources */,
 				07F804E6202D9F3100FDFC27 /* Template.cpp in Sources */,
 				07F804AF2029863600FDFC27 /* Primitives.cpp in Sources */,
-				07F8052B202F8DEE00FDFC27 /* worker-thread.cc in Sources */,
+				07FE85AA2075F7A90013E1B4 /* bits.cc in Sources */,
 				076F58F0201E7FCD004780FD /* Script.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

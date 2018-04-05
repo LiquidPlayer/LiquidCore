@@ -18,7 +18,17 @@ using namespace v8;
 void Template::Set(Local<Name> name, Local<Data> value,
          PropertyAttribute attributes)
 {
-    
+    ObjectTemplateImpl *this_ = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(this));
+    ValueImpl *name_ = reinterpret_cast<ValueImpl*>(*name);
+    ValueImpl *value_ = reinterpret_cast<ValueImpl*>(*value);
+    // FIXME: Deal with attributes
+    for (auto i = this_->m_properties.begin(); i != this_->m_properties.end(); ++i ) {
+        if (JSStringIsEqual(i->first, name_->m_string)) {
+            i->second = value_;
+            return;
+        }
+    }
+    this_->m_properties[name_->m_string] = value_;
 }
 void Template::SetPrivate(Local<Private> name, Local<Data> value,
                 PropertyAttribute attributes)
@@ -33,7 +43,23 @@ void Template::SetAccessorProperty(
                          PropertyAttribute attribute,
                          AccessControl settings)
 {
-    
+    ObjectTemplateImpl *this_ = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(this));
+    ValueImpl *name_ = reinterpret_cast<ValueImpl*>(*name);
+    ObjectTemplateImpl *getter_ = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(*getter));
+    ObjectTemplateImpl *setter_ = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(*setter));
+    // FIXME: Deal with attributes
+    // FIXME: Deal with AccessControl
+
+    PropAccessor accessor;
+    accessor.m_getter = getter_;
+    accessor.m_setter = setter_;
+    for (auto i = this_->m_property_accessors.begin(); i != this_->m_property_accessors.end(); ++i ) {
+        if (JSStringIsEqual(i->first, name_->m_string)) {
+            i->second = accessor;
+            return;
+        }
+    }
+    this_->m_property_accessors[name_->m_string] = accessor;
 }
 
 /**
@@ -104,16 +130,3 @@ void Template::SetIntrinsicDataProperty(Local<Name> name, Intrinsic intrinsic,
 {
     
 }
-
-Local<Signature> Signature::New(Isolate* isolate,
-                                Local<FunctionTemplate> receiver)
-{
-    return Local<Signature>();
-}
-
-Local<AccessorSignature> AccessorSignature::New(Isolate* isolate,
-                                                Local<FunctionTemplate> receiver)
-{
-    return Local<AccessorSignature>();
-}
-

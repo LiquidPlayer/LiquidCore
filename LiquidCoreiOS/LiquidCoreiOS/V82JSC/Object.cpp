@@ -12,13 +12,44 @@ using namespace v8;
 
 Maybe<bool> Object::Set(Local<Context> context, Local<Value> key, Local<Value> value)
 {
-    return Nothing<bool>();
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    
+    LocalException exception(ctx->isolate);
+    JSValueRef keyv = V82JSC::ToJSValueRef(key, context);
+    JSStringRef key_ = JSValueToStringCopy(ctx->m_context, keyv, &exception);
+    JSValueRef value_ = V82JSC::ToJSValueRef(value, context);
+    
+    JSObjectSetProperty(ctx->m_context, obj, key_, value_, kJSPropertyAttributeNone, &exception);
+    JSStringRelease(key_);
+    
+    _maybe<bool> out;
+    out.has_value_ = !exception.ShouldThow();
+    out.value_ = !exception.ShouldThow();
+    
+    return out.toMaybe();
 }
 
 Maybe<bool> Object::Set(Local<Context> context, uint32_t index,
                                       Local<Value> value)
 {
-    return Nothing<bool>();
+    char ndx[50];
+    sprintf(ndx, "%d", index);
+    JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
+
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    JSValueRef value_ = V82JSC::ToJSValueRef(value, context);
+
+    JSValueRef exception = nullptr;
+    JSObjectSetProperty(ctx->m_context, obj, index_, value_, kJSPropertyAttributeNone, &exception);
+    JSStringRelease(index_);
+    
+    _maybe<bool> out;
+    out.has_value_ = true;
+    out.value_ = exception == nullptr;
+    
+    return out.toMaybe();
 }
 
 // Implements CreateDataProperty (ECMA-262, 7.3.4).
@@ -84,11 +115,39 @@ Maybe<bool> Object::DefineProperty(Local<Context> context, Local<Name> key,
 // Note also that this only works for named properties.
 MaybeLocal<Value> Object::Get(Local<Context> context, Local<Value> key)
 {
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    LocalException exception(ctx->isolate);
+    JSValueRef keyv = V82JSC::ToJSValueRef(key, context);
+    JSStringRef key_ = JSValueToStringCopy(ctx->m_context, keyv, &exception);
+
+    JSValueRef prop = JSObjectGetProperty(ctx->m_context, obj, key_, &exception);
+    JSStringRelease(key_);
+
+    if (!exception.ShouldThow()) {
+        return MaybeLocal<Value>(ValueImpl::New(ctx, prop));
+    }
+    
     return MaybeLocal<Value>();
 }
 
 MaybeLocal<Value> Object::Get(Local<Context> context, uint32_t index)
 {
+    char ndx[50];
+    sprintf(ndx, "%d", index);
+    JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
+
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    LocalException exception(ctx->isolate);
+    JSValueRef prop = JSObjectGetProperty(ctx->m_context, obj, index_, &exception);
+    JSStringRelease(index_);
+    if (!exception.ShouldThow()) {
+        return MaybeLocal<Value>(ValueImpl::New(ctx, prop));
+    }
+    
     return MaybeLocal<Value>();
 }
 
@@ -127,22 +186,69 @@ MaybeLocal<Value> Object::GetOwnPropertyDescriptor(Local<Context> context, Local
  */
 Maybe<bool> Object::Has(Local<Context> context, Local<Value> key)
 {
-    return Nothing<bool>();
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    LocalException exception(ctx->isolate);
+    JSValueRef keyv = V82JSC::ToJSValueRef(key, context);
+    JSStringRef key_ = JSValueToStringCopy(ctx->m_context, keyv, &exception);
+
+    _maybe<bool> out;
+    out.has_value_ = !exception.ShouldThow();
+    out.value_ = JSObjectHasProperty(ctx->m_context, obj, key_);
+    JSStringRelease(key_);
+    return out.toMaybe();
 }
 
 Maybe<bool> Object::Delete(Local<Context> context, Local<Value> key)
 {
-    return Nothing<bool>();
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    
+    LocalException exception(ctx->isolate);
+    JSValueRef keyv = V82JSC::ToJSValueRef(key, context);
+    JSStringRef key_ = JSValueToStringCopy(ctx->m_context, keyv, &exception);
+    
+    _maybe<bool> out;
+    if (!exception.ShouldThow()) {
+        out.value_ = JSObjectDeleteProperty(ctx->m_context, obj, key_, &exception);
+    }
+    out.has_value_ = !exception.ShouldThow();
+    JSStringRelease(key_);
+    return out.toMaybe();
 }
 
 Maybe<bool> Object::Has(Local<Context> context, uint32_t index)
 {
-    return Nothing<bool>();
+    char ndx[50];
+    sprintf(ndx, "%d", index);
+    JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
+
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    _maybe<bool> out;
+    out.has_value_ = true;
+    out.value_ = JSObjectHasProperty(ctx->m_context, obj, index_);
+    JSStringRelease(index_);
+    return out.toMaybe();
 }
 
 Maybe<bool> Object::Delete(Local<Context> context, uint32_t index)
 {
-    return Nothing<bool>();
+    char ndx[50];
+    sprintf(ndx, "%d", index);
+    JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
+    
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    _maybe<bool> out;
+    JSValueRef exception = nullptr;
+    out.value_ = JSObjectDeleteProperty(ctx->m_context, obj, index_, &exception);
+    JSStringRelease(index_);
+    out.has_value_ = exception == nullptr;
+    return out.toMaybe();
 }
 
 Maybe<bool> Object::SetAccessor(Local<Context> context,
@@ -489,7 +595,10 @@ MaybeLocal<Value> Object::CallAsConstructor(Local<Context> context,
 
 Local<Object> Object::New(Isolate* isolate)
 {
-    return Local<Object>();
+    IsolateImpl *i = reinterpret_cast<IsolateImpl*>(isolate);
+    Local<Value> o = ValueImpl::New(i->m_defaultContext, JSObjectMake(i->m_defaultContext->m_context, 0, 0));
+    _local<Object> obj(*o);
+    return obj.toLocal();
 }
 
 void* Object::SlowGetAlignedPointerFromInternalField(int index)

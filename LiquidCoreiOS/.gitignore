@@ -41,6 +41,7 @@ xcuserdata
 !xcschemes
 # Xcode 4
 *.moved-aside
+*xcuserdata
 
 ####
 # XCode 4 workspaces - more detailed

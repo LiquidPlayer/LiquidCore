@@ -17,7 +17,15 @@ using namespace v8;
  */
 TryCatch::TryCatch(Isolate* isolate)
 {
+    IsolateImpl *i = reinterpret_cast<IsolateImpl *>(isolate);
+    isolate_ = reinterpret_cast<internal::Isolate *>(isolate);
     
+    next_ = i->m_handlers;
+    i->m_handlers = this;
+    
+    exception_ = nullptr;
+    message_obj_ = nullptr;
+    js_stack_comparable_address_ = nullptr;
 }
 
 /**
@@ -25,7 +33,7 @@ TryCatch::TryCatch(Isolate* isolate)
  */
 TryCatch::~TryCatch()
 {
-    
+    reinterpret_cast<IsolateImpl*>(isolate_)->m_handlers = next_;
 }
 
 /**
@@ -33,7 +41,7 @@ TryCatch::~TryCatch()
  */
 bool TryCatch::HasCaught() const
 {
-    return false;
+    return exception_ != nullptr;
 }
 
 /**
@@ -86,6 +94,9 @@ Local<Value> TryCatch::ReThrow()
  */
 Local<Value> TryCatch::Exception() const
 {
+    if (exception_) {
+        return ValueImpl::New(reinterpret_cast<IsolateImpl*>(isolate_)->m_defaultContext, (JSValueRef)exception_);
+    }
     return Local<Value>();
 }
 
@@ -122,7 +133,9 @@ Local<v8::Message> TryCatch::Message() const
  */
 void TryCatch::Reset()
 {
-    
+    exception_ = nullptr;
+    message_obj_ = nullptr;
+    js_stack_comparable_address_ = nullptr;
 }
 
 /**

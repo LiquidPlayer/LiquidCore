@@ -80,7 +80,7 @@ bool internal::String::MakeExternal(v8::String::ExternalStringResource* resource
 
 internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, internal::Handle<internal::String> string)
 {
-    StringImpl *impl = reinterpret_cast<StringImpl *>(reinterpret_cast<uintptr_t>(*string) & ~3);
+    ValueImpl *impl = reinterpret_cast<ValueImpl *>(reinterpret_cast<uintptr_t>(*string) & ~3);
     impl->pMap->set_instance_type(v8::internal::INTERNALIZED_STRING_TYPE);
     return string;
 }
@@ -245,7 +245,6 @@ base::RandomNumberGenerator* internal::Isolate::random_number_generator()
 {
     return nullptr;
 }
-const intptr_t internal::Isolate::is_profiling_debug_offset_ = 0;
 
 //
 // internal::CpuFeatures
@@ -259,11 +258,30 @@ bool CpuFeatures::initialized_ = false;
 //
 // Utils
 //
-void PRINTF_FORMAT(1, 2) internal::PrintF(const char* format, ...) {}
-void PRINTF_FORMAT(2, 3) internal::PrintF(FILE* out, const char* format, ...) {}
+void PRINTF_FORMAT(1, 2) internal::PrintF(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+void PRINTF_FORMAT(2, 3) internal::PrintF(FILE* out, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vfprintf(out, format, args);
+    va_end(args);
+}
 // Safe formatting print. Ensures that str is always null-terminated.
 // Returns the number of chars written, or -1 if output was truncated.
-int PRINTF_FORMAT(2, 3) internal::SNPrintF(Vector<char> str, const char* format, ...) { return 0; }
+int PRINTF_FORMAT(2, 3) internal::SNPrintF(Vector<char> str, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int r = vsnprintf(str.start(), str.size(), format, args);
+    va_end(args);
+    return r;
+}
 
 //
 // internal::CpuProfiler

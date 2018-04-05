@@ -10,7 +10,11 @@
 
 using namespace v8;
 
-Isolate *current = nullptr;
+v8::Isolate *current = nullptr;
+
+#define DECLARE_FIELDS(type,name,v) \
+const intptr_t v8::internal::Isolate::name##_debug_offset_ = (reinterpret_cast<intptr_t>(&(reinterpret_cast<v8::internal::Isolate*>(16)->name##_)) - 16);
+ISOLATE_INIT_LIST(DECLARE_FIELDS);
 
 /**
  * Creates a new isolate.  Does not change the currently entered
@@ -26,11 +30,18 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     IsolateImpl * isolate = (IsolateImpl *) malloc(sizeof (IsolateImpl));
     memset(isolate, 0, sizeof(IsolateImpl));
     
-    Primitive *undefined = UndefinedImpl::New(reinterpret_cast<v8::Isolate*>(isolate));
-    isolate->roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);
-
     isolate->m_group = JSContextGroupCreate();
-    
+    isolate->m_defaultContext = reinterpret_cast<ContextImpl*>(*ContextImpl::New(reinterpret_cast<v8::Isolate*>(isolate)));
+
+    Primitive *undefined = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
+    isolate->i.roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);
+    Primitive *null = ValueImpl::NewNull(reinterpret_cast<v8::Isolate*>(isolate));
+    isolate->i.roots.null_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(null) & ~3) +1);
+    Primitive *yup = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), true);
+    isolate->i.roots.true_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(yup) & ~3) +1);
+    Primitive *nope = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), false);
+    isolate->i.roots.false_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(nope) & ~3) +1);
+
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
 

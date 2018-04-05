@@ -107,4 +107,3 @@ void StackGuard::ThreadLocal::Clear()
     
 }
 
-const intptr_t v8::internal::Isolate::per_isolate_assert_data_debug_offset_ = 0;

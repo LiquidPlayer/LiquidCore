@@ -24,7 +24,10 @@ using namespace v8;
  */
 Local<Object> Context::Global()
 {
-    return Local<Object>();
+    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
+    JSObjectRef glob = JSContextGetGlobalObject(impl->m_context);
+    Local<Value> v = ValueImpl::New(impl, glob);
+    return _local<Object>(*v).toLocal();
 }
 
 /**
@@ -61,9 +64,13 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
     memset(context, 0, sizeof(ContextImpl));
     context->pInternal = reinterpret_cast<internal::Context *>(context);
-    //context->pInternal = (internal::Context *)((reinterpret_cast<intptr_t>(context) & ~3) + 1);
+    IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
     
-    context->m_context = JSGlobalContextCreateInGroup(((IsolateImpl *)isolate)->m_group, nullptr);
+    if (i->m_defaultContext) {
+        context->m_context = JSGlobalContextRetain((JSGlobalContextRef) i->m_defaultContext->m_context);
+    } else {
+        context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
+    }
     context->isolate = reinterpret_cast<IsolateImpl *>(isolate);
     
     return Local<Context>(context);
@@ -94,7 +101,9 @@ MaybeLocal<Context> Context::FromSnapshot(
                                         ExtensionConfiguration* extensions,
                                         MaybeLocal<Value> global_object)
 {
-    return MaybeLocal<Context>();
+    // Snashots are ignored
+    Local<Context> ctx = New(isolate, extensions, MaybeLocal<ObjectTemplate>(), global_object);
+    return MaybeLocal<Context>(ctx);
 }
 
 /**
@@ -150,8 +159,8 @@ Local<Value> Context::GetSecurityToken()
  */
 void Context::Enter()
 {
-    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
-    
+    ContextImpl *impl = V82JSC::ToContextImpl(this);
+
     impl->isolate->EnterContext(this);
 }
 
@@ -161,7 +170,7 @@ void Context::Enter()
  */
 void Context::Exit()
 {
-    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
+    ContextImpl *impl = V82JSC::ToContextImpl(this);
     
     impl->isolate->ExitContext(this);
 }

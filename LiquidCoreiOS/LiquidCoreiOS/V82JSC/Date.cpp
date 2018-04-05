@@ -12,6 +12,14 @@ using namespace v8;
 
 MaybeLocal<Value> Date::New(Local<Context> context, double time)
 {
+    auto c = V82JSC::ToContextRef(context);
+    auto t = JSValueMakeNumber(c, time);
+    auto ci = V82JSC::ToContextImpl(context);
+    LocalException exception(ci->isolate);
+    auto r = JSObjectMakeDate(c, 1, &t, &exception);
+    if (!exception.ShouldThow()) {
+        return ValueImpl::New(ci, r);
+    }
     return MaybeLocal<Value>();
 }
 
@@ -21,7 +29,7 @@ MaybeLocal<Value> Date::New(Local<Context> context, double time)
  */
 double Date::ValueOf() const
 {
-    return 0.0;
+    return reinterpret_cast<const NumberObject*>(this)->ValueOf();
 }
 
 /**
