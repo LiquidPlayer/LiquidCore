@@ -406,6 +406,8 @@ struct ObjAccessor {
     const ContextImpl* m_context;
 };
 
+struct LocalException;
+
 struct ObjectTemplateImpl : ValueImpl
 {
     v8::FunctionCallback m_callback;
@@ -447,6 +449,8 @@ struct ObjectTemplateImpl : ValueImpl
                                            size_t argumentCount,
                                            const JSValueRef arguments[],
                                            JSValueRef* exception);
+    
+    v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context, JSObjectRef instance, LocalException& exception);
 };
 
 struct ObjectTemplateWrap {

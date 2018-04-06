@@ -65,13 +65,30 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     memset(context, 0, sizeof(ContextImpl));
     context->pInternal = reinterpret_cast<internal::Context *>(context);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    
-    if (i->m_defaultContext) {
+    context->isolate = i;
+
+    if (!global_template.IsEmpty()) {
+        ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
+        
+        impl->m_class = JSClassCreate(&impl->m_definition);
+        
+        ObjectTemplateWrap *wrap = new ObjectTemplateWrap();
+        wrap->m_template = impl;
+        wrap->m_context = context;
+        LocalException exception(V82JSC::ToIsolateImpl(isolate));
+        
+        context->m_context = JSGlobalContextCreateInGroup(i->m_group, impl->m_class);
+        JSObjectRef instance = JSContextGetGlobalObject(context->m_context);
+        JSObjectSetPrivate(instance, (void*)wrap);
+        impl->InitInstance(_local<Context>(context).toLocal(), instance, exception);
+        if (exception.ShouldThow()) {
+            return Local<Context>();
+        }
+    } else if (i->m_defaultContext) {
         context->m_context = JSGlobalContextRetain((JSGlobalContextRef) i->m_defaultContext->m_context);
     } else {
         context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
     }
-    context->isolate = reinterpret_cast<IsolateImpl *>(isolate);
     
     return Local<Context>(context);
 }

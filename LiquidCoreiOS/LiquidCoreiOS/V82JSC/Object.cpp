@@ -350,7 +350,12 @@ MaybeLocal<Array> Object::GetOwnPropertyNames(Local<Context> context, PropertyFi
  */
 Local<Value> Object::GetPrototype()
 {
-    return Local<Value>();
+    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
+    JSContextRef ctx = ctximpl->m_context;
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, _local<Context>(ctximpl).toLocal());
+    
+    JSValueRef proto = JSObjectGetPrototype(ctx, obj);
+    return ValueImpl::New(V82JSC::ToContextImpl<Object>(this), proto);
 }
 
 /**
@@ -361,7 +366,12 @@ Local<Value> Object::GetPrototype()
 Maybe<bool> Object::SetPrototype(Local<Context> context,
                                  Local<Value> prototype)
 {
-    return Nothing<bool>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    JSValueRef proto = V82JSC::ToJSValueRef<Value>(prototype, context);
+    
+    JSObjectSetPrototype(ctx, obj, proto);
+    return _maybe<bool>(true).toMaybe();
 }
 
 /**
@@ -370,6 +380,23 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
  */
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
+    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
+    ObjectTemplateImpl* tmplimpl = V82JSC::ToImpl<ObjectTemplateImpl>(tmpl);
+
+    Local<Value> proto = _local<Value>(this).toLocal();
+    while (proto->IsObject()) {
+        JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, _local<Context>(ctximpl).toLocal());
+        ObjectTemplateWrap *wrap = (ObjectTemplateWrap*) JSObjectGetPrivate(obj);
+        if(wrap) {
+            for (const ObjectTemplateImpl *t = wrap->m_template; t; t = t->m_parent) {
+                if (t == tmplimpl) {
+                    return proto.As<Object>();
+                }
+            }
+        }
+        proto = proto.As<Object>()->GetPrototype();
+    }
+    
     return Local<Object>();
 }
 

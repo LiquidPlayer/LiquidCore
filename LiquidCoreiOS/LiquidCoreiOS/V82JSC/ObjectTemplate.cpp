@@ -41,61 +41,65 @@ MaybeLocal<ObjectTemplate> ObjectTemplate::FromSnapshot(Isolate* isolate,
 /** Creates a new instance of this template.*/
 MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
 {
-    ObjectTemplateImpl *impl = reinterpret_cast<ObjectTemplateImpl*>(this);
+    ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(this);
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     
-    impl->m_class = JSClassCreate(&impl->m_definition);
+    //impl->m_class = JSClassCreate(&impl->m_definition);
+    JSClassDefinition def = kJSClassDefinitionEmpty;
+    def.className = impl->m_definition.className;
+    JSClassRef claz = JSClassCreate(&def);
     
     ObjectTemplateWrap *wrap = new ObjectTemplateWrap();
     wrap->m_template = impl;
     wrap->m_context = ctx;
     LocalException exception(ctx->isolate);
-
+    
     JSObjectRef instance = 0;
     if (impl->m_constructor_template) {
         MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(context);
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
-            JSValueRef args[0];
-            instance = (JSObjectRef) JSObjectCallAsConstructor(ctx->m_context, (JSObjectRef)ctor_func, 0, args, &exception);
+            instance = (JSObjectRef) JSObjectCallAsConstructor(ctx->m_context, (JSObjectRef)ctor_func, 0, 0, &exception);
         }
     } else {
-        instance = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
+        instance = JSObjectMake(ctx->m_context, claz, (void*)wrap);
     }
+    JSClassRelease(claz);
     if (!instance) {
         return MaybeLocal<Object>();
     }
-    
-    if (impl->m_length) {
+    return impl->InitInstance(context, instance, exception);
+}
+
+MaybeLocal<Object> ObjectTemplateImpl::InitInstance(Local<Context> context, JSObjectRef instance, LocalException& exception)
+{
+    const ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    if (m_parent) {
+        MaybeLocal<Object> thiz = m_parent->InitInstance(context, instance, exception);
+        if (exception.ShouldThow()) {
+            return thiz;
+        }
+    }
+
+    if (m_length) {
         JSStringRef length = JSStringCreateWithUTF8CString("length");
         JSValueRef exp = nullptr;
-        JSObjectSetProperty(ctx->m_context, instance, length, JSValueMakeNumber(ctx->m_context, impl->m_length), kJSPropertyAttributeNone, &exp);
+        JSObjectSetProperty(ctx->m_context, instance, length, JSValueMakeNumber(ctx->m_context, m_length), kJSPropertyAttributeNone, &exp);
         assert(exp==nullptr);
         JSStringRelease(length);
     }
-    if (impl->m_name.length()) {
+    if (m_name.length()) {
         JSStringRef name = JSStringCreateWithUTF8CString("name");
-        JSStringRef name_ = JSStringCreateWithUTF8CString(impl->m_name.c_str());
+        JSStringRef name_ = JSStringCreateWithUTF8CString(m_name.c_str());
         JSValueRef exp = nullptr;
         JSObjectSetProperty(ctx->m_context, instance, name, JSValueMakeString(ctx->m_context, name_), kJSPropertyAttributeDontEnum, &exp);
         JSStringRelease(name);
         JSStringRelease(name_);
         assert(exp==nullptr);
     }
-
-    if (impl->m_parent) {
-        MaybeLocal<Object> proto = reinterpret_cast<ObjectTemplate*>(impl->m_parent)->NewInstance(context);
-        if (!proto.IsEmpty()) {
-            JSObjectSetPrototype(ctx->m_context, instance, V82JSC::ToJSValueRef<Object>(proto.ToLocalChecked(), context));
-            JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
-            JSValueRef exp = nullptr;
-            JSObjectSetProperty(ctx->m_context, instance, sprototype, V82JSC::ToJSValueRef<Object>(proto.ToLocalChecked(), context), kJSPropertyAttributeNone, &exp);
-            JSStringRelease(sprototype);
-            assert(exp==nullptr);
-        }
-    }
     
-    for (auto i=impl->m_properties.begin(); i!=impl->m_properties.end(); ++i) {
+    for (auto i=m_properties.begin(); i!=m_properties.end(); ++i) {
         typedef internal::Object O;
         typedef internal::Internals I;
         O* obj = reinterpret_cast<O* const>(i->second->pMap);
@@ -135,7 +139,7 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
                                                getset, 0, 0, &exception);
     assert(exp==nullptr);
     
-    for (auto i=impl->m_property_accessors.begin(); i!=impl->m_property_accessors.end(); ++i) {
+    for (auto i=m_property_accessors.begin(); i!=m_property_accessors.end(); ++i) {
         Local<FunctionTemplate> getter = _local<FunctionTemplate>(i->second.m_getter).toLocal();
         Local<FunctionTemplate> setter = _local<FunctionTemplate>(i->second.m_setter).toLocal();
         if (getter.IsEmpty() && setter.IsEmpty()) continue;
@@ -161,7 +165,7 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         assert(exp==nullptr);
     }
 
-    for (auto i=impl->m_obj_accessors.begin(); i!=impl->m_obj_accessors.end(); ++i) {
+    for (auto i=m_obj_accessors.begin(); i!=m_obj_accessors.end(); ++i) {
         ObjAccessor *priv = new ObjAccessor();
         priv->m_property = JSValueMakeString(ctx->m_context, i->first);
         JSValueProtect(ctx->m_context, priv->m_property);

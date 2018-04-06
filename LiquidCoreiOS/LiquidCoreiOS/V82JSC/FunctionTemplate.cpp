@@ -42,63 +42,28 @@ JSObjectRef ObjectTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
 {
     ObjectTemplateWrap *wrap = reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate(constructor));
     Isolate *isolate = reinterpret_cast<Isolate*>(wrap->m_context->isolate);
-    
-    Local<ObjectTemplate> ot;
-    if (wrap->m_template->m_constructor_template) {
-        ot = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template->m_constructor_template)).toLocal();
-    } else {
-        ot = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template)).toLocal();
-    }
+    Local<ObjectTemplate> templ = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template)).toLocal();
     Local<Context> context = _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal();
-    Local<Object> thiz;
-    {
-        TryCatch try_catch(reinterpret_cast<Isolate*>(wrap->m_context->isolate));
-        MaybeLocal<Object> thiz_ = ot->NewInstance(context);
-        if (thiz_.IsEmpty()) {
-            if (exception && try_catch.HasCaught()) {
-                *exception = V82JSC::ToJSValueRef<Value>(try_catch.Exception(), context);
-            }
-            return 0;
-        }
-        thiz = thiz_.ToLocalChecked();
-    }
 
-    JSObjectRef thisObject = (JSObjectRef) V82JSC::ToJSValueRef<Object>(thiz, isolate);
+    TryCatch try_catch(isolate);
+    MaybeLocal<Object> maybe_thiz = templ->NewInstance(context);
+    if (maybe_thiz.IsEmpty()) {
+        if (exception) {
+            *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
+        }
+        return 0;
+    }
+    Local<Object> thiz = maybe_thiz.ToLocalChecked();
+    JSObjectRef thisObject = (JSObjectRef) V82JSC::ToJSValueRef(thiz, context);
+    
     JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
     JSValueRef excp = nullptr;
     JSObjectSetProperty(ctx, thisObject, ctor, constructor, kJSPropertyAttributeDontEnum, &excp);
+    JSStringRelease(ctor);
     assert(excp==nullptr);
-    
+
     // FIXME: Whatever needs to be done to make instanceof work, signature, etc.
     
-    /*
-    // Check signature
-    bool signature_match = !wrap->m_template->m_signature;
-    if (!signature_match) {
-        ObjectTemplateWrap *thisWrap =
-        reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate(thisObject));
-        SignatureImpl *sig = wrap->m_template->m_signature;
-        
-        while (thisWrap) {
-            if (sig->m_template == thisWrap->m_template) {
-                signature_match = true;
-                break;
-            }
-            JSValueRef proto = JSObjectGetPrototype(ctx, thisObject);
-            if (JSValueIsObject(ctx, proto)) {
-                thisWrap = reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate((JSObjectRef)proto));
-            } else {
-                thisWrap = nullptr;
-            }
-        }
-    }
-    if (!signature_match) {
-        JSStringRef message = JSStringCreateWithUTF8CString("new TypeError('Illegal invocation')");
-        *exception = JSEvaluateScript(ctx, message, 0, 0, 0, 0);
-        JSStringRelease(message);
-        return 0;
-    }
-    */
     Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
 
     v8::internal::Object * implicit[] = {
@@ -261,13 +226,23 @@ Local<FunctionTemplate> FunctionTemplate::NewWithCache(
 /** Returns the unique function instance in the current execution context.*/
 MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 {
-    ObjectTemplate *templ = reinterpret_cast<ObjectTemplate*>(this);
     ObjectTemplateImpl *impl =  V82JSC::ToImpl<ObjectTemplateImpl,FunctionTemplate>(this);
     JSObjectRef function = impl->m_function;
     if (function) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), function).As<Function>();
     }
-    MaybeLocal<Object> v = templ->NewInstance(context);
+    
+    const ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    
+    impl->m_class = JSClassCreate(&impl->m_definition);
+    
+    ObjectTemplateWrap *wrap = new ObjectTemplateWrap();
+    wrap->m_template = impl;
+    wrap->m_context = ctx;
+    
+    LocalException exception(ctx->isolate);
+    JSObjectRef instance = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
+    MaybeLocal<Object> v = impl->InitInstance(context, instance, exception);
     if (!v.IsEmpty()) {
         impl->m_function = (JSObjectRef) V82JSC::ToJSValueRef<Object>(v.ToLocalChecked(), context);
         JSValueProtect(V82JSC::ToContextRef(context), impl->m_function);

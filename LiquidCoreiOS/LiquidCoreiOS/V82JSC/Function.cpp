@@ -24,6 +24,16 @@ MaybeLocal<Function> Function::New(Local<Context> context, FunctionCallback call
 
 MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local<Value> argv[]) const
 {
+    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
+    JSValueRef args[argc];
+    for (int i=0; i<argc; i++) {
+        args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
+    }
+    LocalException exception(V82JSC::ToContextImpl(context)->isolate);
+    JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(context), func, argc, args, &exception);
+    if (!exception.ShouldThow()) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), newobj).As<Object>();
+    }
     return MaybeLocal<Object>();
 }
 
