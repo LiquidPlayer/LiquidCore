@@ -381,14 +381,14 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
     ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    ObjectTemplateImpl* tmplimpl = V82JSC::ToImpl<ObjectTemplateImpl>(tmpl);
+    TemplateImpl* tmplimpl = V82JSC::ToImpl<TemplateImpl>(tmpl);
 
     Local<Value> proto = _local<Value>(this).toLocal();
     while (proto->IsObject()) {
         JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, _local<Context>(ctximpl).toLocal());
-        ObjectTemplateWrap *wrap = (ObjectTemplateWrap*) JSObjectGetPrivate(obj);
+        TemplateWrap *wrap = (TemplateWrap*) JSObjectGetPrivate(obj);
         if(wrap) {
-            for (const ObjectTemplateImpl *t = wrap->m_template; t; t = t->m_parent) {
+            for (const TemplateImpl *t = wrap->m_template; t; t = t->m_parent) {
                 if (t == tmplimpl) {
                     return proto.As<Object>();
                 }

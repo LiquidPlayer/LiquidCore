@@ -14,7 +14,8 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
                                    ScriptOrigin* origin)
 {
     ContextImpl * ctx = V82JSC::ToContextImpl(context);
-    ValueImpl * src = reinterpret_cast<ValueImpl *>(*source);
+    JSValueRef src = V82JSC::ToJSValueRef<String>(source, context);
+    JSStringRef s = JSValueToStringCopy(ctx->m_context, src, 0);
     JSStringRef sourceURL = nullptr;
     int startingLineNumber = 0;
     LocalException exception(ctx->isolate);
@@ -29,8 +30,9 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         }
     }
     
-    bool success = !exception.ShouldThow() && JSCheckScriptSyntax(ctx->m_context, src->m_string, sourceURL, startingLineNumber, &exception);
+    bool success = !exception.ShouldThow() && JSCheckScriptSyntax(ctx->m_context, s, sourceURL, startingLineNumber, &exception);
     if (!success) {
+        JSStringRelease(s);
         return MaybeLocal<Script>();
     } else {
         ScriptImpl * script = (ScriptImpl *) malloc(sizeof(ScriptImpl));
@@ -38,7 +40,7 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         
         script->m_sourceURL = sourceURL;
         script->m_startingLineNumber = startingLineNumber;
-        script->m_script = JSStringRetain(src->m_string);
+        script->m_script = s;
         
         return MaybeLocal<Script>(_local<Script>(script).toLocal());
     }

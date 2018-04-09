@@ -70,16 +70,18 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
         
-        impl->m_class = JSClassCreate(&impl->m_definition);
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        JSClassRef claz = JSClassCreate(&def);
         
-        ObjectTemplateWrap *wrap = new ObjectTemplateWrap();
+        TemplateWrap *wrap = new TemplateWrap();
         wrap->m_template = impl;
         wrap->m_context = context;
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
-        context->m_context = JSGlobalContextCreateInGroup(i->m_group, impl->m_class);
+        context->m_context = JSGlobalContextCreateInGroup(i->m_group, claz);
         JSObjectRef instance = JSContextGetGlobalObject(context->m_context);
         JSObjectSetPrivate(instance, (void*)wrap);
+        JSClassRelease(claz);
         impl->InitInstance(_local<Context>(context).toLocal(), instance, exception);
         if (exception.ShouldThow()) {
             return Local<Context>();

@@ -12,8 +12,9 @@ using namespace v8;
 
 double Number::Value() const
 {
-    auto thiz = reinterpret_cast<const ValueImpl*>(this);
-    return thiz->m_number;
+    ContextImpl *context = V82JSC::ToContextImpl<Number>(this);
+    JSValueRef value = V82JSC::ToJSValueRef<Number>(this, reinterpret_cast<Isolate*>(context->isolate));
+    return JSValueToNumber(context->m_context, value, 0);
 }
 
 Local<Number> Number::New(Isolate* isolate, double value)
@@ -25,7 +26,6 @@ Local<Number> Number::New(Isolate* isolate, double value)
     num->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
     num->m_value = JSValueMakeNumber(num->m_context->m_context, value);
     JSValueProtect(num->m_context->m_context, num->m_value);
-    num->m_number = value;
 
     _local<Number> number(num);
     return number.toLocal();

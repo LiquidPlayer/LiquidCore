@@ -10,16 +10,12 @@
 
 using namespace v8;
 
-#undef THIS
-#define THIS const_cast<ValueImpl*>(reinterpret_cast<const ValueImpl*>(this))
-
 Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal::InstanceType type, void *resource)
 {
     ValueImpl * string = (ValueImpl *) malloc(sizeof(ValueImpl));
     _local<String> local(string);
     memset(string, 0, sizeof(ValueImpl));
     string->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&string->map) & ~3) + 1);
-    string->m_string = str;
     string->m_value = JSValueMakeString(reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext->m_context, str);
     string->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
     if (type == v8::internal::FIRST_NONSTRING_TYPE) {
@@ -99,7 +95,11 @@ String::Value::~Value()
  */
 int String::Length() const
 {
-    return (int) JSStringGetLength(THIS->m_string);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    int r = (int) JSStringGetLength(s);
+    JSStringRelease(s);
+    return r;
 }
 
 /**
@@ -108,7 +108,11 @@ int String::Length() const
  */
 int String::Utf8Length() const
 {
-    return (int) JSStringGetMaximumUTF8CStringSize(THIS->m_string);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    int r = (int) JSStringGetMaximumUTF8CStringSize(s);
+    JSStringRelease(s);
+    return r;
 }
 
 /**
@@ -129,11 +133,15 @@ bool String::IsOneByte() const
  */
 bool String::ContainsOnlyOneByte() const
 {
-    size_t len = JSStringGetLength(THIS->m_string);
-    const uint16_t *buffer = JSStringGetCharactersPtr(THIS->m_string);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+
+    size_t len = JSStringGetLength(s);
+    const uint16_t *buffer = JSStringGetCharactersPtr(s);
     for (size_t i = 0; i < len; i++ ) {
         if (buffer[i] > 255) return false;
     }
+    JSStringRelease(s);
     
     return true;
 }
@@ -168,12 +176,17 @@ int String::Write(uint16_t* buffer,
           int length,
           int options) const
 {
-    const JSChar *str = JSStringGetCharactersPtr(THIS->m_string);
-    size_t len = JSStringGetLength(THIS->m_string);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+
+    const JSChar *str = JSStringGetCharactersPtr(s);
+    size_t len = JSStringGetLength(s);
     str = &str[start];
     len -= start;
     len = length < len ? length : len;
     memcpy(buffer, str, sizeof(uint16_t) * len);
+    
+    JSStringRelease(s);
     return (int) len;
 }
 // One byte characters.
@@ -182,12 +195,17 @@ int String::WriteOneByte(uint8_t* buffer,
                  int length,
                  int options) const
 {
-    size_t len = JSStringGetMaximumUTF8CStringSize(THIS->m_string);
-    char str[len+1];
-    JSStringGetUTF8CString(THIS->m_string, str, len+1);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+
+    size_t len = JSStringGetMaximumUTF8CStringSize(s);
+    char str[len];
+    JSStringGetUTF8CString(s, str, len);
     len -= start;
     len = length < len ? length : len;
     memcpy(buffer, &str[start], sizeof(uint8_t) * len);
+    
+    JSStringRelease(s);
     return (int) len;
 }
 // UTF-8 encoded characters.
@@ -196,13 +214,17 @@ int String::WriteUtf8(char* buffer,
               int* nchars_ref,
               int options) const
 {
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+
     if (length < 0) {
-        length = (int) JSStringGetMaximumUTF8CStringSize(THIS->m_string);
+        length = (int) JSStringGetMaximumUTF8CStringSize(s);
     }
-    size_t chars = JSStringGetUTF8CString(THIS->m_string, buffer, length);
+    size_t chars = JSStringGetUTF8CString(s, buffer, length);
     if (nchars_ref) {
         *nchars_ref = (int) chars;
     }
+    JSStringRelease(s);
     return (int) chars;
 }
 
@@ -236,8 +258,10 @@ bool String::IsExternalOneByte() const
  */
 const String::ExternalOneByteStringResource* String::GetExternalOneByteStringResource() const
 {
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+
     if (IsExternalOneByte()) {
-        return  * reinterpret_cast<ExternalOneByteStringResource**>(&THIS->map + internal::Internals::kStringResourceOffset);
+        return  * reinterpret_cast<ExternalOneByteStringResource**>(&impl->map + internal::Internals::kStringResourceOffset);
     }
     return nullptr;
 }
@@ -272,15 +296,23 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
  */
 Local<String> String::Concat(Local<String> left, Local<String> right)
 {
-    auto left_ = reinterpret_cast<ValueImpl*>(*left);
-    auto right_ = reinterpret_cast<ValueImpl*>(*right);
-    size_t length_left = JSStringGetLength(left_->m_string);
-    size_t length_right = JSStringGetLength(right_->m_string);
+    ValueImpl *left_ = V82JSC::ToImpl<ValueImpl,String>(left);
+    ValueImpl *right_ = V82JSC::ToImpl<ValueImpl,String>(right);
+    JSStringRef sleft = JSValueToStringCopy(left_->m_context->m_context, left_->m_value, 0);
+    JSStringRef sright = JSValueToStringCopy(right_->m_context->m_context, right_->m_value, 0);
+
+    size_t length_left = JSStringGetLength(sleft);
+    size_t length_right = JSStringGetLength(sright);
     uint16_t concat[length_left + length_right];
-    memcpy(concat, JSStringGetCharactersPtr(left_->m_string), sizeof(uint16_t) * length_left);
-    memcpy(&concat[length_left], JSStringGetCharactersPtr(right_->m_string), sizeof(uint16_t) * length_right);
-    Isolate *isolate = reinterpret_cast<Isolate*>(left_->m_context->isolate);
-    return ValueImpl::New(isolate, JSStringCreateWithCharacters(concat,length_left+length_right));
+    memcpy(concat, JSStringGetCharactersPtr(sleft), sizeof(uint16_t) * length_left);
+    memcpy(&concat[length_left], JSStringGetCharactersPtr(sright), sizeof(uint16_t) * length_right);
+    Isolate *isolate = V82JSC::ToIsolate(left_->m_context->isolate);
+    JSStringRef concatted = JSStringCreateWithCharacters(concat,length_left+length_right);
+    Local<String> ret = ValueImpl::New(isolate, concatted);
+    JSStringRelease(sleft);
+    JSStringRelease(sright);
+    JSStringRelease(concatted);
+    return ret;
 }
 
 /**
@@ -311,12 +343,9 @@ MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::External
  */
 bool String::MakeExternal(String::ExternalStringResource* resource)
 {
-    if (THIS->m_string) {
-        JSStringRelease(THIS->m_string);
-    }
-    THIS->m_string = JSStringCreateWithCharacters(resource->data(), resource->length());
-    THIS->pMap->set_instance_type(v8::internal::EXTERNAL_STRING_TYPE);
-    * reinterpret_cast<ExternalStringResource**>(&THIS->map + internal::Internals::kStringResourceOffset) = resource;
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    impl->pMap->set_instance_type(v8::internal::EXTERNAL_STRING_TYPE);
+    * reinterpret_cast<ExternalStringResource**>(&impl->map + internal::Internals::kStringResourceOffset) = resource;
     return true;
 }
 
@@ -351,14 +380,12 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
  */
 bool String::MakeExternal(ExternalOneByteStringResource* resource)
 {
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+
     uint16_t str[resource->length()];
     for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
-    if (THIS->m_string) {
-        JSStringRelease(THIS->m_string);
-    }
-    THIS->m_string = JSStringCreateWithCharacters(str, resource->length());
-    THIS->pMap->set_instance_type(v8::internal::EXTERNAL_ONE_BYTE_STRING_TYPE);
-    * reinterpret_cast<ExternalOneByteStringResource**>(&THIS->map + internal::Internals::kStringResourceOffset) = resource;
+    impl->pMap->set_instance_type(v8::internal::EXTERNAL_ONE_BYTE_STRING_TYPE);
+    * reinterpret_cast<ExternalOneByteStringResource**>(&impl->map + internal::Internals::kStringResourceOffset) = resource;
 
     return true;
 }

@@ -20,7 +20,7 @@ Local<Signature> Signature::New(Isolate* isolate,
 {
     SignatureImpl *signature = new SignatureImpl();
     signature->m_isolate = isolate;
-    signature->m_template = reinterpret_cast<ObjectTemplateImpl*>(*receiver);
+    signature->m_template = V82JSC::ToImpl<FunctionTemplateImpl>(receiver);
     
     return _local<Signature>(signature).toLocal();
 }
@@ -28,160 +28,25 @@ Local<Signature> Signature::New(Isolate* isolate,
 Local<AccessorSignature> AccessorSignature::New(Isolate* isolate,
                                                 Local<FunctionTemplate> receiver)
 {
-    return Local<AccessorSignature>();
+    return _local<AccessorSignature>(*Signature::New(isolate, receiver)).toLocal();
 }
 
-#undef O
-#define O(v) reinterpret_cast<v8::internal::Object*>(v)
-
-JSObjectRef ObjectTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
-                                                          JSObjectRef constructor,
-                                                          size_t argumentCount,
-                                                          const JSValueRef *arguments,
-                                                          JSValueRef *exception)
+/** Get a template included in the snapshot by index. */
+MaybeLocal<FunctionTemplate> FunctionTemplate::FromSnapshot(Isolate* isolate,
+                                                            size_t index)
 {
-    ObjectTemplateWrap *wrap = reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate(constructor));
-    Isolate *isolate = reinterpret_cast<Isolate*>(wrap->m_context->isolate);
-    Local<ObjectTemplate> templ = _local<ObjectTemplate>(const_cast<ObjectTemplateImpl*>(wrap->m_template)).toLocal();
-    Local<Context> context = _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal();
-
-    TryCatch try_catch(isolate);
-    MaybeLocal<Object> maybe_thiz = templ->NewInstance(context);
-    if (maybe_thiz.IsEmpty()) {
-        if (exception) {
-            *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-        }
-        return 0;
-    }
-    Local<Object> thiz = maybe_thiz.ToLocalChecked();
-    JSObjectRef thisObject = (JSObjectRef) V82JSC::ToJSValueRef(thiz, context);
-    
-    JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
-    JSValueRef excp = nullptr;
-    JSObjectSetProperty(ctx, thisObject, ctor, constructor, kJSPropertyAttributeDontEnum, &excp);
-    JSStringRelease(ctor);
-    assert(excp==nullptr);
-
-    // FIXME: Whatever needs to be done to make instanceof work, signature, etc.
-    
-    Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
-
-    v8::internal::Object * implicit[] = {
-        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
-        O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
-        * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
-        nullptr /*deprecated*/,                              // kCalleeIndex = 5;
-        nullptr, // FIXME                                    // kContextSaveIndex = 6;
-        * reinterpret_cast<v8::internal::Object**>(*thiz)    // kNewTargetIndex = 7;
-    };
-    v8::internal::Object * values_[argumentCount + 1];
-    v8::internal::Object ** values = values_ + argumentCount - 1;
-    *(values + 1) = * reinterpret_cast<v8::internal::Object**>(*thiz);
-    for (size_t i=0; i<argumentCount; i++) {
-        Local<Value> arg = ValueImpl::New(wrap->m_context, arguments[i]);
-        *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
-    }
-    
-    FunctionCallbackImpl info(implicit, values, (int) argumentCount);
-    
-    if (wrap->m_template->m_callback) {
-        wrap->m_template->m_callback(info);
-    }
-    
-    if(!implicit[3]->IsUndefined(reinterpret_cast<v8::internal::Isolate*>(isolate))) {
-        Local<Value> ret = info.GetReturnValue().Get();
-        return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
-    }
-    
-    return thisObject;
+    return MaybeLocal<FunctionTemplate>();
 }
 
-JSValueRef ObjectTemplateImpl::callAsFunctionCallback(JSContextRef ctx,
-                                                      JSObjectRef function,
-                                                      JSObjectRef thisObject,
-                                                      size_t argumentCount,
-                                                      const JSValueRef *arguments,
-                                                      JSValueRef *exception)
-{
-    ObjectTemplateWrap *wrap = reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate(function));
-
-    Local<Value> thiz = ValueImpl::New(wrap->m_context, thisObject);
-    
-    // Check signature
-    bool signature_match = !wrap->m_template->m_signature;
-    if (!signature_match) {
-        ObjectTemplateWrap *thisWrap =
-            reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate(thisObject));
-        SignatureImpl *sig = wrap->m_template->m_signature;
-        
-        while (thisWrap) {
-            if (sig->m_template == thisWrap->m_template) {
-                signature_match = true;
-                break;
-            }
-            JSValueRef proto = JSObjectGetPrototype(ctx, thisObject);
-            if (JSValueIsObject(ctx, proto)) {
-                thisWrap = reinterpret_cast<ObjectTemplateWrap*>(JSObjectGetPrivate((JSObjectRef)proto));
-            } else {
-                thisWrap = nullptr;
-            }
-        }
-    }
-    if (!signature_match) {
-        JSStringRef message = JSStringCreateWithUTF8CString("new TypeError('Illegal invocation')");
-        *exception = JSEvaluateScript(ctx, message, 0, 0, 0, 0);
-        JSStringRelease(message);
-        return 0;
-    }
-    Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
-
-    v8::internal::Object * implicit[] = {
-        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
-        O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
-        * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
-        nullptr /*deprecated*/,                              // kCalleeIndex = 5;
-        nullptr, // FIXME                                    // kContextSaveIndex = 6;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kNewTargetIndex = 7;
-    };
-    v8::internal::Object * values_[argumentCount + 1];
-    v8::internal::Object ** values = values_ + argumentCount - 1;
-    *(values + 1) = * reinterpret_cast<v8::internal::Object**>(*thiz);
-    for (size_t i=0; i<argumentCount; i++) {
-        Local<Value> arg = ValueImpl::New(wrap->m_context, arguments[i]);
-        *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
-    }
-
-    FunctionCallbackImpl info(implicit, values, (int) argumentCount);
-
-    if (wrap->m_template->m_callback) {
-        wrap->m_template->m_callback(info);
-    }
-
-    Local<Value> ret = info.GetReturnValue().Get();
-    
-    return V82JSC::ToJSValueRef<Value>(ret, _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal());
-}
-
-/** Creates a function template.*/
 Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback callback,
-                                              Local<Value> data,
-                                              Local<Signature> signature, int length,
-                                              ConstructorBehavior behavior)
+                                          Local<Value> data,
+                                          Local<Signature> signature, int length,
+                                          ConstructorBehavior behavior)
 {
-    ObjectTemplateImpl *templ = (ObjectTemplateImpl *) malloc(sizeof (ObjectTemplateImpl));
-    memset(templ, 0, sizeof(ObjectTemplateImpl));
-    templ->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&templ->map) & ~3) + 1);
+    FunctionTemplateImpl *templ = (FunctionTemplateImpl*) TemplateImpl::New(isolate, sizeof(FunctionTemplateImpl));
     templ->pMap->set_instance_type(v8::internal::FUNCTION_TEMPLATE_INFO_TYPE);
 
-    templ->m_properties = std::map<JSStringRef, ValueImpl*>();
-    templ->m_property_accessors = std::map<JSStringRef, PropAccessor>();
-    templ->m_obj_accessors = std::map<JSStringRef, ObjAccessor>();
     templ->m_name = std::string();
-    templ->m_isolate = isolate;
     templ->m_callback = callback;
     templ->m_signature = reinterpret_cast<SignatureImpl*>(*signature);
     templ->m_behavior = behavior;
@@ -191,25 +56,16 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
     }
     templ->m_data = V82JSC::ToJSValueRef<Value>(data, isolate);
     JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, templ->m_data);
-    
-    templ->m_definition = kJSClassDefinitionEmpty;
-    templ->m_definition.callAsFunction = ObjectTemplateImpl::callAsFunctionCallback;
+    templ->m_definition.callAsFunction = TemplateImpl::callAsFunctionCallback;
     if (behavior == ConstructorBehavior::kAllow) {
-        templ->m_definition.callAsConstructor = ObjectTemplateImpl::callAsConstructorCallback;
+        templ->m_definition.callAsConstructor = FunctionTemplateImpl::callAsConstructorCallback;
     }
     if (templ->m_signature) {
         templ->m_definition.parentClass = templ->m_signature->m_template->m_class;
     }
-    templ->m_definition.attributes = kJSClassAttributeNoAutomaticPrototype;
+    templ->m_functions = std::map<const ContextImpl*, JSObjectRef>();
     
     return _local<FunctionTemplate>(templ).toLocal();
-}
-
-/** Get a template included in the snapshot by index. */
-MaybeLocal<FunctionTemplate> FunctionTemplate::FromSnapshot(Isolate* isolate,
-                                                            size_t index)
-{
-    return MaybeLocal<FunctionTemplate>();
 }
 
 /**
@@ -220,34 +76,89 @@ Local<FunctionTemplate> FunctionTemplate::NewWithCache(
                                             Local<Private> cache_property, Local<Value> data,
                                             Local<Signature> signature, int length)
 {
-    return Local<FunctionTemplate>();
+    return New(isolate, callback, data, signature, length);
 }
+
+/*
+ * \code
+ *   FunctionTemplate Parent  -> Parent() . prototype -> { }
+ *     ^                                                  ^
+ *     | Inherit(Parent)                                  | .__proto__
+ *     |                                                  |
+ *   FunctionTemplate Child   -> Child()  . prototype -> { }
+ * \endcode
+ *
+ * A FunctionTemplate 'Child' inherits from 'Parent', the prototype
+ * object of the Child() function has __proto__ pointing to the
+ * Parent() function's prototype object. An instance of the Child
+ * function has all properties on Parent's instance templates.
+ */
 
 /** Returns the unique function instance in the current execution context.*/
 MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 {
-    ObjectTemplateImpl *impl =  V82JSC::ToImpl<ObjectTemplateImpl,FunctionTemplate>(this);
-    JSObjectRef function = impl->m_function;
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    const ContextImpl *ctx = V82JSC::ToContextImpl(context);
+
+    JSObjectRef function = impl->m_functions[ctx];
     if (function) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), function).As<Function>();
     }
-    
-    const ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
+        
     impl->m_class = JSClassCreate(&impl->m_definition);
     
-    ObjectTemplateWrap *wrap = new ObjectTemplateWrap();
+    TemplateWrap *wrap = new TemplateWrap();
     wrap->m_template = impl;
     wrap->m_context = ctx;
     
     LocalException exception(ctx->isolate);
-    JSObjectRef instance = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
-    MaybeLocal<Object> v = impl->InitInstance(context, instance, exception);
-    if (!v.IsEmpty()) {
-        impl->m_function = (JSObjectRef) V82JSC::ToJSValueRef<Object>(v.ToLocalChecked(), context);
-        JSValueProtect(V82JSC::ToContextRef(context), impl->m_function);
+    function = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
+
+    MaybeLocal<Object> thizo = impl->InitInstance(context, function, exception);
+    if (thizo.IsEmpty()) {
+        return MaybeLocal<Function>();
     }
-    return * reinterpret_cast<MaybeLocal<Function> *>(reinterpret_cast<void *>(&v));
+    Local<ObjectTemplate> prototype_template = _local<FunctionTemplate>(this).toLocal()->PrototypeTemplate();
+    MaybeLocal<Object> prototype = prototype_template->NewInstance(context);
+    if (prototype.IsEmpty()) {
+        return MaybeLocal<Function>();
+    }
+    JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
+    JSValueRef prototype_property = V82JSC::ToJSValueRef(prototype.ToLocalChecked(), context);
+    JSObjectSetProperty(V82JSC::ToContextRef(context), function, sprototype, prototype_property, kJSPropertyAttributeDontEnum, 0);
+    if (impl->m_parent) {
+        MaybeLocal<Function> parentFunc = _local<FunctionTemplate>(impl->m_parent).toLocal()->GetFunction(context);
+        if (parentFunc.IsEmpty()) {
+            JSStringRelease(sprototype);
+            return MaybeLocal<Function>();
+        }
+        JSValueRef parentFuncRef = V82JSC::ToJSValueRef<Function>(parentFunc.ToLocalChecked(), context);
+        JSValueRef parentFuncPrototype = JSObjectGetProperty(ctx->m_context, (JSObjectRef)parentFuncRef, sprototype, 0);
+        JSObjectSetPrototype(ctx->m_context, (JSObjectRef)prototype_property, parentFuncPrototype);
+        JSStringRelease(sprototype);
+    }
+
+    if (impl->m_length) {
+        JSStringRef length = JSStringCreateWithUTF8CString("length");
+        JSValueRef exp = nullptr;
+        JSObjectSetProperty(ctx->m_context, function, length, JSValueMakeNumber(ctx->m_context, impl->m_length), kJSPropertyAttributeNone, &exp);
+        assert(exp==nullptr);
+        JSStringRelease(length);
+    }
+
+    if (impl->m_name.length()) {
+        JSStringRef name = JSStringCreateWithUTF8CString("name");
+        JSStringRef name_ = JSStringCreateWithUTF8CString(impl->m_name.c_str());
+        JSValueRef exp = nullptr;
+        JSObjectSetProperty(ctx->m_context, function, name, JSValueMakeString(ctx->m_context, name_), kJSPropertyAttributeDontEnum, &exp);
+        JSStringRelease(name);
+        JSStringRelease(name_);
+        assert(exp==nullptr);
+    }
+    
+    impl->m_functions[ctx] = function;
+    JSValueProtect(ctx->m_context, function);
+    return thizo.ToLocalChecked().As<Function>();
 }
 
 /**
@@ -270,7 +181,7 @@ MaybeLocal<Object> FunctionTemplate::NewRemoteInstance()
 void FunctionTemplate::SetCallHandler(FunctionCallback callback,
                     Local<Value> data)
 {
-    ObjectTemplateImpl *impl = reinterpret_cast<ObjectTemplateImpl*>(this);
+    FunctionTemplateImpl *impl =  V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     impl->m_callback = callback;
     if (!*data) {
         data = Undefined(impl->m_isolate);
@@ -281,14 +192,27 @@ void FunctionTemplate::SetCallHandler(FunctionCallback callback,
 /** Set the predefined length property for the FunctionTemplate. */
 void FunctionTemplate::SetLength(int length)
 {
-    ObjectTemplateImpl *impl = reinterpret_cast<ObjectTemplateImpl*>(this);
+    FunctionTemplateImpl *impl =  V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     impl->m_length = length;
 }
 
 /** Get the InstanceTemplate. */
 Local<ObjectTemplate> FunctionTemplate::InstanceTemplate()
 {
-    return _local<ObjectTemplate>(this).toLocal();
+    FunctionTemplateImpl *impl =  V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    Local<ObjectTemplate> instance_template;
+    if (!impl->m_instance_template) {
+        instance_template = ObjectTemplate::New(impl->m_isolate);
+        impl->m_instance_template = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
+        Local<ObjectTemplate> prototype_template = PrototypeTemplate();
+        impl->m_instance_template->m_prototype_template = V82JSC::ToImpl<ObjectTemplateImpl>(prototype_template);
+        impl->m_instance_template->m_constructor_template = impl;
+        impl->m_instance_template->m_parent = impl;
+        impl->m_instance_template->m_definition.className = impl->m_name.c_str();
+    } else {
+        instance_template = _local<ObjectTemplate>(impl->m_instance_template).toLocal();
+    }
+    return instance_template;
 }
 
 /**
@@ -298,9 +222,8 @@ Local<ObjectTemplate> FunctionTemplate::InstanceTemplate()
  **/
 void FunctionTemplate::Inherit(Local<FunctionTemplate> parent)
 {
-    ObjectTemplateImpl *impl = reinterpret_cast<ObjectTemplateImpl*>(this);
-    ObjectTemplateImpl *p = reinterpret_cast<ObjectTemplateImpl*>(*parent);
-    impl->m_parent = p;
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    impl->m_parent = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(*parent);
 }
 
 /**
@@ -309,12 +232,15 @@ void FunctionTemplate::Inherit(Local<FunctionTemplate> parent)
  */
 Local<ObjectTemplate> FunctionTemplate::PrototypeTemplate()
 {
-    ObjectTemplateImpl *this_ = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(this));
-    if (!this_->m_parent) {
-        Local<FunctionTemplate> p = this->New(this_->m_isolate);
-        this_->m_parent = static_cast<ObjectTemplateImpl*>(reinterpret_cast<ValueImpl*>(*p));
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    Local<ObjectTemplate> prototype_template;
+    if (!impl->m_prototype_template) {
+        prototype_template = ObjectTemplate::New(impl->m_isolate);
+        impl->m_prototype_template = V82JSC::ToImpl<ObjectTemplateImpl>(prototype_template);
+    } else {
+        prototype_template = _local<ObjectTemplate>(impl->m_prototype_template).toLocal();
     }
-    return _local<ObjectTemplate>(this_->m_parent).toLocal();
+    return prototype_template;
 }
 
 /**
@@ -335,10 +261,12 @@ void FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> prot
  */
 void FunctionTemplate::SetClassName(Local<String> name)
 {
-    ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,FunctionTemplate>(this);
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     String::Utf8Value str(name);
-    this_->m_name = std::string(*str);
-    this_->m_definition.className = this_->m_name.c_str();
+    impl->m_name = std::string(*str);
+    impl->m_definition.className = impl->m_name.c_str();
+    InstanceTemplate();
+    impl->m_instance_template->m_definition.className = impl->m_name.c_str();
 }
 
 /**
@@ -393,3 +321,105 @@ bool FunctionTemplate::HasInstance(Local<Value> object)
 {
     return false;
 }
+
+#undef O
+#define O(v) reinterpret_cast<v8::internal::Object*>(v)
+
+JSObjectRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
+                                                    JSObjectRef constructor,
+                                                    size_t argumentCount,
+                                                    const JSValueRef *arguments,
+                                                    JSValueRef *exception)
+{
+    TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(constructor));
+    Isolate *isolate = V82JSC::ToIsolate(wrap->m_context->isolate);
+    
+    Local<Context> context = _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal();
+    
+    TryCatch try_catch(isolate);
+    LocalException excep(wrap->m_context->isolate);
+    static MaybeLocal<Object> (*init_instance)(Local<Context>, JSObjectRef, LocalException&, const FunctionTemplateImpl *, void *) =
+        [](Local<Context> context, JSObjectRef instance, LocalException& excep, const FunctionTemplateImpl *impl, void *wrap) -> MaybeLocal<Object> {
+            
+            Local<ObjectTemplate> instance_template = _local<FunctionTemplate>(const_cast<FunctionTemplateImpl*>(impl)).toLocal()->InstanceTemplate();
+            ObjectTemplateImpl *instance_impl = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
+            
+            if (!instance) {
+                JSClassRef claz = JSClassCreate(&instance_impl->m_definition);
+                instance = JSObjectMake(V82JSC::ToContextRef(context), claz, (void*)wrap);
+                JSClassRelease(claz);
+            }
+
+            MaybeLocal<Object> thiz;
+            if (impl->m_parent) {
+                thiz = init_instance(context, instance, excep, impl->m_parent, 0);
+            }
+            if (!excep.ShouldThow()) {
+                thiz = instance_impl->InitInstance(context, instance, excep);
+            }
+            return thiz;
+    };
+    
+    Local<Object> thiz = init_instance(context, 0, excep, reinterpret_cast<const FunctionTemplateImpl*>(wrap->m_template), wrap).ToLocalChecked();
+    
+    if (excep.ShouldThow()) {
+        if (exception) {
+            *exception = V82JSC::ToJSValueRef<Value>(try_catch.Exception(), context);
+        }
+        return 0;
+    }
+    JSObjectRef thisObject = (JSObjectRef) V82JSC::ToJSValueRef(thiz, context);
+
+    JSValueRef excp = nullptr;
+    
+    JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
+    JSValueRef proto = JSObjectGetProperty(V82JSC::ToContextRef(context), constructor, sprototype, &excp);
+    JSStringRelease(sprototype);
+    assert(excp==nullptr);
+    if (JSValueIsObject(V82JSC::ToContextRef(context), proto)) {
+        JSObjectSetPrototype(V82JSC::ToContextRef(context), thisObject, proto);
+    } else {
+        proto = thisObject;
+    }
+    
+    JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
+    JSObjectSetProperty(ctx, thisObject, ctor, constructor, kJSPropertyAttributeDontEnum, &excp);
+    JSStringRelease(ctor);
+    assert(excp==nullptr);
+    
+    // FIXME: Whatever needs to be done to make instanceof work, signature, etc.
+    
+    Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
+    
+    v8::internal::Object * implicit[] = {
+        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
+        O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
+        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
+        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
+        * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
+        nullptr /*deprecated*/,                              // kCalleeIndex = 5;
+        nullptr, // FIXME                                    // kContextSaveIndex = 6;
+        * reinterpret_cast<v8::internal::Object**>(*thiz)    // kNewTargetIndex = 7;
+    };
+    v8::internal::Object * values_[argumentCount + 1];
+    v8::internal::Object ** values = values_ + argumentCount - 1;
+    *(values + 1) = * reinterpret_cast<v8::internal::Object**>(*thiz);
+    for (size_t i=0; i<argumentCount; i++) {
+        Local<Value> arg = ValueImpl::New(wrap->m_context, arguments[i]);
+        *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
+    }
+    
+    FunctionCallbackImpl info(implicit, values, (int) argumentCount);
+    
+    if (wrap->m_template->m_callback) {
+        wrap->m_template->m_callback(info);
+    }
+    
+    if(!implicit[3]->IsUndefined(reinterpret_cast<v8::internal::Isolate*>(isolate))) {
+        Local<Value> ret = info.GetReturnValue().Get();
+        return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
+    }
+    
+    return thisObject;
+}
+

@@ -78,181 +78,7 @@ using v8::internal::Isolate;
 struct IsolateImpl {
     union i_ {
         v8::internal::Isolate ii;
-        /*
-        struct internal_copy_ {
-            v8::base::Atomic32 id_;
-            void* entry_stack_; //EntryStackItem* entry_stack_;
-            int stack_trace_nesting_level_;
-            StringStream* incomplete_message_;
-            Address isolate_addresses_[kIsolateAddressCount + 1];  // NOLINT
-            Bootstrapper* bootstrapper_;
-            RuntimeProfiler* runtime_profiler_;
-            CompilationCache* compilation_cache_;
-            std::shared_ptr<Counters> async_counters_;
-            v8::base::RecursiveMutex break_access_;
-            Logger* logger_;
-            StackGuard stack_guard_;
-            StubCache* load_stub_cache_;
-            StubCache* store_stub_cache_;
-            CodeAgingHelper* code_aging_helper_;
-            DeoptimizerData* deoptimizer_data_;
-            bool deoptimizer_lazy_throw_;
-            MaterializedObjectStore* materialized_object_store_;
-            ThreadLocalTop thread_local_top_;
-            bool capture_stack_trace_for_uncaught_exceptions_;
-            int stack_trace_for_uncaught_exceptions_frame_limit_;
-            v8::StackTrace::StackTraceOptions stack_trace_for_uncaught_exceptions_options_;
-            ContextSlotCache* context_slot_cache_;
-            DescriptorLookupCache* descriptor_lookup_cache_;
-            HandleScopeData handle_scope_data_;
-            HandleScopeImplementer* handle_scope_implementer_;
-            UnicodeCache* unicode_cache_;
-            AccountingAllocator* allocator_;
-            InnerPointerToCodeCache* inner_pointer_to_code_cache_;
-            GlobalHandles* global_handles_;
-            EternalHandles* eternal_handles_;
-            ThreadManager* thread_manager_;
-            RuntimeState runtime_state_;
-            Builtins builtins_;
-            SetupIsolateDelegate* setup_delegate_;
-            unibrow::Mapping<unibrow::Ecma262UnCanonicalize> jsregexp_uncanonicalize_;
-            unibrow::Mapping<unibrow::CanonicalizationRange> jsregexp_canonrange_;
-            unibrow::Mapping<unibrow::Ecma262Canonicalize>
-            regexp_macro_assembler_canonicalize_;
-            RegExpStack* regexp_stack_;
-            List<int> regexp_indices_;
-            DateCache* date_cache_;
-            CallInterfaceDescriptorData* call_descriptor_data_;
-            AccessCompilerData* access_compiler_data_;
-            v8::base::RandomNumberGenerator* random_number_generator_;
-            v8::base::AtomicValue<v8::RAILMode> rail_mode_;
-            bool promise_hook_or_debug_is_active_;
-            v8::PromiseHook promise_hook_;
-            v8::HostImportModuleDynamicallyCallback host_import_module_dynamically_callback_;
-            v8::base::Mutex rail_mutex_;
-            double load_start_time_ms_;
-            
-            // Whether the isolate has been created for snapshotting.
-            bool serializer_enabled_;
-            
-            // True if fatal error has been signaled for this isolate.
-            bool has_fatal_error_;
-            
-            // True if this isolate was initialized from a snapshot.
-            bool initialized_from_snapshot_;
-            
-            // True if ES2015 tail call elimination feature is enabled.
-            bool is_tail_call_elimination_enabled_;
-            
-            // True if the isolate is in background. This flag is used
-            // to prioritize between memory usage and latency.
-            bool is_isolate_in_background_;
-            
-            // Time stamp at initialization.
-            double time_millis_at_init_;
-            
-#ifdef DEBUG
-            // A static array of histogram info for each type.
-            HistogramInfo heap_histograms_[LAST_TYPE + 1];
-            JSObject::SpillInformation js_spill_information_;
-#endif
-            
-            v8::internal::Debug* debug_;
-            v8::internal::CpuProfiler* cpu_profiler_;
-            v8::internal::HeapProfiler* heap_profiler_;
-            std::unique_ptr<CodeEventDispatcher> code_event_dispatcher_;
-            v8::FunctionEntryHook function_entry_hook_;
-            
-            const AstStringConstants* ast_string_constants_;
-            
-            interpreter::Interpreter* interpreter_;
-            
-            CompilerDispatcher* compiler_dispatcher_;
-            
-            typedef std::pair<InterruptCallback, void*> InterruptEntry;
-            std::queue<InterruptEntry> api_interrupts_queue_;
-#define debug v8::debug
-#define GLOBAL_BACKING_STORE(type, name, initialvalue)                         \
-type name##_;
-            ISOLATE_INIT_LIST(GLOBAL_BACKING_STORE)
-#undef GLOBAL_BACKING_STORE
-#undef debug
-            
-#define GLOBAL_ARRAY_BACKING_STORE(type, name, length)                         \
-type name##_[length];
-            ISOLATE_INIT_ARRAY_LIST(GLOBAL_ARRAY_BACKING_STORE)
-#undef GLOBAL_ARRAY_BACKING_STORE
-            
-#ifdef DEBUG
-            // This class is huge and has a number of fields controlled by
-            // preprocessor defines. Make sure the offsets of these fields agree
-            // between compilation units.
-#define ISOLATE_FIELD_OFFSET(type, name, ignored)                              \
-static const intptr_t name##_debug_offset_;
-            ISOLATE_INIT_LIST(ISOLATE_FIELD_OFFSET)
-            ISOLATE_INIT_ARRAY_LIST(ISOLATE_FIELD_OFFSET)
-#undef ISOLATE_FIELD_OFFSET
-#endif
-            
-            DeferredHandles* deferred_handles_head_;
-            OptimizingCompileDispatcher* optimizing_compile_dispatcher_;
-            
-            // Counts deopt points if deopt_every_n_times is enabled.
-            unsigned int stress_deopt_count_;
-            
-            int next_optimization_id_;
-            
-#if V8_SFI_HAS_UNIQUE_ID
-            int next_unique_sfi_id_;
-#endif
-            
-            // List of callbacks before a Call starts execution.
-            List<BeforeCallEnteredCallback> before_call_entered_callbacks_;
-            
-            // List of callbacks when a Call completes.
-            List<CallCompletedCallback> call_completed_callbacks_;
-            
-            // List of callbacks after microtasks were run.
-            List<MicrotasksCompletedCallback> microtasks_completed_callbacks_;
-            bool is_running_microtasks_;
-            
-            v8::Isolate::UseCounterCallback use_counter_callback_;
-            BasicBlockProfiler* basic_block_profiler_;
-            
-            List<Object*> partial_snapshot_cache_;
-            
-            v8::ArrayBuffer::Allocator* array_buffer_allocator_;
-            
-            FutexWaitListNode futex_wait_list_node_;
-            
-            CancelableTaskManager* cancelable_task_manager_;
-            
-            std::unique_ptr<wasm::CompilationManager> wasm_compilation_manager_;
-            
-            v8::debug::ConsoleDelegate* console_delegate_ = nullptr;
-            
-            v8::Isolate::AbortOnUncaughtExceptionCallback
-            abort_on_uncaught_exception_callback_;
-            
-#ifdef USE_SIMULATOR
-            base::Mutex simulator_i_cache_mutex_;
-            base::Mutex simulator_redirection_mutex_;
-#endif
-            
-            bool allow_atomics_wait_;
-            
-            v8::internal::Isolate::ManagedObjectFinalizer managed_object_finalizers_list_;
-            
-            size_t total_regexp_code_generated_;
-            
-            size_t elements_deletion_counter_ = 0;
-            
-            // The top entry of the v8::Context::BackupIncumbentScope stack.
-            const v8::Context::BackupIncumbentScope* top_backup_incumbent_scope_ =
-            nullptr;
-        } internal_copy;
-        */
-        struct {
+         struct {
             void *i0; // kHeapObjectMapOffset, kIsolateEmbedderDataOffset
             void *i1; // kForeignAddressOffset
             void *i2;
@@ -290,10 +116,7 @@ struct InternalObjectImpl {
         unsigned char filler_[256]; // FIXME
     };
     JSValueRef  m_value;
-    JSStringRef m_string;
-    JSObjectRef m_object;
     ContextImpl* m_context;
-    double m_number;
 };
 
 struct ContextImpl : v8::Context
@@ -393,10 +216,11 @@ struct PropertyCallbackImpl : public v8::PropertyCallbackInfo<T>
 
 struct SignatureImpl;
 struct ObjectTemplateImpl;
+struct FunctionTemplateImpl;
 
 struct PropAccessor {
-    ObjectTemplateImpl *m_setter;
-    ObjectTemplateImpl *m_getter;
+    FunctionTemplateImpl *m_setter;
+    FunctionTemplateImpl *m_getter;
 };
 struct ObjAccessor {
     JSValueRef m_property;
@@ -408,35 +232,25 @@ struct ObjAccessor {
 
 struct LocalException;
 
-struct ObjectTemplateImpl : ValueImpl
+struct TemplateImpl : InternalObjectImpl
 {
-    v8::FunctionCallback m_callback;
     v8::Isolate *m_isolate;
-    SignatureImpl *m_signature;
-    v8::ConstructorBehavior m_behavior;
-    JSClassRef m_class;
-    JSClassDefinition m_definition;
     std::map<JSStringRef, ValueImpl*> m_properties;
     std::map<JSStringRef, PropAccessor> m_property_accessors;
     std::map<JSStringRef, ObjAccessor> m_obj_accessors;
-    ObjectTemplateImpl *m_parent;
+    v8::FunctionCallback m_callback;
     JSValueRef m_data;
-    std::string m_name;
-    int m_length;
-    ObjectTemplateImpl *m_constructor_template;
-    JSObjectRef m_function;
-    
+    SignatureImpl *m_signature;
+    ObjectTemplateImpl *m_prototype_template;
+    JSClassDefinition m_definition;
+    FunctionTemplateImpl *m_parent;
+
     static JSValueRef callAsFunctionCallback(JSContextRef ctx,
                                              JSObjectRef function,
                                              JSObjectRef thisObject,
                                              size_t argumentCount,
                                              const JSValueRef arguments[],
                                              JSValueRef* exception);
-    static JSObjectRef callAsConstructorCallback(JSContextRef ctx,
-                                                 JSObjectRef constructor,
-                                                 size_t argumentCount,
-                                                 const JSValueRef arguments[],
-                                                 JSValueRef* exception);
     static JSValueRef objectGetterCallback(JSContextRef ctx,
                                            JSObjectRef ignore,
                                            JSObjectRef thisObject,
@@ -450,11 +264,34 @@ struct ObjectTemplateImpl : ValueImpl
                                            const JSValueRef arguments[],
                                            JSValueRef* exception);
     
-    v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context, JSObjectRef instance, LocalException& exception);
+    v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
+                                            JSObjectRef instance, LocalException& exception);
+    static TemplateImpl* New(v8::Isolate* isolate, size_t size);
 };
 
-struct ObjectTemplateWrap {
-    const ObjectTemplateImpl *m_template;
+struct FunctionTemplateImpl : TemplateImpl
+{
+    v8::ConstructorBehavior m_behavior;
+    std::string m_name;
+    int m_length;
+    ObjectTemplateImpl *m_instance_template;
+    std::map<const ContextImpl*, JSObjectRef> m_functions;
+    JSClassRef m_class;
+
+    static JSObjectRef callAsConstructorCallback(JSContextRef ctx,
+                                                 JSObjectRef constructor,
+                                                 size_t argumentCount,
+                                                 const JSValueRef arguments[],
+                                                 JSValueRef* exception);
+};
+
+struct ObjectTemplateImpl : TemplateImpl
+{
+    FunctionTemplateImpl *m_constructor_template;
+};
+
+struct TemplateWrap {
+    const TemplateImpl *m_template;
     const ContextImpl* m_context;
     std::map<JSStringRef, JSObjectRef> m_getters;
     std::map<JSStringRef, JSObjectRef> m_setters;
@@ -466,7 +303,7 @@ struct SignatureImpl
     ~SignatureImpl();
 
     v8::Isolate *m_isolate;
-    ObjectTemplateImpl *m_template;
+    FunctionTemplateImpl *m_template;
 };
 
 struct TypedArrayImpl : public ArrayBufferViewImpl, v8::TypedArray {
