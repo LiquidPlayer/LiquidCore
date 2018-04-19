@@ -6,50 +6,61 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include <v8.h>
+#include "V82JSC.h"
 
 using namespace v8;
 
-std::vector<v8::internal::Object*> m_handles;
-
 HandleScope::HandleScope(Isolate* isolate)
 {
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(isolate);
     
+    this->isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
+    this->prev_next_ = reinterpret_cast<internal::Object **>(impl->m_handle_index);
+    this->prev_limit_ = nullptr;
 }
 
 HandleScope::~HandleScope()
 {
-    
+    // FIXME: Here is where we would decrement count the internal objects
 }
 
 int HandleScope::NumberOfHandles(Isolate* isolate)
 {
-    return (int) m_handles.size();
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
+    
+    return impl->m_handle_index;
 }
 
 internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
                                        internal::Object* value)
 {
-    m_handles.push_back(value);
-    return & m_handles.back();
-    //return reinterpret_cast<internal::Object**>(value);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
+    if (impl->m_handle_index % MAX_HANDLES_PER_GROUP == 0) {
+        impl->m_handles.push_back(internal::HandleGroup());
+    }
+    internal::HandleGroup& group = impl->m_handles.back();
+    internal::Object ** handle = & group.handles_[impl->m_handle_index % MAX_HANDLES_PER_GROUP];
+    impl->m_handle_index++;
+    *handle = value;
+    return handle;
 }
 
 internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,
                                        internal::Object* value)
 {
-    m_handles.push_back(value);
-    return &* (m_handles.end());
+    assert(0);
 }
 
-EscapableHandleScope::EscapableHandleScope(Isolate* isolate)
+EscapableHandleScope::EscapableHandleScope(Isolate* isolate) : HandleScope(isolate)
 {
-    
+    // Super HACK!
+    this->escape_slot_ = reinterpret_cast<internal::Object**>(isolate);
 }
 
 internal::Object** EscapableHandleScope::Escape(internal::Object** escape_value)
 {
-    return HandleScope::CreateHandle((internal::Isolate*)nullptr, *escape_value);
+    // Super HACK!
+    return HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(escape_slot_), *escape_value);
 }
 
 SealHandleScope::~SealHandleScope()

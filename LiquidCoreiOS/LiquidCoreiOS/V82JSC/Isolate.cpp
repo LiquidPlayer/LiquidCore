@@ -295,9 +295,7 @@ bool Isolate::InContext()
 Local<Context> Isolate::GetCurrentContext()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
-    Local<Context> c;
-    *(reinterpret_cast<Context **>(&c)) = impl->current_context;
-    return c;
+    return _local<Context>(impl->current_context).toLocal();
 }
 
 /** Returns the last context entered through V8's C++ API. */

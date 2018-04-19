@@ -93,7 +93,7 @@ bool Value::IsNumber() const { FROMTHIS(c,v); return JSValueIsNumber(c->m_contex
 /**
  * Returns true if this value is external.
  */
-bool Value::IsExternal() const { return IS(IsExternal, "return Object.prototype.toString.call( v ) === '[object External]';);"); }
+bool Value::IsExternal() const { return IS(IsExternal, "return Object.prototype.toString.call( v ) === '[object External]';"); }
 
 /**
  * Returns true if this value is a 32-bit signed integer.

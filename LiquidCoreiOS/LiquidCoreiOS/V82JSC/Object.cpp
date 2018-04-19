@@ -352,10 +352,9 @@ Local<Value> Object::GetPrototype()
 {
     ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
     JSContextRef ctx = ctximpl->m_context;
-    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, _local<Context>(ctximpl).toLocal());
-    
-    JSValueRef proto = JSObjectGetPrototype(ctx, obj);
-    return ValueImpl::New(V82JSC::ToContextImpl<Object>(this), proto);
+    JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, _local<Context>(ctximpl).toLocal());
+    JSValueRef proto = V82JSC::exec(ctx, "return Object.getPrototypeOf(_1)", 1, &obj);
+    return ValueImpl::New(ctximpl, proto);
 }
 
 /**
@@ -381,22 +380,32 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
     ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    TemplateImpl* tmplimpl = V82JSC::ToImpl<TemplateImpl>(tmpl);
-
+    FunctionTemplateImpl* tmplimpl = V82JSC::ToImpl<FunctionTemplateImpl>(tmpl);
+    Local<Context> context = _local<Context>(ctximpl).toLocal();
+    
+    JSStringRef sprivate = JSStringCreateWithUTF8CString("__private__");
     Local<Value> proto = _local<Value>(this).toLocal();
     while (proto->IsObject()) {
-        JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, _local<Context>(ctximpl).toLocal());
-        TemplateWrap *wrap = (TemplateWrap*) JSObjectGetPrivate(obj);
-        if(wrap) {
-            for (const TemplateImpl *t = wrap->m_template; t; t = t->m_parent) {
-                if (t == tmplimpl) {
-                    return proto.As<Object>();
+        JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, context);
+        JSValueRef excp=0;
+        JSObjectRef __private__ = (JSObjectRef) JSObjectGetProperty(ctximpl->m_context, obj, sprivate, &excp);
+        assert(excp==0);
+        bool hasOwn = JSValueToBoolean(ctximpl->m_context,
+                                       V82JSC::exec(ctximpl->m_context, "return !_1.__proto__ || (_1.__proto__.__private__ !== _1.__private__)", 1, &obj));
+        if (hasOwn && JSValueIsObject(ctximpl->m_context, __private__)) {
+            InstanceWrap *instance_wrap = (InstanceWrap*) JSObjectGetPrivate(__private__);
+            if(instance_wrap) {
+                for (const TemplateImpl *t = instance_wrap->m_object_template->m_constructor_template; t; t = t->m_parent) {
+                    if (t == tmplimpl) {
+                        return proto.As<Object>();
+                    }
                 }
             }
         }
         proto = proto.As<Object>()->GetPrototype();
     }
-    
+    JSStringRelease(sprivate);
+
     return Local<Object>();
 }
 

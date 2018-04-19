@@ -70,19 +70,38 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
         
-        JSClassDefinition def = kJSClassDefinitionEmpty;
-        JSClassRef claz = JSClassCreate(&def);
+        //JSClassDefinition def = kJSClassDefinitionEmpty;
+        //JSClassRef claz = JSClassCreate(&def);
         
-        TemplateWrap *wrap = new TemplateWrap();
-        wrap->m_template = impl;
-        wrap->m_context = context;
+        //TemplateWrap *wrap = new TemplateWrap();
+        //wrap->m_template = impl;
+        //wrap->m_context = context;
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
-        context->m_context = JSGlobalContextCreateInGroup(i->m_group, claz);
+        context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
         JSObjectRef instance = JSContextGetGlobalObject(context->m_context);
-        JSObjectSetPrivate(instance, (void*)wrap);
-        JSClassRelease(claz);
-        impl->InitInstance(_local<Context>(context).toLocal(), instance, exception);
+        //JSObjectSetPrivate(instance, (void*)wrap);
+        //JSClassRelease(claz);
+        Local<Context> ctx = Local<Context>(context);
+
+        if (impl->m_constructor_template) {
+            MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(ctx);
+            if (!ctor.IsEmpty()) {
+                JSObjectRef ctor_func = (JSObjectRef) V82JSC::ToJSValueRef(ctor.ToLocalChecked(), ctx);
+                JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
+                JSStringRef sconstructor = JSStringCreateWithUTF8CString("constructor");
+                JSValueRef excp = 0;
+                JSValueRef prototype = JSObjectGetProperty(context->m_context, ctor_func, sprototype, &excp);
+                assert(excp == 0);
+                JSObjectSetPrototype(context->m_context, instance, prototype);
+                JSObjectSetProperty(context->m_context, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum|kJSPropertyAttributeReadOnly, &excp);
+                assert(excp == 0);
+                JSStringRelease(sprototype);
+                JSStringRelease(sconstructor);
+            }
+        }
+        impl->NewInstance(ctx, instance);
+
         if (exception.ShouldThow()) {
             return Local<Context>();
         }

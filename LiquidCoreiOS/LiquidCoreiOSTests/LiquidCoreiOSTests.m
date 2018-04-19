@@ -129,11 +129,11 @@ V(TestObjectTemplateInheritedWithAccessorsInPrototype2)
 V(TestObjectTemplateInheritedWithAccessorsInPrototype3)
 V(TestObjectTemplateInheritedWithPrototype1)
 V(TestObjectTemplateInheritedWithPrototype2)
-
 V(TestObjectTemplateClassInheritance)
 V(TestObjectTemplateReflectConstruct)
 V(DescriptorInheritance)
 V(DescriptorInheritance2)
+
 V(AccessorIsPreservedOnAttributeChange)
 V(CallbackExceptionRegression)
 V(InternalFields)

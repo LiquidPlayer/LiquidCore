@@ -130,31 +130,31 @@ void Template::SetIntrinsicDataProperty(Local<Name> name, Intrinsic intrinsic,
 #define O(v) reinterpret_cast<v8::internal::Object*>(v)
 
 JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
-                                                JSObjectRef function,
+                                                JSObjectRef proxy_function,
                                                 JSObjectRef thisObject,
                                                 size_t argumentCount,
                                                 const JSValueRef *arguments,
                                                 JSValueRef *exception)
 {
-    TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(function));
+    TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(proxy_function));
     Local<Value> thiz = ValueImpl::New(wrap->m_context, thisObject);
     
     // Check signature
+    JSStringRef sprivate = JSStringCreateWithUTF8CString("__private__");
     bool signature_match = !wrap->m_template->m_signature;
     if (!signature_match) {
-        TemplateWrap *thisWrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(thisObject));
+        JSValueRef excp=0;
+        JSObjectRef __private__ = (JSObjectRef) JSObjectGetProperty(ctx, thisObject, sprivate, &excp);
+        assert(excp==0);
         SignatureImpl *sig = wrap->m_template->m_signature;
-        
-        JSValueRef proto = thisObject;
-        while (thisWrap) {
-            for (const TemplateImpl *templ = thisWrap->m_template; !signature_match && templ; templ = templ->m_parent) {
+        if (JSValueIsObject(ctx, __private__)) {
+            bool hasOwn = JSValueToBoolean(ctx,
+               V82JSC::exec(ctx, "return !_1.__proto__ || (_1.__private__ !== _1.__proto__.__private__)", 1, &thisObject));
+            InstanceWrap *thisWrap = reinterpret_cast<InstanceWrap*>(JSObjectGetPrivate(__private__));
+            for (const TemplateImpl *templ = thisWrap->m_object_template->m_constructor_template;
+                 !signature_match && hasOwn && templ; templ = templ->m_parent) {
                 signature_match = sig->m_template == templ;
             }
-            if (signature_match) break;
-            proto = JSObjectGetPrototype(ctx, (JSObjectRef) proto);
-            if (!JSValueIsObject(ctx, proto)) break;
-            JSObjectRef oproto = JSValueToObject(ctx, proto, 0);
-            thisWrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(oproto));
         }
     }
     if (!signature_match) {
@@ -212,16 +212,26 @@ TemplateImpl* TemplateImpl::New(Isolate* isolate, size_t size)
     return templ;
 }
 
+MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRef instance, LocalException& excep,
+                                              const FunctionTemplateImpl *impl)
+{
+    Local<ObjectTemplate> instance_template =
+        _local<FunctionTemplate>(const_cast<FunctionTemplateImpl*>(impl)).toLocal()->InstanceTemplate();
+    ObjectTemplateImpl *instance_impl = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
+    
+    MaybeLocal<Object> thiz;
+    if (impl->m_parent) {
+        thiz = InitInstance(context, instance, excep, impl->m_parent);
+    }
+    if (!excep.ShouldThow()) {
+        thiz = instance_impl->InitInstance(context, instance, excep);
+    }
+    return thiz;
+};
+
 MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRef instance, LocalException& exception)
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    if (m_prototype_template) {
-        m_prototype_template->InitInstance(context, instance, exception);
-        if (exception.ShouldThow()) {
-            return MaybeLocal<Object>();
-        }
-    }
     
     for (auto i=m_properties.begin(); i!=m_properties.end(); ++i) {
         typedef internal::Object O;
@@ -244,10 +254,10 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     }
     
     JSStringRef getset = JSStringCreateWithUTF8CString(
-                                                       "delete __o__[__n__]; "
-                                                       "if (!__setter__) Object.defineProperty(__o__, __n__, { get: __getter__, configurable: true }); "
-                                                       "else if (!__getter__) Object.defineProperty(__o__, __n__, { set: __setter__, configurable: true }); "
-                                                       "else Object.defineProperty(__o__, __n__, { get: __getter__, set: __setter__, configurable: true });");
+       "delete __o__[__n__]; "
+       "if (!__setter__) Object.defineProperty(__o__, __n__, { get: __getter__, configurable: true }); "
+       "else if (!__getter__) Object.defineProperty(__o__, __n__, { set: __setter__, configurable: true }); "
+       "else Object.defineProperty(__o__, __n__, { get: __getter__, set: __setter__, configurable: true });");
     JSStringRef name = JSStringCreateWithUTF8CString("getset");
     JSStringRef paramNames[] = {
         JSStringCreateWithUTF8CString("__o__"),
@@ -342,11 +352,11 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
 #define O(v) reinterpret_cast<v8::internal::Object*>(v)
 
 JSValueRef TemplateImpl::objectGetterCallback(JSContextRef ctx,
-                                                    JSObjectRef function,
-                                                    JSObjectRef thisObject,
-                                                    size_t argumentCount,
-                                                    const JSValueRef *arguments,
-                                                    JSValueRef *exception)
+                                              JSObjectRef function,
+                                              JSObjectRef thisObject,
+                                              size_t argumentCount,
+                                              const JSValueRef *arguments,
+                                              JSValueRef *exception)
 {
     ObjAccessor* wrap = reinterpret_cast<ObjAccessor*>(JSObjectGetPrivate(function));
     
@@ -357,8 +367,8 @@ JSValueRef TemplateImpl::objectGetterCallback(JSContextRef ctx,
         0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
         O(wrap->m_context->isolate),                         // kIsolateIndex = 2;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 3;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 4;
+        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueDefaultValueIndex = 3;
+        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueIndex = 4;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
     };

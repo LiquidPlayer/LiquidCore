@@ -10,6 +10,8 @@
 
 using namespace v8;
 
+#define PROXY_CALL_MAGIC_NUMBER ((void*)0x0133707eel)
+
 SignatureImpl::SignatureImpl()
 {
     
@@ -56,10 +58,12 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
     }
     templ->m_data = V82JSC::ToJSValueRef<Value>(data, isolate);
     JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, templ->m_data);
-    templ->m_definition.callAsFunction = TemplateImpl::callAsFunctionCallback;
+    //templ->m_definition.callAsFunction = TemplateImpl::callAsFunctionCallback;
+    /*
     if (behavior == ConstructorBehavior::kAllow) {
         templ->m_definition.callAsConstructor = FunctionTemplateImpl::callAsConstructorCallback;
     }
+    */
     if (templ->m_signature) {
         templ->m_definition.parentClass = templ->m_signature->m_template->m_class;
     }
@@ -104,28 +108,112 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     if (function) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), function).As<Function>();
     }
-        
-    impl->m_class = JSClassCreate(&impl->m_definition);
-    
+
+    JSStringRef generic_function_name = JSStringCreateWithUTF8CString("generic_function");
+    JSStringRef empty_body = JSStringCreateWithUTF8CString("");
+
+    JSValueRef excp = nullptr;
+    JSObjectRef generic_function = JSObjectMakeFunction(V82JSC::ToContextRef(context),
+                                    generic_function_name, 0, 0, empty_body, 0, 0, &excp);
+    assert(excp == nullptr);
+    JSStringRelease(generic_function_name);
+    JSStringRelease(empty_body);
+    JSValueRef generic_function_prototype = V82JSC::exec(V82JSC::ToContextRef(context),
+                                                         "return Object.getPrototypeOf(_1)", 1,
+                                                         &generic_function);
+
     TemplateWrap *wrap = new TemplateWrap();
     wrap->m_template = impl;
     wrap->m_context = ctx;
     
+    JSClassDefinition function_def = kJSClassDefinitionEmpty;
+    function_def.callAsFunction = TemplateImpl::callAsFunctionCallback;
+    function_def.className = "function_proxy";
+    JSClassRef function_class = JSClassCreate(&function_def);
+    JSObjectRef function_proxy = JSObjectMake(ctx->m_context, function_class, (void*)wrap);
+    JSObjectSetPrototype(ctx->m_context, function_proxy, generic_function_prototype);
+    JSClassRelease(function_class);
+
+    JSClassDefinition constructor_def = kJSClassDefinitionEmpty;
+    constructor_def.callAsFunction = FunctionTemplateImpl::callAsConstructorCallback;
+    constructor_def.className = "constructor_proxy";
+    JSClassRef constructor_class = JSClassCreate(&constructor_def);
+    JSObjectRef constructor_proxy = JSObjectMake(ctx->m_context, constructor_class, (void*)wrap);
+    JSObjectSetPrototype(ctx->m_context, constructor_proxy, generic_function_prototype);
+    JSClassRelease(constructor_class);
+    
+    static const char *proxy_function_template =
+    "function name () { "
+    "    if (new.target) { "
+    "        return name_ctor.call(this, new.target == name, ...arguments); "
+    "    } else { "
+    "        return name_func.call(this, ...arguments); "
+    "    } "
+    "}; "
+    "if (name_length) { "
+    "    Object.defineProperty(name, 'length', {value: name_length}); "
+    "} "
+    "return name; ";
+    
+    auto ReplaceStringInPlace = [](std::string& subject, const std::string& search,
+                              const std::string& replace) {
+        size_t pos = 0;
+        while((pos = subject.find(search, pos)) != std::string::npos) {
+            subject.replace(pos, search.length(), replace);
+            pos += replace.length();
+        }
+    };
+    
+    std::string proxy_function_body = proxy_function_template;
+    const char *sname = impl->m_name.length() ? impl->m_name.c_str() : "Function";
+    ReplaceStringInPlace(proxy_function_body, "name", sname);
+    
+    JSStringRef name = JSStringCreateWithUTF8CString("proxy_function");
+    JSStringRef body = JSStringCreateWithUTF8CString(proxy_function_body.c_str());
+    JSStringRef paramNames[] = {
+        JSStringCreateWithUTF8CString(std::string(std::string(sname) + "_func").c_str()),
+        JSStringCreateWithUTF8CString(std::string(std::string(sname) + "_ctor").c_str()),
+        JSStringCreateWithUTF8CString(std::string(std::string(sname) + "_length").c_str()),
+    };
+    JSValueRef exp = nullptr;
+    JSObjectRef get_proxy = JSObjectMakeFunction(V82JSC::ToContextRef(context),
+                                                 name,
+                                                 sizeof paramNames / sizeof (JSStringRef),
+                                                 paramNames,
+                                                 body, 0, 0, &exp);
+    assert(exp==nullptr);
+    JSStringRelease(name);
+    JSStringRelease(body);
+    for (int i=0; i < sizeof paramNames / sizeof (JSStringRef); i++) {
+        JSStringRelease(paramNames[i]);
+    }
+    JSValueRef params[] = {
+        function_proxy,
+        constructor_proxy,
+        JSValueMakeNumber(ctx->m_context, impl->m_length)
+    };
+    function = (JSObjectRef) JSObjectCallAsFunction(V82JSC::ToContextRef(context),
+                                                    get_proxy, 0, sizeof params / sizeof (JSValueRef), params, &exp);
+    assert(exp==nullptr);
+    
     LocalException exception(ctx->isolate);
-    function = JSObjectMake(ctx->m_context, impl->m_class, (void*)wrap);
 
     MaybeLocal<Object> thizo = impl->InitInstance(context, function, exception);
     if (thizo.IsEmpty()) {
         return MaybeLocal<Function>();
     }
-    Local<ObjectTemplate> prototype_template = _local<FunctionTemplate>(this).toLocal()->PrototypeTemplate();
-    MaybeLocal<Object> prototype = prototype_template->NewInstance(context);
-    if (prototype.IsEmpty()) {
-        return MaybeLocal<Function>();
-    }
     JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
-    JSValueRef prototype_property = V82JSC::ToJSValueRef(prototype.ToLocalChecked(), context);
-    JSObjectSetProperty(V82JSC::ToContextRef(context), function, sprototype, prototype_property, kJSPropertyAttributeDontEnum, 0);
+    JSValueRef prototype_property = 0;
+    if (impl->m_prototype_template || impl->m_parent) {
+        Local<ObjectTemplate> prototype_template = _local<FunctionTemplate>(this).toLocal()->PrototypeTemplate();
+        MaybeLocal<Object> prototype = prototype_template->NewInstance(context);
+        if (prototype.IsEmpty()) {
+            return MaybeLocal<Function>();
+        }
+        prototype_property = V82JSC::ToJSValueRef(prototype.ToLocalChecked(), context);
+        JSObjectSetProperty(V82JSC::ToContextRef(context), function, sprototype,
+                            prototype_property, kJSPropertyAttributeDontEnum/*|kJSPropertyAttributeReadOnly*/, 0);
+    }
     if (impl->m_parent) {
         MaybeLocal<Function> parentFunc = _local<FunctionTemplate>(impl->m_parent).toLocal()->GetFunction(context);
         if (parentFunc.IsEmpty()) {
@@ -134,31 +222,15 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
         }
         JSValueRef parentFuncRef = V82JSC::ToJSValueRef<Function>(parentFunc.ToLocalChecked(), context);
         JSValueRef parentFuncPrototype = JSObjectGetProperty(ctx->m_context, (JSObjectRef)parentFuncRef, sprototype, 0);
-        JSObjectSetPrototype(ctx->m_context, (JSObjectRef)prototype_property, parentFuncPrototype);
-        JSStringRelease(sprototype);
+        if (prototype_property) {
+            JSObjectSetPrototype(ctx->m_context, (JSObjectRef)prototype_property, parentFuncPrototype);
+        }
     }
+    JSStringRelease(sprototype);
 
-    if (impl->m_length) {
-        JSStringRef length = JSStringCreateWithUTF8CString("length");
-        JSValueRef exp = nullptr;
-        JSObjectSetProperty(ctx->m_context, function, length, JSValueMakeNumber(ctx->m_context, impl->m_length), kJSPropertyAttributeNone, &exp);
-        assert(exp==nullptr);
-        JSStringRelease(length);
-    }
-
-    if (impl->m_name.length()) {
-        JSStringRef name = JSStringCreateWithUTF8CString("name");
-        JSStringRef name_ = JSStringCreateWithUTF8CString(impl->m_name.c_str());
-        JSValueRef exp = nullptr;
-        JSObjectSetProperty(ctx->m_context, function, name, JSValueMakeString(ctx->m_context, name_), kJSPropertyAttributeDontEnum, &exp);
-        JSStringRelease(name);
-        JSStringRelease(name_);
-        assert(exp==nullptr);
-    }
-    
     impl->m_functions[ctx] = function;
     JSValueProtect(ctx->m_context, function);
-    return thizo.ToLocalChecked().As<Function>();
+    return ValueImpl::New(ctx, function).As<Function>();
 }
 
 /**
@@ -204,11 +276,8 @@ Local<ObjectTemplate> FunctionTemplate::InstanceTemplate()
     if (!impl->m_instance_template) {
         instance_template = ObjectTemplate::New(impl->m_isolate);
         impl->m_instance_template = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
-        Local<ObjectTemplate> prototype_template = PrototypeTemplate();
-        impl->m_instance_template->m_prototype_template = V82JSC::ToImpl<ObjectTemplateImpl>(prototype_template);
         impl->m_instance_template->m_constructor_template = impl;
         impl->m_instance_template->m_parent = impl;
-        impl->m_instance_template->m_definition.className = impl->m_name.c_str();
     } else {
         instance_template = _local<ObjectTemplate>(impl->m_instance_template).toLocal();
     }
@@ -325,77 +394,64 @@ bool FunctionTemplate::HasInstance(Local<Value> object)
 #undef O
 #define O(v) reinterpret_cast<v8::internal::Object*>(v)
 
-JSObjectRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
-                                                    JSObjectRef constructor,
-                                                    size_t argumentCount,
-                                                    const JSValueRef *arguments,
-                                                    JSValueRef *exception)
+JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
+                                                           JSObjectRef constructor_function,
+                                                           JSObjectRef instance,
+                                                           size_t argumentCount,
+                                                           const JSValueRef *arguments,
+                                                           JSValueRef *exception)
 {
-    TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(constructor));
+    TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(constructor_function));
     Isolate *isolate = V82JSC::ToIsolate(wrap->m_context->isolate);
-    
     Local<Context> context = _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal();
     
-    TryCatch try_catch(isolate);
-    LocalException excep(wrap->m_context->isolate);
-    static MaybeLocal<Object> (*init_instance)(Local<Context>, JSObjectRef, LocalException&, const FunctionTemplateImpl *, void *) =
-        [](Local<Context> context, JSObjectRef instance, LocalException& excep, const FunctionTemplateImpl *impl, void *wrap) -> MaybeLocal<Object> {
-            
-            Local<ObjectTemplate> instance_template = _local<FunctionTemplate>(const_cast<FunctionTemplateImpl*>(impl)).toLocal()->InstanceTemplate();
-            ObjectTemplateImpl *instance_impl = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
-            
-            if (!instance) {
-                JSClassRef claz = JSClassCreate(&instance_impl->m_definition);
-                instance = JSObjectMake(V82JSC::ToContextRef(context), claz, (void*)wrap);
-                JSClassRelease(claz);
-            }
+    assert(argumentCount>0);
+    bool create_object = JSValueToBoolean(ctx, arguments[0]);
+    argumentCount--;
+    arguments++;
 
-            MaybeLocal<Object> thiz;
-            if (impl->m_parent) {
-                thiz = init_instance(context, instance, excep, impl->m_parent, 0);
-            }
-            if (!excep.ShouldThow()) {
-                thiz = instance_impl->InitInstance(context, instance, excep);
-            }
-            return thiz;
-    };
+    FunctionTemplateImpl *ftempl = reinterpret_cast<FunctionTemplateImpl*>(const_cast<TemplateImpl*>(wrap->m_template));
+    Local<FunctionTemplate> function_template = _local<FunctionTemplate>(ftempl).toLocal();
+
+    if (create_object) {
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        def.attributes = kJSClassAttributeNoAutomaticPrototype;
+        const std::string& name = ftempl->m_name;
+        def.className = name.length() ? name.c_str() : nullptr;
+        JSClassRef claz = JSClassCreate(&def);
+        instance = JSObjectMake(ctx, claz, 0);
+
+        JSObjectRef function = ftempl->m_functions[wrap->m_context];
+        JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
+        JSStringRef sconstructor = JSStringCreateWithUTF8CString("constructor");
+        JSValueRef excp = 0;
+        JSObjectRef prototype = (JSObjectRef) JSObjectGetProperty(ctx, function, sprototype, &excp);
+        assert(excp == 0);
+        JSObjectSetPrototype(ctx, instance, prototype);
+        JSObjectSetProperty(ctx, instance, sconstructor, function, kJSPropertyAttributeDontEnum|kJSPropertyAttributeReadOnly, &excp);
+        assert(excp == 0);
+    }
     
-    Local<Object> thiz = init_instance(context, 0, excep, reinterpret_cast<const FunctionTemplateImpl*>(wrap->m_template), wrap).ToLocalChecked();
+    TryCatch try_catch(isolate);
     
-    if (excep.ShouldThow()) {
+    Local<ObjectTemplate> instance_template = function_template->InstanceTemplate();
+    ObjectTemplateImpl* otempl = V82JSC::ToImpl<ObjectTemplateImpl>(*instance_template);
+    Local<Object> thiz = otempl->NewInstance(context, instance).ToLocalChecked();
+
+    if (try_catch.HasCaught()) {
         if (exception) {
             *exception = V82JSC::ToJSValueRef<Value>(try_catch.Exception(), context);
         }
         return 0;
     }
-    JSObjectRef thisObject = (JSObjectRef) V82JSC::ToJSValueRef(thiz, context);
 
-    JSValueRef excp = nullptr;
-    
-    JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
-    JSValueRef proto = JSObjectGetProperty(V82JSC::ToContextRef(context), constructor, sprototype, &excp);
-    JSStringRelease(sprototype);
-    assert(excp==nullptr);
-    if (JSValueIsObject(V82JSC::ToContextRef(context), proto)) {
-        JSObjectSetPrototype(V82JSC::ToContextRef(context), thisObject, proto);
-    } else {
-        proto = thisObject;
-    }
-    
-    JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
-    JSObjectSetProperty(ctx, thisObject, ctor, constructor, kJSPropertyAttributeDontEnum, &excp);
-    JSStringRelease(ctor);
-    assert(excp==nullptr);
-    
-    // FIXME: Whatever needs to be done to make instanceof work, signature, etc.
-    
     Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
     
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
         O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
+        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueDefaultValueIndex = 2;
+        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
@@ -415,11 +471,11 @@ JSObjectRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         wrap->m_template->m_callback(info);
     }
     
-    if(!implicit[3]->IsUndefined(reinterpret_cast<v8::internal::Isolate*>(isolate))) {
-        Local<Value> ret = info.GetReturnValue().Get();
-        return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
+    if (implicit[3] == O(wrap->m_context->isolate->i.roots.the_hole_value)) {
+        return V82JSC::ToJSValueRef<Object>(thiz, context);
     }
-    
-    return thisObject;
+
+    Local<Value> ret = info.GetReturnValue().Get();
+    return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
 }
 

@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include <string.h>
 
 using namespace v8;
 
@@ -15,18 +16,14 @@ Local<ObjectTemplate> ObjectTemplate::New(
                                  Isolate* isolate,
                                  Local<FunctionTemplate> constructor)
 {
-    ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl));
-    otempl->pMap->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
-
-    FunctionTemplateImpl *ctor = nullptr;
     if (!constructor.IsEmpty()) {
-        ctor = V82JSC::ToImpl<FunctionTemplateImpl>(constructor);
-    }
-    if (ctor) {
-        otempl->m_constructor_template = ctor;
-    }
+        return constructor->InstanceTemplate();
+    } else {
+        ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl));
+        otempl->pMap->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
 
-    return _local<ObjectTemplate>(otempl).toLocal();
+        return _local<ObjectTemplate>(otempl).toLocal();
+    }
 }
 
 /** Get a template included in the snapshot by index. */
@@ -42,11 +39,6 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(this);
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     
-    JSClassRef claz = JSClassCreate(&impl->m_definition);
-    
-    TemplateWrap *wrap = new TemplateWrap();
-    wrap->m_template = impl;
-    wrap->m_context = ctx;
     LocalException exception(ctx->isolate);
     
     JSObjectRef instance = 0;
@@ -54,16 +46,324 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(context);
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
-            instance = (JSObjectRef) JSObjectCallAsConstructor(ctx->m_context, (JSObjectRef)ctor_func, 0, 0, &exception);
+            instance = JSObjectCallAsConstructor(ctx->m_context, (JSObjectRef)ctor_func, 0, 0, &exception);
         }
     } else {
-        instance = JSObjectMake(ctx->m_context, claz, (void*)wrap);
+        instance = JSObjectMake(ctx->m_context, nullptr, nullptr);
     }
-    JSClassRelease(claz);
     if (!instance) {
         return MaybeLocal<Object>();
     }
-    return impl->InitInstance(context, instance, exception);
+    return impl->NewInstance(context, instance);
+}
+
+#undef O
+#define O(v) reinterpret_cast<v8::internal::Object*>(v)
+#define CALLBACK_PARAMS JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, \
+size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception
+#define PASS ctx, function, thisObject, argumentCount, arguments, exception
+
+template <typename V>
+JSValueRef PropertyHandler(CALLBACK_PARAMS,
+                           void (*named_handler)(const ObjectTemplateImpl*, Local<Name>, Local<Value>, PropertyCallbackInfo<V>&),
+                           void (*indexed_handler)(const ObjectTemplateImpl*, uint32_t, Local<Value>, PropertyCallbackInfo<V>&))
+{
+    // Arguments:
+    //  get            - target, property, receiver        -> Value
+    //  set            - target, property, value, receiver -> True (assigned), False (not assigned)
+    //  deleteProperty - target, property                  -> True (deleted), False (not deleted)
+    //  has            - target, property                  -> True (has), False (not has)
+    //  ownKeys        - target                            -> Array of keys
+    assert(argumentCount > 0);
+    JSValueRef excp = 0;
+    JSObjectRef target = (JSObjectRef) arguments[0];
+    JSStringRef propertyName;
+    if (argumentCount > 1) {
+        propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+        assert(excp==0);
+    } else {
+        propertyName = JSStringCreateWithUTF8CString("NONE");
+    }
+    size_t size = JSStringGetMaximumUTF8CStringSize(propertyName);
+    char property[size];
+    JSStringGetUTF8CString(propertyName, property, size);
+    char *p = nullptr;
+    int index = strtod(property, &p);
+    if (p && (!strcmp(p, "constructor") || !strcmp(p, "__proto__") || !strcmp(p, "__private__"))) {
+        return NULL;
+    }
+
+    JSValueRef value;
+    if (argumentCount > 2) {
+        value = arguments[2];
+    } else {
+        value = JSValueMakeUndefined(ctx);
+    }
+    JSStringRef sprivate = JSStringCreateWithUTF8CString("__private__");
+    JSObjectRef __private__ = (JSObjectRef) JSObjectGetProperty(ctx, target, sprivate, &excp);
+    assert(excp==0);
+    TemplateWrap* wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(__private__));
+    const ObjectTemplateImpl *templ = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_template);
+    
+    Local<Value> data;
+    if (p!=nullptr) { /* Is named */
+        data = ValueImpl::New(wrap->m_context, templ->m_named_data);
+    } else { /* Is Indexed */
+        data = ValueImpl::New(wrap->m_context, templ->m_indexed_data);
+    }
+    
+    const ObjectTemplateImpl *impl = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_template);
+    
+    Local<Value> thiz = ValueImpl::New(wrap->m_context, target);
+    
+    v8::internal::Object * implicit[] = {
+        0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
+        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
+        O(wrap->m_context->isolate),                         // kIsolateIndex = 2;
+        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 3;
+        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueIndex = 4;
+        * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
+        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
+    };
+    
+    PropertyCallbackImpl<V> info(implicit);
+    Local<Value> set = ValueImpl::New(wrap->m_context, value);
+    
+    if (p!=nullptr) {
+        named_handler(impl,
+                      ValueImpl::New(V82JSC::ToIsolate(wrap->m_context->isolate), propertyName).As<Name>(),
+                      set, info);
+    } else {
+        indexed_handler(impl, index, set, info);
+    }
+    
+    if (implicit[4] == O(wrap->m_context->isolate->i.roots.the_hole_value)) {
+        return NULL;
+    }
+    
+    Local<Value> retVal = info.GetReturnValue().Get();
+    return V82JSC::ToJSValueRef<Value>(retVal, _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal());
+}
+
+v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root)
+{
+    const ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    
+    InstanceWrap *wrap = new InstanceWrap();
+    wrap->m_object_template = this;
+    wrap->m_context = ctx;
+    LocalException exception(ctx->isolate);
+    
+    // Structure:
+    //
+    // proxy -----> root . __private__ -->  lifecycle_object(wrap) --> TemplateWrap*
+    
+    // Create lifecycle object
+    JSClassDefinition def = kJSClassDefinitionEmpty;
+    def.attributes = kJSClassAttributeNoAutomaticPrototype;
+    def.finalize = [](JSObjectRef object) {
+        
+    };
+    JSClassRef klass = JSClassCreate(&def);
+    JSObjectRef lifecycle_object = JSObjectMake(ctx->m_context, klass, (void*)wrap);
+    JSClassRelease(klass);
+    JSStringRef __private__ = JSStringCreateWithUTF8CString("__private__");
+    JSValueRef excp = 0;
+    JSObjectSetProperty(ctx->m_context, root, __private__, lifecycle_object,
+                        kJSPropertyAttributeDontEnum/*|kJSPropertyAttributeReadOnly*/, &excp);
+    assert(excp==0);
+    
+    // Create proxy
+    JSObjectRef handler = 0;
+    if (m_need_proxy) {
+        handler = JSObjectMake(ctx->m_context, nullptr, nullptr);
+        auto handler_func = [ctx, handler](const char *name, JSObjectCallAsFunctionCallback callback) -> void {
+            JSValueRef excp = 0;
+            JSStringRef sname = JSStringCreateWithUTF8CString(name);
+            JSObjectRef f = JSObjectMakeFunctionWithCallback(ctx->m_context, sname, callback);
+            JSObjectSetProperty(ctx->m_context, handler, sname, f, 0, &excp);
+            JSStringRelease(sname);
+            assert(excp==0);
+        };
+        
+        handler_func("apply", [](CALLBACK_PARAMS) -> JSValueRef
+        {
+            return NULL;
+        });
+        /*if (m_named_handler.getter || m_indexed_handler.getter)*/ handler_func("get", [](CALLBACK_PARAMS) -> JSValueRef
+        {
+            JSValueRef ret = PropertyHandler<Value>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
+            {
+                if (impl->m_named_handler.getter)
+                    impl->m_named_handler.getter(property, info);
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
+            {
+                if (impl->m_indexed_handler.getter)
+                    impl->m_indexed_handler.getter(index, info);
+            });
+            if (ret == NULL) {
+                // Not handled.  Pass thru.
+                assert(argumentCount>1);
+                JSValueRef excp = 0;
+                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+                if (excp == 0) {
+                    ret = JSObjectGetProperty(ctx, (JSObjectRef) arguments[0], propertyName, exception);
+                } else if (exception) *exception = excp;
+                JSStringRelease(propertyName);
+                return ret;
+            }
+            return ret;
+        });
+        if (m_named_handler.setter || m_indexed_handler.setter) handler_func("set", [](CALLBACK_PARAMS) -> JSValueRef
+        {
+            JSValueRef ret = PropertyHandler<Value>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
+            {
+                if (impl->m_named_handler.setter) {
+                    impl->m_named_handler.setter(property, value, info);
+                }
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
+            {
+                if (impl->m_indexed_handler.setter) {
+                    impl->m_indexed_handler.setter(index, value, info);
+                }
+            });
+            if (ret == NULL) {
+                assert(argumentCount>2);
+                return V82JSC::exec(ctx, "return _1[_2] = _3", 3, arguments);
+                /*
+                JSValueRef excp = 0;
+                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+                if (excp == 0) {
+                    JSObjectSetProperty(ctx, (JSObjectRef) arguments[0], propertyName, arguments[2], kJSPropertyAttributeNone, exception);
+                } else if (exception) *exception = excp;
+                JSStringRelease(propertyName);
+                */
+            }
+            return JSValueMakeBoolean(ctx, true);
+        });
+        /*if (m_named_handler.query || m_indexed_handler.query)*/ handler_func("has", [](CALLBACK_PARAMS) -> JSValueRef
+        {
+            JSValueRef ret = PropertyHandler<Integer>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
+            {
+                if (impl->m_named_handler.query) {
+                    impl->m_named_handler.query(property, info);
+                }
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Integer>& info)
+            {
+                if (impl->m_indexed_handler.query) {
+                    impl->m_indexed_handler.query(index, info);
+                }
+            });
+            if (ret == NULL) {
+                assert(argumentCount>1);
+                return V82JSC::exec(ctx, "return _1.hasOwnProperty(_2)", 2, arguments);
+    /*
+                JSValueRef excp = 0;
+                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+                if (excp == 0) {
+                    ret = JSValueMakeBoolean(ctx, JSObjectHasProperty(ctx, (JSObjectRef) arguments[0], propertyName));
+                } else if (exception) *exception = excp;
+                JSStringRelease(propertyName);
+    */
+            }
+            return ret;
+        });
+        if (m_named_handler.deleter || m_indexed_handler.deleter) handler_func("deleteProperty", [](CALLBACK_PARAMS) -> JSValueRef
+        {
+            JSValueRef ret = PropertyHandler<v8::Boolean>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
+            {
+                if (impl->m_named_handler.deleter) {
+                    impl->m_named_handler.deleter(property, info);
+                }
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
+            {
+                if (impl->m_indexed_handler.deleter) {
+                    impl->m_indexed_handler.deleter(index, info);
+                }
+            });
+            if (ret == NULL) {
+                assert(argumentCount>1);
+                return V82JSC::exec(ctx, "delete _1[_2]", 2, arguments);
+                /*
+                JSValueRef excp = 0;
+                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+                if (excp == 0) {
+                    ret = JSValueMakeBoolean(ctx, JSObjectDeleteProperty(ctx, (JSObjectRef) arguments[0], propertyName, exception));
+                } else if (exception) *exception = excp;
+                JSStringRelease(propertyName);
+                */
+            }
+            return ret;
+        });
+        /*if (m_named_handler.enumerator || m_indexed_handler.enumerator)*/ handler_func("ownKeys", [](CALLBACK_PARAMS) -> JSValueRef
+        {
+            JSValueRef ret = PropertyHandler<v8::Array>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
+            {
+                if (impl->m_named_handler.enumerator) {
+                    impl->m_named_handler.enumerator(info);
+                }
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
+            {
+                if (impl->m_indexed_handler.enumerator) {
+                    impl->m_indexed_handler.enumerator(info);
+                }
+            });
+            if (ret == NULL) {
+                assert(argumentCount>0);
+                return V82JSC::exec(ctx, "return Object.getOwnPropertyNames(_1)", 1, arguments);
+                /*
+                JSPropertyNameArrayRef names = JSObjectCopyPropertyNames(ctx, (JSObjectRef)arguments[0]);
+                size_t size = JSPropertyNameArrayGetCount(names);
+                JSValueRef names_values[size];
+                for (size_t i=0; i<size; i++) {
+                    names_values[i] = JSValueMakeString(ctx, JSPropertyNameArrayGetNameAtIndex(names, i));
+                }
+                ret = JSObjectMakeArray(ctx, size, names_values, exception);
+                JSPropertyNameArrayRelease(names);
+                */
+            }
+            return ret;
+        });
+        handler_func("getPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
+            assert(argumentCount>0);
+            return JSObjectGetPrototype(ctx, (JSObjectRef) arguments[0]);
+        });
+        handler_func("setPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
+            assert(argumentCount>1);
+            JSObjectSetPrototype(ctx, (JSObjectRef) arguments[0], arguments[1]);
+            return JSValueMakeBoolean(ctx, true);
+        });
+        handler_func("getOwnPropertyDescriptor", [](CALLBACK_PARAMS) -> JSValueRef {
+            assert(argumentCount>1);
+            return V82JSC::exec(ctx, "return Object.getOwnPropertyDescriptor(_1, _2)", 2, arguments);
+        });
+    }
+
+    MaybeLocal<Object> instance;
+    if (m_constructor_template) {
+        instance = InitInstance(context, root, exception, m_constructor_template);
+    } else {
+        instance = InitInstance(context, root, exception);
+    }
+    if (instance.IsEmpty()) {
+        return instance;
+    }
+    if (m_need_proxy) {
+        JSValueRef args[] = {root, handler};
+        return ValueImpl::New(ctx, V82JSC::exec(ctx->m_context, "return new Proxy(_1, _2)", 2, args)).As<Object>();
+    }
+    
+    return ValueImpl::New(ctx, root).As<Object>();
 }
 
 /**
@@ -164,7 +464,6 @@ void ObjectTemplate::SetNamedPropertyHandler(NamedPropertyGetterCallback getter,
                              NamedPropertyEnumeratorCallback enumerator,
                              Local<Value> data)
 {
-    
 }
 
 /**
@@ -180,7 +479,17 @@ void ObjectTemplate::SetNamedPropertyHandler(NamedPropertyGetterCallback getter,
  */
 void ObjectTemplate::SetHandler(const NamedPropertyHandlerConfiguration& configuration)
 {
-    
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    Local<Value> data = configuration.data;
+    templ->m_named_handler = configuration;
+    templ->m_named_handler.data.Clear();
+
+    if (data.IsEmpty()) {
+        data = Undefined(Isolate::GetCurrent());
+    }
+    templ->m_named_data = V82JSC::ToJSValueRef(configuration.data, Isolate::GetCurrent());
+    JSValueProtect(V82JSC::ToContextRef(Isolate::GetCurrent()), templ->m_named_data);
+    templ->m_need_proxy = true;
 }
 
 /**
@@ -195,7 +504,17 @@ void ObjectTemplate::SetHandler(const NamedPropertyHandlerConfiguration& configu
  */
 void ObjectTemplate::SetHandler(const IndexedPropertyHandlerConfiguration& configuration)
 {
-    
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    Local<Value> data = configuration.data;
+    templ->m_indexed_handler = configuration;
+    templ->m_indexed_handler.data.Clear();
+
+    if (data.IsEmpty()) {
+        data = Undefined(Isolate::GetCurrent());
+    }
+    templ->m_indexed_data = V82JSC::ToJSValueRef(configuration.data, Isolate::GetCurrent());
+    JSValueProtect(V82JSC::ToContextRef(Isolate::GetCurrent()), templ->m_indexed_data);
+    templ->m_need_proxy = true;
 }
 
 /**
@@ -286,3 +605,4 @@ void ObjectTemplate::SetImmutableProto()
 {
     
 }
+

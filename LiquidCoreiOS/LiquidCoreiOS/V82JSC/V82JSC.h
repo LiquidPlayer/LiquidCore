@@ -75,6 +75,12 @@ using v8::internal::Isolate;
 #define kBMMaxShift v8::internal::Isolate::kBMMaxShift
 #define kUC16AlphabetSize v8::internal::Isolate::kUC16AlphabetSize
 
+#define MAX_HANDLES_PER_GROUP 32
+struct HandleGroup {
+    v8::internal::Object * handles_[MAX_HANDLES_PER_GROUP];
+    HandleGroup *next_;
+};
+    
 struct IsolateImpl {
     union i_ {
         v8::internal::Isolate ii;
@@ -101,6 +107,8 @@ struct IsolateImpl {
     v8::Context *m_external_context;
     
     v8::TryCatch *m_handlers;
+    std::vector<HandleGroup> m_handles;
+    int m_handle_index;
 };
 }} // namespaces
 
@@ -263,7 +271,10 @@ struct TemplateImpl : InternalObjectImpl
                                            size_t argumentCount,
                                            const JSValueRef arguments[],
                                            JSValueRef* exception);
-    
+    static v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
+                                                   JSObjectRef instance,
+                                                   LocalException& excep,
+                                                   const FunctionTemplateImpl *impl);
     v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                             JSObjectRef instance, LocalException& exception);
     static TemplateImpl* New(v8::Isolate* isolate, size_t size);
@@ -278,16 +289,24 @@ struct FunctionTemplateImpl : TemplateImpl
     std::map<const ContextImpl*, JSObjectRef> m_functions;
     JSClassRef m_class;
 
-    static JSObjectRef callAsConstructorCallback(JSContextRef ctx,
-                                                 JSObjectRef constructor,
-                                                 size_t argumentCount,
-                                                 const JSValueRef arguments[],
-                                                 JSValueRef* exception);
+    static JSValueRef callAsConstructorCallback(JSContextRef ctx,
+                                                JSObjectRef constructor,
+                                                JSObjectRef thisObject,
+                                                size_t argumentCount,
+                                                const JSValueRef arguments[],
+                                                JSValueRef* exception);
 };
 
 struct ObjectTemplateImpl : TemplateImpl
 {
     FunctionTemplateImpl *m_constructor_template;
+    v8::NamedPropertyHandlerConfiguration m_named_handler;
+    v8::IndexedPropertyHandlerConfiguration m_indexed_handler;
+    JSValueRef m_named_data;
+    JSValueRef m_indexed_data;
+    bool m_need_proxy;
+    
+    v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root);
 };
 
 struct TemplateWrap {
@@ -295,6 +314,11 @@ struct TemplateWrap {
     const ContextImpl* m_context;
     std::map<JSStringRef, JSObjectRef> m_getters;
     std::map<JSStringRef, JSObjectRef> m_setters;
+};
+
+struct InstanceWrap {
+    const ObjectTemplateImpl *m_object_template;
+    const ContextImpl *m_context;
 };
 
 struct SignatureImpl
@@ -461,6 +485,28 @@ struct V82JSC {
                                     JSObjectCallAsFunction(c->m_context, jsfunc__(name_, code_, c, index), 0, 1, &v, &exception));
         assert(exception==nullptr);
         return ret;
+    }
+    static inline JSValueRef exec(JSContextRef ctx, const char *body, int argc, const JSValueRef *argv)
+    {
+        JSValueRef exception = 0;
+        JSStringRef argNames[argc];
+        JSStringRef anon = JSStringCreateWithUTF8CString("anon");
+        JSStringRef sbody = JSStringCreateWithUTF8CString(body);
+        for (int i=0; i<argc; i++) {
+            char argname[64];
+            sprintf(argname, "_%d", i+1);
+            argNames[i] = JSStringCreateWithUTF8CString(argname);
+        }
+        JSObjectRef function = JSObjectMakeFunction(ctx, anon, argc, argNames, sbody, 0, 0, &exception);
+        assert(exception==0);
+        JSValueRef result = JSObjectCallAsFunction(ctx, function, 0, argc, argv, &exception);
+        assert(exception==0);
+        for (int i=0; i<argc; i++) {
+            JSStringRelease(argNames[i]);
+        }
+        JSStringRelease(anon);
+        JSStringRelease(sbody);
+        return result;
     }
 };
 #define JSFUNC(name_,code_,c) V82JSC::jsfunc__(#name_,code_,c,ContextImpl::IsFunctions::name_)
