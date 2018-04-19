@@ -109,6 +109,8 @@ struct IsolateImpl {
     v8::TryCatch *m_handlers;
     std::vector<HandleGroup> m_handles;
     int m_handle_index;
+    
+    JSValueRef m_pending_exception;
 };
 }} // namespaces
 
@@ -486,7 +488,7 @@ struct V82JSC {
         assert(exception==nullptr);
         return ret;
     }
-    static inline JSValueRef exec(JSContextRef ctx, const char *body, int argc, const JSValueRef *argv)
+    static inline JSValueRef exec(JSContextRef ctx, const char *body, int argc, const JSValueRef *argv, JSValueRef *pexcp=nullptr)
     {
         JSValueRef exception = 0;
         JSStringRef argNames[argc];
@@ -500,7 +502,11 @@ struct V82JSC {
         JSObjectRef function = JSObjectMakeFunction(ctx, anon, argc, argNames, sbody, 0, 0, &exception);
         assert(exception==0);
         JSValueRef result = JSObjectCallAsFunction(ctx, function, 0, argc, argv, &exception);
-        assert(exception==0);
+        if (!pexcp) {
+            assert(exception==0);
+        } else {
+            *pexcp = exception;
+        }
         for (int i=0; i<argc; i++) {
             JSStringRelease(argNames[i]);
         }

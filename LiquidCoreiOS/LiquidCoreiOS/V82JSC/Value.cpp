@@ -63,6 +63,13 @@ bool Value::IsName() const { return IsString() || IsSymbol(); }
  * Returns true if this value is a symbol.
  */
 bool Value::IsSymbol() const { return IS(IsSymbol, "return typeof v === 'symbol'"); }
+/*
+bool Value::IsSymbol() const {
+    ContextImpl *ctx = V82JSC::ToContextImpl<Value>(this);
+    JSValueRef v = V82JSC::ToJSValueRef(this, V82JSC::ToIsolate(ctx->isolate));
+    return V82JSC::exec(ctx->m_context, "return typeof _1 === 'symbol'", 1, &v);
+}
+*/
 
 /**
  * Returns true if this value is a function.

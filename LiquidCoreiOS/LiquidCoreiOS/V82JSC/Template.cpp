@@ -375,8 +375,14 @@ JSValueRef TemplateImpl::objectGetterCallback(JSContextRef ctx,
     
     PropertyCallbackImpl<Value> info(implicit);
     
+    JSValueRef held_exception = wrap->m_context->isolate->m_pending_exception;
+    wrap->m_context->isolate->m_pending_exception = 0;
+
     wrap->m_getter(ValueImpl::New(wrap->m_context, wrap->m_property).As<String>(), info);
-    
+
+    *exception = wrap->m_context->isolate->m_pending_exception;
+    wrap->m_context->isolate->m_pending_exception = held_exception;
+
     Local<Value> ret = info.GetReturnValue().Get();
     
     return V82JSC::ToJSValueRef<Value>(ret, _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal());
@@ -408,7 +414,13 @@ JSValueRef TemplateImpl::objectSetterCallback(JSContextRef ctx,
     
     PropertyCallbackImpl<void> info(implicit);
     
+    JSValueRef held_exception = wrap->m_context->isolate->m_pending_exception;
+    wrap->m_context->isolate->m_pending_exception = 0;
+
     wrap->m_setter(ValueImpl::New(wrap->m_context, wrap->m_property).As<String>(), value, info);
+    
+    *exception = wrap->m_context->isolate->m_pending_exception;
+    wrap->m_context->isolate->m_pending_exception = held_exception;
     
     Local<Value> ret = info.GetReturnValue().Get();
     

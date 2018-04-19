@@ -74,23 +74,31 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     //  deleteProperty - target, property                  -> True (deleted), False (not deleted)
     //  has            - target, property                  -> True (has), False (not has)
     //  ownKeys        - target                            -> Array of keys
+    *exception = 0;
     assert(argumentCount > 0);
     JSValueRef excp = 0;
     JSObjectRef target = (JSObjectRef) arguments[0];
-    JSStringRef propertyName;
+    JSStringRef propertyName = 0;
+    bool isSymbol = false;
+    int index = 0;
+    char *p = nullptr;
     if (argumentCount > 1) {
-        propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+        isSymbol = V82JSC::exec(ctx, "return typeof _1 === 'symbol'", 1, &arguments[1]);
+        if (!isSymbol) {
+            propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
+        }
         assert(excp==0);
     } else {
         propertyName = JSStringCreateWithUTF8CString("NONE");
     }
-    size_t size = JSStringGetMaximumUTF8CStringSize(propertyName);
-    char property[size];
-    JSStringGetUTF8CString(propertyName, property, size);
-    char *p = nullptr;
-    int index = strtod(property, &p);
-    if (p && (!strcmp(p, "constructor") || !strcmp(p, "__proto__") || !strcmp(p, "__private__"))) {
-        return NULL;
+    if (!isSymbol) {
+        size_t size = JSStringGetMaximumUTF8CStringSize(propertyName);
+        char property[size];
+        JSStringGetUTF8CString(propertyName, property, size);
+        index = strtod(property, &p);
+        if (p && (!strcmp(p, "constructor") || !strcmp(p, "__proto__") || !strcmp(p, "__private__"))) {
+            return NULL;
+        }
     }
 
     JSValueRef value;
@@ -104,9 +112,10 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     assert(excp==0);
     TemplateWrap* wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(__private__));
     const ObjectTemplateImpl *templ = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_template);
-    
+    IsolateImpl *isolate = wrap->m_context->isolate;
+
     Local<Value> data;
-    if (p!=nullptr) { /* Is named */
+    if (isSymbol || p!=nullptr) { /* Is named */
         data = ValueImpl::New(wrap->m_context, templ->m_named_data);
     } else { /* Is Indexed */
         data = ValueImpl::New(wrap->m_context, templ->m_indexed_data);
@@ -129,13 +138,19 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     PropertyCallbackImpl<V> info(implicit);
     Local<Value> set = ValueImpl::New(wrap->m_context, value);
     
-    if (p!=nullptr) {
+    JSValueRef held_exception = isolate->m_pending_exception;
+    isolate->m_pending_exception = 0;
+    
+    if (isSymbol || p!=nullptr) {
         named_handler(impl,
-                      ValueImpl::New(V82JSC::ToIsolate(wrap->m_context->isolate), propertyName).As<Name>(),
+                      ValueImpl::New(wrap->m_context, arguments[1]).As<Name>(),
                       set, info);
     } else {
         indexed_handler(impl, index, set, info);
     }
+    
+    *exception = isolate->m_pending_exception;
+    isolate->m_pending_exception = held_exception;
     
     if (implicit[4] == O(wrap->m_context->isolate->i.roots.the_hole_value)) {
         return NULL;
@@ -190,7 +205,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         {
             return NULL;
         });
-        /*if (m_named_handler.getter || m_indexed_handler.getter)*/ handler_func("get", [](CALLBACK_PARAMS) -> JSValueRef
+        handler_func("get", [](CALLBACK_PARAMS) -> JSValueRef
         {
             JSValueRef ret = PropertyHandler<Value>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
@@ -203,20 +218,14 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
                 if (impl->m_indexed_handler.getter)
                     impl->m_indexed_handler.getter(index, info);
             });
-            if (ret == NULL) {
+            if (ret == NULL && !*exception) {
                 // Not handled.  Pass thru.
                 assert(argumentCount>1);
-                JSValueRef excp = 0;
-                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
-                if (excp == 0) {
-                    ret = JSObjectGetProperty(ctx, (JSObjectRef) arguments[0], propertyName, exception);
-                } else if (exception) *exception = excp;
-                JSStringRelease(propertyName);
-                return ret;
+                return V82JSC::exec(ctx, "return _1[_2]", 2, arguments, exception);
             }
             return ret;
         });
-        if (m_named_handler.setter || m_indexed_handler.setter) handler_func("set", [](CALLBACK_PARAMS) -> JSValueRef
+        handler_func("set", [](CALLBACK_PARAMS) -> JSValueRef
         {
             JSValueRef ret = PropertyHandler<Value>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
@@ -231,50 +240,44 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
                     impl->m_indexed_handler.setter(index, value, info);
                 }
             });
+            if (*exception) {
+                return JSValueMakeBoolean(ctx, false);
+            }
             if (ret == NULL) {
                 assert(argumentCount>2);
-                return V82JSC::exec(ctx, "return _1[_2] = _3", 3, arguments);
-                /*
-                JSValueRef excp = 0;
-                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
-                if (excp == 0) {
-                    JSObjectSetProperty(ctx, (JSObjectRef) arguments[0], propertyName, arguments[2], kJSPropertyAttributeNone, exception);
-                } else if (exception) *exception = excp;
-                JSStringRelease(propertyName);
-                */
+                return V82JSC::exec(ctx, "return _1[_2] = _3", 3, arguments, exception);
             }
             return JSValueMakeBoolean(ctx, true);
         });
-        /*if (m_named_handler.query || m_indexed_handler.query)*/ handler_func("has", [](CALLBACK_PARAMS) -> JSValueRef
+        handler_func("has", [](CALLBACK_PARAMS) -> JSValueRef
         {
             JSValueRef ret = PropertyHandler<Integer>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
             {
                 if (impl->m_named_handler.query) {
                     impl->m_named_handler.query(property, info);
+                } else if (impl->m_named_handler.getter) {
+                    info.GetReturnValue().Set(v8::PropertyAttribute::None);
                 }
             },
             [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Integer>& info)
             {
                 if (impl->m_indexed_handler.query) {
                     impl->m_indexed_handler.query(index, info);
+                } else if (impl->m_indexed_handler.getter) {
+                    info.GetReturnValue().Set(v8::PropertyAttribute::None);
                 }
             });
+            if (*exception) {
+                return JSValueMakeBoolean(ctx, false);
+            }
             if (ret == NULL) {
                 assert(argumentCount>1);
-                return V82JSC::exec(ctx, "return _1.hasOwnProperty(_2)", 2, arguments);
-    /*
-                JSValueRef excp = 0;
-                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
-                if (excp == 0) {
-                    ret = JSValueMakeBoolean(ctx, JSObjectHasProperty(ctx, (JSObjectRef) arguments[0], propertyName));
-                } else if (exception) *exception = excp;
-                JSStringRelease(propertyName);
-    */
+                return V82JSC::exec(ctx, "return _1.hasOwnProperty(_2)", 2, arguments, exception);
             }
-            return ret;
+            return JSValueMakeBoolean(ctx, !JSValueIsUndefined(ctx, ret));
         });
-        if (m_named_handler.deleter || m_indexed_handler.deleter) handler_func("deleteProperty", [](CALLBACK_PARAMS) -> JSValueRef
+        handler_func("deleteProperty", [](CALLBACK_PARAMS) -> JSValueRef
         {
             JSValueRef ret = PropertyHandler<v8::Boolean>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
@@ -289,21 +292,13 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
                     impl->m_indexed_handler.deleter(index, info);
                 }
             });
-            if (ret == NULL) {
+            if (!*exception && ret == NULL) {
                 assert(argumentCount>1);
-                return V82JSC::exec(ctx, "delete _1[_2]", 2, arguments);
-                /*
-                JSValueRef excp = 0;
-                JSStringRef propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
-                if (excp == 0) {
-                    ret = JSValueMakeBoolean(ctx, JSObjectDeleteProperty(ctx, (JSObjectRef) arguments[0], propertyName, exception));
-                } else if (exception) *exception = excp;
-                JSStringRelease(propertyName);
-                */
+                return V82JSC::exec(ctx, "delete _1[_2]", 2, arguments, exception);
             }
             return ret;
         });
-        /*if (m_named_handler.enumerator || m_indexed_handler.enumerator)*/ handler_func("ownKeys", [](CALLBACK_PARAMS) -> JSValueRef
+        handler_func("ownKeys", [](CALLBACK_PARAMS) -> JSValueRef
         {
             JSValueRef ret = PropertyHandler<v8::Array>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
@@ -318,19 +313,9 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
                     impl->m_indexed_handler.enumerator(info);
                 }
             });
-            if (ret == NULL) {
+            if (!*exception && ret == NULL) {
                 assert(argumentCount>0);
-                return V82JSC::exec(ctx, "return Object.getOwnPropertyNames(_1)", 1, arguments);
-                /*
-                JSPropertyNameArrayRef names = JSObjectCopyPropertyNames(ctx, (JSObjectRef)arguments[0]);
-                size_t size = JSPropertyNameArrayGetCount(names);
-                JSValueRef names_values[size];
-                for (size_t i=0; i<size; i++) {
-                    names_values[i] = JSValueMakeString(ctx, JSPropertyNameArrayGetNameAtIndex(names, i));
-                }
-                ret = JSObjectMakeArray(ctx, size, names_values, exception);
-                JSPropertyNameArrayRelease(names);
-                */
+                return V82JSC::exec(ctx, "return Object.getOwnPropertyNames(_1)", 1, arguments, exception);
             }
             return ret;
         });
@@ -345,7 +330,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("getOwnPropertyDescriptor", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>1);
-            return V82JSC::exec(ctx, "return Object.getOwnPropertyDescriptor(_1, _2)", 2, arguments);
+            return V82JSC::exec(ctx, "return Object.getOwnPropertyDescriptor(_1, _2)", 2, arguments, exception);
         });
     }
 

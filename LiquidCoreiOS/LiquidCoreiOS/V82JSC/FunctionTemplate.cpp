@@ -467,9 +467,15 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     
+    JSValueRef held_exception = wrap->m_context->isolate->m_pending_exception;
+    wrap->m_context->isolate->m_pending_exception = 0;
+
     if (wrap->m_template->m_callback) {
         wrap->m_template->m_callback(info);
     }
+    
+    *exception = wrap->m_context->isolate->m_pending_exception;
+    wrap->m_context->isolate->m_pending_exception = held_exception;
     
     if (implicit[3] == O(wrap->m_context->isolate->i.roots.the_hole_value)) {
         return V82JSC::ToJSValueRef<Object>(thiz, context);
