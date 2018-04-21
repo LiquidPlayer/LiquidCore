@@ -36,7 +36,7 @@ Local<Object> Context::Global()
  */
 void Context::DetachGlobal()
 {
-    
+    assert(0);
 }
 
 /**
@@ -79,7 +79,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
         context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
-        JSObjectRef instance = JSContextGetGlobalObject(context->m_context);
+        JSObjectRef global = JSContextGetGlobalObject(context->m_context);
+        JSObjectRef instance = JSObjectMake(context->m_context, 0, nullptr);
+        JSObjectSetPrototype(context->m_context, global, instance);
         //JSObjectSetPrivate(instance, (void*)wrap);
         //JSClassRelease(claz);
         Local<Context> ctx = Local<Context>(context);
@@ -165,6 +167,7 @@ MaybeLocal<Object> Context::NewRemoteContext(
                                            Isolate* isolate, Local<ObjectTemplate> global_template,
                                            MaybeLocal<Value> global_object)
 {
+    assert(0);
     return MaybeLocal<Object>();
 }
 
@@ -174,18 +177,19 @@ MaybeLocal<Object> Context::NewRemoteContext(
  */
 void Context::SetSecurityToken(Local<Value> token)
 {
-    
+    assert(0);
 }
 
 /** Restores the security token to the default value. */
 void Context::UseDefaultSecurityToken()
 {
-    
+    assert(0);
 }
 
 /** Returns the security token of this context.*/
 Local<Value> Context::GetSecurityToken()
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -229,6 +233,7 @@ Isolate* Context::GetIsolate()
  */
 Local<Object> Context::GetExtrasBindingObject()
 {
+    assert(0);
     return Local<Object>();
 }
 
@@ -239,7 +244,7 @@ Local<Object> Context::GetExtrasBindingObject()
  */
 void Context::SetEmbedderData(int index, Local<Value> value)
 {
-    
+    assert(0);
 }
 
 /**
@@ -249,7 +254,7 @@ void Context::SetEmbedderData(int index, Local<Value> value)
  */
 void Context::SetAlignedPointerInEmbedderData(int index, void* value)
 {
-    
+    assert(0);
 }
 
 /**
@@ -267,7 +272,7 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
  */
 void Context::AllowCodeGenerationFromStrings(bool allow)
 {
-    
+    assert(0);
 }
 
 /**
@@ -286,5 +291,5 @@ bool Context::IsCodeGenerationFromStringsAllowed()
  */
 void Context::SetErrorMessageForCodeGenerationFromStrings(Local<String> message)
 {
-    
+    assert(0);
 }

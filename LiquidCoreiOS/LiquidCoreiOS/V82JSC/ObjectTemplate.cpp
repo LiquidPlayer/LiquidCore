@@ -96,7 +96,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         char property[size];
         JSStringGetUTF8CString(propertyName, property, size);
         index = strtod(property, &p);
-        if (p && (!strcmp(p, "constructor") || !strcmp(p, "__proto__") || !strcmp(p, "__private__"))) {
+        if (p && (!strcmp(p, "constructor") || !strcmp(p, "__proto__") )) {
             return NULL;
         }
     }
@@ -107,11 +107,8 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     } else {
         value = JSValueMakeUndefined(ctx);
     }
-    JSStringRef sprivate = JSStringCreateWithUTF8CString("__private__");
-    JSObjectRef __private__ = (JSObjectRef) JSObjectGetProperty(ctx, target, sprivate, &excp);
-    assert(excp==0);
-    TemplateWrap* wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(__private__));
-    const ObjectTemplateImpl *templ = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_template);
+    InstanceWrap* wrap = V82JSC::getPrivateInstance(ctx, target);
+    const ObjectTemplateImpl *templ = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_object_template);
     IsolateImpl *isolate = wrap->m_context->isolate;
 
     Local<Value> data;
@@ -120,8 +117,6 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     } else { /* Is Indexed */
         data = ValueImpl::New(wrap->m_context, templ->m_indexed_data);
     }
-    
-    const ObjectTemplateImpl *impl = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_template);
     
     Local<Value> thiz = ValueImpl::New(wrap->m_context, target);
     
@@ -142,11 +137,11 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     isolate->m_pending_exception = 0;
     
     if (isSymbol || p!=nullptr) {
-        named_handler(impl,
+        named_handler(templ,
                       ValueImpl::New(wrap->m_context, arguments[1]).As<Name>(),
                       set, info);
     } else {
-        indexed_handler(impl, index, set, info);
+        indexed_handler(templ, index, set, info);
     }
     
     *exception = isolate->m_pending_exception;
@@ -164,30 +159,19 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     
-    InstanceWrap *wrap = new InstanceWrap();
-    wrap->m_object_template = this;
-    wrap->m_context = ctx;
     LocalException exception(ctx->isolate);
     
     // Structure:
     //
-    // proxy -----> root . __private__ -->  lifecycle_object(wrap) --> TemplateWrap*
+    // proxy -----> root . Symbol.for('org.liquidplayer.javascript.__v82jsc_private__') -->  lifecycle_object(wrap) --> InstanceWrap*
     
     // Create lifecycle object
-    JSClassDefinition def = kJSClassDefinitionEmpty;
-    def.attributes = kJSClassAttributeNoAutomaticPrototype;
-    def.finalize = [](JSObjectRef object) {
-        
-    };
-    JSClassRef klass = JSClassCreate(&def);
-    JSObjectRef lifecycle_object = JSObjectMake(ctx->m_context, klass, (void*)wrap);
-    JSClassRelease(klass);
-    JSStringRef __private__ = JSStringCreateWithUTF8CString("__private__");
-    JSValueRef excp = 0;
-    JSObjectSetProperty(ctx->m_context, root, __private__, lifecycle_object,
-                        kJSPropertyAttributeDontEnum/*|kJSPropertyAttributeReadOnly*/, &excp);
-    assert(excp==0);
-    
+    InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_context, root);
+    wrap->m_context = ctx;
+    wrap->m_object_template = this;
+    wrap->m_num_internal_fields = m_internal_fields;
+    wrap->m_internal_fields = new JSValueRef[m_internal_fields]();
+
     // Create proxy
     JSObjectRef handler = 0;
     if (m_need_proxy) {
@@ -386,29 +370,10 @@ void ObjectTemplate::SetAccessor(
                  AccessControl settings, PropertyAttribute attribute,
                  Local<AccessorSignature> signature)
 {
-    ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
-    ValueImpl *name_ = V82JSC::ToImpl<ValueImpl>(name);
-    JSStringRef s = JSValueToStringCopy(name_->m_context->m_context, name_->m_value, 0);
-    // FIXME: Deal with attributes
-    // FIXME: Deal with AccessControl
-    // FIXME: Deal with signature
-    
-    ObjAccessor accessor;
-    accessor.m_getter = getter;
-    accessor.m_setter = setter;
-    if (!*data) {
-        data = Undefined(Isolate::GetCurrent());
-    }
-    accessor.m_data = V82JSC::ToJSValueRef<Value>(data, Isolate::GetCurrent());
-    JSValueProtect(V82JSC::ToIsolateImpl(Isolate::GetCurrent())->m_defaultContext->m_context, accessor.m_data);
-    for (auto i = this_->m_obj_accessors.begin(); i != this_->m_obj_accessors.end(); ++i ) {
-        if (JSStringIsEqual(i->first, s)) {
-            i->second = accessor;
-            JSStringRelease(s);
-            return;
-        }
-    }
-    this_->m_obj_accessors[s] = accessor;
+    SetAccessor(name.As<Name>(),
+                reinterpret_cast<AccessorNameGetterCallback>(getter),
+                reinterpret_cast<AccessorNameSetterCallback>(setter),
+                data, settings, attribute, signature);
 }
 void ObjectTemplate::SetAccessor(
                  Local<Name> name, AccessorNameGetterCallback getter,
@@ -416,7 +381,20 @@ void ObjectTemplate::SetAccessor(
                  AccessControl settings, PropertyAttribute attribute,
                  Local<AccessorSignature> signature)
 {
-    assert(0);
+    ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    ValueImpl *name_ = V82JSC::ToImpl<ValueImpl>(name);
+    ValueImpl *data_ = V82JSC::ToImpl<ValueImpl>(data);
+    
+    ObjAccessor accessor;
+    accessor.name = name_;
+    accessor.getter = getter;
+    accessor.setter = setter;
+    accessor.data = data_;
+    accessor.settings = settings;
+    accessor.attribute = attribute;
+    accessor.signature = reinterpret_cast<SignatureImpl*>(*signature); // FIXME
+    
+    this_->m_accessors.push_back(accessor);
 }
 
 /**
@@ -449,6 +427,7 @@ void ObjectTemplate::SetNamedPropertyHandler(NamedPropertyGetterCallback getter,
                              NamedPropertyEnumeratorCallback enumerator,
                              Local<Value> data)
 {
+    assert(0);
 }
 
 /**
@@ -562,7 +541,8 @@ void ObjectTemplate::SetAccessCheckCallbackAndHandler(
  */
 int ObjectTemplate::InternalFieldCount()
 {
-    return 0;
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    return templ->m_internal_fields;
 }
 
 /**
@@ -571,7 +551,8 @@ int ObjectTemplate::InternalFieldCount()
  */
 void ObjectTemplate::SetInternalFieldCount(int value)
 {
-    
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    templ->m_internal_fields = value > 0 ? value : 0;
 }
 
 /**

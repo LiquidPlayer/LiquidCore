@@ -12,16 +12,15 @@ using namespace v8;
 
 uint32_t Array::Length() const
 {
-    v8::internal::Object **map = reinterpret_cast<v8::internal::Object**>(const_cast<Array*>(this));
-    v8::internal::Object *obj = *map;
-    ValueImpl *impl = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-    _local<Object> o((void*)this);
-    _local<Context> context(impl->m_context);
-    
-    MaybeLocal<Value> length = (o.val_)->Get(context.toLocal(),
-                                             String::NewFromUtf8(reinterpret_cast<Isolate*>(impl->m_context->isolate),
-                                                                 "length", NewStringType::kNormal).ToLocalChecked());
-    return JSValueToNumber(impl->m_context->m_context, reinterpret_cast<ValueImpl*>(*length.ToLocalChecked())->m_value, 0);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Array>(this);
+    JSValueRef length = V82JSC::exec(impl->m_context->m_context, "return _1.length", 1, &impl->m_value);
+    uint32_t len = 0;
+    if (length) {
+        JSValueRef excp = 0;
+        len = JSValueToNumber(impl->m_context->m_context, length, &excp);
+        assert(excp==0);
+    }
+    return len;
 }
 
 /**

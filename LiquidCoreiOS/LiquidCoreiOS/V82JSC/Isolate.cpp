@@ -49,6 +49,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     ValueImpl *es = V82JSC::ToImpl<ValueImpl>(esv);
     isolate->i.roots.empty_string = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(es) & ~3) +1);;
     JSStringRelease(empty_string);
+    
+    isolate->m_global_symbols = std::map<std::string, JSValueRef>();
 
     return reinterpret_cast<v8::Isolate*>(isolate);
 }

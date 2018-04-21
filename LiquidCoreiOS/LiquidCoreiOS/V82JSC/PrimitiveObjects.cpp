@@ -66,11 +66,18 @@ Local<String> StringObject::ValueOf() const
 
 Local<Value> SymbolObject::New(Isolate* isolate, Local<Symbol> value)
 {
-    return Local<Value>();
+    ValueImpl* symbol = V82JSC::ToImpl<ValueImpl>(value);
+    JSValueRef symbol_object = V82JSC::exec(symbol->m_context->m_context, "return Object(_1)", 1, &symbol->m_value);
+    
+    return ValueImpl::New(symbol->m_context, symbol_object);
 }
 
 Local<Symbol> SymbolObject::ValueOf() const
 {
-    return Local<Symbol>();
+    ContextImpl* ctximpl = V82JSC::ToContextImpl<SymbolObject>(this);
+    Local<Context> context = _local<Context>(ctximpl).toLocal();
+    JSValueRef symbol_object = V82JSC::ToJSValueRef(this, context);
+    
+    return ValueImpl::New(ctximpl, V82JSC::exec(ctximpl->m_context, "return _1.valueOf()", 1, &symbol_object)).As<Symbol>();
 }
 

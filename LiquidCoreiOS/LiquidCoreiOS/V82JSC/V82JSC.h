@@ -28,6 +28,8 @@
 #include "src/utils.h"
 #include "src/vm-state.h"
 #include "src/heap/heap.h"
+#include <map>
+#include <string>
 
 #define DEF(T,V,F) \
 v8::internal::Object ** V;
@@ -111,6 +113,8 @@ struct IsolateImpl {
     int m_handle_index;
     
     JSValueRef m_pending_exception;
+    
+    std::map<std::string, JSValueRef> m_global_symbols;
 };
 }} // namespaces
 
@@ -229,15 +233,25 @@ struct ObjectTemplateImpl;
 struct FunctionTemplateImpl;
 
 struct PropAccessor {
-    FunctionTemplateImpl *m_setter;
-    FunctionTemplateImpl *m_getter;
+    ValueImpl* name;
+    FunctionTemplateImpl *setter;
+    FunctionTemplateImpl *getter;
+    v8::PropertyAttribute attribute;
+    v8::AccessControl settings;
+};
+struct Prop {
+    ValueImpl* name;
+    ValueImpl* value;
+    v8::PropertyAttribute attributes;
 };
 struct ObjAccessor {
-    JSValueRef m_property;
-    v8::AccessorSetterCallback m_setter;
-    v8::AccessorGetterCallback m_getter;
-    JSValueRef m_data;
-    const ContextImpl* m_context;
+    ValueImpl *name;
+    v8::AccessorNameGetterCallback getter;
+    v8::AccessorNameSetterCallback setter;
+    ValueImpl *data;
+    v8::AccessControl settings;
+    v8::PropertyAttribute attribute;
+    SignatureImpl *signature;
 };
 
 struct LocalException;
@@ -245,9 +259,9 @@ struct LocalException;
 struct TemplateImpl : InternalObjectImpl
 {
     v8::Isolate *m_isolate;
-    std::map<JSStringRef, ValueImpl*> m_properties;
-    std::map<JSStringRef, PropAccessor> m_property_accessors;
-    std::map<JSStringRef, ObjAccessor> m_obj_accessors;
+    std::vector<Prop> m_properties;
+    std::vector<PropAccessor> m_property_accessors;
+    std::vector<ObjAccessor> m_accessors;
     v8::FunctionCallback m_callback;
     JSValueRef m_data;
     SignatureImpl *m_signature;
@@ -307,6 +321,7 @@ struct ObjectTemplateImpl : TemplateImpl
     JSValueRef m_named_data;
     JSValueRef m_indexed_data;
     bool m_need_proxy;
+    int m_internal_fields;
     
     v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root);
 };
@@ -319,8 +334,12 @@ struct TemplateWrap {
 };
 
 struct InstanceWrap {
+    JSValueRef m_security;
     const ObjectTemplateImpl *m_object_template;
     const ContextImpl *m_context;
+    int m_num_internal_fields;
+    JSValueRef *m_internal_fields;
+    JSValueRef m_private_properties;
 };
 
 struct SignatureImpl
@@ -503,6 +522,12 @@ struct V82JSC {
         assert(exception==0);
         JSValueRef result = JSObjectCallAsFunction(ctx, function, 0, argc, argv, &exception);
         if (!pexcp) {
+            if (exception!=0) {
+                JSStringRef error = JSValueToStringCopy(ctx, exception, 0);
+                char msg[JSStringGetMaximumUTF8CStringSize(error)];
+                JSStringGetUTF8CString(error, msg, JSStringGetMaximumUTF8CStringSize(error));
+                fprintf(stderr, ">>> %s\n", msg);
+            }
             assert(exception==0);
         } else {
             *pexcp = exception;
@@ -513,6 +538,42 @@ struct V82JSC {
         JSStringRelease(anon);
         JSStringRelease(sbody);
         return result;
+    }
+#define GLOBAL_PRIVATE_SYMBOL "org.liquidplayer.javascript.__v82jsc_private__"
+    static inline InstanceWrap * makePrivateInstance(JSContextRef ctx, JSObjectRef object)
+    {
+        InstanceWrap *wrap = new InstanceWrap();
+        wrap->m_security = object;
+        JSValueProtect(ctx, wrap->m_security);
+        
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        def.attributes = kJSClassAttributeNoAutomaticPrototype;
+        def.finalize = [](JSObjectRef object) {
+            // FIXME: Do something
+        };
+        JSClassRef klass = JSClassCreate(&def);
+        JSObjectRef private_object = JSObjectMake(ctx, klass, (void*)wrap);
+        JSClassRelease(klass);
+        
+        JSValueRef args[] = {
+            object, private_object
+        };
+
+        exec(ctx,
+             "_1[Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')] = _2",
+             2, args);
+        return wrap;
+    }
+    static inline InstanceWrap * getPrivateInstance(JSContextRef ctx, JSObjectRef object)
+    {
+        JSObjectRef private_object = (JSObjectRef) exec(ctx, "return _1[Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')]", 1, &object);
+        if (JSValueIsObject(ctx, private_object)) {
+            InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(private_object);
+            if (wrap && JSValueIsStrictEqual(ctx, object, wrap->m_security)) {
+                return wrap;
+            }
+        }
+        return nullptr;
     }
 };
 #define JSFUNC(name_,code_,c) V82JSC::jsfunc__(#name_,code_,c,ContextImpl::IsFunctions::name_)
@@ -531,7 +592,6 @@ struct LocalException {
         return &exception_;
     }
     inline bool ShouldThow() { return exception_ != nullptr; }
-private:
     JSValueRef exception_;
     IsolateImpl *isolate_;
 };
