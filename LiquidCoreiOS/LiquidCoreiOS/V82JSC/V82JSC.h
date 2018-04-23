@@ -189,6 +189,8 @@ struct ContextImpl : v8::Context
         SIZE
     } IsFunctions;
     JSObjectRef IsFunctionRefs[IsFunctions::SIZE];
+    
+    static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
 
 struct ArrayBufferViewImpl : v8::ArrayBufferView
@@ -275,18 +277,6 @@ struct TemplateImpl : InternalObjectImpl
                                              size_t argumentCount,
                                              const JSValueRef arguments[],
                                              JSValueRef* exception);
-    static JSValueRef objectGetterCallback(JSContextRef ctx,
-                                           JSObjectRef ignore,
-                                           JSObjectRef thisObject,
-                                           size_t argumentCount,
-                                           const JSValueRef arguments[],
-                                           JSValueRef* exception);
-    static JSValueRef objectSetterCallback(JSContextRef ctx,
-                                           JSObjectRef ignore,
-                                           JSObjectRef thisObject,
-                                           size_t argumentCount,
-                                           const JSValueRef arguments[],
-                                           JSValueRef* exception);
     static v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                                    JSObjectRef instance,
                                                    LocalException& excep,
@@ -328,7 +318,7 @@ struct ObjectTemplateImpl : TemplateImpl
 
 struct TemplateWrap {
     const TemplateImpl *m_template;
-    const ContextImpl* m_context;
+    IsolateImpl* m_isolate;
     std::map<JSStringRef, JSObjectRef> m_getters;
     std::map<JSStringRef, JSObjectRef> m_setters;
 };
@@ -336,7 +326,7 @@ struct TemplateWrap {
 struct InstanceWrap {
     JSValueRef m_security;
     const ObjectTemplateImpl *m_object_template;
-    const ContextImpl *m_context;
+    IsolateImpl *m_isolate;
     int m_num_internal_fields;
     JSValueRef *m_internal_fields;
     JSValueRef m_private_properties;
@@ -519,8 +509,12 @@ struct V82JSC {
             argNames[i] = JSStringCreateWithUTF8CString(argname);
         }
         JSObjectRef function = JSObjectMakeFunction(ctx, anon, argc, argNames, sbody, 0, 0, &exception);
+        for (int i=0; i<argc; i++) {
+            JSStringRelease(argNames[i]);
+        }
         assert(exception==0);
-        JSValueRef result = JSObjectCallAsFunction(ctx, function, 0, argc, argv, &exception);
+
+        JSValueRef result = JSObjectCallAsFunction(ctx, function, JSObjectMake(ctx,0,0), argc, argv, &exception);
         if (!pexcp) {
             if (exception!=0) {
                 JSStringRef error = JSValueToStringCopy(ctx, exception, 0);
@@ -531,9 +525,6 @@ struct V82JSC {
             assert(exception==0);
         } else {
             *pexcp = exception;
-        }
-        for (int i=0; i<argc; i++) {
-            JSStringRelease(argNames[i]);
         }
         JSStringRelease(anon);
         JSStringRelease(sbody);

@@ -31,7 +31,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     memset(isolate, 0, sizeof(IsolateImpl));
     
     isolate->m_group = JSContextGroupCreate();
-    isolate->m_defaultContext = reinterpret_cast<ContextImpl*>(*ContextImpl::New(reinterpret_cast<v8::Isolate*>(isolate)));
+    isolate->m_defaultContext = reinterpret_cast<ContextImpl*>(*Context::New(V82JSC::ToIsolate(isolate)));
 
     Primitive *undefined = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
     isolate->i.roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);

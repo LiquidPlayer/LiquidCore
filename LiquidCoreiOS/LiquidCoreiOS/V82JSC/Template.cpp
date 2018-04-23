@@ -140,7 +140,10 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
                                                 JSValueRef *exception)
 {
     TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(proxy_function));
-    Local<Value> thiz = ValueImpl::New(wrap->m_context, thisObject);
+    IsolateImpl* isolateimpl = wrap->m_isolate;
+    Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+    ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
+    Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
     
     // Check signature
     bool signature_match = !wrap->m_template->m_signature;
@@ -160,35 +163,41 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         JSStringRelease(message);
         return 0;
     }
-    Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
+    Local<Value> data = ValueImpl::New(ctximpl, wrap->m_template->m_data);
     
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
-        O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 2;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueIndex = 3;
+        O(isolateimpl),                                      // kIsolateIndex = 1;
+        O(isolateimpl->i.roots.undefined_value),             // kReturnValueDefaultValueIndex = 2;
+        O(isolateimpl->i.roots.undefined_value),             // kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kNewTargetIndex = 7;
+        O(isolateimpl->i.roots.undefined_value),             // kNewTargetIndex = 7;
     };
     v8::internal::Object * values_[argumentCount + 1];
     v8::internal::Object ** values = values_ + argumentCount - 1;
     *(values + 1) = * reinterpret_cast<v8::internal::Object**>(*thiz);
     for (size_t i=0; i<argumentCount; i++) {
-        Local<Value> arg = ValueImpl::New(wrap->m_context, arguments[i]);
+        Local<Value> arg = ValueImpl::New(ctximpl, arguments[i]);
         *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
     }
+    
+    JSValueRef held_exception = isolateimpl->m_pending_exception;
+    isolateimpl->m_pending_exception = 0;
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     
     if (wrap->m_template->m_callback) {
         wrap->m_template->m_callback(info);
     }
+
+    *exception = isolateimpl->m_pending_exception;
+    isolateimpl->m_pending_exception = held_exception;
     
     Local<Value> ret = info.GetReturnValue().Get();
     
-    return V82JSC::ToJSValueRef<Value>(ret, _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal());
+    return V82JSC::ToJSValueRef<Value>(ret, context);
 }
 
 /** Creates a function template.*/

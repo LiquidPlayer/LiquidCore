@@ -83,7 +83,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     int index = 0;
     char *p = nullptr;
     if (argumentCount > 1) {
-        isSymbol = V82JSC::exec(ctx, "return typeof _1 === 'symbol'", 1, &arguments[1]);
+        isSymbol = JSValueToBoolean(ctx, V82JSC::exec(ctx, "return typeof _1 === 'symbol'", 1, &arguments[1]));
         if (!isSymbol) {
             propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
         }
@@ -109,50 +109,52 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     }
     InstanceWrap* wrap = V82JSC::getPrivateInstance(ctx, target);
     const ObjectTemplateImpl *templ = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_object_template);
-    IsolateImpl *isolate = wrap->m_context->isolate;
+    IsolateImpl *isolateimpl = wrap->m_isolate;
+    Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+    ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
 
     Local<Value> data;
     if (isSymbol || p!=nullptr) { /* Is named */
-        data = ValueImpl::New(wrap->m_context, templ->m_named_data);
+        data = ValueImpl::New(ctximpl, templ->m_named_data);
     } else { /* Is Indexed */
-        data = ValueImpl::New(wrap->m_context, templ->m_indexed_data);
+        data = ValueImpl::New(ctximpl, templ->m_indexed_data);
     }
     
-    Local<Value> thiz = ValueImpl::New(wrap->m_context, target);
+    Local<Value> thiz = ValueImpl::New(ctximpl, target);
     
     v8::internal::Object * implicit[] = {
         0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
-        O(wrap->m_context->isolate),                         // kIsolateIndex = 2;
-        O(wrap->m_context->isolate->i.roots.undefined_value),// kReturnValueDefaultValueIndex = 3;
-        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueIndex = 4;
+        O(isolateimpl),                                      // kIsolateIndex = 2;
+        O(isolateimpl->i.roots.undefined_value),             // kReturnValueDefaultValueIndex = 3;
+        O(isolateimpl->i.roots.the_hole_value),              // kReturnValueIndex = 4;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
     };
     
     PropertyCallbackImpl<V> info(implicit);
-    Local<Value> set = ValueImpl::New(wrap->m_context, value);
+    Local<Value> set = ValueImpl::New(ctximpl, value);
     
-    JSValueRef held_exception = isolate->m_pending_exception;
-    isolate->m_pending_exception = 0;
+    JSValueRef held_exception = isolateimpl->m_pending_exception;
+    isolateimpl->m_pending_exception = 0;
     
     if (isSymbol || p!=nullptr) {
         named_handler(templ,
-                      ValueImpl::New(wrap->m_context, arguments[1]).As<Name>(),
+                      ValueImpl::New(ctximpl, arguments[1]).As<Name>(),
                       set, info);
     } else {
         indexed_handler(templ, index, set, info);
     }
     
-    *exception = isolate->m_pending_exception;
-    isolate->m_pending_exception = held_exception;
+    *exception = isolateimpl->m_pending_exception;
+    isolateimpl->m_pending_exception = held_exception;
     
-    if (implicit[4] == O(wrap->m_context->isolate->i.roots.the_hole_value)) {
+    if (implicit[4] == O(isolateimpl->i.roots.the_hole_value)) {
         return NULL;
     }
     
     Local<Value> retVal = info.GetReturnValue().Get();
-    return V82JSC::ToJSValueRef<Value>(retVal, _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal());
+    return V82JSC::ToJSValueRef<Value>(retVal, context);
 }
 
 v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root)
@@ -167,7 +169,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     
     // Create lifecycle object
     InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_context, root);
-    wrap->m_context = ctx;
+    wrap->m_isolate = ctx->isolate;
     wrap->m_object_template = this;
     wrap->m_num_internal_fields = m_internal_fields;
     wrap->m_internal_fields = new JSValueRef[m_internal_fields]();

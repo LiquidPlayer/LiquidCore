@@ -16,8 +16,9 @@ Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal
     _local<String> local(string);
     memset(string, 0, sizeof(ValueImpl));
     string->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&string->map) & ~3) + 1);
-    string->m_value = JSValueMakeString(reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext->m_context, str);
-    string->m_context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
+    string->m_value = JSValueMakeString(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, str);
+    JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, string->m_value);
+    string->m_context = V82JSC::ToIsolateImpl(isolate)->m_defaultContext;
     if (type == v8::internal::FIRST_NONSTRING_TYPE) {
         if (local.val_->ContainsOnlyOneByte()) {
             string->pMap->set_instance_type(v8::internal::ONE_BYTE_STRING_TYPE);

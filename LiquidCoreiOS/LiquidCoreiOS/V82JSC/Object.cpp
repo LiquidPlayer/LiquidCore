@@ -21,7 +21,7 @@ Maybe<bool> Object::Set(Local<Context> context, Local<Value> key, Local<Value> v
         V82JSC::ToJSValueRef(value, context)
     };
     
-    JSValueRef ret = V82JSC::exec(ctx->m_context, "return _1[_2] = _3", 3, args, &exception);
+    JSValueRef ret = V82JSC::exec(ctx->m_context, "return _3 == (_1[_2] = _3)", 3, args, &exception);
     
     _maybe<bool> out;
     if (!exception.ShouldThow()) {
@@ -315,38 +315,40 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
                              size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception)
     {
         AccessorInfo* wrap = reinterpret_cast<AccessorInfo*>(JSObjectGetPrivate(function));
+        IsolateImpl* isolateimpl = wrap->m_context->isolate;
+        Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+        ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
         
-        Local<Value> thiz = ValueImpl::New(wrap->m_context, thisObject);
-        Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_data);
-        Local<Context> context = _local<Context>(wrap->m_context).toLocal();
+        Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
+        Local<Value> data = ValueImpl::New(ctximpl, wrap->m_data);
         
         v8::internal::Object * implicit[] = {
             0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
             * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
-            O(wrap->m_context->isolate),                         // kIsolateIndex = 2;
-            O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueDefaultValueIndex = 3;
-            O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueIndex = 4;
+            O(isolateimpl),                                      // kIsolateIndex = 2;
+            O(isolateimpl->i.roots.the_hole_value),              // kReturnValueDefaultValueIndex = 3;
+            O(isolateimpl->i.roots.the_hole_value),              // kReturnValueIndex = 4;
             * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
             * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
         };
         
-        JSValueRef held_exception = wrap->m_context->isolate->m_pending_exception;
-        wrap->m_context->isolate->m_pending_exception = 0;
+        JSValueRef held_exception = isolateimpl->m_pending_exception;
+        isolateimpl->m_pending_exception = 0;
         
-        Local<Value> ret = Undefined(V82JSC::ToIsolate(wrap->m_context->isolate));
+        Local<Value> ret = Undefined(V82JSC::ToIsolate(isolateimpl));
         if (argumentCount == 0) {
             PropertyCallbackImpl<Value> info(implicit);
-            wrap->getter(ValueImpl::New(wrap->m_context, wrap->m_property).As<Name>(), info);
+            wrap->getter(ValueImpl::New(ctximpl, wrap->m_property).As<Name>(), info);
             ret = info.GetReturnValue().Get();
         } else {
             PropertyCallbackImpl<void> info(implicit);
-            wrap->setter(ValueImpl::New(wrap->m_context, wrap->m_property).As<Name>(),
-                         ValueImpl::New(wrap->m_context, arguments[0]),
+            wrap->setter(ValueImpl::New(ctximpl, wrap->m_property).As<Name>(),
+                         ValueImpl::New(ctximpl, arguments[0]),
                          info);
         }
         
-        *exception = wrap->m_context->isolate->m_pending_exception;
-        wrap->m_context->isolate->m_pending_exception = held_exception;
+        *exception = isolateimpl->m_pending_exception;
+        isolateimpl->m_pending_exception = held_exception;
         
         return V82JSC::ToJSValueRef<Value>(ret, context);
     };
@@ -558,7 +560,7 @@ Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
     while (proto->IsObject()) {
         JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, context);
         InstanceWrap *instance_wrap = V82JSC::getPrivateInstance(ctximpl->m_context, obj);
-        if (instance_wrap->m_object_template) {
+        if (instance_wrap && instance_wrap->m_object_template) {
             for (const TemplateImpl *t = instance_wrap->m_object_template->m_constructor_template; t; t = t->m_parent) {
                 if (t == tmplimpl) {
                     return proto.As<Object>();

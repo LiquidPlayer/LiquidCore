@@ -39,6 +39,19 @@ void Context::DetachGlobal()
     assert(0);
 }
 
+Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
+{
+    ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
+    memset(context, 0, sizeof(ContextImpl));
+    context->pInternal = reinterpret_cast<internal::Context *>(context);
+    IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
+    context->isolate = i;
+    context->m_context = ctx;
+    
+    return _local<Context>(context).toLocal();
+}
+
+
 /**
  * Creates a new context and returns a handle to the newly allocated
  * context.
@@ -70,20 +83,12 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
         
-        //JSClassDefinition def = kJSClassDefinitionEmpty;
-        //JSClassRef claz = JSClassCreate(&def);
-        
-        //TemplateWrap *wrap = new TemplateWrap();
-        //wrap->m_template = impl;
-        //wrap->m_context = context;
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
         context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
         JSObjectRef global = JSContextGetGlobalObject(context->m_context);
         JSObjectRef instance = JSObjectMake(context->m_context, 0, nullptr);
         JSObjectSetPrototype(context->m_context, global, instance);
-        //JSObjectSetPrivate(instance, (void*)wrap);
-        //JSClassRelease(claz);
         Local<Context> ctx = Local<Context>(context);
 
         if (impl->m_constructor_template) {
@@ -96,7 +101,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSValueRef prototype = JSObjectGetProperty(context->m_context, ctor_func, sprototype, &excp);
                 assert(excp == 0);
                 JSObjectSetPrototype(context->m_context, instance, prototype);
-                JSObjectSetProperty(context->m_context, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum|kJSPropertyAttributeReadOnly, &excp);
+                JSObjectSetProperty(context->m_context, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum, &excp);
                 assert(excp == 0);
                 JSStringRelease(sprototype);
                 JSStringRelease(sconstructor);

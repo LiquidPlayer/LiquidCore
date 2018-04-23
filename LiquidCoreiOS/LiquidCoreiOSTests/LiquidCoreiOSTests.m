@@ -53,9 +53,9 @@ extern int cctest_main(int argc, char* argv[]);
 
 #undef V
 #define V(tst) \
-- (void)testCc##tst { \
-    char *argv[] = { "cctest", "test-api/" #tst }; \
-    cctest_main(2, argv); \
+- (void)testCcPassing##tst { \
+char *argv[] = { "cctest", "test-api/" #tst }; \
+cctest_main(2, argv); \
 }
 /******* PASSING TESTS *******/
 V(InitializeAndDisposeOnce)
@@ -146,6 +146,13 @@ V(SymbolTemplateProperties)
 V(GlobalSymbols)
 V(GlobalSymbolsNoContext)
 V(WellKnownSymbols)
+
+#undef V
+#define V(tst) \
+- (void)testCc##tst { \
+char *argv[] = { "cctest", "test-api/" #tst }; \
+cctest_main(2, argv); \
+}
 
 V(AccessorIsPreservedOnAttributeChange)
 V(EmbedderDataAlignedPointers)

@@ -124,7 +124,7 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 
     TemplateWrap *wrap = new TemplateWrap();
     wrap->m_template = impl;
-    wrap->m_context = ctx;
+    wrap->m_isolate = ctx->isolate;
     
     JSClassDefinition function_def = kJSClassDefinitionEmpty;
     function_def.callAsFunction = TemplateImpl::callAsFunctionCallback;
@@ -402,8 +402,10 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
                                                            JSValueRef *exception)
 {
     TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(constructor_function));
-    Isolate *isolate = V82JSC::ToIsolate(wrap->m_context->isolate);
-    Local<Context> context = _local<Context>(const_cast<ContextImpl*>(wrap->m_context)).toLocal();
+    IsolateImpl *isolateimpl = wrap->m_isolate;
+    Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
+    Local<Context> context = ContextImpl::New(isolate, ctx);
+    ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     
     assert(argumentCount>0);
     bool create_object = JSValueToBoolean(ctx, arguments[0]);
@@ -421,7 +423,7 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         JSClassRef claz = JSClassCreate(&def);
         instance = JSObjectMake(ctx, claz, 0);
 
-        JSObjectRef function = ftempl->m_functions[wrap->m_context];
+        JSObjectRef function = (JSObjectRef) V82JSC::ToJSValueRef(function_template->GetFunction(context).ToLocalChecked(), context);
         JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
         JSStringRef sconstructor = JSStringCreateWithUTF8CString("constructor");
         JSValueRef excp = 0;
@@ -445,13 +447,13 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         return 0;
     }
 
-    Local<Value> data = ValueImpl::New(wrap->m_context, wrap->m_template->m_data);
+    Local<Value> data = ValueImpl::New(V82JSC::ToContextImpl(context), wrap->m_template->m_data);
     
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
-        O(wrap->m_context->isolate),                         // kIsolateIndex = 1;
-        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueDefaultValueIndex = 2;
-        O(wrap->m_context->isolate->i.roots.the_hole_value), // kReturnValueIndex = 3;
+        O(isolateimpl),                                      // kIsolateIndex = 1;
+        O(isolateimpl->i.roots.the_hole_value),              // kReturnValueDefaultValueIndex = 2;
+        O(isolateimpl->i.roots.the_hole_value),              // kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
@@ -461,23 +463,23 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     v8::internal::Object ** values = values_ + argumentCount - 1;
     *(values + 1) = * reinterpret_cast<v8::internal::Object**>(*thiz);
     for (size_t i=0; i<argumentCount; i++) {
-        Local<Value> arg = ValueImpl::New(wrap->m_context, arguments[i]);
+        Local<Value> arg = ValueImpl::New(ctximpl, arguments[i]);
         *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
     }
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     
-    JSValueRef held_exception = wrap->m_context->isolate->m_pending_exception;
-    wrap->m_context->isolate->m_pending_exception = 0;
+    JSValueRef held_exception = isolateimpl->m_pending_exception;
+    isolateimpl->m_pending_exception = 0;
 
     if (wrap->m_template->m_callback) {
         wrap->m_template->m_callback(info);
     }
     
-    *exception = wrap->m_context->isolate->m_pending_exception;
-    wrap->m_context->isolate->m_pending_exception = held_exception;
+    *exception = isolateimpl->m_pending_exception;
+    isolateimpl->m_pending_exception = held_exception;
     
-    if (implicit[3] == O(wrap->m_context->isolate->i.roots.the_hole_value)) {
+    if (implicit[3] == O(isolateimpl->i.roots.the_hole_value)) {
         return V82JSC::ToJSValueRef<Object>(thiz, context);
     }
 
