@@ -48,7 +48,9 @@ internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
 internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,
                                        internal::Object* value)
 {
-    assert(0);
+    uint8_t *addr = reinterpret_cast<uint8_t*>(heap_object) - internal::kHeapObjectTag;
+    InternalObjectImpl *o = reinterpret_cast<InternalObjectImpl*>(addr);
+    return CreateHandle(reinterpret_cast<internal::Isolate*>(o->m_isolate), value);
 }
 
 EscapableHandleScope::EscapableHandleScope(Isolate* isolate) : HandleScope(isolate)

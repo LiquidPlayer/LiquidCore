@@ -12,18 +12,18 @@ using namespace v8;
 
 Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
 {
-    JSType t = JSValueGetType(ctx->m_context, value);
+    JSType t = JSValueGetType(ctx->m_ctxRef, value);
     v8::internal::InstanceType instancet = v8::internal::JS_VALUE_TYPE;
     switch (t) {
         case kJSTypeUndefined:
-            return _local<Value>(&ctx->isolate->i.roots.undefined_value).toLocal();
+            return _local<Value>(&ctx->m_isolate->i.roots.undefined_value).toLocal();
         case kJSTypeNull:
-            return _local<Value>(&ctx->isolate->i.roots.null_value).toLocal();
+            return _local<Value>(&ctx->m_isolate->i.roots.null_value).toLocal();
         case kJSTypeBoolean:
-            if (JSValueToBoolean(ctx->m_context, value))
-                return _local<Value>(&ctx->isolate->i.roots.true_value).toLocal();
+            if (JSValueToBoolean(ctx->m_ctxRef, value))
+                return _local<Value>(&ctx->m_isolate->i.roots.true_value).toLocal();
             else
-                return _local<Value>(&ctx->isolate->i.roots.false_value).toLocal();
+                return _local<Value>(&ctx->m_isolate->i.roots.false_value).toLocal();
         case kJSTypeString:
             instancet = v8::internal::STRING_TYPE;
             break;
@@ -36,8 +36,9 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
     impl->pMap->set_instance_type(instancet);
     
     impl->m_context = const_cast<ContextImpl*>(ctx);
+    impl->m_isolate = ctx->m_isolate;
     impl->m_value = value;
-    JSValueProtect(impl->m_context->m_context, impl->m_value);
+    JSValueProtect(impl->m_context->m_ctxRef, impl->m_value);
     
     return _local<Value>(impl).toLocal();
 }
@@ -47,12 +48,12 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
 /**
  * Returns true if this value is true.
  */
-bool Value::IsTrue() const { FROMTHIS(c,v); return JSValueIsStrictEqual(c->m_context, v, JSValueMakeBoolean(c->m_context, true)); }
+bool Value::IsTrue() const { FROMTHIS(c,v); return JSValueIsStrictEqual(c->m_ctxRef, v, JSValueMakeBoolean(c->m_ctxRef, true)); }
 
 /**
  * Returns true if this value is false.
  */
-bool Value::IsFalse() const { FROMTHIS(c,v); return JSValueIsStrictEqual(c->m_context, v, JSValueMakeBoolean(c->m_context, false)); }
+bool Value::IsFalse() const { FROMTHIS(c,v); return JSValueIsStrictEqual(c->m_ctxRef, v, JSValueMakeBoolean(c->m_ctxRef, false)); }
 
 /**
  * Returns true if this value is a symbol or a string.
@@ -80,22 +81,22 @@ bool Value::IsFunction() const { return IS(IsFunction, "return typeof v === 'fun
  * Returns true if this value is an array. Note that it will return false for
  * an Proxy for an array.
  */
-bool Value::IsArray() const { FROMTHIS(c,v); return JSValueIsArray(c->m_context, v); }
+bool Value::IsArray() const { FROMTHIS(c,v); return JSValueIsArray(c->m_ctxRef, v); }
 
 /**
  * Returns true if this value is an object.
  */
-bool Value::IsObject() const { FROMTHIS(c,v); return JSValueIsObject(c->m_context, v); }
+bool Value::IsObject() const { FROMTHIS(c,v); return JSValueIsObject(c->m_ctxRef, v); }
 
 /**
  * Returns true if this value is boolean.
  */
-bool Value::IsBoolean() const { FROMTHIS(c,v); return JSValueIsBoolean(c->m_context, v); }
+bool Value::IsBoolean() const { FROMTHIS(c,v); return JSValueIsBoolean(c->m_ctxRef, v); }
 
 /**
  * Returns true if this value is a number.
  */
-bool Value::IsNumber() const { FROMTHIS(c,v); return JSValueIsNumber(c->m_context, v); }
+bool Value::IsNumber() const { FROMTHIS(c,v); return JSValueIsNumber(c->m_ctxRef, v); }
 
 /**
  * Returns true if this value is external.
@@ -110,7 +111,7 @@ bool Value::IsInt32() const
     if (IsNumber()) {
         JSValueRef exception = nullptr;
         FROMTHIS(c,v);
-        double number = JSValueToNumber(c->m_context, v, &exception);
+        double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
         if (std::modf(number, &intpart) == 0.0) {
             return (intpart >= std::numeric_limits<std::int32_t>::min() && intpart <= std::numeric_limits<std::int32_t>::max());
@@ -127,7 +128,7 @@ bool Value::IsUint32() const
     if (IsNumber()) {
         JSValueRef exception = nullptr;
         FROMTHIS(c,v);
-        double number = JSValueToNumber(c->m_context, v, &exception);
+        double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
         if (std::modf(number, &intpart) == 0.0) {
             return (intpart >= 0 && intpart <= std::numeric_limits<std::uint32_t>::max());
@@ -139,7 +140,7 @@ bool Value::IsUint32() const
 /**
  * Returns true if this value is a Date.
  */
-bool Value::IsDate() const { FROMTHIS(c,v); return JSValueIsDate(c->m_context, v); }
+bool Value::IsDate() const { FROMTHIS(c,v); return JSValueIsDate(c->m_ctxRef, v); }
 
 /**
  * Returns true if this value is an Arguments object.
@@ -320,12 +321,12 @@ Maybe<T> toValue(const Value* thiz, Local<Context> context)
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     JSValueRef value = V82JSC::ToJSValueRef<Value>(thiz, context);
-    LocalException exception(ctx->isolate);
+    LocalException exception(ctx->m_isolate);
     T ret;
     if (std::is_same<T,bool>::value) {
-        ret = JSValueToBoolean(ctx->m_context, value);
+        ret = JSValueToBoolean(ctx->m_ctxRef, value);
     } else {
-        double number = JSValueToNumber(ctx->m_context, value, &exception);
+        double number = JSValueToNumber(ctx->m_ctxRef, value, &exception);
         if (std::isnan(number)) number = 0;
         ret = static_cast<T>(number);
     }
@@ -345,7 +346,7 @@ Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const
     JSValueRef this_ = V82JSC::ToJSValueRef<Value>(this, context);
     JSValueRef that_ = V82JSC::ToJSValueRef<Value>(that, context);
     JSContextRef context_ = V82JSC::ToContextRef(context);
-    IsolateImpl* i = V82JSC::ToContextImpl(context)->isolate;
+    IsolateImpl* i = V82JSC::ToContextImpl(context)->m_isolate;
 
     LocalException exception(i);
     bool is = JSValueIsEqual(context_, this_, that_, &exception);
@@ -356,9 +357,9 @@ Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const
 }
 bool Value::StrictEquals(Local<Value> that) const
 {
-    ValueImpl *this_ = const_cast<ValueImpl*>(static_cast<const ValueImpl*>(this));
-    ValueImpl *that_ = const_cast<ValueImpl*>(static_cast<const ValueImpl*>(*that));
-    return JSValueIsStrictEqual(this_->m_context->m_context, this_->m_value, that_->m_value);
+    ValueImpl *this_ = V82JSC::ToImpl<ValueImpl,Value>(this);
+    ValueImpl *that_ = V82JSC::ToImpl<ValueImpl,Value>(*that);
+    return JSValueIsStrictEqual(this_->m_context->m_ctxRef, this_->m_value, that_->m_value);
 }
 bool Value::SameValue(Local<Value> that) const
 {
@@ -369,8 +370,8 @@ Local<String> Value::TypeOf(Isolate* isolate)
 {
     FROMTHIS(c,v);
     JSValueRef exception = nullptr;
-    JSValueRef to = JSObjectCallAsFunction(c->m_context, JSFUNC(TypeOf, "return typeof v", c), 0, 1, &v, &exception);
-    return ValueImpl::New(isolate, JSValueToStringCopy(c->m_context, to, &exception));
+    JSValueRef to = JSObjectCallAsFunction(c->m_ctxRef, JSFUNC(TypeOf, "return typeof v", c), 0, 1, &v, &exception);
+    return ValueImpl::New(isolate, JSValueToStringCopy(c->m_ctxRef, to, &exception));
 }
 
 Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object) { return Nothing<bool>(); }
@@ -386,20 +387,20 @@ MaybeLocal<String> Value::ToString(Local<Context> context) const
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     JSValueRef v = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(ctx->isolate);
-    JSStringRef s = JSValueToStringCopy (ctx->m_context, v, &exception);
+    LocalException exception(ctx->m_isolate);
+    JSStringRef s = JSValueToStringCopy (ctx->m_ctxRef, v, &exception);
     if (exception.ShouldThow()) {
         return MaybeLocal<String>();
     }
-    return ValueImpl::New(reinterpret_cast<Isolate*>(ctx->isolate), s);
+    return ValueImpl::New(reinterpret_cast<Isolate*>(ctx->m_isolate), s);
 }
 MaybeLocal<String> Value::ToDetailString(Local<Context> context) const { return ToString(context); } // FIXME
 MaybeLocal<Object> Value::ToObject(Local<Context> context) const
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     JSValueRef v = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(ctx->isolate);
-    JSObjectRef o = JSValueToObject(ctx->m_context, v, &exception);
+    LocalException exception(ctx->m_isolate);
+    JSObjectRef o = JSValueToObject(ctx->m_ctxRef, v, &exception);
     if (exception.ShouldThow()) {
         return MaybeLocal<Object>();
     }
@@ -411,12 +412,12 @@ MaybeLocal<T> ToNum(const Value* thiz, Local<Context> context)
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     JSValueRef v = V82JSC::ToJSValueRef(thiz, context);
-    LocalException exception(ctx->isolate);
-    double num = JSValueToNumber(ctx->m_context, v, &exception);
+    LocalException exception(ctx->m_isolate);
+    double num = JSValueToNumber(ctx->m_ctxRef, v, &exception);
     if (exception.ShouldThow()) {
         return MaybeLocal<T>();
     }
-    return _local<T>(*T::New(reinterpret_cast<Isolate*>(ctx->isolate), num)).toLocal();
+    return _local<T>(*T::New(reinterpret_cast<Isolate*>(ctx->m_isolate), num)).toLocal();
 }
 
 MaybeLocal<Number> Value::ToNumber(Local<Context> context) const
@@ -449,10 +450,10 @@ Local<External> External::New(Isolate* isolate, void* value)
     
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(isolate);
     if (!impl->m_external_context) {
-        impl->m_external_context = static_cast<ContextImpl*>(*Context::New(isolate));
+        impl->m_external_context = reinterpret_cast<Context*>(V82JSC::ToContextImpl(Context::New(isolate)));
     }
-    ContextImpl *ctx = static_cast<ContextImpl*>(impl->m_external_context);
-    JSObjectRef external = JSObjectMake(ctx->m_context, s_externalClass, value);
+    ContextImpl *ctx = V82JSC::ToContextImpl(impl->m_external_context);
+    JSObjectRef external = JSObjectMake(ctx->m_ctxRef, s_externalClass, value);
     auto e = ValueImpl::New(ctx, external);
     
     return * reinterpret_cast<Local<External> *>(&e);

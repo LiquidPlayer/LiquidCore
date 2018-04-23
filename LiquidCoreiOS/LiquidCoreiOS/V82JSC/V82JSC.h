@@ -130,15 +130,15 @@ struct InternalObjectImpl {
         unsigned char filler_[256]; // FIXME
     };
     JSValueRef  m_value;
+    IsolateImpl* m_isolate;
     ContextImpl* m_context;
 };
 
-struct ContextImpl : v8::Context
+struct ContextImpl : InternalObjectImpl
 {
     v8::internal::Context *pInternal;
     
-    JSContextRef m_context;
-    IsolateImpl *isolate;
+    JSContextRef m_ctxRef;
     
     typedef enum _IsFunctions {
         IsFunction,
@@ -214,6 +214,17 @@ struct ValueImpl : InternalObjectImpl, v8::Value {
     static v8::Primitive * New(v8::Isolate *isolate, double number);
     static v8::Primitive * NewBoolean(v8::Isolate *isolate, bool value);
     static v8::Primitive * NewNull(v8::Isolate *isolate);
+};
+
+struct EmbedderDataImpl {
+    union {
+        struct {
+            v8::internal::Map *pMap;
+            int m_size;
+        };
+        uint8_t buffer[v8::internal::Internals::kFixedArrayHeaderSize];
+    };
+    v8::internal::Object* m_embedder_data[1];
 };
 
 struct FunctionCallbackImpl : public v8::FunctionCallbackInfo<v8::Value>
@@ -393,7 +404,7 @@ struct V82JSC {
         v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(*v);
         if (obj->IsSmi()) {
             int value = v8::internal::Smi::ToInt(obj);
-            return JSValueMakeNumber(reinterpret_cast<ContextImpl*>(*context)->m_context, value);
+            return JSValueMakeNumber(reinterpret_cast<ContextImpl*>(*context)->m_ctxRef, value);
         } else {
             ValueImpl *that_ = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
             return that_->m_value;
@@ -444,23 +455,22 @@ struct V82JSC {
     }
     static inline JSContextRef ToContextRef(v8::Local<v8::Context> context)
     {
-        ContextImpl *ctx = ToContextImpl(context);
-        return ctx->m_context;
+        return ToContextImpl(context)->m_ctxRef;
     }
     static inline JSContextRef ToContextRef(v8::Isolate *isolate)
     {
         IsolateImpl *impl = reinterpret_cast<IsolateImpl*>(isolate);
-        return impl->m_defaultContext->m_context;
+        return impl->m_defaultContext->m_ctxRef;
     }
     static inline ContextImpl* ToContextImpl(v8::Local<v8::Context> context)
     {
-        ContextImpl *ctx = * reinterpret_cast<ContextImpl**>(*context);
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<v8::Context*>(*context));
+        ContextImpl *ctx = reinterpret_cast<ContextImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
         return ctx;
     }
     static inline ContextImpl* ToContextImpl(const v8::Context* thiz)
     {
-        ContextImpl *ctx = * reinterpret_cast<ContextImpl**>(const_cast<v8::Context*>(thiz));
-        return ctx;
+        return ToContextImpl(_local<v8::Context>(const_cast<v8::Context*>(thiz)).toLocal());
     }
     static inline IsolateImpl* ToIsolateImpl(v8::Isolate *isolate)
     {
@@ -477,8 +487,8 @@ struct V82JSC {
             JSStringRef param = JSStringCreateWithUTF8CString("v");
             JSStringRef body = JSStringCreateWithUTF8CString(code_);
             JSValueRef exception = nullptr;
-            c->IsFunctionRefs[index] = JSObjectMakeFunction(c->m_context, name, 1, &param, body, 0, 0, &exception);
-            JSValueProtect(c->m_context, c->IsFunctionRefs[index]);
+            c->IsFunctionRefs[index] = JSObjectMakeFunction(c->m_ctxRef, name, 1, &param, body, 0, 0, &exception);
+            JSValueProtect(c->m_ctxRef, c->IsFunctionRefs[index]);
             assert(exception==nullptr);
             JSStringRelease(name);
             JSStringRelease(param);
@@ -492,8 +502,8 @@ struct V82JSC {
         auto c = V82JSC::ToContextImpl(thiz);
         auto v = V82JSC::ToJSValueRef<v8::Value>(thiz, _local<v8::Context>(c).toLocal());
         JSValueRef exception = nullptr;
-        bool ret = JSValueToBoolean(c->m_context,
-                                    JSObjectCallAsFunction(c->m_context, jsfunc__(name_, code_, c, index), 0, 1, &v, &exception));
+        bool ret = JSValueToBoolean(c->m_ctxRef,
+                                    JSObjectCallAsFunction(c->m_ctxRef, jsfunc__(name_, code_, c, index), 0, 1, &v, &exception));
         assert(exception==nullptr);
         return ret;
     }

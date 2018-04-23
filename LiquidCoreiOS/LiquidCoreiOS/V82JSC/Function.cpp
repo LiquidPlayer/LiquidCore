@@ -29,7 +29,7 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
     for (int i=0; i<argc; i++) {
         args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
     }
-    LocalException exception(V82JSC::ToContextImpl(context)->isolate);
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
     JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(context), func, argc, args, &exception);
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), newobj).As<Object>();

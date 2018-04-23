@@ -16,8 +16,9 @@ Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal
     _local<String> local(string);
     memset(string, 0, sizeof(ValueImpl));
     string->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&string->map) & ~3) + 1);
-    string->m_value = JSValueMakeString(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, str);
-    JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, string->m_value);
+    string->m_value = JSValueMakeString(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_ctxRef, str);
+    string->m_isolate = V82JSC::ToIsolateImpl(isolate);
+    JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_ctxRef, string->m_value);
     string->m_context = V82JSC::ToIsolateImpl(isolate)->m_defaultContext;
     if (type == v8::internal::FIRST_NONSTRING_TYPE) {
         if (local.val_->ContainsOnlyOneByte()) {
@@ -77,7 +78,7 @@ String::Value::Value(Local<v8::Value> obj)
 {
     auto value = const_cast<ValueImpl*>(static_cast<const ValueImpl*>(*obj));
     JSValueRef exception = nullptr;
-    JSStringRef s = JSValueToStringCopy(value->m_context->m_context, value->m_value, &exception);
+    JSStringRef s = JSValueToStringCopy(value->m_context->m_ctxRef, value->m_value, &exception);
     if (exception) {
         s = JSStringCreateWithUTF8CString("undefined");
     }
@@ -97,7 +98,7 @@ String::Value::~Value()
 int String::Length() const
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_ctxRef, impl->m_value, 0);
     int r = (int) JSStringGetLength(s);
     JSStringRelease(s);
     return r;
@@ -110,7 +111,7 @@ int String::Length() const
 int String::Utf8Length() const
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_ctxRef, impl->m_value, 0);
     int r = (int) JSStringGetMaximumUTF8CStringSize(s);
     JSStringRelease(s);
     return r;
@@ -135,7 +136,7 @@ bool String::IsOneByte() const
 bool String::ContainsOnlyOneByte() const
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_ctxRef, impl->m_value, 0);
 
     size_t len = JSStringGetLength(s);
     const uint16_t *buffer = JSStringGetCharactersPtr(s);
@@ -178,7 +179,7 @@ int String::Write(uint16_t* buffer,
           int options) const
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_ctxRef, impl->m_value, 0);
 
     const JSChar *str = JSStringGetCharactersPtr(s);
     size_t len = JSStringGetLength(s);
@@ -197,7 +198,7 @@ int String::WriteOneByte(uint8_t* buffer,
                  int options) const
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_ctxRef, impl->m_value, 0);
 
     size_t len = JSStringGetMaximumUTF8CStringSize(s);
     char str[len];
@@ -216,7 +217,7 @@ int String::WriteUtf8(char* buffer,
               int options) const
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    JSStringRef s = JSValueToStringCopy(impl->m_context->m_context, impl->m_value, 0);
+    JSStringRef s = JSValueToStringCopy(impl->m_context->m_ctxRef, impl->m_value, 0);
 
     if (length < 0) {
         length = (int) JSStringGetMaximumUTF8CStringSize(s);
@@ -299,15 +300,15 @@ Local<String> String::Concat(Local<String> left, Local<String> right)
 {
     ValueImpl *left_ = V82JSC::ToImpl<ValueImpl,String>(left);
     ValueImpl *right_ = V82JSC::ToImpl<ValueImpl,String>(right);
-    JSStringRef sleft = JSValueToStringCopy(left_->m_context->m_context, left_->m_value, 0);
-    JSStringRef sright = JSValueToStringCopy(right_->m_context->m_context, right_->m_value, 0);
+    JSStringRef sleft = JSValueToStringCopy(left_->m_context->m_ctxRef, left_->m_value, 0);
+    JSStringRef sright = JSValueToStringCopy(right_->m_context->m_ctxRef, right_->m_value, 0);
 
     size_t length_left = JSStringGetLength(sleft);
     size_t length_right = JSStringGetLength(sright);
     uint16_t concat[length_left + length_right];
     memcpy(concat, JSStringGetCharactersPtr(sleft), sizeof(uint16_t) * length_left);
     memcpy(&concat[length_left], JSStringGetCharactersPtr(sright), sizeof(uint16_t) * length_right);
-    Isolate *isolate = V82JSC::ToIsolate(left_->m_context->isolate);
+    Isolate *isolate = V82JSC::ToIsolate(left_->m_context->m_isolate);
     JSStringRef concatted = JSStringCreateWithCharacters(concat,length_left+length_right);
     Local<String> ret = ValueImpl::New(isolate, concatted);
     JSStringRelease(sleft);

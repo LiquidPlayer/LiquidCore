@@ -57,13 +57,7 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
         data = Undefined(isolate);
     }
     templ->m_data = V82JSC::ToJSValueRef<Value>(data, isolate);
-    JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_context, templ->m_data);
-    //templ->m_definition.callAsFunction = TemplateImpl::callAsFunctionCallback;
-    /*
-    if (behavior == ConstructorBehavior::kAllow) {
-        templ->m_definition.callAsConstructor = FunctionTemplateImpl::callAsConstructorCallback;
-    }
-    */
+    JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_ctxRef, templ->m_data);
     if (templ->m_signature) {
         templ->m_definition.parentClass = templ->m_signature->m_template->m_class;
     }
@@ -124,22 +118,22 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 
     TemplateWrap *wrap = new TemplateWrap();
     wrap->m_template = impl;
-    wrap->m_isolate = ctx->isolate;
+    wrap->m_isolate = ctx->m_isolate;
     
     JSClassDefinition function_def = kJSClassDefinitionEmpty;
     function_def.callAsFunction = TemplateImpl::callAsFunctionCallback;
     function_def.className = "function_proxy";
     JSClassRef function_class = JSClassCreate(&function_def);
-    JSObjectRef function_proxy = JSObjectMake(ctx->m_context, function_class, (void*)wrap);
-    JSObjectSetPrototype(ctx->m_context, function_proxy, generic_function_prototype);
+    JSObjectRef function_proxy = JSObjectMake(ctx->m_ctxRef, function_class, (void*)wrap);
+    JSObjectSetPrototype(ctx->m_ctxRef, function_proxy, generic_function_prototype);
     JSClassRelease(function_class);
 
     JSClassDefinition constructor_def = kJSClassDefinitionEmpty;
     constructor_def.callAsFunction = FunctionTemplateImpl::callAsConstructorCallback;
     constructor_def.className = "constructor_proxy";
     JSClassRef constructor_class = JSClassCreate(&constructor_def);
-    JSObjectRef constructor_proxy = JSObjectMake(ctx->m_context, constructor_class, (void*)wrap);
-    JSObjectSetPrototype(ctx->m_context, constructor_proxy, generic_function_prototype);
+    JSObjectRef constructor_proxy = JSObjectMake(ctx->m_ctxRef, constructor_class, (void*)wrap);
+    JSObjectSetPrototype(ctx->m_ctxRef, constructor_proxy, generic_function_prototype);
     JSClassRelease(constructor_class);
     
     static const char *proxy_function_template =
@@ -190,13 +184,13 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     JSValueRef params[] = {
         function_proxy,
         constructor_proxy,
-        JSValueMakeNumber(ctx->m_context, impl->m_length)
+        JSValueMakeNumber(ctx->m_ctxRef, impl->m_length)
     };
     function = (JSObjectRef) JSObjectCallAsFunction(V82JSC::ToContextRef(context),
                                                     get_proxy, 0, sizeof params / sizeof (JSValueRef), params, &exp);
     assert(exp==nullptr);
     
-    LocalException exception(ctx->isolate);
+    LocalException exception(ctx->m_isolate);
 
     MaybeLocal<Object> thizo = impl->InitInstance(context, function, exception);
     if (thizo.IsEmpty()) {
@@ -221,15 +215,15 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
             return MaybeLocal<Function>();
         }
         JSValueRef parentFuncRef = V82JSC::ToJSValueRef<Function>(parentFunc.ToLocalChecked(), context);
-        JSValueRef parentFuncPrototype = JSObjectGetProperty(ctx->m_context, (JSObjectRef)parentFuncRef, sprototype, 0);
+        JSValueRef parentFuncPrototype = JSObjectGetProperty(ctx->m_ctxRef, (JSObjectRef)parentFuncRef, sprototype, 0);
         if (prototype_property) {
-            JSObjectSetPrototype(ctx->m_context, (JSObjectRef)prototype_property, parentFuncPrototype);
+            JSObjectSetPrototype(ctx->m_ctxRef, (JSObjectRef)prototype_property, parentFuncPrototype);
         }
     }
     JSStringRelease(sprototype);
 
     impl->m_functions[ctx] = function;
-    JSValueProtect(ctx->m_context, function);
+    JSValueProtect(ctx->m_ctxRef, function);
     return ValueImpl::New(ctx, function).As<Function>();
 }
 

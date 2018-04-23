@@ -39,17 +39,17 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(this);
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     
-    LocalException exception(ctx->isolate);
+    LocalException exception(ctx->m_isolate);
     
     JSObjectRef instance = 0;
     if (impl->m_constructor_template) {
         MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(context);
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
-            instance = JSObjectCallAsConstructor(ctx->m_context, (JSObjectRef)ctor_func, 0, 0, &exception);
+            instance = JSObjectCallAsConstructor(ctx->m_ctxRef, (JSObjectRef)ctor_func, 0, 0, &exception);
         }
     } else {
-        instance = JSObjectMake(ctx->m_context, nullptr, nullptr);
+        instance = JSObjectMake(ctx->m_ctxRef, nullptr, nullptr);
     }
     if (!instance) {
         return MaybeLocal<Object>();
@@ -161,15 +161,15 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     
-    LocalException exception(ctx->isolate);
+    LocalException exception(ctx->m_isolate);
     
     // Structure:
     //
     // proxy -----> root . Symbol.for('org.liquidplayer.javascript.__v82jsc_private__') -->  lifecycle_object(wrap) --> InstanceWrap*
     
     // Create lifecycle object
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_context, root);
-    wrap->m_isolate = ctx->isolate;
+    InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_ctxRef, root);
+    wrap->m_isolate = ctx->m_isolate;
     wrap->m_object_template = this;
     wrap->m_num_internal_fields = m_internal_fields;
     wrap->m_internal_fields = new JSValueRef[m_internal_fields]();
@@ -177,12 +177,12 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     // Create proxy
     JSObjectRef handler = 0;
     if (m_need_proxy) {
-        handler = JSObjectMake(ctx->m_context, nullptr, nullptr);
+        handler = JSObjectMake(ctx->m_ctxRef, nullptr, nullptr);
         auto handler_func = [ctx, handler](const char *name, JSObjectCallAsFunctionCallback callback) -> void {
             JSValueRef excp = 0;
             JSStringRef sname = JSStringCreateWithUTF8CString(name);
-            JSObjectRef f = JSObjectMakeFunctionWithCallback(ctx->m_context, sname, callback);
-            JSObjectSetProperty(ctx->m_context, handler, sname, f, 0, &excp);
+            JSObjectRef f = JSObjectMakeFunctionWithCallback(ctx->m_ctxRef, sname, callback);
+            JSObjectSetProperty(ctx->m_ctxRef, handler, sname, f, 0, &excp);
             JSStringRelease(sname);
             assert(excp==0);
         };
@@ -331,7 +331,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     }
     if (m_need_proxy) {
         JSValueRef args[] = {root, handler};
-        return ValueImpl::New(ctx, V82JSC::exec(ctx->m_context, "return new Proxy(_1, _2)", 2, args)).As<Object>();
+        return ValueImpl::New(ctx, V82JSC::exec(ctx->m_ctxRef, "return new Proxy(_1, _2)", 2, args)).As<Object>();
     }
     
     return ValueImpl::New(ctx, root).As<Object>();

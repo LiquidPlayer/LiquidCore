@@ -261,7 +261,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
             instance,
             i->name->m_value,
             v,
-            JSValueMakeNumber(ctx->m_context, i->attributes)
+            JSValueMakeNumber(ctx->m_ctxRef, i->attributes)
         };
         
         /* None = 0,
@@ -269,7 +269,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
            DontEnum = 1 << 1,
            DontDelete = 1 << 2
         */
-        V82JSC::exec(ctx->m_context,
+        V82JSC::exec(ctx->m_ctxRef,
                      "Object.defineProperty(_1, _2, "
                      "{ writable : !(_4&(1<<0)), "
                      "  enumerable : !(_4&(1<<1)), "

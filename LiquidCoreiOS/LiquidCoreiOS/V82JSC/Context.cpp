@@ -25,7 +25,7 @@ using namespace v8;
 Local<Object> Context::Global()
 {
     ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
-    JSObjectRef glob = JSContextGetGlobalObject(impl->m_context);
+    JSObjectRef glob = JSContextGetGlobalObject(impl->m_ctxRef);
     Local<Value> v = ValueImpl::New(impl, glob);
     return _local<Object>(*v).toLocal();
 }
@@ -43,10 +43,11 @@ Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
     ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
     memset(context, 0, sizeof(ContextImpl));
-    context->pInternal = reinterpret_cast<internal::Context *>(context);
+    context->pMap = reinterpret_cast<internal::Map *>(reinterpret_cast<uint8_t*>(context) + internal::kHeapObjectTag);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    context->isolate = i;
-    context->m_context = ctx;
+    context->m_isolate = i;
+    context->m_ctxRef = ctx;
+    context->m_context = context;
     
     return _local<Context>(context).toLocal();
 }
@@ -76,20 +77,20 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
 {
     ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
     memset(context, 0, sizeof(ContextImpl));
-    context->pInternal = reinterpret_cast<internal::Context *>(context);
+    context->pMap = reinterpret_cast<internal::Map*>(reinterpret_cast<uint8_t*>(context) + 1);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    context->isolate = i;
+    context->m_isolate = i;
+    Local<Context> ctx = _local<Context>(context).toLocal();
 
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
         
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
-        context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
-        JSObjectRef global = JSContextGetGlobalObject(context->m_context);
-        JSObjectRef instance = JSObjectMake(context->m_context, 0, nullptr);
-        JSObjectSetPrototype(context->m_context, global, instance);
-        Local<Context> ctx = Local<Context>(context);
+        context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
+        JSObjectRef global = JSContextGetGlobalObject(context->m_ctxRef);
+        JSObjectRef instance = JSObjectMake(context->m_ctxRef, 0, nullptr);
+        JSObjectSetPrototype(context->m_ctxRef, global, instance);
 
         if (impl->m_constructor_template) {
             MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(ctx);
@@ -98,10 +99,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
                 JSStringRef sconstructor = JSStringCreateWithUTF8CString("constructor");
                 JSValueRef excp = 0;
-                JSValueRef prototype = JSObjectGetProperty(context->m_context, ctor_func, sprototype, &excp);
+                JSValueRef prototype = JSObjectGetProperty(context->m_ctxRef, ctor_func, sprototype, &excp);
                 assert(excp == 0);
-                JSObjectSetPrototype(context->m_context, instance, prototype);
-                JSObjectSetProperty(context->m_context, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum, &excp);
+                JSObjectSetPrototype(context->m_ctxRef, instance, prototype);
+                JSObjectSetProperty(context->m_ctxRef, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum, &excp);
                 assert(excp == 0);
                 JSStringRelease(sprototype);
                 JSStringRelease(sconstructor);
@@ -113,12 +114,12 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             return Local<Context>();
         }
     } else if (i->m_defaultContext) {
-        context->m_context = JSGlobalContextRetain((JSGlobalContextRef) i->m_defaultContext->m_context);
+        context->m_ctxRef = JSGlobalContextRetain((JSGlobalContextRef) i->m_defaultContext->m_ctxRef);
     } else {
-        context->m_context = JSGlobalContextCreateInGroup(i->m_group, nullptr);
+        context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
     }
     
-    return Local<Context>(context);
+    return ctx;
 }
 
 /**
@@ -208,7 +209,7 @@ void Context::Enter()
 {
     ContextImpl *impl = V82JSC::ToContextImpl(this);
 
-    impl->isolate->EnterContext(this);
+    impl->m_isolate->EnterContext(this);
 }
 
 /**
@@ -219,7 +220,7 @@ void Context::Exit()
 {
     ContextImpl *impl = V82JSC::ToContextImpl(this);
     
-    impl->isolate->ExitContext(this);
+    impl->m_isolate->ExitContext(this);
 }
 
 /** Returns an isolate associated with a current context. */
@@ -227,7 +228,7 @@ Isolate* Context::GetIsolate()
 {
     ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
     
-    return reinterpret_cast<Isolate*>(impl->isolate);
+    return V82JSC::ToIsolate(impl->m_isolate);
 }
 
 /**
@@ -242,6 +243,13 @@ Local<Object> Context::GetExtrasBindingObject()
     return Local<Object>();
 }
 
+template<typename T>
+static void WriteField(internal::Object* ptr, int offset, T value) {
+    uint8_t* addr =
+        reinterpret_cast<uint8_t*>(ptr) + offset - internal::kHeapObjectTag;
+    *reinterpret_cast<T*>(addr) = value;
+}
+
 /**
  * Sets the embedder data with the given index, growing the data as
  * needed. Note that index 0 currently has a special meaning for Chrome's
@@ -249,7 +257,9 @@ Local<Object> Context::GetExtrasBindingObject()
  */
 void Context::SetEmbedderData(int index, Local<Value> value)
 {
-    assert(0);
+    typedef internal::Object O;
+    O* val = *reinterpret_cast<O* const*>(*value);
+    SetAlignedPointerInEmbedderData(index, val);
 }
 
 /**
@@ -259,7 +269,38 @@ void Context::SetEmbedderData(int index, Local<Value> value)
  */
 void Context::SetAlignedPointerInEmbedderData(int index, void* value)
 {
-    assert(0);
+    typedef internal::Object O;
+    typedef internal::Internals I;
+    O* ctx = *reinterpret_cast<O* const*>(this);
+    int embedder_data_offset = I::kContextHeaderSize +
+        (internal::kApiPointerSize * I::kContextEmbedderDataIndex);
+    O* embedder_data = I::ReadField<O*>(ctx, embedder_data_offset);
+    O** copy = nullptr;
+    int copy_pointers = 0;
+    void *defunct = nullptr;
+    if (embedder_data) {
+        EmbedderDataImpl *ed = reinterpret_cast<EmbedderDataImpl*>(reinterpret_cast<uint8_t*>(embedder_data) - internal::kHeapObjectTag);
+        if (ed->m_size <= index) {
+            copy = &ed->m_embedder_data[0];
+            copy_pointers = ed->m_size;
+            embedder_data = nullptr;
+            defunct = ed;
+        }
+    }
+    if (!embedder_data) {
+        int size = ((index + 32) / 32) * 32;
+        EmbedderDataImpl* io = (EmbedderDataImpl*) malloc(sizeof(EmbedderDataImpl) + size * internal::kApiPointerSize);
+        memset(io, 0, sizeof(InternalObjectImpl) + size * internal::kApiPointerSize);
+        io->pMap = (v8::internal::Map*)(reinterpret_cast<uintptr_t>(io) + 1);
+        io->m_size = size;
+        memcpy(&io->m_embedder_data[0], copy, copy_pointers * internal::kApiPointerSize);
+        if (defunct) free(defunct);
+        embedder_data = reinterpret_cast<O*>(io->pMap);
+        WriteField<O*>(ctx, embedder_data_offset, embedder_data);
+    }
+    int value_offset =
+        I::kFixedArrayHeaderSize + (internal::kApiPointerSize * index);
+    WriteField<void*>(embedder_data, value_offset, value);
 }
 
 /**
