@@ -791,8 +791,13 @@ bool Object::HasIndexedLookupInterceptor()
  */
 int Object::GetIdentityHash()
 {
-    assert(0);
-    return 1;
+    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
+    JSObjectRef o = (JSObjectRef) V82JSC::ToJSValueRef(this, V82JSC::ToIsolate(ctximpl->m_isolate));
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, o);
+    if (!wrap) {
+        wrap = V82JSC::makePrivateInstance(ctximpl->m_ctxRef, o);
+    }
+    return wrap->m_hash;
 }
 
 /**

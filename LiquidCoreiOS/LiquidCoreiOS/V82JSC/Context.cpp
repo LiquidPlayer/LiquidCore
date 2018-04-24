@@ -36,7 +36,8 @@ Local<Object> Context::Global()
  */
 void Context::DetachGlobal()
 {
-    assert(0);
+    //FIXME: Not sure what to do here to ensure it isn't used in the existing context
+    //assert(0);
 }
 
 Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
@@ -81,6 +82,11 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
     context->m_isolate = i;
     Local<Context> ctx = _local<Context>(context).toLocal();
+    int hash = 0;
+    
+    if (!global_object.IsEmpty()) {
+        hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
+    }
 
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
@@ -109,6 +115,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             }
         }
         impl->NewInstance(ctx, instance);
+        if (hash) {
+            V82JSC::getPrivateInstance(context->m_ctxRef, instance)->m_hash = hash;
+        }
 
         if (exception.ShouldThow()) {
             return Local<Context>();

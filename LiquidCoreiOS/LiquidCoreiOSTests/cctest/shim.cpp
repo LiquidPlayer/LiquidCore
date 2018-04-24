@@ -293,14 +293,17 @@ void internal::CpuProfiler::DeleteAllProfiles() {}
 //
 internal::Handle<Code> Builtins::InterpreterEnterBytecodeDispatch()
 {
+    assert(0);
     return Handle<Code>();
 }
 internal::Handle<Code> Builtins::InterpreterEnterBytecodeAdvance()
 {
+    assert(0);
     return Handle<Code>();
 }
 internal::Handle<Code> Builtins::InterpreterEntryTrampoline()
 {
+    assert(0);
     return Handle<Code>();
 }
 
@@ -309,18 +312,38 @@ internal::Handle<Code> Builtins::InterpreterEntryTrampoline()
 //
 // Returns the permanent hash code associated with this object. May return
 // undefined if not yet created.
-internal::Object* internal::Object::GetHash() { return nullptr; }
+internal::Object* internal::Object::GetHash()
+{
+    if (this->IsSmi()) return this;
+    
+    ValueImpl* impl = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(this) & ~3);
+    if (JSValueIsObject(impl->m_context->m_ctxRef, impl->m_value)) {
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef) impl->m_value);
+        if (!wrap) wrap = V82JSC::makePrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef) impl->m_value);
+        return Smi::FromInt(wrap->m_hash);
+    }
+    return nullptr;
+}
 
 // Returns the permanent hash code associated with this object depending on
 // the actual object type. May create and store a hash code if needed and none
 // exists.
 Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 {
+    Local<v8::Object> o = _local<v8::Object>(object.location()).toLocal();
+    ValueImpl* impl = V82JSC::ToImpl<ValueImpl>(o);
+    if (impl) {
+        if (JSValueIsObject(impl->m_context->m_ctxRef, impl->m_value)) {
+            int hash = o->GetIdentityHash();
+            return Smi::FromInt(hash);
+        }
+    }
     return nullptr;
 }
 
 MaybeHandle<internal::Object> internal::Object::GetProperty(LookupIterator* it)
 {
+    assert(0);
     return MaybeHandle<Object>();
 }
 
@@ -332,12 +355,14 @@ internal::Handle<JSMessageObject> MessageHandler::MakeMessageObject(
                                                  const MessageLocation* location, Handle<Object> argument,
                                                  Handle<FixedArray> stack_frames)
 {
+    assert(0);
     return Handle<JSMessageObject>();
 }
 // Report a formatted message (needs JS allocation).
 void MessageHandler::ReportMessage(Isolate* isolate, const MessageLocation* loc,
                           Handle<JSMessageObject> message)
 {
+    assert(0);
 }
 
 //
@@ -348,12 +373,14 @@ AccountingAllocator::~AccountingAllocator() {}
 // Gets an empty segment from the pool or creates a new one.
 Segment* AccountingAllocator::GetSegment(size_t bytes)
 {
+    assert(0);
     return nullptr;
 }
 // Return unneeded segments to either insert them into the pool or release
 // them if the pool is already full or memory pressure is high.
 void AccountingAllocator::ReturnSegment(Segment* memory)
 {
+    assert(0);
 }
 
 //
@@ -378,15 +405,18 @@ Platform* internal::V8::GetCurrentPlatform() { return currentPlatform; }
 //
 Local<FunctionTemplate> ProfilerExtension::GetNativeFunctionTemplate(v8::Isolate* isolate, v8::Local<v8::String> name)
 {
+    assert(0);
     return Local<FunctionTemplate>();
 }
 const char* ProfilerExtension::kSource = "ProfilerExtension";
 Local<FunctionTemplate> PrintExtension::GetNativeFunctionTemplate(v8::Isolate* isolate, v8::Local<v8::String> name)
 {
+    assert(0);
     return Local<FunctionTemplate>();
 }
 Local<FunctionTemplate> TraceExtension::GetNativeFunctionTemplate(v8::Isolate* isolate, v8::Local<v8::String> name)
 {
+    assert(0);
     return Local<FunctionTemplate>();
 }
 const char* TraceExtension::kSource = "TraceExtension";
@@ -402,45 +432,47 @@ void TimedHistogram::Stop(base::ElapsedTimer* timer, Isolate* isolate) {}
 // internal::Script
 //
 // Init line_ends array with source code positions of line ends.
-void internal::Script::InitLineEnds(Handle<Script> script) {}
+void internal::Script::InitLineEnds(Handle<Script> script) { assert(0); }
 bool internal::Script::GetPositionInfo(int position, PositionInfo* info,
                      OffsetFlag offset_flag) const
 {
+    assert(0);
     return false;
 }
 
 //
 // internal::ScriptData
 //
-ScriptData::ScriptData(const byte* data, int length) {}
+ScriptData::ScriptData(const byte* data, int length) { assert(0); }
 
 //
 // internal::FixedArrayBase
 //
-bool FixedArrayBase::IsCowArray() const { return false; }
+bool FixedArrayBase::IsCowArray() const { assert(0); return false; }
 
 //
 // internal::JSReceiver
 //
 internal::Handle<internal::Context> JSReceiver::GetCreationContext()
 {
+    assert(0);
     return Handle<Context>();
 }
 
 //
 // internal::StackGuard
 //
-void StackGuard::RequestInterrupt(InterruptFlag flag) {}
+void StackGuard::RequestInterrupt(InterruptFlag flag) { assert(0); }
 
 //
 // internal:MarkCompactCollector
 //
-void MarkCompactCollector::EnsureSweepingCompleted() {}
+void MarkCompactCollector::EnsureSweepingCompleted() { assert(0); }
 
 //
 // internal::MessageLocation
 //
-MessageLocation::MessageLocation(Handle<Script> script, int start_pos, int end_pos) {}
+MessageLocation::MessageLocation(Handle<Script> script, int start_pos, int end_pos) { assert(0); }
 
 std::ostream& internal::operator<<(std::ostream& os, v8::internal::InstanceType i)
 {

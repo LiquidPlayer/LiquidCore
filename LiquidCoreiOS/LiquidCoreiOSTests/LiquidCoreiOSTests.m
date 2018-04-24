@@ -148,6 +148,8 @@ V(GlobalSymbolsNoContext)
 V(WellKnownSymbols)
 V(EmbedderDataAlignedPointers)
 V(EmbedderData)
+V(IdentityHash)
+V(GlobalProxyIdentityHash)
 
 #undef V
 #define V(tst) \
@@ -157,8 +159,6 @@ cctest_main(2, argv); \
 }
 
 V(AccessorIsPreservedOnAttributeChange)
-V(IdentityHash)
-V(GlobalProxyIdentityHash)
 V(PrivatePropertiesOnProxies)
 V(PrivateProperties)
 V(GlobalPrivates)

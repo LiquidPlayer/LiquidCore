@@ -341,6 +341,7 @@ struct InstanceWrap {
     int m_num_internal_fields;
     JSValueRef *m_internal_fields;
     JSValueRef m_private_properties;
+    int m_hash;
 };
 
 struct SignatureImpl
@@ -545,6 +546,7 @@ struct V82JSC {
     {
         InstanceWrap *wrap = new InstanceWrap();
         wrap->m_security = object;
+        wrap->m_hash = 1 + rand();
         JSValueProtect(ctx, wrap->m_security);
         
         JSClassDefinition def = kJSClassDefinitionEmpty;

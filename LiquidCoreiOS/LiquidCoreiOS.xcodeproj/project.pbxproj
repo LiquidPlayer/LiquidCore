@@ -21,6 +21,7 @@
 		076F58F0201E7FCD004780FD /* Script.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EE201E7FCD004780FD /* Script.cpp */; };
 		076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F5201E80A4004780FD /* StringImpl.cpp */; };
 		076F58FA201E8155004780FD /* helloworld.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F9201E8155004780FD /* helloworld.cpp */; };
+		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07F8049820260E3F00FDFC27 /* test-api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8049720260E3F00FDFC27 /* test-api.cc */; };
 		07F8049B2027147F00FDFC27 /* Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804992027147F00FDFC27 /* Object.cpp */; };
 		07F804A320277DC700FDFC27 /* TypedArray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804A120277DC700FDFC27 /* TypedArray.cpp */; };
@@ -186,6 +187,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */,
 				076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -662,6 +664,7 @@
 		076F5899201E7980004780FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -685,6 +688,7 @@
 		076F589A201E7980004780FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -708,6 +712,7 @@
 		076F589C201E7980004780FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = LiquidCoreiOSTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -724,6 +729,7 @@
 		076F589D201E7980004780FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = LiquidCoreiOSTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
