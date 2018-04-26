@@ -433,24 +433,74 @@ Maybe<bool> Object::SetNativeDataProperty(Local<Context> context, Local<Name> na
  */
 Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
 {
-    assert(0);
-    return Nothing<bool>();
+    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    if (wrap && wrap->m_private_properties) {
+        JSValueRef args[] = {
+            impl->m_value,
+            V82JSC::ToJSValueRef(key, context)
+        };
+        LocalException exception(impl->m_context->m_isolate);
+        JSValueRef ret = V82JSC::exec(ctx, "return _1.hasOwnProperty(_2)", 2, args);
+        if (exception.ShouldThow()) return Nothing<bool>();
+        return _maybe<bool>(JSValueToBoolean(ctx, ret)).toMaybe();
+    }
+    return _maybe<bool>(false).toMaybe();
 }
 Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
                                Local<Value> value)
 {
-    assert(0);
-    return Nothing<bool>();
+    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    if (!wrap) wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    if (!wrap->m_private_properties) {
+        wrap->m_private_properties = JSObjectMake(ctx, 0, 0);
+    }
+    JSValueRef args[] = {
+        impl->m_value,
+        V82JSC::ToJSValueRef(key, context),
+        V82JSC::ToJSValueRef(value, context)
+    };
+    LocalException exception(impl->m_context->m_isolate);
+    V82JSC::exec(ctx, "_1[_2] = _3", 3, args, &exception);
+    if (exception.ShouldThow()) return Nothing<bool>();
+    return _maybe<bool>(true).toMaybe();
 }
 Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
 {
-    assert(0);
-    return Nothing<bool>();
+    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    if (wrap && wrap->m_private_properties) {
+        JSValueRef args[] = {
+            impl->m_value,
+            V82JSC::ToJSValueRef(key, context)
+        };
+        LocalException exception(impl->m_context->m_isolate);
+        V82JSC::exec(ctx, "return delete _1[_2]", 2, args, &exception);
+        if (exception.ShouldThow()) return Nothing<bool>();
+        return _maybe<bool>(true).toMaybe();
+    }
+    return _maybe<bool>(false).toMaybe();
 }
 MaybeLocal<Value> Object::GetPrivate(Local<Context> context, Local<Private> key)
 {
-    assert(0);
-    return MaybeLocal<Value>();
+    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    if (wrap && wrap->m_private_properties) {
+        JSValueRef args[] = {
+            impl->m_value,
+            V82JSC::ToJSValueRef(key, context)
+        };
+        LocalException exception(impl->m_context->m_isolate);
+        JSValueRef ret = V82JSC::exec(ctx, "return _1[_2]", 2, args);
+        if (exception.ShouldThow()) return MaybeLocal<Value>();
+        return ValueImpl::New(V82JSC::ToContextImpl(context), ret);
+    }
+    return Undefined(V82JSC::ToIsolate(impl->m_context->m_isolate));
 }
 
 /**
@@ -626,6 +676,11 @@ int Object::InternalFieldCount()
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
     if (wrap) return wrap->m_num_internal_fields;
+    else if (IsArrayBufferView()) {
+        // ArrayBufferViews have internal fields by default.  This was created in JS.
+        GetArrayBufferViewInfo(reinterpret_cast<const ArrayBufferView*>(this));
+        return ArrayBufferView::kInternalFieldCount;
+    }
     return 0;
 }
 
@@ -637,6 +692,11 @@ void Object::SetInternalField(int index, Local<Value> value)
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+    if (!wrap && IsArrayBuffer()) {
+        // ArrayBuffers have internal fields by default.  This was created in JS.
+        GetArrayBufferInfo(reinterpret_cast<const ArrayBuffer*>(this));
+        wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+    }
     if (wrap && index < wrap->m_num_internal_fields) {
         if (wrap->m_internal_fields[index]) {
             JSValueUnprotect(ctximpl->m_ctxRef, wrap->m_internal_fields[index]);

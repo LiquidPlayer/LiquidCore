@@ -30,6 +30,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     IsolateImpl * isolate = (IsolateImpl *) malloc(sizeof (IsolateImpl));
     memset(isolate, 0, sizeof(IsolateImpl));
     
+    isolate->m_params = params;
+    
     isolate->m_group = JSContextGroupCreate();
     isolate->m_defaultContext = reinterpret_cast<ContextImpl*>(*Context::New(V82JSC::ToIsolate(isolate)));
 
@@ -51,6 +53,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     JSStringRelease(empty_string);
     
     isolate->m_global_symbols = std::map<std::string, JSValueRef>();
+    isolate->m_private_symbols = std::map<std::string, JSValueRef>();
 
     return reinterpret_cast<v8::Isolate*>(isolate);
 }

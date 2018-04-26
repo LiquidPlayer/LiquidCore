@@ -290,7 +290,7 @@ bool Value::IsFloat64Array() const { return IS(IsFloat64Array, "return v instanc
 /**
  * Returns true if this value is a DataView.
  */
-bool Value::IsDataView() const { return IS(IsDataView, "return v && Object.prototype.toString.call(v) !== '[object DataView]'"); }
+bool Value::IsDataView() const { return IS(IsDataView, "return v && Object.prototype.toString.call(v) === '[object DataView]'"); }
 
 /**
  * Returns true if this value is a SharedArrayBuffer.

@@ -128,6 +128,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
     }
     
+    proxyArrayBuffer(context);
+    
     return ctx;
 }
 

@@ -115,6 +115,9 @@ struct IsolateImpl {
     JSValueRef m_pending_exception;
     
     std::map<std::string, JSValueRef> m_global_symbols;
+    std::map<std::string, JSValueRef> m_private_symbols;
+    
+    v8::Isolate::CreateParams m_params;
 };
 }} // namespaces
 
@@ -191,11 +194,6 @@ struct ContextImpl : InternalObjectImpl
     JSObjectRef IsFunctionRefs[IsFunctions::SIZE];
     
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
-};
-
-struct ArrayBufferViewImpl : v8::ArrayBufferView
-{
-    int m_byte_length;
 };
 
 struct ScriptImpl : v8::Script
@@ -351,36 +349,6 @@ struct SignatureImpl
 
     v8::Isolate *m_isolate;
     FunctionTemplateImpl *m_template;
-};
-
-struct TypedArrayImpl : public ArrayBufferViewImpl, v8::TypedArray {
-};
-
-struct Uint8ClampedArrayImpl : public TypedArrayImpl, v8::Uint8ClampedArray {
-};
-
-struct Uint8ArrayImpl : public TypedArrayImpl, v8::Uint8Array {
-};
-
-struct Uint16ArrayImpl : public TypedArrayImpl, v8::Uint16Array {
-};
-
-struct Uint32ArrayImpl : public TypedArrayImpl, v8::Uint32Array {
-};
-
-struct Int8ArrayImpl : public TypedArrayImpl, v8::Int8Array {
-};
-
-struct Int16ArrayImpl : public TypedArrayImpl, v8::Int16Array {
-};
-
-struct Int32ArrayImpl : public TypedArrayImpl, v8::Int32Array {
-};
-
-struct Float32ArrayImpl : public TypedArrayImpl, v8::Float32Array {
-};
-
-struct Float64ArrayImpl : public TypedArrayImpl, v8::Float64Array {
 };
 
 /* IMPORTANT!  This must match v8::TryCatch */
@@ -598,5 +566,21 @@ struct LocalException {
     JSValueRef exception_;
     IsolateImpl *isolate_;
 };
+
+struct ArrayBufferInfo {
+    void *buffer;
+    size_t byte_length;
+    IsolateImpl *isolate;
+    bool isExternal;
+    bool isNeuterable;
+};
+
+ArrayBufferInfo * GetArrayBufferInfo(const v8::ArrayBuffer *ab);
+
+struct ArrayBufferViewInfo {
+};
+
+ArrayBufferViewInfo * GetArrayBufferViewInfo(const v8::ArrayBufferView *abv);
+void proxyArrayBuffer(ContextImpl *ctx);
 
 #endif /* V82JSC_h */
