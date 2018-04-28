@@ -19,6 +19,7 @@ using namespace v8;
  */
 MaybeLocal<Value> JSON::Parse(Local<Context> context, Local<String> json_string)
 {
+    assert(0);
     return MaybeLocal<Value>();
 }
 
@@ -32,6 +33,7 @@ MaybeLocal<Value> JSON::Parse(Local<Context> context, Local<String> json_string)
 MaybeLocal<String> JSON::Stringify(Local<Context> context, Local<Object> json_object,
                                    Local<String> gap)
 {
+    assert(0);
     return MaybeLocal<String>();
 }
 

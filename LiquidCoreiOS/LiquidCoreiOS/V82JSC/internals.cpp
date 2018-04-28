@@ -54,56 +54,57 @@ void Malloced::Delete(void* p)
 
 Heap::Heap() : external_string_table_(nullptr)
 {
-    
+    assert(0);
 }
 
 StackGuard::StackGuard()
 {
-    
+    assert(0);
 }
 
 Builtins::Builtins()
 {
-    
+    assert(0);
 }
 
 Builtins::~Builtins()
 {
-    
+    assert(0);
 }
 
 ThreadLocalTop::ThreadLocalTop()
 {
-    
+    assert(0);
 }
 
 AccountingAllocator::AccountingAllocator()
 {
-    
+    assert(0);
 }
 AccountingAllocator::~AccountingAllocator()
 {
-    
+    assert(0);
 }
 // Gets an empty segment from the pool or creates a new one.
 Segment* AccountingAllocator::GetSegment(size_t bytes)
 {
+    assert(0);
     return nullptr;
 }
 // Return unneeded segments to either insert them into the pool or release
 // them if the pool is already full or memory pressure is high.
 void AccountingAllocator::ReturnSegment(Segment* memory)
 {
-    
+    assert(0);
 }
 
 CancelableTaskManager::CancelableTaskManager()
 {
-    
+    assert(0);
 }
 
 void StackGuard::ThreadLocal::Clear()
 {
-    
+    assert(0);
 }
 

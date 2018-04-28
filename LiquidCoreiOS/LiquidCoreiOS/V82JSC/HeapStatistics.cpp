@@ -6,26 +6,26 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include <v8.h>
+#include "V82JSC.h"
 
 using namespace v8;
 
 HeapStatistics::HeapStatistics()
 {
-    
+    assert(0);
 }
 
 HeapSpaceStatistics::HeapSpaceStatistics()
 {
-    
+    assert(0);
 }
 
 HeapObjectStatistics::HeapObjectStatistics()
 {
-    
+    assert(0);
 }
 
 HeapCodeStatistics::HeapCodeStatistics()
 {
-    
+    assert(0);
 }

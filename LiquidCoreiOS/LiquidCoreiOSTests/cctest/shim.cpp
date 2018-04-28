@@ -33,20 +33,24 @@ internal::Handle<JSTypedArray> Factory::NewJSTypedArray(ElementsKind elements_ki
                                                         size_t number_of_elements,
                                                         PretenureFlag pretenure)
 {
+    assert(0);
     return Handle<JSTypedArray>();
 }
 internal::Handle<internal::String> Factory::InternalizeOneByteString(Vector<const uint8_t> str)
 {
+    assert(0);
     return Handle<internal::String>();
 }
 
 internal::Handle<FixedArray> Factory::NewFixedArray(int size, PretenureFlag pretenure)
 {
+    assert(0);
     return Handle<FixedArray>();
 }
 
 MaybeHandle<internal::String> Factory::NewExternalStringFromOneByte(const ExternalOneByteString::Resource* resource)
 {
+    assert(0);
     return MaybeHandle<internal::String>();
 }
 
@@ -56,25 +60,29 @@ MaybeHandle<internal::String> Factory::NewExternalStringFromOneByte(const Extern
 template <>
 void internal::String::WriteToFlat(internal::String* source, unsigned short* sink, int from, int to)
 {
-    
+    assert(0);
 }
 internal::Handle<internal::String> internal::String::SlowFlatten(Handle<ConsString> cons,
                            PretenureFlag tenure)
 {
+    assert(0);
     return Handle<String>();
 }
 bool internal::String::SlowEquals(internal::String* other)
 {
+    assert(0);
     return false;
 }
 
 bool internal::String::SlowAsArrayIndex(uint32_t* index)
 {
+    assert(0);
     return false;
 }
 
 bool internal::String::MakeExternal(v8::String::ExternalStringResource* resource)
 {
+    assert(0);
     return false;
 }
 
@@ -92,6 +100,7 @@ internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, i
 // Returns of size of all objects residing in the heap.
 size_t Heap::SizeOfObjects()
 {
+    assert(0);
     return 0;
 }
 
@@ -101,6 +110,7 @@ size_t Heap::SizeOfObjects()
 bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reason,
                           const GCCallbackFlags gc_callback_flags)
 {
+    printf ("FIXME! Heap::CollectGarbage\n");
     return false;
 }
 
@@ -110,17 +120,18 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
 void Heap::CollectAllGarbage(int flags, GarbageCollectionReason gc_reason,
                              const GCCallbackFlags gc_callback_flags)
 {
-    
+    printf ("FIXME! Heap::CollectAllGarbage\n");
 }
 
 // Last hope GC, should try to squeeze as much as possible.
 void Heap::CollectAllAvailableGarbage(GarbageCollectionReason gc_reason)
 {
-    
+    printf ("FIXME! Heap::CollectAllAvailableGarbage\n");
 }
 
 bool Heap::ShouldOptimizeForMemoryUsage()
 {
+    assert(0);
     return false;
 }
 
@@ -129,7 +140,7 @@ bool Heap::ShouldOptimizeForMemoryUsage()
 void Heap::StartIdleIncrementalMarking(GarbageCollectionReason gc_reason,
                                        GCCallbackFlags gc_callback_flags)
 {
-    
+    assert(0);
 }
 
 //
@@ -137,14 +148,15 @@ void Heap::StartIdleIncrementalMarking(GarbageCollectionReason gc_reason,
 //
 HeapIterator::HeapIterator(Heap* heap, HeapObjectsFiltering filtering)
 {
-    
+    assert(0);
 }
 HeapIterator::~HeapIterator()
 {
-    
+    assert(0);
 }
 HeapObject* HeapIterator::next()
 {
+    assert(0);
     return nullptr;
 }
 
@@ -154,13 +166,13 @@ HeapObject* HeapIterator::next()
 void heap::SimulateFullSpace(v8::internal::NewSpace* space,
                        std::vector<Handle<FixedArray>>* out_handles)
 {
-    
+    assert(0);
 }
 
 // Helper function that simulates a full old-space in the heap.
 void heap::SimulateFullSpace(v8::internal::PagedSpace* space)
 {
-    
+    printf( "FIXME! heap::SimulateFullSpace\n" );
 }
 
 //
@@ -169,6 +181,7 @@ void heap::SimulateFullSpace(v8::internal::PagedSpace* space)
 
 void IncrementalMarking::RecordWriteSlow(HeapObject* obj, Object** slot, Object* value)
 {
+    assert(0);
     *slot = nullptr;
 }
 
@@ -177,7 +190,7 @@ void IncrementalMarking::RecordWriteSlow(HeapObject* obj, Object** slot, Object*
 //
 void internal::FatalProcessOutOfMemory(const char* message)
 {
-    
+    assert(0);
 }
 
 char* internal::StrDup(const char* str)
@@ -191,23 +204,26 @@ char* internal::StrDup(const char* str)
 // Deallocates any extensions used by the current scope.
 void internal::HandleScope::DeleteExtensions(Isolate* isolate)
 {
-    
+    assert(0);
 }
 
 // Counts the number of allocated handles.
 int internal::HandleScope::NumberOfHandles(Isolate* isolate)
 {
+    assert(0);
     return 0;
 }
 
 // Extend the handle scope making room for more handles.
 internal::Object** internal::HandleScope::Extend(Isolate* isolate)
 {
+    assert(0);
     return nullptr;
 }
 
 internal::Object** CanonicalHandleScope::Lookup(Object* object)
 {
+    assert(0);
     return nullptr;
 }
 
@@ -216,6 +232,7 @@ internal::Object** CanonicalHandleScope::Lookup(Object* object)
 //
 template <bool is_element>
 void LookupIterator::Start() {
+    assert(0);
 }
 template void LookupIterator::Start<false>();
 template void LookupIterator::Start<true>();
@@ -223,9 +240,11 @@ template void LookupIterator::Start<true>();
 internal::Handle<JSReceiver> LookupIterator::GetRootForNonJSReceiver(Isolate* isolate,
                                                            Handle<Object> receiver, uint32_t index)
 {
+    assert(0);
     return Handle<JSReceiver>();
 }
 internal::Handle<internal::Object> LookupIterator::GetAccessors() const {
+    assert(0);
     return Handle<internal::Object>();
 }
 
@@ -234,25 +253,28 @@ internal::Handle<internal::Object> LookupIterator::GetAccessors() const {
 //
 bool internal::Isolate::IsFastArrayConstructorPrototypeChainIntact()
 {
+    assert(0);
     return false;
 }
 MaybeHandle<JSPromise> internal::Isolate::RunHostImportModuleDynamicallyCallback(
                                                               Handle<String> referrer, Handle<Object> specifier)
 {
+    assert(0);
     return MaybeHandle<JSPromise>();
 }
 base::RandomNumberGenerator* internal::Isolate::random_number_generator()
 {
+    assert(0);
     return nullptr;
 }
 
 //
 // internal::CpuFeatures
 //
-void CpuFeatures::PrintTarget() {}
-void CpuFeatures::PrintFeatures() {}
+void CpuFeatures::PrintTarget() {assert(0);}
+void CpuFeatures::PrintFeatures() {assert(0);}
 // Platform-dependent implementation.
-void CpuFeatures::ProbeImpl(bool cross_compile) {}
+void CpuFeatures::ProbeImpl(bool cross_compile) {assert(0);}
 bool CpuFeatures::initialized_ = false;
 
 //
@@ -286,7 +308,10 @@ int PRINTF_FORMAT(2, 3) internal::SNPrintF(Vector<char> str, const char* format,
 //
 // internal::CpuProfiler
 //
-void internal::CpuProfiler::DeleteAllProfiles() {}
+void internal::CpuProfiler::DeleteAllProfiles()
+{
+    printf ("FIXME! internal::CpuProfiler::DeleteAllProfiles()\n");
+}
 
 //
 // internal::Builtins
@@ -315,14 +340,18 @@ internal::Handle<Code> Builtins::InterpreterEntryTrampoline()
 internal::Object* internal::Object::GetHash()
 {
     if (this->IsSmi()) return this;
+
+    ValueImpl* impl = (ValueImpl*)(reinterpret_cast<uintptr_t>(this) & ~3);
+    Local<v8::Context> context = V82JSC::ToIsolate(impl->m_isolate)->GetCurrentContext();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef value = impl->m_value;
     
-    ValueImpl* impl = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(this) & ~3);
-    if (JSValueIsObject(impl->m_context->m_ctxRef, impl->m_value)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef) impl->m_value);
-        if (!wrap) wrap = V82JSC::makePrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef) impl->m_value);
+    if (JSValueIsObject(ctx, value)) {
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef) value);
+        if (!wrap) wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef) value);
         return Smi::FromInt(wrap->m_hash);
     }
-    return nullptr;
+    return Smi::FromInt(JSValueToNumber(ctx, value, 0));
 }
 
 // Returns the permanent hash code associated with this object depending on
@@ -330,13 +359,15 @@ internal::Object* internal::Object::GetHash()
 // exists.
 Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 {
+    if ((*object.location())->IsSmi()) return (reinterpret_cast<Smi*>(*object.location()));
+    
     Local<v8::Object> o = _local<v8::Object>(object.location()).toLocal();
-    ValueImpl* impl = V82JSC::ToImpl<ValueImpl>(o);
-    if (impl) {
-        if (JSValueIsObject(impl->m_context->m_ctxRef, impl->m_value)) {
-            int hash = o->GetIdentityHash();
-            return Smi::FromInt(hash);
-        }
+    Local<v8::Context> context = V82JSC::ToCurrentContext(*o);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef value = V82JSC::ToJSValueRef(o, context);
+    if (JSValueIsObject(ctx, value)) {
+        int hash = o->GetIdentityHash();
+        return Smi::FromInt(hash);
     }
     return nullptr;
 }
@@ -386,13 +417,16 @@ void AccountingAllocator::ReturnSegment(Segment* memory)
 //
 // internal::Zone
 //
-Zone::Zone(AccountingAllocator* allocator, const char* name) {}
-Zone::~Zone() {}
+Zone::Zone(AccountingAllocator* allocator, const char* name) {assert(0);}
+Zone::~Zone() {assert(0);}
 
 //
 // internal::CompilationCache
 //
-void CompilationCache::Clear() {}
+void CompilationCache::Clear()
+{
+    printf("FIXME! CompliationCache::Clear()\n");
+}
 
 //
 // internal::V8
@@ -403,30 +437,18 @@ Platform* internal::V8::GetCurrentPlatform() { return currentPlatform; }
 //
 // Extensions
 //
-Local<FunctionTemplate> ProfilerExtension::GetNativeFunctionTemplate(v8::Isolate* isolate, v8::Local<v8::String> name)
-{
-    assert(0);
-    return Local<FunctionTemplate>();
-}
-const char* ProfilerExtension::kSource = "ProfilerExtension";
-Local<FunctionTemplate> PrintExtension::GetNativeFunctionTemplate(v8::Isolate* isolate, v8::Local<v8::String> name)
-{
-    assert(0);
-    return Local<FunctionTemplate>();
-}
 Local<FunctionTemplate> TraceExtension::GetNativeFunctionTemplate(v8::Isolate* isolate, v8::Local<v8::String> name)
 {
     assert(0);
     return Local<FunctionTemplate>();
 }
-const char* TraceExtension::kSource = "TraceExtension";
-
+const char* TraceExtension::kSource = "";
 //
 // internal::TimedHistogram
 //
 // Start the timer. Log if isolate non-null.
-void TimedHistogram::Start(base::ElapsedTimer* timer, Isolate* isolate) {}
-void TimedHistogram::Stop(base::ElapsedTimer* timer, Isolate* isolate) {}
+void TimedHistogram::Start(base::ElapsedTimer* timer, Isolate* isolate) {assert(0);}
+void TimedHistogram::Stop(base::ElapsedTimer* timer, Isolate* isolate) {assert(0);}
 
 //
 // internal::Script
@@ -476,5 +498,6 @@ MessageLocation::MessageLocation(Handle<Script> script, int start_pos, int end_p
 
 std::ostream& internal::operator<<(std::ostream& os, v8::internal::InstanceType i)
 {
+    assert(0);
     return os;
 }

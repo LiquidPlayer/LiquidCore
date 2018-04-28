@@ -14,11 +14,10 @@ MaybeLocal<Value> Date::New(Local<Context> context, double time)
 {
     auto c = V82JSC::ToContextRef(context);
     auto t = JSValueMakeNumber(c, time);
-    auto ci = V82JSC::ToContextImpl(context);
-    LocalException exception(ci->m_isolate);
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
     auto r = JSObjectMakeDate(c, 1, &t, &exception);
     if (!exception.ShouldThow()) {
-        return ValueImpl::New(ci, r);
+        return ValueImpl::New(V82JSC::ToContextImpl(context), r);
     }
     return MaybeLocal<Value>();
 }
@@ -46,5 +45,5 @@ double Date::ValueOf() const
  */
 void Date::DateTimeConfigurationChangeNotification(Isolate* isolate)
 {
-    
+    assert(0);
 }

@@ -30,7 +30,7 @@ void Template::Set(Local<Name> name, Local<Data> value, PropertyAttribute attrib
 }
 void Template::SetPrivate(Local<Private> name, Local<Data> value, PropertyAttribute attributes)
 {
-    
+    assert(0);
 }
 
 void Template::SetAccessorProperty(
@@ -115,7 +115,7 @@ void Template::SetLazyDataProperty(Local<Name> name, AccessorNameGetterCallback 
                          Local<Value> data,
                          PropertyAttribute attribute)
 {
-    
+    assert(0);
 }
 
 /**
@@ -125,7 +125,7 @@ void Template::SetLazyDataProperty(Local<Name> name, AccessorNameGetterCallback 
 void Template::SetIntrinsicDataProperty(Local<Name> name, Intrinsic intrinsic,
                               PropertyAttribute attribute)
 {
-    
+    assert(0);
 }
 
 

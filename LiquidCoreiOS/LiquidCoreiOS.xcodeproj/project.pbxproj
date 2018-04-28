@@ -21,6 +21,9 @@
 		076F58F0201E7FCD004780FD /* Script.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EE201E7FCD004780FD /* Script.cpp */; };
 		076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F5201E80A4004780FD /* StringImpl.cpp */; };
 		076F58FA201E8155004780FD /* helloworld.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F9201E8155004780FD /* helloworld.cpp */; };
+		07A7CF09209220C000352ABF /* print-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF08209220BF00352ABF /* print-extension.cc */; };
+		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
+		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07F8049820260E3F00FDFC27 /* test-api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8049720260E3F00FDFC27 /* test-api.cc */; };
 		07F8049B2027147F00FDFC27 /* Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804992027147F00FDFC27 /* Object.cpp */; };
@@ -113,6 +116,9 @@
 		076F58F5201E80A4004780FD /* StringImpl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StringImpl.cpp; sourceTree = "<group>"; };
 		076F58F9201E8155004780FD /* helloworld.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = helloworld.cpp; sourceTree = "<group>"; };
 		076F58FF201FB615004780FD /* helloworld.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = helloworld.h; sourceTree = "<group>"; };
+		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
+		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
+		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
 		07F8049720260E3F00FDFC27 /* test-api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "test-api.cc"; sourceTree = "<group>"; };
 		07F804992027147F00FDFC27 /* Object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Object.cpp; sourceTree = "<group>"; };
 		07F804A120277DC700FDFC27 /* TypedArray.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TypedArray.cpp; sourceTree = "<group>"; };
@@ -198,6 +204,8 @@
 		0718F6892025FF0900C588AA /* cctest */ = {
 			isa = PBXGroup;
 			children = (
+				07A7CF0A2092215F00352ABF /* profiler-extension.cc */,
+				07A7CF08209220BF00352ABF /* print-extension.cc */,
 				07F8053D203055B900FDFC27 /* flags.cc */,
 				07F8049720260E3F00FDFC27 /* test-api.cc */,
 				07F80539202F925300FDFC27 /* shim.cpp */,
@@ -289,6 +297,7 @@
 				07F804F8202DD85D00FDFC27 /* TryCatch.cpp */,
 				07F804FC202DDA4400FDFC27 /* Locker.cpp */,
 				07F8054320395FA700FDFC27 /* internals.cpp */,
+				07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -477,6 +486,7 @@
 				07F8049B2027147F00FDFC27 /* Object.cpp in Sources */,
 				076F58DF201E7EF9004780FD /* Isolate.cpp in Sources */,
 				076F58E2201E7EF9004780FD /* Value.cpp in Sources */,
+				07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */,
 				07FE85982075F6D40013E1B4 /* trace-object.cc in Sources */,
 				07FE85A82075F7A90013E1B4 /* functional.cc in Sources */,
 				07F804C2202C2EDF00FDFC27 /* Set.cpp in Sources */,
@@ -536,6 +546,8 @@
 				076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */,
 				07F8049820260E3F00FDFC27 /* test-api.cc in Sources */,
 				07F8053A202F925300FDFC27 /* shim.cpp in Sources */,
+				07A7CF09209220C000352ABF /* print-extension.cc in Sources */,
+				07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */,
 				076F58FA201E8155004780FD /* helloworld.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

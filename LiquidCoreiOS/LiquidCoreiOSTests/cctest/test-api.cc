@@ -200,7 +200,7 @@ static void TestSignatureLooped(const char* operation, Local<Value> receiver,
   i::SNPrintF(source,
               "for (var i = 0; i < 10; i++) {"
               "  %s"
-              "}" " 0;",  // FIXME! Why did I have to add the 0; at the end?
+              "}",
               operation);
   signature_callback_count = 0;
   signature_expected_receiver = receiver;

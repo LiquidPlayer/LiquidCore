@@ -35,15 +35,17 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
     impl->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&impl->map) & ~3) + 1);
     impl->pMap->set_instance_type(instancet);
     
-    impl->m_context = const_cast<ContextImpl*>(ctx);
     impl->m_isolate = ctx->m_isolate;
     impl->m_value = value;
-    JSValueProtect(impl->m_context->m_ctxRef, impl->m_value);
+    JSValueProtect(ctx->m_ctxRef, impl->m_value);
     
     return _local<Value>(impl).toLocal();
 }
 
-#define FROMTHIS(c,v) auto c = V82JSC::ToContextImpl(this); auto v = V82JSC::ToJSValueRef<Value>(this, _local<v8::Context>(c).toLocal())
+#define FROMTHIS(c,v) \
+    auto cc = V82JSC::ToCurrentContext(this); \
+    auto c = V82JSC::ToContextImpl(cc); \
+    auto v = V82JSC::ToJSValueRef<Value>(this, cc)
 
 /**
  * Returns true if this value is true.
@@ -357,9 +359,10 @@ Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const
 }
 bool Value::StrictEquals(Local<Value> that) const
 {
-    ValueImpl *this_ = V82JSC::ToImpl<ValueImpl,Value>(this);
-    ValueImpl *that_ = V82JSC::ToImpl<ValueImpl,Value>(*that);
-    return JSValueIsStrictEqual(this_->m_context->m_ctxRef, this_->m_value, that_->m_value);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSValueRef this_ = V82JSC::ToJSValueRef(this, context);
+    JSValueRef that_ = V82JSC::ToJSValueRef(that, context);
+    return JSValueIsStrictEqual(V82JSC::ToContextRef(context), this_, that_);
 }
 bool Value::SameValue(Local<Value> that) const
 {
@@ -461,7 +464,7 @@ Local<External> External::New(Isolate* isolate, void* value)
 
 void* External::Value() const
 {
-    auto c = V82JSC::ToContextImpl(this);
-    auto v = V82JSC::ToJSValueRef<External>(this, _local<v8::Context>(c).toLocal());
+    auto context = V82JSC::ToCurrentContext(this);
+    auto v = V82JSC::ToJSValueRef<External>(this, context);
     return JSObjectGetPrivate((JSObjectRef)v);
 }

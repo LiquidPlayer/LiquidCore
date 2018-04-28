@@ -38,27 +38,32 @@ bool NativeWeakMap::Delete(Local<Value> key)
 
 size_t Map::Size() const
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+
     JSStringRef ssize = JSStringCreateWithUTF8CString("size");
     JSValueRef excp = 0;
-    JSValueRef size = JSObjectGetProperty(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value, ssize, &excp);
+    JSValueRef size = JSObjectGetProperty(ctx, (JSObjectRef)obj, ssize, &excp);
     assert(excp==0);
-    return JSValueToNumber(impl->m_context->m_ctxRef, size, 0);
+    return JSValueToNumber(ctx, size, 0);
 }
 
 void Map::Clear()
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
-    V82JSC::exec(impl->m_context->m_ctxRef, "_1.clear()", 1, &impl->m_value);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    V82JSC::exec(ctx, "_1.clear()", 1, &obj);
 }
 
 MaybeLocal<Value> Map::Get(Local<Context> context, Local<Value> key)
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
-    LocalException exception(impl->m_isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
     JSValueRef args[] = {
-        impl->m_value,
+        obj,
         V82JSC::ToJSValueRef(key, context)
     };
     JSValueRef r = V82JSC::exec(ctx, "return _1.get(_2)", 2, args, &exception);
@@ -70,11 +75,11 @@ MaybeLocal<Map> Map::Set(Local<Context> context,
                          Local<Value> key,
                          Local<Value> value)
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
-    LocalException exception(impl->m_isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
     JSValueRef args[] = {
-        impl->m_value,
+        obj,
         V82JSC::ToJSValueRef(key, context),
         V82JSC::ToJSValueRef(value, context)
     };
@@ -85,11 +90,11 @@ MaybeLocal<Map> Map::Set(Local<Context> context,
 
 Maybe<bool> Map::Has(Local<Context> context, Local<Value> key)
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    LocalException exception(impl->m_isolate);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
     JSValueRef args[] = {
-        impl->m_value,
+        obj,
         V82JSC::ToJSValueRef(key, context)
     };
     JSValueRef r = V82JSC::exec(ctx, "return _1.has(_2)", 2, args, &exception);
@@ -100,11 +105,11 @@ Maybe<bool> Map::Has(Local<Context> context, Local<Value> key)
 Maybe<bool> Map::Delete(Local<Context> context,
                                          Local<Value> key)
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    LocalException exception(impl->m_isolate);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
     JSValueRef args[] = {
-        impl->m_value,
+        obj,
         V82JSC::ToJSValueRef(key, context)
     };
     JSValueRef r = V82JSC::exec(ctx, "return _1.delete(_2)", 2, args, &exception);
@@ -118,11 +123,13 @@ Maybe<bool> Map::Delete(Local<Context> context,
  */
 Local<Array> Map::AsArray() const
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Map>(this);
-    return ValueImpl::New(impl->m_context,
-                          V82JSC::exec(impl->m_context->m_ctxRef,
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    return ValueImpl::New(V82JSC::ToContextImpl(context),
+                          V82JSC::exec(ctx,
                                        "var r = []; _1.forEach((v,k,m)=>r.push(k,v)); return r",
-                                       1, &impl->m_value)).As<Array>();
+                                       1, &obj)).As<Array>();
 }
 
 /**
@@ -130,7 +137,9 @@ Local<Array> Map::AsArray() const
  */
 Local<Map> Map::New(Isolate* isolate)
 {
-    return ValueImpl::New(V82JSC::ToIsolateImpl(isolate)->m_defaultContext,
-                          V82JSC::exec(V82JSC::ToContextRef(isolate),
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    
+    return ValueImpl::New(V82JSC::ToContextImpl(context),
+                          V82JSC::exec(V82JSC::ToContextRef(context),
                                        "return new Map()", 0, 0)).As<Map>();
 }

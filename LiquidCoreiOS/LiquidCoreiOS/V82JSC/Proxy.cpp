@@ -22,19 +22,21 @@ Local<Value> Proxy::GetHandler()
 }
 bool Proxy::IsRevoked()
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Proxy>(this);
-    JSValueRef revoked = V82JSC::exec(impl->m_context->m_ctxRef,
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    JSValueRef revoked = V82JSC::exec(ctx,
                                       "try { new Proxy(_1, _1); return false; } catch (err) { return Object(_1) === value; }",
-                                      1, &impl->m_value);
-    return JSValueToBoolean(impl->m_context->m_ctxRef, revoked);
+                                      1, &obj);
+    return JSValueToBoolean(ctx, revoked);
 }
 void Proxy::Revoke()
 {
     assert(0); // FIXME: We need to handle proxies differently (using Proxy.revocable())
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Proxy>(this);
-    V82JSC::exec(impl->m_context->m_ctxRef,
-                 "_1.revoke()",
-                 1, &impl->m_value);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    V82JSC::exec(ctx, "_1.revoke()", 1, &obj);
 }
 
 /**

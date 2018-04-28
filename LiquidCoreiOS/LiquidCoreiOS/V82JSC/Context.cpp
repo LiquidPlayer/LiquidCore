@@ -26,8 +26,7 @@ Local<Object> Context::Global()
 {
     ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
     JSObjectRef glob = JSContextGetGlobalObject(impl->m_ctxRef);
-    Local<Value> v = ValueImpl::New(impl, glob);
-    return _local<Object>(*v).toLocal();
+    return ValueImpl::New(impl, glob).As<Object>();
 }
 
 /**
@@ -48,7 +47,6 @@ Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
     context->m_isolate = i;
     context->m_ctxRef = ctx;
-    context->m_context = context;
     
     return _local<Context>(context).toLocal();
 }
@@ -83,6 +81,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     context->m_isolate = i;
     Local<Context> ctx = _local<Context>(context).toLocal();
     int hash = 0;
+    context->m_loaded_extensions = std::map<std::string, bool>();
     
     if (!global_object.IsEmpty()) {
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
@@ -122,13 +121,23 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         if (exception.ShouldThow()) {
             return Local<Context>();
         }
-    } else if (i->m_defaultContext) {
-        context->m_ctxRef = JSGlobalContextRetain((JSGlobalContextRef) i->m_defaultContext->m_ctxRef);
     } else {
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
     }
     
-    proxyArrayBuffer(context);
+    // Don't do anything fancy if we are setting up the default context
+    if (i->m_nullContext != nullptr) {
+        proxyArrayBuffer(context);
+
+        InstallAutoExtensions(ctx);
+        if (extensions) {
+            for (const char **extension = extensions->begin(); extension != extensions->end(); extension++) {
+                if (!InstallExtension(ctx, *extension)) {
+                    return Local<Context>();
+                }
+            }
+        }
+    }
     
     return ctx;
 }
@@ -237,7 +246,7 @@ void Context::Exit()
 /** Returns an isolate associated with a current context. */
 Isolate* Context::GetIsolate()
 {
-    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
+    ContextImpl *impl = V82JSC::ToContextImpl(this);
     
     return V82JSC::ToIsolate(impl->m_isolate);
 }
@@ -305,7 +314,7 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
         io->pMap = (v8::internal::Map*)(reinterpret_cast<uintptr_t>(io) + 1);
         io->m_size = size;
         memcpy(&io->m_embedder_data[0], copy, copy_pointers * internal::kApiPointerSize);
-        if (defunct) free(defunct);
+        /* FIXME if (defunct) free(defunct); */
         embedder_data = reinterpret_cast<O*>(io->pMap);
         WriteField<O*>(ctx, embedder_data_offset, embedder_data);
     }

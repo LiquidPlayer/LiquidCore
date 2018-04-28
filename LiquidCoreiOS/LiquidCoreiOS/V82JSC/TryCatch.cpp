@@ -54,6 +54,7 @@ bool TryCatch::HasCaught() const
  */
 bool TryCatch::CanContinue() const
 {
+    assert(0);
     return false;
 }
 
@@ -71,6 +72,7 @@ bool TryCatch::CanContinue() const
  */
 bool TryCatch::HasTerminated() const
 {
+    assert(0);
     return false;
 }
 
@@ -83,6 +85,7 @@ bool TryCatch::HasTerminated() const
  */
 Local<Value> TryCatch::ReThrow()
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -94,8 +97,9 @@ Local<Value> TryCatch::ReThrow()
  */
 Local<Value> TryCatch::Exception() const
 {
+    Local<Context> context = reinterpret_cast<Isolate*>(this->isolate_)->GetCurrentContext();
     if (exception_) {
-        return ValueImpl::New(reinterpret_cast<IsolateImpl*>(isolate_)->m_defaultContext, (JSValueRef)exception_);
+        return ValueImpl::New(V82JSC::ToContextImpl(context), (JSValueRef)exception_);
     }
     return Local<Value>();
 }
@@ -106,6 +110,7 @@ Local<Value> TryCatch::Exception() const
  */
 MaybeLocal<Value> TryCatch::StackTrace(Local<Context> context) const
 {
+    assert(0);
     return MaybeLocal<Value>();
 }
 
@@ -118,6 +123,7 @@ MaybeLocal<Value> TryCatch::StackTrace(Local<Context> context) const
  */
 Local<v8::Message> TryCatch::Message() const
 {
+    assert(0);
     return Local<v8::Message>();
 }
 
@@ -148,7 +154,7 @@ void TryCatch::Reset()
  */
 void TryCatch::SetVerbose(bool value)
 {
-    
+    assert(0);
 }
 
 /**
@@ -156,6 +162,7 @@ void TryCatch::SetVerbose(bool value)
  */
 bool TryCatch::IsVerbose() const
 {
+    assert(0);
     return false;
 }
 
@@ -166,5 +173,5 @@ bool TryCatch::IsVerbose() const
  */
 void TryCatch::SetCaptureMessage(bool value)
 {
-    
+    assert(0);
 }

@@ -18,6 +18,7 @@ MaybeLocal<Function> Function::New(Local<Context> context, FunctionCallback call
                                 Local<Value> data, int length,
                                 ConstructorBehavior behavior)
 {
+    assert(0);
     return MaybeLocal<Function>();
 }
 
@@ -41,16 +42,29 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
                                  Local<Value> recv, int argc,
                                  Local<Value> argv[])
 {
+    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
+    JSValueRef thiz = V82JSC::ToJSValueRef<Value>(recv, context);
+    JSValueRef args[argc];
+    for (int i=0; i<argc; i++) {
+        args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
+    }
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    JSValueRef result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &exception);
+    if (!exception.ShouldThow()) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), result);
+    }
+    
     return MaybeLocal<Value>();
 }
 
 void Function::SetName(Local<String> name)
 {
-    
+    assert(0);
 }
 
 Local<Value> Function::GetName() const
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -62,6 +76,7 @@ Local<Value> Function::GetName() const
  */
 Local<Value> Function::GetInferredName() const
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -71,6 +86,7 @@ Local<Value> Function::GetInferredName() const
  */
 Local<Value> Function::GetDebugName() const
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -80,6 +96,7 @@ Local<Value> Function::GetDebugName() const
  */
 Local<Value> Function::GetDisplayName() const
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -89,6 +106,7 @@ Local<Value> Function::GetDisplayName() const
  */
 int Function::GetScriptLineNumber() const
 {
+    assert(0);
     return 0;
 }
 /**
@@ -97,6 +115,7 @@ int Function::GetScriptLineNumber() const
  */
 int Function::GetScriptColumnNumber() const
 {
+    assert(0);
     return 0;
 }
 
@@ -105,6 +124,7 @@ int Function::GetScriptColumnNumber() const
  */
 int Function::ScriptId() const
 {
+    assert(0);
     return 0;
 }
 
@@ -114,11 +134,13 @@ int Function::ScriptId() const
  */
 Local<Value> Function::GetBoundFunction() const
 {
+    assert(0);
     return Local<Value>();
 }
 
 ScriptOrigin Function::GetScriptOrigin() const
 {
+    assert(0);
     Local<Value> v = Local<Value>();
     ScriptOrigin so(v);
     return so;

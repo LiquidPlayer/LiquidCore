@@ -100,12 +100,11 @@ struct IsolateImpl {
         };
     } i;
     JSContextGroupRef m_group;
-    ContextImpl* m_defaultContext;
+    ContextImpl* m_nullContext;
 
     void EnterContext(v8::Context *ctx);
     void ExitContext(v8::Context *ctx);
     
-    v8::Context *current_context;
     v8::Context *m_external_context;
     
     v8::TryCatch *m_handlers;
@@ -118,12 +117,12 @@ struct IsolateImpl {
     std::map<std::string, JSValueRef> m_private_symbols;
     
     v8::Isolate::CreateParams m_params;
+    
+    std::stack<ContextImpl*> m_context_stack;
 };
 }} // namespaces
 
 using v8::internal::IsolateImpl;
-
-struct ContextImpl;
 
 struct InternalObjectImpl {
     union {
@@ -134,7 +133,7 @@ struct InternalObjectImpl {
     };
     JSValueRef  m_value;
     IsolateImpl* m_isolate;
-    ContextImpl* m_context;
+    //ContextImpl* m_context;
 };
 
 struct ContextImpl : InternalObjectImpl
@@ -142,6 +141,7 @@ struct ContextImpl : InternalObjectImpl
     v8::internal::Context *pInternal;
     
     JSContextRef m_ctxRef;
+    std::map<std::string, bool> m_loaded_extensions;
     
     typedef enum _IsFunctions {
         IsFunction,
@@ -379,17 +379,6 @@ struct V82JSC {
             return that_->m_value;
         }
     }
-    template <class T>
-    static inline ContextImpl* ToContextImpl(const T* v)
-    {
-        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<T*>(v));
-        if (obj->IsSmi()) {
-            return nullptr;
-        } else {
-            ValueImpl *that_ = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-            return that_->m_context;
-        }
-    }
     template <class I, class T>
     static inline I* ToImpl(v8::Local<T> v)
     {
@@ -409,7 +398,7 @@ struct V82JSC {
     template <class T>
     static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Isolate *isolate)
     {
-        return ToJSValueRef(v, _local<v8::Context>(reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext).toLocal());
+        return ToJSValueRef(v, OperatingContext(isolate));
     }
     template <class T>
     static inline JSValueRef ToJSValueRef(const T* v, v8::Local<v8::Context> context)
@@ -419,8 +408,7 @@ struct V82JSC {
     template <class T>
     static inline JSValueRef ToJSValueRef(const T* v, v8::Isolate *isolate)
     {
-        return ToJSValueRef(_local<T>(const_cast<T*>(v)).toLocal(),
-                            _local<v8::Context>(reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext).toLocal());
+        return ToJSValueRef(_local<T>(const_cast<T*>(v)).toLocal(), OperatingContext(isolate));
     }
     static inline JSContextRef ToContextRef(v8::Local<v8::Context> context)
     {
@@ -428,8 +416,7 @@ struct V82JSC {
     }
     static inline JSContextRef ToContextRef(v8::Isolate *isolate)
     {
-        IsolateImpl *impl = reinterpret_cast<IsolateImpl*>(isolate);
-        return impl->m_defaultContext->m_ctxRef;
+        return ToContextImpl(OperatingContext(isolate))->m_ctxRef;
     }
     static inline ContextImpl* ToContextImpl(v8::Local<v8::Context> context)
     {
@@ -448,6 +435,25 @@ struct V82JSC {
     static inline v8::Isolate* ToIsolate(IsolateImpl *isolate)
     {
         return reinterpret_cast<v8::Isolate*>(isolate);
+    }
+    template <class T>
+    static inline v8::Isolate* ToIsolate(const T* thiz)
+    {
+        ValueImpl* v = ToImpl<ValueImpl,T>(thiz);
+        return ToIsolate(v->m_isolate);
+    }
+    static inline v8::Local<v8::Context> OperatingContext(v8::Isolate* isolate)
+    {
+        v8::Local<v8::Context> context = isolate->GetCurrentContext();
+        if (context.IsEmpty()) {
+            context = _local<v8::Context>(ToIsolateImpl(isolate)->m_nullContext).toLocal();
+        }
+        return context;
+    }
+    template <class T>
+    static inline v8::Local<v8::Context> ToCurrentContext(const T* thiz)
+    {
+        return OperatingContext(ToIsolate<T>(thiz));
     }
     static inline JSObjectRef jsfunc__(const char *name_, const char *code_, ContextImpl *c, int index)
     {
@@ -468,11 +474,13 @@ struct V82JSC {
     
     static inline bool is__(const v8::Value* thiz, const char *name_, const char *code_, int index)
     {
-        auto c = V82JSC::ToContextImpl(thiz);
-        auto v = V82JSC::ToJSValueRef<v8::Value>(thiz, _local<v8::Context>(c).toLocal());
+        v8::Local<v8::Context> context = ToCurrentContext(thiz);
+        
+        auto ctx = V82JSC::ToContextRef(context);
+        auto v = V82JSC::ToJSValueRef<v8::Value>(thiz, context);
         JSValueRef exception = nullptr;
-        bool ret = JSValueToBoolean(c->m_ctxRef,
-                                    JSObjectCallAsFunction(c->m_ctxRef, jsfunc__(name_, code_, c, index), 0, 1, &v, &exception));
+        bool ret = JSValueToBoolean(ctx,
+                                    JSObjectCallAsFunction(ctx, jsfunc__(name_, code_, ToContextImpl(context), index), 0, 1, &v, &exception));
         assert(exception==nullptr);
         return ret;
     }
@@ -582,5 +590,7 @@ struct ArrayBufferViewInfo {
 
 ArrayBufferViewInfo * GetArrayBufferViewInfo(const v8::ArrayBufferView *abv);
 void proxyArrayBuffer(ContextImpl *ctx);
+bool InstallAutoExtensions(v8::Local<v8::Context> context);
+bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name);
 
 #endif /* V82JSC_h */

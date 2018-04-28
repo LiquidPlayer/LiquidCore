@@ -24,6 +24,7 @@ MaybeLocal<RegExp> RegExp::New(Local<Context> context,
                               Local<String> pattern,
                               Flags flags)
 {
+    assert(0);
     return MaybeLocal<RegExp>();
 }
 
@@ -33,6 +34,7 @@ MaybeLocal<RegExp> RegExp::New(Local<Context> context,
  */
 Local<String> RegExp::GetSource() const
 {
+    assert(0);
     return Local<String>();
 }
 
@@ -41,5 +43,6 @@ Local<String> RegExp::GetSource() const
  */
 RegExp::Flags RegExp::GetFlags() const
 {
+    assert(0);
     return Flags();
 }

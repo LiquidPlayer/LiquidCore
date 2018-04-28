@@ -14,19 +14,22 @@ using namespace v8;
 
 Local<Value> NumberObject::New(Isolate* isolate, double value)
 {
-    ContextImpl *context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
-    JSValueRef arg = JSValueMakeNumber(context->m_ctxRef, value);
-    JSObjectRef func = JSFUNC(NewNumberObject, "return new Number(v)", context);
-    return ValueImpl::New(context, JSObjectCallAsFunction(context->m_ctxRef, func, 0, 1, &arg, 0));
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
+    JSValueRef arg = JSValueMakeNumber(ctx, value);
+    JSObjectRef func = JSFUNC(NewNumberObject, "return new Number(v)", V82JSC::ToContextImpl(context));
+    return ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectCallAsFunction(ctx, func, 0, 1, &arg, 0));
 }
 
 double NumberObject::ValueOf() const
 {
-    auto c = V82JSC::ToContextImpl(this);
-    auto v = V82JSC::ToJSValueRef<v8::Value>(this, _local<v8::Context>(c).toLocal());
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    auto v = V82JSC::ToJSValueRef(this, context);
     JSValueRef exception = nullptr;
-    double ret = JSValueToNumber(c->m_ctxRef,
-                                 JSObjectCallAsFunction(c->m_ctxRef, JSFUNC(ValueOf, VALUE_OF_CODE, c),
+    double ret = JSValueToNumber(ctx,
+                                 JSObjectCallAsFunction(ctx, JSFUNC(ValueOf, VALUE_OF_CODE, V82JSC::ToContextImpl(context)),
                                                         0, 1, &v, &exception), &exception);
     assert(exception==nullptr);
     return ret;
@@ -34,10 +37,12 @@ double NumberObject::ValueOf() const
 
 Local<Value> BooleanObject::New(Isolate* isolate, bool value)
 {
-    ContextImpl *context = reinterpret_cast<IsolateImpl*>(isolate)->m_defaultContext;
-    JSValueRef arg = JSValueMakeBoolean(context->m_ctxRef, value);
-    JSObjectRef func = JSFUNC(NewBooleanObject, "return new Boolean(v)", context);
-    return ValueImpl::New(context, JSObjectCallAsFunction(context->m_ctxRef, func, 0, 1, &arg, 0));
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
+    JSValueRef arg = JSValueMakeBoolean(ctx, value);
+    JSObjectRef func = JSFUNC(NewBooleanObject, "return new Boolean(v)", V82JSC::ToContextImpl(context));
+    return ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectCallAsFunction(ctx, func, 0, 1, &arg, 0));
 }
 bool BooleanObject::ValueOf() const
 {
@@ -46,38 +51,44 @@ bool BooleanObject::ValueOf() const
 
 Local<Value> StringObject::New(Local<String> value)
 {
+    Local<Context> context = V82JSC::ToCurrentContext(*value);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    
     JSValueRef v = V82JSC::ToJSValueRef<String>(value, Local<Context>());
-    ContextImpl *context = V82JSC::ToContextImpl<String>(*value);
-    JSObjectRef func = JSFUNC(NewStringObject, "return new String(v)", context);
-    return ValueImpl::New(context, JSObjectCallAsFunction(context->m_ctxRef, func, 0, 1, &v, 0));
+    JSObjectRef func = JSFUNC(NewStringObject, "return new String(v)", V82JSC::ToContextImpl(context));
+    return ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectCallAsFunction(ctx, func, 0, 1, &v, 0));
 }
 
 Local<String> StringObject::ValueOf() const
 {
-    auto c = V82JSC::ToContextImpl(this);
-    auto v = V82JSC::ToJSValueRef<v8::Value>(this, _local<v8::Context>(c).toLocal());
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    auto v = V82JSC::ToJSValueRef(this, context);
+
     JSValueRef exception = nullptr;
-    JSValueRef rval = JSObjectCallAsFunction(c->m_ctxRef, JSFUNC(ValueOf, VALUE_OF_CODE, c), 0, 1, &v, &exception);
+    JSValueRef rval = JSObjectCallAsFunction(ctx, JSFUNC(ValueOf, VALUE_OF_CODE, V82JSC::ToContextImpl(context)), 0, 1, &v, &exception);
     assert(exception==nullptr);
-    JSStringRef ret = JSValueToStringCopy(c->m_ctxRef, rval, &exception);
+    JSStringRef ret = JSValueToStringCopy(ctx, rval, &exception);
     assert(exception==nullptr);
-    return ValueImpl::New(reinterpret_cast<Isolate*>(c->m_isolate), ret);
+    return ValueImpl::New(V82JSC::ToIsolate(V82JSC::ToContextImpl(context)->m_isolate), ret);
 }
 
 Local<Value> SymbolObject::New(Isolate* isolate, Local<Symbol> value)
 {
-    ValueImpl* symbol = V82JSC::ToImpl<ValueImpl>(value);
-    JSValueRef symbol_object = V82JSC::exec(symbol->m_context->m_ctxRef, "return Object(_1)", 1, &symbol->m_value);
+    Local<Context> context = V82JSC::ToCurrentContext(*value);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef symbol = V82JSC::ToJSValueRef(value, context);
+    JSValueRef symbol_object = V82JSC::exec(ctx, "return Object(_1)", 1, &symbol);
     
-    return ValueImpl::New(symbol->m_context, symbol_object);
+    return ValueImpl::New(V82JSC::ToContextImpl(context), symbol_object);
 }
 
 Local<Symbol> SymbolObject::ValueOf() const
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<SymbolObject>(this);
-    Local<Context> context = _local<Context>(ctximpl).toLocal();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef symbol_object = V82JSC::ToJSValueRef(this, context);
     
-    return ValueImpl::New(ctximpl, V82JSC::exec(ctximpl->m_ctxRef, "return _1.valueOf()", 1, &symbol_object)).As<Symbol>();
+    return ValueImpl::New(V82JSC::ToContextImpl(context), V82JSC::exec(ctx, "return _1.valueOf()", 1, &symbol_object)).As<Symbol>();
 }
 

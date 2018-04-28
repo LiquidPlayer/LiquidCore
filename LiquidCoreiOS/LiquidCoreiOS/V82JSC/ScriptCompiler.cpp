@@ -13,19 +13,23 @@ using namespace v8;
 ScriptCompiler::CachedData::CachedData(const uint8_t* data, int length,
                BufferPolicy buffer_policy)
 {
+    assert(0);
 }
 
 ScriptCompiler::CachedData::~CachedData()
 {
+    assert(0);
 }
 
 bool ScriptCompiler::ExternalSourceStream::SetBookmark()
 {
+    assert(0);
     return false;
 }
     
 void ScriptCompiler::ExternalSourceStream::ResetToBookmark()
 {
+    assert(0);
 }
 
 
@@ -37,9 +41,11 @@ void ScriptCompiler::ExternalSourceStream::ResetToBookmark()
  */
 ScriptCompiler::StreamedSource::StreamedSource(ExternalSourceStream* source_stream, Encoding encoding)
 {
+    assert(0);
 }
 ScriptCompiler::StreamedSource::~StreamedSource()
 {
+    assert(0);
 }
     
 // Ownership of the CachedData or its buffers is *not* transferred to the
@@ -47,6 +53,7 @@ ScriptCompiler::StreamedSource::~StreamedSource()
 // object is alive.
 const ScriptCompiler::CachedData* ScriptCompiler::StreamedSource::GetCachedData() const
 {
+    assert(0);
     return nullptr;
 }
 
@@ -67,6 +74,7 @@ MaybeLocal<UnboundScript> ScriptCompiler::CompileUnboundScript(
                         Isolate* isolate, Source* source,
                         CompileOptions options)
 {
+    assert(0);
     return MaybeLocal<UnboundScript>();
 }
 
@@ -85,6 +93,7 @@ MaybeLocal<Script> ScriptCompiler::Compile(
                     Local<Context> context, Source* source,
                     CompileOptions options)
 {
+    assert(0);
     return MaybeLocal<Script>();
 }
 
@@ -103,6 +112,7 @@ ScriptCompiler::ScriptStreamingTask* ScriptCompiler::StartStreamingScript(
                          Isolate* isolate, StreamedSource* source,
                          CompileOptions options)
 {
+    assert(0);
     return nullptr;
 }
 
@@ -117,6 +127,7 @@ MaybeLocal<Script> ScriptCompiler::Compile(
                         Local<Context> context, StreamedSource* source,
                         Local<String> full_source_string, const ScriptOrigin& origin)
 {
+    assert(0);
     return MaybeLocal<Script>();
 }
 
@@ -140,6 +151,7 @@ MaybeLocal<Script> ScriptCompiler::Compile(
  */
 uint32_t ScriptCompiler::CachedDataVersionTag()
 {
+    assert(0);
     return 0;
 }
 
@@ -155,6 +167,7 @@ uint32_t ScriptCompiler::CachedDataVersionTag()
  */
 MaybeLocal<Module> ScriptCompiler::CompileModule(Isolate* isolate, Source* source)
 {
+    assert(0);
     return MaybeLocal<Module>();
 }
 
@@ -173,17 +186,20 @@ MaybeLocal<Function> ScriptCompiler::CompileFunctionInContext(
                            Local<String> arguments[], size_t context_extension_count,
                            Local<Object> context_extensions[])
 {
+    assert(0);
     return MaybeLocal<Function>();
 }
 
 
 Local<String> Message::Get() const
 {
+    assert(0);
     return Local<String>();
 }
 
 MaybeLocal<String> Message::GetSourceLine(Local<Context> context) const
 {
+    assert(0);
     return Local<String>();
 }
 
@@ -193,6 +209,7 @@ MaybeLocal<String> Message::GetSourceLine(Local<Context> context) const
  */
 ScriptOrigin Message::GetScriptOrigin() const
 {
+    assert(0);
     return ScriptOrigin(Local<Value>());
 }
 
@@ -202,6 +219,7 @@ ScriptOrigin Message::GetScriptOrigin() const
  */
 Local<Value> Message::GetScriptResourceName() const
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -212,6 +230,7 @@ Local<Value> Message::GetScriptResourceName() const
  */
 Local<StackTrace> Message::GetStackTrace() const
 {
+    assert(0);
     return Local<StackTrace>();
 }
 
@@ -220,6 +239,7 @@ Local<StackTrace> Message::GetStackTrace() const
  */
 Maybe<int> Message::GetLineNumber(Local<Context> context) const
 {
+    assert(0);
     return Nothing<int>();
 }
 
@@ -229,6 +249,7 @@ Maybe<int> Message::GetLineNumber(Local<Context> context) const
  */
 int Message::GetStartPosition() const
 {
+    assert(0);
     return 0;
 }
 
@@ -238,6 +259,7 @@ int Message::GetStartPosition() const
  */
 int Message::GetEndPosition() const
 {
+    assert(0);
     return 0;
 }
 
@@ -246,6 +268,7 @@ int Message::GetEndPosition() const
  */
 int Message::ErrorLevel() const
 {
+    assert(0);
     return 0;
 }
 
@@ -255,6 +278,7 @@ int Message::ErrorLevel() const
  */
 Maybe<int> Message::GetStartColumn(Local<Context> context) const
 {
+    assert(0);
     return Nothing<int>();
 }
 
@@ -264,6 +288,7 @@ Maybe<int> Message::GetStartColumn(Local<Context> context) const
  */
 Maybe<int> Message::GetEndColumn(Local<Context> context) const
 {
+    assert(0);
     return Nothing<int>();
 }
 
@@ -273,16 +298,18 @@ Maybe<int> Message::GetEndColumn(Local<Context> context) const
  */
 bool Message::IsSharedCrossOrigin() const
 {
+    assert(0);
     return false;
 }
 bool Message::IsOpaque() const
 {
+    assert(0);
     return false;
 }
 
 void Message::PrintCurrentStackTrace(Isolate* isolate, FILE* out)
 {
-    
+    assert(0);
 }
 
 /**
@@ -293,6 +320,7 @@ void Message::PrintCurrentStackTrace(Isolate* isolate, FILE* out)
  */
 int StackFrame::GetLineNumber() const
 {
+    assert(0);
     return 0;
 }
 
@@ -305,6 +333,7 @@ int StackFrame::GetLineNumber() const
  */
 int StackFrame::GetColumn() const
 {
+    assert(0);
     return 0;
 }
 
@@ -316,6 +345,7 @@ int StackFrame::GetColumn() const
  */
 int StackFrame::GetScriptId() const
 {
+    assert(0);
     return 0;
 }
 
@@ -325,6 +355,7 @@ int StackFrame::GetScriptId() const
  */
 Local<String> StackFrame::GetScriptName() const
 {
+    assert(0);
     return Local<String>();
 }
 
@@ -336,6 +367,7 @@ Local<String> StackFrame::GetScriptName() const
  */
 Local<String> StackFrame::GetScriptNameOrSourceURL() const
 {
+    assert(0);
     return Local<String>();
 }
 
@@ -344,6 +376,7 @@ Local<String> StackFrame::GetScriptNameOrSourceURL() const
  */
 Local<String> StackFrame::GetFunctionName() const
 {
+    assert(0);
     return Local<String>();
 }
 
@@ -353,6 +386,7 @@ Local<String> StackFrame::GetFunctionName() const
  */
 bool StackFrame::IsEval() const
 {
+    assert(0);
     return false;
 }
 
@@ -362,6 +396,7 @@ bool StackFrame::IsEval() const
  */
 bool StackFrame::IsConstructor() const
 {
+    assert(0);
     return false;
 }
 
@@ -370,12 +405,14 @@ bool StackFrame::IsConstructor() const
  */
 bool StackFrame::IsWasm() const
 {
+    assert(0);
     return false;
 }
 
 
 Local<StackFrame> StackTrace::GetFrame(uint32_t index) const
 {
+    assert(0);
     return Local<StackFrame>();
 }
 
@@ -384,6 +421,7 @@ Local<StackFrame> StackTrace::GetFrame(uint32_t index) const
  */
 int StackTrace::GetFrameCount() const
 {
+    assert(0);
     return 0;
 }
 
@@ -397,5 +435,6 @@ int StackTrace::GetFrameCount() const
 Local<StackTrace> StackTrace::CurrentStackTrace(Isolate* isolate, int frame_limit,
                                                 StackTraceOptions options)
 {
+    assert(0);
     return Local<StackTrace>();
 }

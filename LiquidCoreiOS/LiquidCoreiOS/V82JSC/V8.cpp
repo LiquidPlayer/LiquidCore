@@ -6,7 +6,7 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include <v8.h>
+#include "V82JSC.h"
 
 using namespace v8;
 
@@ -27,11 +27,11 @@ using namespace v8;
  */
 void V8::SetNativesDataBlob(StartupData* startup_blob)
 {
-    
+    assert(0);
 }
 void V8::SetSnapshotDataBlob(StartupData* startup_blob)
 {
-    
+    assert(0);
 }
 
 /**
@@ -42,6 +42,7 @@ void V8::SetSnapshotDataBlob(StartupData* startup_blob)
  */
 StartupData V8::CreateSnapshotDataBlob(const char* embedded_source)
 {
+    assert(0);
     return StartupData();
 }
 
@@ -56,6 +57,7 @@ StartupData V8::CreateSnapshotDataBlob(const char* embedded_source)
 StartupData V8::WarmUpSnapshotDataBlob(StartupData cold_startup_blob,
                                           const char* warmup_source)
 {
+    assert(0);
     return StartupData();
 }
 
@@ -64,7 +66,7 @@ StartupData V8::WarmUpSnapshotDataBlob(StartupData cold_startup_blob,
  */
 void V8::SetFlagsFromString(const char* str, int length)
 {
-    
+    assert(0);
 }
 
 /**
@@ -74,13 +76,18 @@ void V8::SetFlagsFromCommandLine(int* argc,
                                     char** argv,
                                     bool remove_flags)
 {
-    
+    assert(0);
 }
+
+static char version_string[32] = {0};
 
 /** Get the version string. */
 const char* V8::GetVersion()
 {
-    return nullptr;
+    if (!version_string[0]) {
+        sprintf(version_string, "%d.%d.%d.%d", V8_MAJOR_VERSION, V8_MINOR_VERSION, V8_BUILD_NUMBER, V8_PATCH_LEVEL);
+    }
+    return version_string;
 }
 
 /**
@@ -98,7 +105,7 @@ bool V8::Initialize()
  */
 void V8::SetEntropySource(EntropySource source)
 {
-    
+    assert(0);
 }
 
 /**
@@ -108,7 +115,7 @@ void V8::SetEntropySource(EntropySource source)
 void V8::SetReturnAddressLocationResolver(
         ReturnAddressLocationResolver return_address_resolver)
 {
-    
+    assert(0);
 }
 
 /**
@@ -140,6 +147,7 @@ bool V8::Dispose()
 bool V8::InitializeICUDefaultLocation(const char* exec_path,
                                       const char* icu_data_file)
 {
+    // We will use the ICU bundled with JavaScriptCore
     return false;
 }
 
@@ -161,12 +169,12 @@ bool V8::InitializeICUDefaultLocation(const char* exec_path,
  */
 void V8::InitializeExternalStartupData(const char* directory_path)
 {
-    
+    // External statup data not supported
 }
 void V8::InitializeExternalStartupData(const char* natives_blob,
                                           const char* snapshot_blob)
 {
-    
+    // External statup data not supported
 }
 
 Platform *currentPlatform = nullptr;
@@ -195,27 +203,30 @@ void V8::ShutdownPlatform()
  */
 bool V8::RegisterDefaultSignalHandler()
 {
+    assert(0);
     return false;
 }
 
 internal::Object** V8::GlobalizeReference(internal::Isolate* isolate,
                                              internal::Object** handle)
 {
+    printf("FIXME! GlobalizeReference\n");
     return handle;
 }
 internal::Object** V8::CopyPersistent(internal::Object** handle)
 {
+    assert(0);
     return nullptr;
 }
 void V8::DisposeGlobal(internal::Object** global_handle)
 {
-    
+    printf("FIXME! DisposeGlobal\n");
 }
 void V8::MakeWeak(internal::Object** location, void* data,
                      WeakCallbackInfo<void>::Callback weak_callback,
                      WeakCallbackType type)
 {
-    
+    assert(0);
 }
 void V8::MakeWeak(internal::Object** location, void* data,
                      // Must be 0 or -1.
@@ -224,37 +235,41 @@ void V8::MakeWeak(internal::Object** location, void* data,
                      int internal_field_index2,
                      WeakCallbackInfo<void>::Callback weak_callback)
 {
-    
+    assert(0);
 }
 void V8::MakeWeak(internal::Object*** location_addr)
 {
-    
+    assert(0);
 }
 void* V8::ClearWeak(internal::Object** location)
 {
+    assert(0);
     return nullptr;
 }
 Value* V8::Eternalize(Isolate* isolate, Value* handle)
 {
+    assert(0);
     return nullptr;
 }
 
 void V8::RegisterExternallyReferencedObject(internal::Object** object,
                                                internal::Isolate* isolate)
 {
-    
+    assert(0);
 }
 
 void V8::FromJustIsNothing()
 {
-    
+    printf ("FIXME! V8::FromJustIsNothing()\n");
+    //assert(0);
 }
 void V8::ToLocalEmpty()
 {
-    
+    printf ("FIXME! V8::ToLocalEmpty()\n");
+    //assert(0);
 }
 void V8::InternalFieldOutOfBounds(int index)
 {
-    
+    assert(0);
 }
 

@@ -12,6 +12,7 @@ using namespace v8;
 
 MaybeLocal<Promise::Resolver> Promise::Resolver::New(Local<Context> context)
 {
+    assert(0);
     return MaybeLocal<Promise::Resolver>();
 }
     
@@ -20,6 +21,7 @@ MaybeLocal<Promise::Resolver> Promise::Resolver::New(Local<Context> context)
  */
 Local<Promise> Promise::Resolver::GetPromise()
 {
+    assert(0);
     return Local<Promise>();
 }
 
@@ -29,11 +31,13 @@ Local<Promise> Promise::Resolver::GetPromise()
  */
 Maybe<bool> Promise::Resolver::Resolve(Local<Context> context,Local<Value> value)
 {
+    assert(0);
     return Nothing<bool>();
 }
 
 Maybe<bool> Promise::Resolver::Reject(Local<Context> context, Local<Value> value)
 {
+    assert(0);
     return Nothing<bool>();
 }
 
@@ -45,11 +49,13 @@ Maybe<bool> Promise::Resolver::Reject(Local<Context> context, Local<Value> value
  */
 MaybeLocal<Promise> Promise::Catch(Local<Context> context,Local<Function> handler)
 {
+    assert(0);
     return MaybeLocal<Promise>();
 }
 
 MaybeLocal<Promise> Promise::Then(Local<Context> context, Local<Function> handler)
 {
+    assert(0);
     return MaybeLocal<Promise>();
 }
 
@@ -59,6 +65,7 @@ MaybeLocal<Promise> Promise::Then(Local<Context> context, Local<Function> handle
  */
 bool Promise::HasHandler()
 {
+    assert(0);
     return false;
 }
 
@@ -68,6 +75,7 @@ bool Promise::HasHandler()
  */
 Local<Value> Promise::Result()
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -76,5 +84,6 @@ Local<Value> Promise::Result()
  */
 Promise::PromiseState Promise::State()
 {
+    assert(0);
     return PromiseState();
 }

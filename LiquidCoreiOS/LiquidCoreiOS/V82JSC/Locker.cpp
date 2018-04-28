@@ -12,16 +12,17 @@ using namespace v8;
 
 Unlocker::~Unlocker()
 {
+    assert(0);
 }
 
 Locker::~Locker()
 {
-    
+    assert(0);
 }
 
 void Unlocker::Initialize(Isolate* isolate)
 {
-    
+    assert(0);
 }
 
 
@@ -31,6 +32,7 @@ void Unlocker::Initialize(Isolate* isolate)
  */
 bool Locker::IsLocked(Isolate* isolate)
 {
+    assert(0);
     return false;
 }
 
@@ -39,10 +41,11 @@ bool Locker::IsLocked(Isolate* isolate)
  */
 bool Locker::IsActive()
 {
+    printf("FIXME! Locker::IsActive()\n");
     return false;
 }
 
 void Locker::Initialize(Isolate* isolate)
 {
-    
+    assert(0);
 }

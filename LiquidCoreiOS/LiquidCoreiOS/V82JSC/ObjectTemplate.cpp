@@ -30,6 +30,7 @@ Local<ObjectTemplate> ObjectTemplate::New(
 MaybeLocal<ObjectTemplate> ObjectTemplate::FromSnapshot(Isolate* isolate,
                                                size_t index)
 {
+    assert(0);
     return MaybeLocal<ObjectTemplate>();
 }
 
@@ -492,7 +493,7 @@ void ObjectTemplate::SetHandler(const IndexedPropertyHandlerConfiguration& confi
 void ObjectTemplate::SetCallAsFunctionHandler(FunctionCallback callback,
                               Local<Value> data)
 {
-    
+    assert(0);
 }
 
 /**
@@ -505,7 +506,7 @@ void ObjectTemplate::SetCallAsFunctionHandler(FunctionCallback callback,
  */
 void ObjectTemplate::MarkAsUndetectable()
 {
-    
+    assert(0);
 }
 
 /**
@@ -519,7 +520,7 @@ void ObjectTemplate::MarkAsUndetectable()
 void ObjectTemplate::SetAccessCheckCallback(AccessCheckCallback callback,
                             Local<Value> data)
 {
-    
+    assert(0);
 }
 
 /**
@@ -534,7 +535,7 @@ void ObjectTemplate::SetAccessCheckCallbackAndHandler(
                                       const IndexedPropertyHandlerConfiguration& indexed_handler,
                                       Local<Value> data)
 {
-    
+    assert(0);
 }
 
 /**
@@ -562,6 +563,7 @@ void ObjectTemplate::SetInternalFieldCount(int value)
  */
 bool ObjectTemplate::IsImmutableProto()
 {
+    assert(0);
     return false;
 }
 
@@ -571,6 +573,6 @@ bool ObjectTemplate::IsImmutableProto()
  */
 void ObjectTemplate::SetImmutableProto()
 {
-    
+    assert(0);
 }
 

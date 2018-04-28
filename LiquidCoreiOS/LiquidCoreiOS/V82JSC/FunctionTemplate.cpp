@@ -45,6 +45,7 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
                                           Local<Signature> signature, int length,
                                           ConstructorBehavior behavior)
 {
+    Local<Context> context = V82JSC::OperatingContext(isolate);
     FunctionTemplateImpl *templ = (FunctionTemplateImpl*) TemplateImpl::New(isolate, sizeof(FunctionTemplateImpl));
     templ->pMap->set_instance_type(v8::internal::FUNCTION_TEMPLATE_INFO_TYPE);
 
@@ -57,7 +58,7 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
         data = Undefined(isolate);
     }
     templ->m_data = V82JSC::ToJSValueRef<Value>(data, isolate);
-    JSValueProtect(V82JSC::ToIsolateImpl(isolate)->m_defaultContext->m_ctxRef, templ->m_data);
+    JSValueProtect(V82JSC::ToContextRef(context), templ->m_data);
     if (templ->m_signature) {
         templ->m_definition.parentClass = templ->m_signature->m_template->m_class;
     }
@@ -100,7 +101,7 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 
     JSObjectRef function = impl->m_functions[ctx];
     if (function) {
-        return ValueImpl::New(V82JSC::ToContextImpl(context), function).As<Function>();
+        return ValueImpl::New(ctx, function).As<Function>();
     }
 
     JSStringRef generic_function_name = JSStringCreateWithUTF8CString("generic_function");
@@ -236,6 +237,7 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
  */
 MaybeLocal<Object> FunctionTemplate::NewRemoteInstance()
 {
+    assert(0);
     return MaybeLocal<Object>();
 }
 
@@ -314,7 +316,7 @@ Local<ObjectTemplate> FunctionTemplate::PrototypeTemplate()
  **/
 void FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> prototype_provider)
 {
-    
+    assert(0);
 }
 
 /**
@@ -338,7 +340,7 @@ void FunctionTemplate::SetClassName(Local<String> name)
  */
 void FunctionTemplate::SetAcceptAnyReceiver(bool value)
 {
-    
+    assert(0);
 }
 
 /**
@@ -355,7 +357,7 @@ void FunctionTemplate::SetAcceptAnyReceiver(bool value)
  */
 void FunctionTemplate::SetHiddenPrototype(bool value)
 {
-    
+    assert(0);
 }
 
 /**
@@ -364,7 +366,7 @@ void FunctionTemplate::SetHiddenPrototype(bool value)
  */
 void FunctionTemplate::ReadOnlyPrototype()
 {
-    
+    assert(0);
 }
 
 /**
@@ -373,7 +375,7 @@ void FunctionTemplate::ReadOnlyPrototype()
  */
 void FunctionTemplate::RemovePrototype()
 {
-    
+    assert(0);
 }
 
 /**
@@ -382,6 +384,7 @@ void FunctionTemplate::RemovePrototype()
  */
 bool FunctionTemplate::HasInstance(Local<Value> object)
 {
+    assert(0);
     return false;
 }
 

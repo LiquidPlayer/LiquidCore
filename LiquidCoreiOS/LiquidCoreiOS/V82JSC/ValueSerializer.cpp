@@ -17,6 +17,7 @@ using namespace v8;
  */
 Maybe<bool> ValueSerializer::Delegate::WriteHostObject(Isolate* isolate, Local<Object> object)
 {
+    assert(0);
     return Nothing<bool>();
 }
 
@@ -33,12 +34,14 @@ Maybe<bool> ValueSerializer::Delegate::WriteHostObject(Isolate* isolate, Local<O
 Maybe<uint32_t> ValueSerializer::Delegate::GetSharedArrayBufferId(Isolate* isolate,
                                                                   Local<SharedArrayBuffer> shared_array_buffer)
 {
+    assert(0);
     return Nothing<uint32_t>();
 }
 
 Maybe<uint32_t> ValueSerializer::Delegate::GetWasmModuleTransferId(Isolate* isolate,
                                                                    Local<WasmCompiledModule> module)
 {
+    assert(0);
     return Nothing<uint32_t>();
 }
 
@@ -54,6 +57,7 @@ Maybe<uint32_t> ValueSerializer::Delegate::GetWasmModuleTransferId(Isolate* isol
 void* ValueSerializer::Delegate::ReallocateBufferMemory(void* old_buffer, size_t size,
                                      size_t* actual_size)
 {
+    assert(0);
     return nullptr;
 }
 
@@ -62,21 +66,21 @@ void* ValueSerializer::Delegate::ReallocateBufferMemory(void* old_buffer, size_t
  */
 void ValueSerializer::Delegate::FreeBufferMemory(void* buffer)
 {
-
+    assert(0);
 }
 
 ValueSerializer::ValueSerializer(Isolate* isolate)
 {
-    
+    assert(0);
 }
 
 ValueSerializer::ValueSerializer(Isolate* isolate, Delegate* delegate)
 {
-    
+    assert(0);
 }
 ValueSerializer::~ValueSerializer()
 {
-    
+    assert(0);
 }
 
 /**
@@ -84,7 +88,7 @@ ValueSerializer::~ValueSerializer()
  */
 void ValueSerializer::WriteHeader()
 {
-    
+    assert(0);
 }
 
 /**
@@ -92,6 +96,7 @@ void ValueSerializer::WriteHeader()
  */
 Maybe<bool> ValueSerializer::WriteValue(Local<Context> context, Local<Value> value)
 {
+    assert(0);
     return Nothing<bool>();
 }
 
@@ -103,6 +108,7 @@ Maybe<bool> ValueSerializer::WriteValue(Local<Context> context, Local<Value> val
  */
 std::pair<uint8_t*, size_t> ValueSerializer::Release()
 {
+    assert(0);
     return std::pair<uint8_t*, size_t>(nullptr,0);
 }
 
@@ -114,7 +120,7 @@ std::pair<uint8_t*, size_t> ValueSerializer::Release()
 void ValueSerializer::TransferArrayBuffer(uint32_t transfer_id,
                          Local<ArrayBuffer> array_buffer)
 {
-    
+    assert(0);
 }
 
 /**
@@ -126,7 +132,7 @@ void ValueSerializer::TransferArrayBuffer(uint32_t transfer_id,
  */
 void ValueSerializer::SetTreatArrayBufferViewsAsHostObjects(bool mode)
 {
-    
+    assert(0);
 }
 
 /**
@@ -136,19 +142,19 @@ void ValueSerializer::SetTreatArrayBufferViewsAsHostObjects(bool mode)
  */
 void ValueSerializer::WriteUint32(uint32_t value)
 {
-    
+    assert(0);
 }
 void ValueSerializer::WriteUint64(uint64_t value)
 {
-    
+    assert(0);
 }
 void ValueSerializer::WriteDouble(double value)
 {
-    
+    assert(0);
 }
 void ValueSerializer::WriteRawBytes(const void* source, size_t length)
 {
-    
+    assert(0);
 }
 
 /**
@@ -158,6 +164,7 @@ void ValueSerializer::WriteRawBytes(const void* source, size_t length)
  */
 MaybeLocal<Object> ValueDeserializer::Delegate::ReadHostObject(Isolate* isolate)
 {
+    assert(0);
     return MaybeLocal<Object>();
 }
 
@@ -168,21 +175,22 @@ MaybeLocal<Object> ValueDeserializer::Delegate::ReadHostObject(Isolate* isolate)
 MaybeLocal<WasmCompiledModule> ValueDeserializer::Delegate::GetWasmModuleFromId(
                                         Isolate* isolate, uint32_t transfer_id)
 {
+    assert(0);
     return MaybeLocal<WasmCompiledModule>();
 }
 
 ValueDeserializer::ValueDeserializer(Isolate* isolate, const uint8_t* data, size_t size)
 {
-    
+    assert(0);
 }
 ValueDeserializer::ValueDeserializer(Isolate* isolate, const uint8_t* data, size_t size,
                   Delegate* delegate)
 {
-    
+    assert(0);
 }
 ValueDeserializer::~ValueDeserializer()
 {
-    
+    assert(0);
 }
 
 /**
@@ -191,6 +199,7 @@ ValueDeserializer::~ValueDeserializer()
  */
 Maybe<bool> ValueDeserializer::ReadHeader(Local<Context> context)
 {
+    assert(0);
     return Nothing<bool>();
 }
 
@@ -199,6 +208,7 @@ Maybe<bool> ValueDeserializer::ReadHeader(Local<Context> context)
  */
 MaybeLocal<Value> ValueDeserializer::ReadValue(Local<Context> context)
 {
+    assert(0);
     return MaybeLocal<Value>();
 }
 
@@ -209,7 +219,7 @@ MaybeLocal<Value> ValueDeserializer::ReadValue(Local<Context> context)
 void ValueDeserializer::TransferArrayBuffer(uint32_t transfer_id,
                          Local<ArrayBuffer> array_buffer)
 {
-    
+    assert(0);
 }
 
 /**
@@ -220,7 +230,7 @@ void ValueDeserializer::TransferArrayBuffer(uint32_t transfer_id,
 void ValueDeserializer::TransferSharedArrayBuffer(uint32_t id,
                                Local<SharedArrayBuffer> shared_array_buffer)
 {
-    
+    assert(0);
 }
 
 /**
@@ -232,7 +242,7 @@ void ValueDeserializer::TransferSharedArrayBuffer(uint32_t id,
  */
 void ValueDeserializer::SetSupportsLegacyWireFormat(bool supports_legacy_wire_format)
 {
-    
+    assert(0);
 }
 
 /**
@@ -240,7 +250,7 @@ void ValueDeserializer::SetSupportsLegacyWireFormat(bool supports_legacy_wire_fo
  */
 void ValueDeserializer::SetExpectInlineWasm(bool allow_inline_wasm)
 {
-    
+    assert(0);
 }
 
 /**
@@ -250,6 +260,7 @@ void ValueDeserializer::SetExpectInlineWasm(bool allow_inline_wasm)
  */
 uint32_t ValueDeserializer::GetWireFormatVersion() const
 {
+    assert(0);
     return 0;
 }
 
@@ -260,17 +271,21 @@ uint32_t ValueDeserializer::GetWireFormatVersion() const
  */
 bool ValueDeserializer::ReadUint32(uint32_t* value)
 {
+    assert(0);
     return false;
 }
 bool ValueDeserializer::ReadUint64(uint64_t* value)
 {
+    assert(0);
     return false;
 }
 bool ValueDeserializer::ReadDouble(double* value)
 {
+    assert(0);
     return false;
 }
 bool ValueDeserializer::ReadRawBytes(size_t length, const void** data)
 {
+    assert(0);
     return false;
 }

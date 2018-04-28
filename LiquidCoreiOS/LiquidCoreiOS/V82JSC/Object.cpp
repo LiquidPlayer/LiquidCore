@@ -12,20 +12,21 @@ using namespace v8;
 
 Maybe<bool> Object::Set(Local<Context> context, Local<Value> key, Local<Value> value)
 {
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    LocalException exception(ctx->m_isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    LocalException exception(iso);
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(key, context),
         V82JSC::ToJSValueRef(value, context)
     };
     
-    JSValueRef ret = V82JSC::exec(ctx->m_ctxRef, "return _3 == (_1[_2] = _3)", 3, args, &exception);
+    JSValueRef ret = V82JSC::exec(ctx, "return _3 == (_1[_2] = _3)", 3, args, &exception);
     
     _maybe<bool> out;
     if (!exception.ShouldThow()) {
-        out.value_ = JSValueToBoolean(ctx->m_ctxRef, ret);
+        out.value_ = JSValueToBoolean(ctx, ret);
     }
     out.has_value_ = !exception.ShouldThow();
     
@@ -39,12 +40,12 @@ Maybe<bool> Object::Set(Local<Context> context, uint32_t index,
     sprintf(ndx, "%d", index);
     JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
 
-    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     JSValueRef value_ = V82JSC::ToJSValueRef(value, context);
 
     JSValueRef exception = nullptr;
-    JSObjectSetProperty(ctx->m_ctxRef, obj, index_, value_, kJSPropertyAttributeNone, &exception);
+    JSObjectSetProperty(ctx, (JSObjectRef)obj, index_, value_, kJSPropertyAttributeNone, &exception);
     JSStringRelease(index_);
     
     _maybe<bool> out;
@@ -121,18 +122,19 @@ Maybe<bool> Object::DefineProperty(Local<Context> context, Local<Name> key,
 // Note also that this only works for named properties.
 MaybeLocal<Value> Object::Get(Local<Context> context, Local<Value> key)
 {
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    LocalException exception(ctx->m_isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    LocalException exception(iso);
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(key, context)
     };
     
-    JSValueRef ret = V82JSC::exec(ctx->m_ctxRef, "return _1[_2]", 2, args, &exception);
+    JSValueRef ret = V82JSC::exec(ctx, "return _1[_2]", 2, args, &exception);
     
     if (!exception.ShouldThow()) {
-        return ValueImpl::New(ctx, ret);
+        return ValueImpl::New(V82JSC::ToContextImpl(context), ret);
     }
     return Local<Value>();
 }
@@ -143,14 +145,15 @@ MaybeLocal<Value> Object::Get(Local<Context> context, uint32_t index)
     sprintf(ndx, "%d", index);
     JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
 
-    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
 
-    LocalException exception(ctx->m_isolate);
-    JSValueRef prop = JSObjectGetProperty(ctx->m_ctxRef, obj, index_, &exception);
+    LocalException exception(iso);
+    JSValueRef prop = JSObjectGetProperty(ctx, (JSObjectRef)obj, index_, &exception);
     JSStringRelease(index_);
     if (!exception.ShouldThow()) {
-        return MaybeLocal<Value>(ValueImpl::New(ctx, prop));
+        return MaybeLocal<Value>(ValueImpl::New(V82JSC::ToContextImpl(context), prop));
     }
     
     return MaybeLocal<Value>();
@@ -163,15 +166,16 @@ MaybeLocal<Value> Object::Get(Local<Context> context, uint32_t index)
  */
 Maybe<PropertyAttribute> Object::GetPropertyAttributes(Local<Context> context, Local<Value> key)
 {
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    LocalException exception(ctx->m_isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    LocalException exception(iso);
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(key, context),
     };
     
-    JSValueRef ret = V82JSC::exec(ctx->m_ctxRef,
+    JSValueRef ret = V82JSC::exec(ctx,
                                   "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
                                   "var d = Object.getOwnPropertyDescriptor(_1, _2); "
                                   "var attr = None; if (!d) return attr; "
@@ -184,7 +188,7 @@ Maybe<PropertyAttribute> Object::GetPropertyAttributes(Local<Context> context, L
     _maybe<PropertyAttribute> out;
     if (!exception.ShouldThow()) {
         JSValueRef excp = 0;
-        out.value_ = (PropertyAttribute) JSValueToNumber(ctx->m_ctxRef, ret, &excp);
+        out.value_ = (PropertyAttribute) JSValueToNumber(ctx, ret, &excp);
         assert(excp==0);
     }
     out.has_value_ = !exception.ShouldThow();
@@ -218,19 +222,20 @@ MaybeLocal<Value> Object::GetOwnPropertyDescriptor(Local<Context> context, Local
  */
 Maybe<bool> Object::Has(Local<Context> context, Local<Value> key)
 {
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    LocalException exception(ctx->m_isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    LocalException exception(iso);
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(key, context)
     };
     
-    JSValueRef ret = V82JSC::exec(ctx->m_ctxRef, "return (_2 in _1)", 2, args, &exception);
+    JSValueRef ret = V82JSC::exec(ctx, "return (_2 in _1)", 2, args, &exception);
     
     _maybe<bool> out;
     if (!exception.ShouldThow()) {
-        out.value_ = JSValueToBoolean(ctx->m_ctxRef, ret);
+        out.value_ = JSValueToBoolean(ctx, ret);
     }
     out.has_value_ = !exception.ShouldThow();
     
@@ -239,19 +244,20 @@ Maybe<bool> Object::Has(Local<Context> context, Local<Value> key)
 
 Maybe<bool> Object::Delete(Local<Context> context, Local<Value> key)
 {
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    LocalException exception(ctx->m_isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    LocalException exception(iso);
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(key, context)
     };
 
-    JSValueRef ret = V82JSC::exec(ctx->m_ctxRef, "return delete _1[_2]", 2, args, &exception);
+    JSValueRef ret = V82JSC::exec(ctx, "return delete _1[_2]", 2, args, &exception);
 
     _maybe<bool> out;
     if (!exception.ShouldThow()) {
-        out.value_ = JSValueToBoolean(ctx->m_ctxRef, ret);
+        out.value_ = JSValueToBoolean(ctx, ret);
     }
     out.has_value_ = !exception.ShouldThow();
     
@@ -264,12 +270,12 @@ Maybe<bool> Object::Has(Local<Context> context, uint32_t index)
     sprintf(ndx, "%d", index);
     JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
 
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
 
     _maybe<bool> out;
     out.has_value_ = true;
-    out.value_ = JSObjectHasProperty(ctx->m_ctxRef, obj, index_);
+    out.value_ = JSObjectHasProperty(ctx, obj, index_);
     JSStringRelease(index_);
     return out.toMaybe();
 }
@@ -280,12 +286,12 @@ Maybe<bool> Object::Delete(Local<Context> context, uint32_t index)
     sprintf(ndx, "%d", index);
     JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
     
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
-    ContextImpl *ctx = V82JSC::ToContextImpl(context);
 
     _maybe<bool> out;
     JSValueRef exception = nullptr;
-    out.value_ = JSObjectDeleteProperty(ctx->m_ctxRef, obj, index_, &exception);
+    out.value_ = JSObjectDeleteProperty(ctx, obj, index_, &exception);
     JSStringRelease(index_);
     out.has_value_ = exception == nullptr;
     return out.toMaybe();
@@ -391,10 +397,11 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
                                  PropertyAttribute attribute,
                                  AccessControl settings)
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Object>(this);
-    Local<Context> context = _local<Context>(impl->m_context).toLocal();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
     
-    LocalException exception(impl->m_context->m_isolate);
+    LocalException exception(iso);
     
     // FIXME: Deal with attributes / access control
     
@@ -405,7 +412,7 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
         *setter ? V82JSC::ToJSValueRef(setter, context) : 0
     };
     
-    V82JSC::exec(impl->m_context->m_ctxRef,
+    V82JSC::exec(ctx,
                  "delete _1[_2]; "
                  "if (!_4) Object.defineProperty(_1, _2, { get: _3, set: function(v) { delete this[_2]; this[_2] = v; }, configurable: true }); "
                  "else if (!_3) Object.defineProperty(_1, _2, { set: _4, configurable: true }); "
@@ -433,15 +440,17 @@ Maybe<bool> Object::SetNativeDataProperty(Local<Context> context, Local<Name> na
  */
 Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
 {
-    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
-            impl->m_value,
+            obj,
             V82JSC::ToJSValueRef(key, context)
         };
-        LocalException exception(impl->m_context->m_isolate);
+        LocalException exception(iso);
         JSValueRef ret = V82JSC::exec(ctx, "return _1.hasOwnProperty(_2)", 2, args);
         if (exception.ShouldThow()) return Nothing<bool>();
         return _maybe<bool>(JSValueToBoolean(ctx, ret)).toMaybe();
@@ -451,34 +460,38 @@ Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
 Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
                                Local<Value> value)
 {
-    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
-    if (!wrap) wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    if (!wrap) wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef)obj);
     if (!wrap->m_private_properties) {
         wrap->m_private_properties = JSObjectMake(ctx, 0, 0);
     }
     JSValueRef args[] = {
-        impl->m_value,
+        obj,
         V82JSC::ToJSValueRef(key, context),
         V82JSC::ToJSValueRef(value, context)
     };
-    LocalException exception(impl->m_context->m_isolate);
+    LocalException exception(iso);
     V82JSC::exec(ctx, "_1[_2] = _3", 3, args, &exception);
     if (exception.ShouldThow()) return Nothing<bool>();
     return _maybe<bool>(true).toMaybe();
 }
 Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
 {
-    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
-            impl->m_value,
+            obj,
             V82JSC::ToJSValueRef(key, context)
         };
-        LocalException exception(impl->m_context->m_isolate);
+        LocalException exception(iso);
         V82JSC::exec(ctx, "return delete _1[_2]", 2, args, &exception);
         if (exception.ShouldThow()) return Nothing<bool>();
         return _maybe<bool>(true).toMaybe();
@@ -487,20 +500,22 @@ Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
 }
 MaybeLocal<Value> Object::GetPrivate(Local<Context> context, Local<Private> key)
 {
-    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,Object>(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
+
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
-            impl->m_value,
+            obj,
             V82JSC::ToJSValueRef(key, context)
         };
-        LocalException exception(impl->m_context->m_isolate);
+        LocalException exception(iso);
         JSValueRef ret = V82JSC::exec(ctx, "return _1[_2]", 2, args);
         if (exception.ShouldThow()) return MaybeLocal<Value>();
         return ValueImpl::New(V82JSC::ToContextImpl(context), ret);
     }
-    return Undefined(V82JSC::ToIsolate(impl->m_context->m_isolate));
+    return Undefined(context->GetIsolate());
 }
 
 /**
@@ -573,7 +588,8 @@ MaybeLocal<Array> Object::GetOwnPropertyNames(Local<Context> context, PropertyFi
  */
 Local<Value> Object::GetPrototype()
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
+    Local<Context> context = Isolate::GetCurrent()->GetCurrentContext();
+    ContextImpl* ctximpl = V82JSC::ToContextImpl(context);
     JSContextRef ctx = ctximpl->m_ctxRef;
     JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, _local<Context>(ctximpl).toLocal());
     JSValueRef proto = V82JSC::exec(ctx, "return Object.getPrototypeOf(_1)", 1, &obj);
@@ -589,10 +605,10 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
                                  Local<Value> prototype)
 {
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     JSValueRef proto = V82JSC::ToJSValueRef<Value>(prototype, context);
     
-    JSObjectSetPrototype(ctx, obj, proto);
+    JSObjectSetPrototype(ctx, (JSObjectRef)obj, proto);
     return _maybe<bool>(true).toMaybe();
 }
 
@@ -602,14 +618,15 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
  */
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
     FunctionTemplateImpl* tmplimpl = V82JSC::ToImpl<FunctionTemplateImpl>(tmpl);
-    Local<Context> context = _local<Context>(ctximpl).toLocal();
     
     Local<Value> proto = _local<Value>(this).toLocal();
     while (proto->IsObject()) {
         JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, context);
-        InstanceWrap *instance_wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+        InstanceWrap *instance_wrap = V82JSC::getPrivateInstance(ctx, obj);
         if (instance_wrap && instance_wrap->m_object_template) {
             for (const TemplateImpl *t = instance_wrap->m_object_template->m_constructor_template; t; t = t->m_parent) {
                 if (t == tmplimpl) {
@@ -639,20 +656,20 @@ MaybeLocal<String> Object::ObjectProtoToString(Local<Context> context)
  */
 Local<String> Object::GetConstructorName()
 {
-    ValueImpl* obj = V82JSC::ToImpl<ValueImpl,Object>(this);
-    if (obj) {
-        JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
-        JSValueRef excp = nullptr;
-        JSValueRef vctor = JSObjectGetProperty(obj->m_context->m_ctxRef, (JSObjectRef) obj->m_value, ctor, &excp);
-        JSStringRelease(ctor);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    JSStringRef ctor = JSStringCreateWithUTF8CString("constructor");
+    JSValueRef excp = nullptr;
+    JSValueRef vctor = JSObjectGetProperty(ctx, (JSObjectRef) obj, ctor, &excp);
+    JSStringRelease(ctor);
+    assert(excp==nullptr);
+    if (JSValueIsObject(ctx, vctor)) {
+        JSStringRef name = JSStringCreateWithUTF8CString("name");
+        JSValueRef vname = JSObjectGetProperty(ctx, (JSObjectRef) vctor, name, &excp);
+        JSStringRelease(name);
         assert(excp==nullptr);
-        if (JSValueIsObject(obj->m_context->m_ctxRef, vctor)) {
-            JSStringRef name = JSStringCreateWithUTF8CString("name");
-            JSValueRef vname = JSObjectGetProperty(obj->m_context->m_ctxRef, (JSObjectRef) vctor, name, &excp);
-            JSStringRelease(name);
-            assert(excp==nullptr);
-            return ValueImpl::New(obj->m_context, vname)->ToString(_local<Context>(obj->m_context).toLocal()).ToLocalChecked();
-        }
+        return ValueImpl::New(V82JSC::ToContextImpl(context), vname)->ToString(context).ToLocalChecked();
     }
 
     return Local<String>(nullptr);
@@ -670,11 +687,11 @@ Maybe<bool> Object::SetIntegrityLevel(Local<Context> context, IntegrityLevel lev
 /** Gets the number of internal fields for this Object. */
 int Object::InternalFieldCount()
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    Local<Context> context = _local<Context>(ctximpl).toLocal();
-    
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+    
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
     if (wrap) return wrap->m_num_internal_fields;
     else if (IsArrayBufferView()) {
         // ArrayBufferViews have internal fields by default.  This was created in JS.
@@ -687,22 +704,22 @@ int Object::InternalFieldCount()
 /** Sets the value in an internal field. */
 void Object::SetInternalField(int index, Local<Value> value)
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    Local<Context> context = _local<Context>(ctximpl).toLocal();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
     if (!wrap && IsArrayBuffer()) {
         // ArrayBuffers have internal fields by default.  This was created in JS.
         GetArrayBufferInfo(reinterpret_cast<const ArrayBuffer*>(this));
-        wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+        wrap = V82JSC::getPrivateInstance(ctx, obj);
     }
     if (wrap && index < wrap->m_num_internal_fields) {
         if (wrap->m_internal_fields[index]) {
-            JSValueUnprotect(ctximpl->m_ctxRef, wrap->m_internal_fields[index]);
+            JSValueUnprotect(ctx, wrap->m_internal_fields[index]);
         }
         wrap->m_internal_fields[index] = V82JSC::ToJSValueRef(value, context);
-        JSValueProtect(ctximpl->m_ctxRef, wrap->m_internal_fields[index]);
+        JSValueProtect(ctx, wrap->m_internal_fields[index]);
     }
 }
 
@@ -713,7 +730,8 @@ void Object::SetInternalField(int index, Local<Value> value)
  */
 void Object::SetAlignedPointerInInternalField(int index, void* value)
 {
-    SetInternalField(index, External::New(V82JSC::ToIsolate(V82JSC::ToContextImpl(this)->m_isolate), value));
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    SetInternalField(index, External::New(context->GetIsolate(), value));
 }
 void Object::SetAlignedPointerInInternalFields(int argc, int indices[],
                                        void* values[])
@@ -756,25 +774,25 @@ Maybe<bool> Object::HasOwnProperty(Local<Context> context, uint32_t index)
  */
 Maybe<bool> Object::HasRealNamedProperty(Local<Context> context, Local<Name> key)
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToContextImpl(context)->m_isolate;
     JSValueRef args[] = {
         V82JSC::ToJSValueRef(this, context),
         V82JSC::ToJSValueRef(key, context)
     };
-    LocalException exception(ctximpl->m_isolate);
-    JSValueRef has = V82JSC::exec(ctximpl->m_ctxRef,
+    LocalException exception(iso);
+    JSValueRef has = V82JSC::exec(ctx,
                                   "return Object.getOwnPropertyDescriptor(_1, _2) !== undefined",
                                   2, args, &exception);
     if (exception.ShouldThow()) {
         return Nothing<bool>();
     }
     
-    return _maybe<bool>(JSValueToBoolean(ctximpl->m_ctxRef, has)).toMaybe();
+    return _maybe<bool>(JSValueToBoolean(ctx, has)).toMaybe();
 }
 Maybe<bool> Object::HasRealIndexedProperty(Local<Context> context, uint32_t index)
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    return HasRealNamedProperty(context, Uint32::New(V82JSC::ToIsolate(ctximpl->m_isolate), index).As<Name>());
+    return HasRealNamedProperty(context, Uint32::New(context->GetIsolate(), index).As<Name>());
 }
 Maybe<bool> Object::HasRealNamedCallbackProperty(Local<Context> context, Local<Name> key)
 {
@@ -851,11 +869,12 @@ bool Object::HasIndexedLookupInterceptor()
  */
 int Object::GetIdentityHash()
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    JSObjectRef o = (JSObjectRef) V82JSC::ToJSValueRef(this, V82JSC::ToIsolate(ctximpl->m_isolate));
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, o);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (!wrap) {
-        wrap = V82JSC::makePrivateInstance(ctximpl->m_ctxRef, o);
+        wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef)obj);
     }
     return wrap->m_hash;
 }
@@ -927,16 +946,16 @@ MaybeLocal<Value> Object::CallAsConstructor(Local<Context> context,
 
 Local<Object> Object::New(Isolate* isolate)
 {
-    IsolateImpl *i = reinterpret_cast<IsolateImpl*>(isolate);
-    Local<Value> o = ValueImpl::New(i->m_defaultContext, JSObjectMake(i->m_defaultContext->m_ctxRef, 0, 0));
-    _local<Object> obj(*o);
-    return obj.toLocal();
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
+    Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectMake(ctx, 0, 0));
+    return o.As<Object>();
 }
 
 void* Object::SlowGetAlignedPointerFromInternalField(int index)
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    Local<Context> context = _local<Context>(ctximpl).toLocal();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
 
     Local<External> external = SlowGetInternalField(index).As<External>();
     JSObjectRef o = (JSObjectRef) V82JSC::ToJSValueRef(external, context);
@@ -945,16 +964,16 @@ void* Object::SlowGetAlignedPointerFromInternalField(int index)
 
 Local<Value> Object::SlowGetInternalField(int index)
 {
-    ContextImpl* ctximpl = V82JSC::ToContextImpl<Object>(this);
-    Local<Context> context = _local<Context>(ctximpl).toLocal();
-    
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctximpl->m_ctxRef, obj);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
     if (wrap && index < wrap->m_num_internal_fields) {
         if (wrap->m_internal_fields[index]) {
-            return ValueImpl::New(ctximpl, wrap->m_internal_fields[index]);
+            return ValueImpl::New(V82JSC::ToContextImpl(context), wrap->m_internal_fields[index]);
         } else {
-            return Undefined(V82JSC::ToIsolate(ctximpl->m_isolate));
+            return Undefined(context->GetIsolate());
         }
     }
     return Local<Value>();

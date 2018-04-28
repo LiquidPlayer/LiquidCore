@@ -12,12 +12,14 @@ using namespace v8;
 
 uint32_t Array::Length() const
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,Array>(this);
-    JSValueRef length = V82JSC::exec(impl->m_context->m_ctxRef, "return _1.length", 1, &impl->m_value);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    JSValueRef length = V82JSC::exec(ctx, "return _1.length", 1, &obj);
     uint32_t len = 0;
     if (length) {
         JSValueRef excp = 0;
-        len = JSValueToNumber(impl->m_context->m_ctxRef, length, &excp);
+        len = JSValueToNumber(ctx, length, &excp);
         assert(excp==0);
     }
     return len;
@@ -29,13 +31,14 @@ uint32_t Array::Length() const
  */
 Local<Array> Array::New(Isolate* isolate, int length)
 {
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     length = length<0 ? 0 : length;
-    IsolateImpl *i = reinterpret_cast<IsolateImpl*>(isolate);
     JSValueRef args[length];
     for (int ndx=0; ndx < length; ndx++) {
-        args[ndx] = JSValueMakeUndefined(i->m_defaultContext->m_ctxRef);
+        args[ndx] = JSValueMakeUndefined(ctx);
     }
-    Local<Value> o = ValueImpl::New(i->m_defaultContext, JSObjectMakeArray(i->m_defaultContext->m_ctxRef, length, args, 0));
+    Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectMakeArray(ctx, length, args, 0));
     _local<Array> obj(*o);
     return obj.toLocal();
 }

@@ -63,21 +63,25 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
 
 Local<UnboundScript> Script::GetUnboundScript()
 {
+    assert(0);
     return Local<UnboundScript>();
 }
 
 
 Local<Script> UnboundScript::BindToCurrentContext()
 {
+    assert(0);
     return Local<Script>();
 }
 
 int UnboundScript::GetId()
 {
+    assert(0);
     return 0;
 }
 Local<Value> UnboundScript::GetScriptName()
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -86,6 +90,7 @@ Local<Value> UnboundScript::GetScriptName()
  */
 Local<Value> UnboundScript::GetSourceURL()
 {
+    assert(0);
     return Local<Value>();
 }
 /**
@@ -93,6 +98,7 @@ Local<Value> UnboundScript::GetSourceURL()
  */
 Local<Value> UnboundScript::GetSourceMappingURL()
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -102,6 +108,7 @@ Local<Value> UnboundScript::GetSourceMappingURL()
  */
 int UnboundScript::GetLineNumber(int code_pos)
 {
+    assert(0);
     return 0;
 }
 

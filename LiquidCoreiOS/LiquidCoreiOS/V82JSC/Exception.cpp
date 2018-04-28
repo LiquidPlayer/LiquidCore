@@ -12,22 +12,27 @@ using namespace v8;
 
 Local<Value> Exception::RangeError(Local<String> message)
 {
+    assert(0);
     return Local<Value>();
 }
 Local<Value> Exception::ReferenceError(Local<String> message)
 {
+    assert(0);
     return Local<Value>();
 }
 Local<Value> Exception::SyntaxError(Local<String> message)
 {
+    assert(0);
     return Local<Value>();
 }
 Local<Value> Exception::TypeError(Local<String> message)
 {
+    assert(0);
     return Local<Value>();
 }
 Local<Value> Exception::Error(Local<String> message)
 {
+    assert(0);
     return Local<Value>();
 }
 
@@ -38,6 +43,7 @@ Local<Value> Exception::Error(Local<String> message)
  */
 Local<Message> Exception::CreateMessage(Isolate* isolate, Local<Value> exception)
 {
+    assert(0);
     return Local<Message>();
 }
 
@@ -47,5 +53,6 @@ Local<Message> Exception::CreateMessage(Isolate* isolate, Local<Value> exception
  */
 Local<StackTrace> Exception::GetStackTrace(Local<Value> exception)
 {
+    assert(0);
     return Local<StackTrace>();
 }

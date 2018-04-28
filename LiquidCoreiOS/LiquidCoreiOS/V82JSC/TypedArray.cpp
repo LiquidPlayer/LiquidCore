@@ -12,9 +12,12 @@ using namespace v8;
 
 size_t TypedArray::Length()
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,TypedArray>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+    
     JSValueRef excp=0;
-    size_t length = JSObjectGetTypedArrayLength(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value, &excp);
+    size_t length = JSObjectGetTypedArrayLength(ctx, obj, &excp);
     assert(excp==0);
     return length;
 }
@@ -22,12 +25,14 @@ size_t TypedArray::Length()
 template <typename T>
 Local<T> NewTypedArray(JSTypedArrayType arrayType, Local<ArrayBuffer> array_buffer, size_t byte_offset, size_t byte_length)
 {
+    Local<Context> context = V82JSC::ToCurrentContext(*array_buffer);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(array_buffer);
-    JSContextRef ctx = impl->m_context->m_ctxRef;
     JSValueRef excp=0;
     JSObjectRef typed_array = JSObjectMakeTypedArrayWithArrayBufferAndOffset(ctx, arrayType, (JSObjectRef) impl->m_value, byte_offset, byte_length, &excp);
     assert(excp==0);
-    Local<T> array = ValueImpl::New(impl->m_context, typed_array).As<T>();
+    Local<T> array = ValueImpl::New(V82JSC::ToContextImpl(context), typed_array).As<T>();
     GetArrayBufferViewInfo(V82JSC::ToImpl<ArrayBufferView>(array));
     return array;
 }

@@ -36,7 +36,8 @@ internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
     if (impl->m_handle_index % MAX_HANDLES_PER_GROUP == 0) {
-        impl->m_handles.push_back(internal::HandleGroup());
+        internal::HandleGroup grp;
+        impl->m_handles.push_back(grp);
     }
     internal::HandleGroup& group = impl->m_handles.back();
     internal::Object ** handle = & group.handles_[impl->m_handle_index % MAX_HANDLES_PER_GROUP];

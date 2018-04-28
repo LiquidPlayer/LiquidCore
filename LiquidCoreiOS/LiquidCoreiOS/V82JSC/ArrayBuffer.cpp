@@ -87,9 +87,12 @@ ArrayBuffer::Allocator * ArrayBuffer::Allocator::NewDefaultAllocator()
 
 size_t ArrayBuffer::ByteLength() const
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,ArrayBuffer>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef value = V82JSC::ToJSValueRef(this, context);
+    
     JSValueRef excp = 0;
-    size_t length = JSObjectGetArrayBufferByteLength(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value, &excp);
+    size_t length = JSObjectGetArrayBufferByteLength(ctx, (JSObjectRef)value, &excp);
     assert(excp==0);
     return length;
 }
@@ -155,7 +158,8 @@ void proxyArrayBuffer(ContextImpl *ctx)
 Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
 {
     IsolateImpl* isolateimpl = V82JSC::ToIsolateImpl(isolate);
-    JSContextRef ctx = isolateimpl->m_defaultContext->m_ctxRef;
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     
     LocalException exception(isolateimpl);
     
@@ -175,7 +179,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
     InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx, array_buffer);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
     wrap->m_internal_fields = new JSValueRef[ArrayBuffer::kInternalFieldCount]();
-    Local<ArrayBuffer> buffer = ValueImpl::New(isolateimpl->m_defaultContext, array_buffer).As<ArrayBuffer>();
+    Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
     buffer->SetAlignedPointerInInternalField(1, info);
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(buffer);
     impl->pMap->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
@@ -198,7 +202,8 @@ Local<ArrayBuffer> ArrayBuffer::New(
                               ArrayBufferCreationMode mode)
 {
     IsolateImpl* isolateimpl = V82JSC::ToIsolateImpl(isolate);
-    JSContextRef ctx = isolateimpl->m_defaultContext->m_ctxRef;
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     
     LocalException exception(isolateimpl);
     
@@ -218,7 +223,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
     InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx, array_buffer);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
     wrap->m_internal_fields = new JSValueRef[ArrayBuffer::kInternalFieldCount]();
-    Local<ArrayBuffer> buffer = ValueImpl::New(isolateimpl->m_defaultContext, array_buffer).As<ArrayBuffer>();
+    Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
     buffer->SetAlignedPointerInInternalField(1, info);
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(buffer);
     impl->pMap->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
@@ -231,7 +236,8 @@ ArrayBufferInfo * GetArrayBufferInfo(const ArrayBuffer *ab)
 {
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBuffer>(ab);
     Local<Object> thiz = _local<Object>(const_cast<ArrayBuffer*>(ab)).toLocal();
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value);
+    Local<Context> context = V82JSC::ToCurrentContext(ab);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), (JSObjectRef)impl->m_value);
     ArrayBufferInfo *info;
     assert(wrap);
     info = (ArrayBufferInfo*) thiz->GetAlignedPointerFromInternalField(1);
@@ -398,12 +404,14 @@ ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
 {
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(ab);
     Local<Object> thiz = _local<Object>(const_cast<ArrayBufferView*>(ab)).toLocal();
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value);
+    JSContextRef ctx = V82JSC::ToContextRef(V82JSC::ToCurrentContext(ab));
+    
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
     ArrayBufferViewInfo *info;
     if (!wrap) {
         info = new ArrayBufferViewInfo();
         
-        InstanceWrap *wrap = V82JSC::makePrivateInstance(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value);
+        InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef)impl->m_value);
         wrap->m_num_internal_fields = ArrayBufferView::kInternalFieldCount;
         wrap->m_internal_fields = new JSValueRef[ArrayBufferView::kInternalFieldCount];
         memset(wrap->m_internal_fields, 0, ArrayBufferView::kInternalFieldCount * sizeof(JSValueRef) );
@@ -421,26 +429,30 @@ ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
  */
 Local<ArrayBuffer> ArrayBufferView::Buffer()
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSValueRef value = V82JSC::ToJSValueRef(this, context);
+    
     JSStringRef sbuffer = JSStringCreateWithUTF8CString("buffer");
     JSValueRef excp = 0;
-    JSValueRef buffer = JSObjectGetProperty(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value, sbuffer, &excp);
+    JSValueRef buffer = JSObjectGetProperty(V82JSC::ToContextRef(context), (JSObjectRef)value, sbuffer, &excp);
     assert(excp==0);
     JSStringRelease(sbuffer);
-    return ValueImpl::New(impl->m_context, buffer).As<ArrayBuffer>();
+    return ValueImpl::New(V82JSC::ToContextImpl(context), buffer).As<ArrayBuffer>();
 }
 /**
  * Byte offset in |Buffer|.
  */
 size_t ArrayBufferView::ByteOffset()
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSValueRef value = V82JSC::ToJSValueRef(this, context);
+    
     JSStringRef soffset = JSStringCreateWithUTF8CString("byteOffset");
     JSValueRef excp = 0;
-    JSValueRef offset = JSObjectGetProperty(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value, soffset, &excp);
+    JSValueRef offset = JSObjectGetProperty(V82JSC::ToContextRef(context), (JSObjectRef)value, soffset, &excp);
     assert(excp==0);
     JSStringRelease(soffset);
-    size_t byte_offset = JSValueToNumber(impl->m_context->m_ctxRef, offset, &excp);
+    size_t byte_offset = JSValueToNumber(V82JSC::ToContextRef(context), offset, &excp);
     assert(excp==0);
     return byte_offset;
 }
@@ -449,13 +461,15 @@ size_t ArrayBufferView::ByteOffset()
  */
 size_t ArrayBufferView::ByteLength()
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(this);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSValueRef value = V82JSC::ToJSValueRef(this, context);
+
     JSStringRef slength = JSStringCreateWithUTF8CString("byteLength");
     JSValueRef excp = 0;
-    JSValueRef length = JSObjectGetProperty(impl->m_context->m_ctxRef, (JSObjectRef)impl->m_value, slength, &excp);
+    JSValueRef length = JSObjectGetProperty(V82JSC::ToContextRef(context), (JSObjectRef)value, slength, &excp);
     assert(excp==0);
     JSStringRelease(slength);
-    size_t byte_length = JSValueToNumber(impl->m_context->m_ctxRef, length, &excp);
+    size_t byte_length = JSValueToNumber(V82JSC::ToContextRef(context), length, &excp);
     assert(excp==0);
     return byte_length;
 }
@@ -488,15 +502,17 @@ bool ArrayBufferView::HasBuffer() const
 Local<DataView> DataView::New(Local<ArrayBuffer> array_buffer,
                            size_t byte_offset, size_t length)
 {
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(array_buffer);
-    JSContextRef ctx = impl->m_context->m_ctxRef;
+    Local<Context> context = V82JSC::ToCurrentContext(*array_buffer);
+    JSValueRef ab = V82JSC::ToJSValueRef(array_buffer, context);
+
+    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef args[] = {
-        V82JSC::ToJSValueRef(array_buffer, V82JSC::ToIsolate(impl->m_isolate)),
+        ab,
         JSValueMakeNumber(ctx, byte_offset),
         JSValueMakeNumber(ctx, length)
     };
     JSObjectRef data_view = (JSObjectRef) V82JSC::exec(ctx, "return new DataView(_1,_2,_3)", 3, args);
-    Local<DataView> view = ValueImpl::New(impl->m_context, data_view).As<DataView>();
+    Local<DataView> view = ValueImpl::New(V82JSC::ToContextImpl(context), data_view).As<DataView>();
     GetArrayBufferViewInfo(V82JSC::ToImpl<ArrayBufferView>(view));
     return view;
 }
