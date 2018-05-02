@@ -87,6 +87,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
     }
 
+    ctx->Enter();    
+
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
         
@@ -94,9 +96,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
         JSObjectRef global = JSContextGetGlobalObject(context->m_ctxRef);
-        JSObjectRef instance = JSObjectMake(context->m_ctxRef, 0, nullptr);
-        JSObjectSetPrototype(context->m_ctxRef, global, instance);
-
+        JSObjectRef instance = global;
+        //JSObjectRef instance = JSObjectMake(context->m_ctxRef, 0, nullptr);
+        //JSObjectSetPrototype(context->m_ctxRef, global, instance);
+        
         if (impl->m_constructor_template) {
             MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(ctx);
             if (!ctor.IsEmpty()) {
@@ -119,6 +122,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         }
 
         if (exception.ShouldThow()) {
+            ctx->Exit();
             return Local<Context>();
         }
     } else {
@@ -133,11 +137,14 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         if (extensions) {
             for (const char **extension = extensions->begin(); extension != extensions->end(); extension++) {
                 if (!InstallExtension(ctx, *extension)) {
+                    ctx->Exit();
                     return Local<Context>();
                 }
             }
         }
     }
+    
+    ctx->Exit();
     
     return ctx;
 }

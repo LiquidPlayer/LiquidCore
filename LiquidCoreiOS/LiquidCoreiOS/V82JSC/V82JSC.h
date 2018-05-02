@@ -111,8 +111,6 @@ struct IsolateImpl {
     std::vector<HandleGroup> m_handles;
     int m_handle_index;
     
-    JSValueRef m_pending_exception;
-    
     std::map<std::string, JSValueRef> m_global_symbols;
     std::map<std::string, JSValueRef> m_private_symbols;
     
@@ -564,6 +562,7 @@ struct LocalException {
     {
         if (isolate_->m_handlers && exception_) {
             reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers)->exception_ = (void*)exception_;
+            isolate_->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolate_->i.roots.the_hole_value);
         }
     }
     inline JSValueRef* operator&()

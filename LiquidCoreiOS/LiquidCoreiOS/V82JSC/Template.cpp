@@ -183,17 +183,24 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
     }
     
-    JSValueRef held_exception = isolateimpl->m_pending_exception;
-    isolateimpl->m_pending_exception = 0;
+    //internal::Object* held_exception = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+    isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
+    TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
     
     if (wrap->m_template->m_callback) {
         wrap->m_template->m_callback(info);
     }
 
-    *exception = isolateimpl->m_pending_exception;
-    isolateimpl->m_pending_exception = held_exception;
+    if (try_catch.HasCaught()) {
+        *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
+    } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
+        Local<Value> excp = _local<Value>(&isolateimpl->i.ii.thread_local_top()->scheduled_exception_).toLocal();
+        *exception = V82JSC::ToJSValueRef(excp, context);
+        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+    }
+    //isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = held_exception;
     
     Local<Value> ret = info.GetReturnValue().Get();
     
@@ -237,8 +244,9 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
 
 MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRef instance, LocalException& exception)
 {
-    const ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    Local<Object> thiz = ValueImpl::New(ctx, instance).As<Object>();
+    const ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    Local<Object> thiz = ValueImpl::New(ctximpl, instance).As<Object>();
     
     for (auto i=m_properties.begin(); i!=m_properties.end(); ++i) {
         typedef internal::Object O;
@@ -261,7 +269,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
             instance,
             i->name->m_value,
             v,
-            JSValueMakeNumber(ctx->m_ctxRef, i->attributes)
+            JSValueMakeNumber(ctx, i->attributes)
         };
         
         /* None = 0,
@@ -269,7 +277,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
            DontEnum = 1 << 1,
            DontDelete = 1 << 2
         */
-        V82JSC::exec(ctx->m_ctxRef,
+        V82JSC::exec(ctx,
                      "Object.defineProperty(_1, _2, "
                      "{ writable : !(_4&(1<<0)), "
                      "  enumerable : !(_4&(1<<1)), "

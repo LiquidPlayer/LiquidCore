@@ -47,6 +47,10 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     Primitive *nope = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), false);
     isolate->i.roots.false_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(nope) & ~3) +1);
     
+    isolate->i.ii.thread_local_top_ = internal::ThreadLocalTop();
+    isolate->i.ii.thread_local_top_.isolate_ = &isolate->i.ii;
+    isolate->i.ii.thread_local_top_.pending_exception_ = *isolate->i.roots.the_hole_value;
+    
     JSStringRef empty_string = JSStringCreateWithUTF8CString("");
     Local<String> esv = ValueImpl::New(V82JSC::ToIsolate(isolate), empty_string);
     ValueImpl *es = V82JSC::ToImpl<ValueImpl>(esv);
@@ -347,9 +351,8 @@ Local<Context> Isolate::GetIncumbentContext()
  */
 Local<Value> Isolate::ThrowException(Local<Value> exception)
 {
-    JSValueRef excp = V82JSC::ToJSValueRef(exception, this);
     IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
-    impl->m_pending_exception = excp;
+    impl->i.ii.thread_local_top()->scheduled_exception_ = * reinterpret_cast<internal::Object**>(*exception);
 
     return exception;
 }

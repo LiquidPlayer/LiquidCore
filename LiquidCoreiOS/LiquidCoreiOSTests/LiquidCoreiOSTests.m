@@ -27,74 +27,12 @@ extern int cctest_main(int argc, char* argv[]);
     [super tearDown];
 }
 
-- (void)testExample {
-    // This is an example of a functional test case.
-    // Use XCTAssert and related functions to verify your tests produce the correct results.
-}
-
-- (void)testPerformanceExample {
-    // This is an example of a performance test case.
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-    }];
-}
-
-- (void)testHelloWorld {
-    char *argv[] = { "foo" };
-    helloworld(1, argv);
-}
-
-/*
-- (void)testCc {
-    char *argv[] = { "cctest", "--list" };
-    cctest_main(2, argv);
-}
-*/
-
 #undef V
 #define V(tst) \
 - (void)testCcPassing##tst { \
 char *argv[] = { "cctest", "test-api/" #tst }; \
 cctest_main(2, argv); \
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /******* PASSING TESTS *******/
@@ -189,7 +127,6 @@ V(WellKnownSymbols)
 V(EmbedderDataAlignedPointers)
 V(EmbedderData)
 V(IdentityHash)
-V(GlobalProxyIdentityHash)
 V(PrivatePropertiesOnProxies)
 V(PrivateProperties)
 V(GlobalPrivates)
@@ -216,7 +153,6 @@ V(MultiRun)
 V(SimplePropertyRead)
 V(DefinePropertyOnAPIAccessor)
 V(DefinePropertyOnDefineGetterSetter)
-V(DefineAPIAccessorOnObject)
 V(ElementAPIAccessor)
 V(SimplePropertyWrite)
 V(SetterOnly)
@@ -246,7 +182,6 @@ V(TryCatchFinallyUsingTryCatchHandler)
 V(GetterSetterExceptions)
 V(Version)
 V(InstanceProperties)
-V(GlobalObjectInstanceProperties)
 V(CatchStackOverflow)
 V(DateAccess)
 V(CompileExternalTwoByteSource)
@@ -257,7 +192,6 @@ V(StaticGetters)
 V(IsolateEmbedderData)
 V(StringEmpty)
 V(SimpleExtensions)
-V(StackTraceInExtension)
 V(NullExtensions)
 V(ExtensionMissingSourceLength)
 V(ExtensionWithSourceLength)
@@ -271,6 +205,58 @@ V(NativeFunctionDeclarationError)
 V(NativeFunctionDeclarationErrorEscape)
 V(ExtensionDependency)
 V(FunctionLookup)
+V(GlobalProxyIdentityHash)
+V(GlobalObjectInstanceProperties)
+V(DefineAPIAccessorOnObject)
+V(Arguments)
+V(AccessCheckInIC)
+V(BooleanCheckMultipleContexts)
+V(CallAPIFunctionOnNonObject)
+V(CallICFastApi_DirectCall_GCMoveStub)
+V(CallICFastApi_DirectCall_Throw)
+V(CallICFastApi_TrivialSignatureWithProfiler)
+V(CallICFastApi_TrivialSignature)
+V(LoadICFastApi_DirectCall_GCMoveStubWithProfiler)
+V(LoadICFastApi_DirectCall_GCMoveStub)
+V(LoadICFastApi_DirectCall_Throw)
+V(CallKnownGlobalReceiver)
+V(ChainSignatureCheck)
+V(CheckForCrossContextObjectLiterals)
+V(CompatibleReceiverCheckOnCachedICHandler)
+V(CrossActivationEval)
+V(DataView)
+V(DictionaryICLoadedFunction)
+V(Equals)
+V(EvalAliasedDynamic)
+V(FunctionCall)
+V(FunctionDescriptorException)
+V(FunctionPrototypeAcrossContexts)
+V(GlobalHandle)
+V(GlobalHandleUpcast)
+V(HandleEquality)
+V(InitGlobalVarInProtoChain)
+V(InitializeDefaultIsolateOnSecondaryThread1)
+V(InternalFieldsOnGlobalProxy)
+V(IsolateDifferentContexts)
+V(NestedHandleScopeAndContexts)
+V(StringCheckMultipleContexts)
+V(NumberCheckMultipleContexts)
+V(PropertyEnumeration2)
+V(ReceiverConversionForAccessors)
+V(Regress157124)
+V(Regress2333)
+V(Regress2535)
+V(Regress2746)
+V(Regress260106)
+V(Regress54)
+V(Regress618)
+V(SemaphoreInterruption)
+V(SetterOnConstructorPrototype)
+V(SimpleSignatureCheck)
+V(SubclassGetConstructorName)
+V(TryCatchCustomException)
+V(Utf16MissingTrailing)
+V(WrapperClassId)
 
 #undef V
 #define V(tst) \
@@ -279,9 +265,9 @@ char *argv[] = { "cctest", "test-api/" #tst }; \
 cctest_main(2, argv); \
 }
 
+V(StackTraceInExtension)
 V(AccessorIsPreservedOnAttributeChange)
 V(External)
-V(GlobalHandle)
 V(ResettingGlobalHandle)
 V(ResettingGlobalHandleToEmpty)
 V(Global)
@@ -289,9 +275,6 @@ V(TwoPassPhantomCallbacks)
 V(TwoPassPhantomCallbacksNestedGc)
 V(GlobalValueMap)
 V(PersistentValueVector)
-V(GlobalHandleUpcast)
-V(HandleEquality)
-V(TryCatchCustomException)
 V(MessageHandler0)
 V(MessageHandler1)
 V(MessageHandler2)
@@ -300,7 +283,6 @@ V(MessageHandler4)
 V(MessageHandler5)
 V(NativeWeakMap)
 V(PropertyAttributes)
-V(FunctionCall)
 V(ConversionNumber)
 V(isNumberType)
 V(CustomErrorToString)
@@ -317,7 +299,6 @@ V(Equality)
 V(InstanceOf)
 V(DontDeleteAPIAccessorsCannotBeOverriden)
 V(MultiContexts)
-V(FunctionPrototypeAcrossContexts)
 V(UndetectableObject)
 V(VoidLiteral)
 V(ExtensibleOnUndetectable)
@@ -328,13 +309,11 @@ V(IndependentWeakHandle)
 V(InternalFieldCallback)
 V(ResetWeakHandle)
 V(GCFromWeakCallbacks)
-V(Arguments)
 V(GetterHolders)
 V(PreInterceptorHolders)
 V(StringWrite)
 V(Utf16)
 V(Utf16Symbol)
-V(Utf16MissingTrailing)
 V(Utf16Trailing3Byte)
 V(ToArrayIndex)
 V(ErrorConstruction)
@@ -361,7 +340,6 @@ V(Regress470113)
 V(CrossDomainAccessors)
 V(AccessControlIC)
 V(ObjectGetOwnPropertyNames)
-V(CallKnownGlobalReceiver)
 V(ShadowObject)
 V(HiddenPrototype)
 V(HiddenPrototypeSet)
@@ -374,8 +352,6 @@ V(SetPrototypeThrows)
 V(FunctionRemovePrototype)
 V(Constructor)
 V(ConstructorForObject)
-V(FunctionDescriptorException)
-V(EvalAliasedDynamic)
 V(CrossEval)
 V(EvalInDetachedGlobal)
 V(CrossLazyLoad)
@@ -383,11 +359,6 @@ V(CallAsFunction)
 V(CallableObject)
 V(Regress567998)
 V(HandleIteration)
-V(CallICFastApi_DirectCall_GCMoveStub)
-V(CallICFastApi_DirectCall_Throw)
-V(LoadICFastApi_DirectCall_GCMoveStubWithProfiler)
-V(LoadICFastApi_DirectCall_GCMoveStub)
-V(LoadICFastApi_DirectCall_Throw)
 V(InterceptorCallICFastApi_TrivialSignatureWithProfiler)
 V(InterceptorCallICFastApi_TrivialSignature)
 V(InterceptorCallICFastApi_SimpleSignatureWithProfiler)
@@ -400,8 +371,6 @@ V(InterceptorCallICFastApi_SimpleSignature_Miss3WithProfiler)
 V(InterceptorCallICFastApi_SimpleSignature_Miss3)
 V(InterceptorCallICFastApi_SimpleSignature_TypeErrorWithProfiler)
 V(InterceptorCallICFastApi_SimpleSignature_TypeError)
-V(CallICFastApi_TrivialSignatureWithProfiler)
-V(CallICFastApi_TrivialSignature)
 V(CallICFastApi_SimpleSignatureWithProfiler)
 V(CallICFastApi_SimpleSignature)
 V(CallICFastApi_SimpleSignature_Miss1WithProfiler)
@@ -419,7 +388,6 @@ V(NewTargetHandler)
 V(ObjectProtoToString)
 V(ObjectProtoToStringES6)
 V(ObjectGetConstructorName)
-V(SubclassGetConstructorName)
 V(Threading1)
 V(Threading2)
 V(Threading3)
@@ -438,23 +406,18 @@ V(WeakCallbackApi)
 V(NewPersistentHandleFromWeakCallback)
 V(DoNotUseDeletedNodesInSecondLevelGc)
 V(NoGlobalHandlesOrphaningDueToWeakCallback)
-V(CheckForCrossContextObjectLiterals)
-V(NestedHandleScopeAndContexts)
 V(SetFunctionEntryHook)
 V(SetJitCodeEventHandler)
 V(ExternalAllocatedMemory)
 V(Regress51719)
-V(Regress54)
 V(TryCatchSourceInfo)
 V(TryCatchSourceInfoForEOSError)
 V(CompilationCache)
 V(CallbackFunctionName)
 V(PropertyEnumeration)
-V(PropertyEnumeration2)
 V(PropertyNames)
 V(AccessChecksReenabledCorrectly)
 V(PreCompileSerialization)
-V(DictionaryICLoadedFunction)
 V(CrossContextNew)
 V(ObjectClone)
 V(MorphCompositeStringTest)
@@ -463,7 +426,6 @@ V(ReadOnlyPropertyInGlobalProto)
 V(CreateDataProperty)
 V(DefineOwnProperty)
 V(DefineProperty)
-V(InitGlobalVarInProtoChain)
 V(ReplaceConstantFunction)
 V(FixedUint8Array)
 V(FixedUint8ClampedArray)
@@ -483,7 +445,6 @@ V(Int32Array)
 V(Float32Array)
 V(Float64Array)
 V(Uint8ClampedArray)
-V(DataView)
 V(SkipArrayBufferBackingStoreDuringGC)
 V(SkipArrayBufferDuringScavenge)
 V(SharedUint8Array)
@@ -518,7 +479,6 @@ V(DynamicWithSourceURLInStackTraceString)
 V(EvalWithSourceURLInMessageScriptResourceNameOrSourceURL)
 V(RecursionWithSourceURLInMessageScriptResourceNameOrSourceURL)
 V(TestIdleNotification)
-V(Regress2333)
 V(SetStackLimit)
 V(SetStackLimitInThread)
 V(GetHeapStatistics)
@@ -539,9 +499,7 @@ V(ScriptLineNumber)
 V(ScriptColumnNumber)
 V(FunctionGetScriptId)
 V(FunctionGetBoundFunction)
-V(SetterOnConstructorPrototype)
 V(InterceptorOnConstructorPrototype)
-V(Regress618)
 V(GCCallbacksOld)
 V(GCCallbacksWithData)
 V(GCCallbacks)
@@ -553,21 +511,15 @@ V(DisposeIsolateWhenInUse)
 V(VerifyArrayPrototypeGuarantees)
 V(RunTwoIsolatesOnSingleThread)
 V(MultipleIsolatesOnIndividualThreads)
-V(IsolateDifferentContexts)
 V(InitializeDefaultIsolateOnSecondaryThread1)
 V(InitializeDefaultIsolateOnSecondaryThread2)
 V(InitializeDefaultIsolateOnSecondaryThread3)
 V(InitializeDefaultIsolateOnSecondaryThread4)
 V(InitializeDefaultIsolateOnSecondaryThread5)
-V(StringCheckMultipleContexts)
-V(NumberCheckMultipleContexts)
-V(BooleanCheckMultipleContexts)
 V(DontDeleteCellLoadIC)
 V(PersistentHandleVisitor)
-V(WrapperClassId)
 V(PersistentHandleInNewSpaceVisitor)
 V(RegExp)
-V(Equals)
 V(NamedEnumeratorAndForIn)
 V(DefinePropertyPostDetach)
 V(CreationContext)
@@ -578,7 +530,6 @@ V(IndexedInterceptorWithStringProto)
 V(AllowCodeGenFromStrings)
 V(SetErrorMessageForCodeGenFromStrings)
 V(CaptureSourceForCodeGenFromStrings)
-V(CallAPIFunctionOnNonObject)
 V(ReadOnlyIndexedProperties)
 V(Regress1516)
 V(Regress93759)
@@ -600,19 +551,13 @@ V(Regress137002a)
 V(Regress137002b)
 V(Regress142088)
 V(Regress137496)
-V(Regress157124)
-V(Regress2535)
-V(Regress2746)
-V(Regress260106)
 V(JSONParseObject)
 V(JSONParseNumber)
 V(JSONParseArray)
 V(JSONStringifyObject)
 V(JSONStringifyObjectWithGap)
-V(SemaphoreInterruption)
 V(JSONStringifyAccessCheck)
 V(AccessCheckThrows)
-V(AccessCheckInIC)
 V(RequestInterruptTestWithFunctionCall)
 V(RequestInterruptTestWithMethodCall)
 V(RequestInterruptTestWithAccessor)
@@ -628,8 +573,6 @@ V(FunctionCallOptimization)
 V(FunctionCallOptimizationMultipleArgs)
 V(ApiCallbackCanReturnSymbols)
 V(EmptyApiCallback)
-V(SimpleSignatureCheck)
-V(ChainSignatureCheck)
 V(PrototypeSignatureCheck)
 V(EventLogging)
 V(PropertyDescriptor)
@@ -681,8 +624,6 @@ V(ExtrasFunctionSource)
 V(ExtrasBindingObject)
 V(ExperimentalExtras)
 V(ExtrasUtilsObject)
-V(CompatibleReceiverCheckOnCachedICHandler)
-V(ReceiverConversionForAccessors)
 V(FutexInterruption)
 V(AbortOnUncaughtExceptionNoAbort)
 V(AccessCheckedIsConcatSpreadable)
@@ -696,10 +637,8 @@ V(MemoryPressure)
 V(SetIntegrityLevel)
 V(PrivateForApiIsNumber)
 V(ImmutableProto)
-V(CrossActivationEval)
 V(EvalInAccessCheckedContext)
 V(ImmutableProtoWithParent)
-V(InternalFieldsOnGlobalProxy)
 V(ImmutableProtoGlobal)
 V(MutableProtoGlobal)
 V(InternalFieldsOnTypedArray)

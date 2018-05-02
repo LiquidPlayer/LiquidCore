@@ -466,16 +466,22 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     
-    JSValueRef held_exception = isolateimpl->m_pending_exception;
-    isolateimpl->m_pending_exception = 0;
+    //internal::Object* held_exception = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+    isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
 
     if (wrap->m_template->m_callback) {
         wrap->m_template->m_callback(info);
     }
     
-    *exception = isolateimpl->m_pending_exception;
-    isolateimpl->m_pending_exception = held_exception;
-    
+    if (try_catch.HasCaught()) {
+        *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
+    } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
+        Local<Value> excp = _local<Value>(&isolateimpl->i.ii.thread_local_top()->scheduled_exception_).toLocal();
+        *exception = V82JSC::ToJSValueRef(excp, context);
+        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+    }
+    //isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = held_exception;
+
     if (implicit[3] == O(isolateimpl->i.roots.the_hole_value)) {
         return V82JSC::ToJSValueRef<Object>(thiz, context);
     }

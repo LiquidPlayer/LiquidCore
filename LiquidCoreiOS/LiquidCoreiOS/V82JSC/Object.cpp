@@ -338,9 +338,10 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
             * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
         };
         
-        JSValueRef held_exception = isolateimpl->m_pending_exception;
-        isolateimpl->m_pending_exception = 0;
-        
+        //internal::Object* held_exception = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
+        TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
+
         Local<Value> ret = Undefined(V82JSC::ToIsolate(isolateimpl));
         if (argumentCount == 0) {
             PropertyCallbackImpl<Value> info(implicit);
@@ -353,9 +354,15 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
                          info);
         }
         
-        *exception = isolateimpl->m_pending_exception;
-        isolateimpl->m_pending_exception = held_exception;
-        
+        if (try_catch.HasCaught()) {
+            *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
+        } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
+            Local<Value> excp = _local<Value>(&isolateimpl->i.ii.thread_local_top()->scheduled_exception_).toLocal();
+            *exception = V82JSC::ToJSValueRef(excp, context);
+            isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+        }
+        //isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = held_exception;
+
         return V82JSC::ToJSValueRef<Value>(ret, context);
     };
     

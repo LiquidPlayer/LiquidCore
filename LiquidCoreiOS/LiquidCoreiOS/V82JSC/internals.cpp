@@ -74,7 +74,7 @@ Builtins::~Builtins()
 
 ThreadLocalTop::ThreadLocalTop()
 {
-    assert(0);
+    printf ("FIXME! ThreadLocalTop()\n");
 }
 
 AccountingAllocator::AccountingAllocator()

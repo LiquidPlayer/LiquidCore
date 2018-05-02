@@ -136,9 +136,10 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     PropertyCallbackImpl<V> info(implicit);
     Local<Value> set = ValueImpl::New(ctximpl, value);
     
-    JSValueRef held_exception = isolateimpl->m_pending_exception;
-    isolateimpl->m_pending_exception = 0;
-    
+    //internal::Object* held_exception = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+    isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
+    TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
+
     if (isSymbol || p!=nullptr) {
         named_handler(templ,
                       ValueImpl::New(ctximpl, arguments[1]).As<Name>(),
@@ -147,9 +148,15 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         indexed_handler(templ, index, set, info);
     }
     
-    *exception = isolateimpl->m_pending_exception;
-    isolateimpl->m_pending_exception = held_exception;
-    
+    if (try_catch.HasCaught()) {
+        *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
+    } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
+        Local<Value> excp = _local<Value>(&isolateimpl->i.ii.thread_local_top()->scheduled_exception_).toLocal();
+        *exception = V82JSC::ToJSValueRef(excp, context);
+        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+    }
+    //isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = held_exception;
+
     if (implicit[4] == O(isolateimpl->i.roots.the_hole_value)) {
         return NULL;
     }
@@ -335,7 +342,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         return ValueImpl::New(ctx, V82JSC::exec(ctx->m_ctxRef, "return new Proxy(_1, _2)", 2, args)).As<Object>();
     }
     
-    return ValueImpl::New(ctx, root).As<Object>();
+    return instance;
 }
 
 /**

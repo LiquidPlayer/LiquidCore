@@ -33,6 +33,7 @@ TryCatch::TryCatch(Isolate* isolate)
  */
 TryCatch::~TryCatch()
 {
+    isolate_->thread_local_top()->scheduled_exception_ = * reinterpret_cast<IsolateImpl*>(isolate_)->i.roots.the_hole_value;
     reinterpret_cast<IsolateImpl*>(isolate_)->m_handlers = next_;
 }
 
