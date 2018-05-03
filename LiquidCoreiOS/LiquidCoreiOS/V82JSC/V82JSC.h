@@ -124,14 +124,28 @@ using v8::internal::IsolateImpl;
 
 struct InternalObjectImpl {
     union {
+        unsigned char filler_[v8::internal::Map::kSize];
         v8::internal::Map *pMap;
         v8::internal::Oddball oddball;
         v8::internal::Map map;
-        unsigned char filler_[256]; // FIXME
     };
+    size_t m_slots;
+    size_t m_count;
     JSValueRef  m_value;
     IsolateImpl* m_isolate;
-    //ContextImpl* m_context;
+};
+
+class HeapAllocator : public v8::internal::MemoryChunk
+{
+public:
+    static InternalObjectImpl* Alloc(IsolateImpl *isolate, size_t size);
+};
+
+struct HeapImpl : v8::internal::Heap {
+    v8::internal::MemoryChunk *m_heap_top;
+    size_t m_index;
+    
+    static InternalObjectImpl* Alloc(v8::internal::Isolate *isolate, size_t size);
 };
 
 struct ContextImpl : InternalObjectImpl
@@ -141,60 +155,10 @@ struct ContextImpl : InternalObjectImpl
     JSContextRef m_ctxRef;
     std::map<std::string, bool> m_loaded_extensions;
     
-    typedef enum _IsFunctions {
-        IsFunction,
-        IsSymbol,
-        IsArgumentsObject,
-        IsBooleanObject,
-        IsNumberObject,
-        IsStringObject,
-        IsSymbolObject,
-        IsNativeError,
-        IsRegExp,
-        IsAsyncFunction,
-        IsGeneratorFunction,
-        IsGeneratorObject,
-        IsPromise,
-        IsMap,
-        IsSet,
-        IsMapIterator,
-        IsSetIterator,
-        IsWeakMap,
-        IsWeakSet,
-        IsArrayBuffer,
-        IsArrayBufferView,
-        IsTypedArray,
-        IsUint8Array,
-        IsUint8ClampedArray,
-        IsInt8Array,
-        IsUint16Array,
-        IsInt16Array,
-        IsUint32Array,
-        IsInt32Array,
-        IsFloat32Array,
-        IsFloat64Array,
-        IsDataView,
-        IsSharedArrayBuffer,
-        IsProxy,
-        IsExternal,
-        
-        TypeOf,
-        InstanceOf,
-        ValueOf,
-        
-        NewBooleanObject,
-        NewStringObject,
-        NewSymbolObject,
-        NewNumberObject,
-        
-        SIZE
-    } IsFunctions;
-    JSObjectRef IsFunctionRefs[IsFunctions::SIZE];
-    
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
 
-struct ScriptImpl : v8::Script
+struct ScriptImpl : InternalObjectImpl, v8::Script
 {
     JSStringRef m_sourceURL;
     int m_startingLineNumber;
@@ -267,7 +231,6 @@ struct LocalException;
 
 struct TemplateImpl : InternalObjectImpl
 {
-    v8::Isolate *m_isolate;
     std::vector<Prop> m_properties;
     std::vector<PropAccessor> m_property_accessors;
     std::vector<ObjAccessor> m_accessors;
@@ -275,7 +238,6 @@ struct TemplateImpl : InternalObjectImpl
     JSValueRef m_data;
     SignatureImpl *m_signature;
     ObjectTemplateImpl *m_prototype_template;
-    JSClassDefinition m_definition;
     FunctionTemplateImpl *m_parent;
 
     static JSValueRef callAsFunctionCallback(JSContextRef ctx,
@@ -453,33 +415,14 @@ struct V82JSC {
     {
         return OperatingContext(ToIsolate<T>(thiz));
     }
-    static inline JSObjectRef jsfunc__(const char *name_, const char *code_, ContextImpl *c, int index)
-    {
-        if (!c->IsFunctionRefs[index]) {
-            JSStringRef name = JSStringCreateWithUTF8CString(name_);
-            JSStringRef param = JSStringCreateWithUTF8CString("v");
-            JSStringRef body = JSStringCreateWithUTF8CString(code_);
-            JSValueRef exception = nullptr;
-            c->IsFunctionRefs[index] = JSObjectMakeFunction(c->m_ctxRef, name, 1, &param, body, 0, 0, &exception);
-            JSValueProtect(c->m_ctxRef, c->IsFunctionRefs[index]);
-            assert(exception==nullptr);
-            JSStringRelease(name);
-            JSStringRelease(param);
-            JSStringRelease(body);
-        }
-        return c->IsFunctionRefs[index];
-    }
-    
-    static inline bool is__(const v8::Value* thiz, const char *name_, const char *code_, int index)
+    static inline bool is__(const v8::Value* thiz, const char *name_, const char *code_)
     {
         v8::Local<v8::Context> context = ToCurrentContext(thiz);
-        
         auto ctx = V82JSC::ToContextRef(context);
         auto v = V82JSC::ToJSValueRef<v8::Value>(thiz, context);
-        JSValueRef exception = nullptr;
-        bool ret = JSValueToBoolean(ctx,
-                                    JSObjectCallAsFunction(ctx, jsfunc__(name_, code_, ToContextImpl(context), index), 0, 1, &v, &exception));
-        assert(exception==nullptr);
+        
+        JSValueRef b = exec(ctx, code_, 1, &v);
+        bool ret = JSValueToBoolean(ctx, b);
         return ret;
     }
     static inline JSValueRef exec(JSContextRef ctx, const char *body, int argc, const JSValueRef *argv, JSValueRef *pexcp=nullptr)
@@ -553,8 +496,7 @@ struct V82JSC {
         return nullptr;
     }
 };
-#define JSFUNC(name_,code_,c) V82JSC::jsfunc__(#name_,code_,c,ContextImpl::IsFunctions::name_)
-#define IS(name_,code_) V82JSC::is__(this,#name_,code_,ContextImpl::IsFunctions::name_)
+#define IS(name_,code_) V82JSC::is__(this,#name_,code_)
 
 struct LocalException {
     LocalException(IsolateImpl *i) : exception_(0), isolate_(i) {}

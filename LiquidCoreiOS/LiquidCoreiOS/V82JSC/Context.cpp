@@ -24,7 +24,7 @@ using namespace v8;
  */
 Local<Object> Context::Global()
 {
-    ContextImpl *impl = reinterpret_cast<ContextImpl *>(this);
+    ContextImpl *impl = V82JSC::ToContextImpl(_local<Context>(this).toLocal());
     JSObjectRef glob = JSContextGetGlobalObject(impl->m_ctxRef);
     return ValueImpl::New(impl, glob).As<Object>();
 }
@@ -35,17 +35,13 @@ Local<Object> Context::Global()
  */
 void Context::DetachGlobal()
 {
-    //FIXME: Not sure what to do here to ensure it isn't used in the existing context
+    printf( "FIXME! Context::DetachGlobal()\n");
     //assert(0);
 }
 
 Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
-    ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
-    memset(context, 0, sizeof(ContextImpl));
-    context->pMap = reinterpret_cast<internal::Map *>(reinterpret_cast<uint8_t*>(context) + internal::kHeapObjectTag);
-    IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    context->m_isolate = i;
+    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
     context->m_ctxRef = ctx;
     
     return _local<Context>(context).toLocal();
@@ -74,11 +70,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<ObjectTemplate> global_template,
                           MaybeLocal<Value> global_object)
 {
-    ContextImpl * context = (ContextImpl *) malloc(sizeof (ContextImpl));
-    memset(context, 0, sizeof(ContextImpl));
-    context->pMap = reinterpret_cast<internal::Map*>(reinterpret_cast<uint8_t*>(context) + 1);
+    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
+    context->pMap->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    context->m_isolate = i;
     Local<Context> ctx = _local<Context>(context).toLocal();
     int hash = 0;
     context->m_loaded_extensions = std::map<std::string, bool>();

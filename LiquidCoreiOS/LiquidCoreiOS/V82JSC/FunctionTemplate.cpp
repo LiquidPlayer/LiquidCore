@@ -59,9 +59,6 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
     }
     templ->m_data = V82JSC::ToJSValueRef<Value>(data, isolate);
     JSValueProtect(V82JSC::ToContextRef(context), templ->m_data);
-    if (templ->m_signature) {
-        templ->m_definition.parentClass = templ->m_signature->m_template->m_class;
-    }
     templ->m_functions = std::map<const ContextImpl*, JSObjectRef>();
     
     return _local<FunctionTemplate>(templ).toLocal();
@@ -252,9 +249,9 @@ void FunctionTemplate::SetCallHandler(FunctionCallback callback,
     FunctionTemplateImpl *impl =  V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     impl->m_callback = callback;
     if (!*data) {
-        data = Undefined(impl->m_isolate);
+        data = Undefined(V82JSC::ToIsolate(impl->m_isolate));
     }
-    impl->m_data = V82JSC::ToJSValueRef(data, impl->m_isolate);
+    impl->m_data = V82JSC::ToJSValueRef(data, V82JSC::ToIsolate(impl->m_isolate));
 }
 
 /** Set the predefined length property for the FunctionTemplate. */
@@ -270,7 +267,7 @@ Local<ObjectTemplate> FunctionTemplate::InstanceTemplate()
     FunctionTemplateImpl *impl =  V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     Local<ObjectTemplate> instance_template;
     if (!impl->m_instance_template) {
-        instance_template = ObjectTemplate::New(impl->m_isolate);
+        instance_template = ObjectTemplate::New(V82JSC::ToIsolate(impl->m_isolate));
         impl->m_instance_template = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
         impl->m_instance_template->m_constructor_template = impl;
         impl->m_instance_template->m_parent = impl;
@@ -300,7 +297,7 @@ Local<ObjectTemplate> FunctionTemplate::PrototypeTemplate()
     FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     Local<ObjectTemplate> prototype_template;
     if (!impl->m_prototype_template) {
-        prototype_template = ObjectTemplate::New(impl->m_isolate);
+        prototype_template = ObjectTemplate::New(V82JSC::ToIsolate(impl->m_isolate));
         impl->m_prototype_template = V82JSC::ToImpl<ObjectTemplateImpl>(prototype_template);
     } else {
         prototype_template = _local<ObjectTemplate>(impl->m_prototype_template).toLocal();
@@ -329,9 +326,6 @@ void FunctionTemplate::SetClassName(Local<String> name)
     FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
     String::Utf8Value str(name);
     impl->m_name = std::string(*str);
-    impl->m_definition.className = impl->m_name.c_str();
-    InstanceTemplate();
-    impl->m_instance_template->m_definition.className = impl->m_name.c_str();
 }
 
 /**

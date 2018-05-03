@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		071D9A4C209A2015002351EB /* Heap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 071D9A4B209A2015002351EB /* Heap.cpp */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
 		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -98,6 +99,7 @@
 
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
+		071D9A4B209A2015002351EB /* Heap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Heap.cpp; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -298,6 +300,7 @@
 				07F804FC202DDA4400FDFC27 /* Locker.cpp */,
 				07F8054320395FA700FDFC27 /* internals.cpp */,
 				07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */,
+				071D9A4B209A2015002351EB /* Heap.cpp */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -508,6 +511,7 @@
 				07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */,
 				07F804C6202CCC3800FDFC27 /* ScriptCompiler.cpp in Sources */,
 				076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */,
+				071D9A4C209A2015002351EB /* Heap.cpp in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
 				07F804FE202DDA4400FDFC27 /* Locker.cpp in Sources */,
 				07FE85A62075F7A90013E1B4 /* cpu.cc in Sources */,

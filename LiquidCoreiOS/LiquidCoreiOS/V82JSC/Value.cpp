@@ -30,12 +30,9 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
         default:
             break;
     }
-    ValueImpl * impl = (ValueImpl *) malloc(sizeof(ValueImpl));
-    memset(impl, 0, sizeof(ValueImpl));
-    impl->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&impl->map) & ~3) + 1);
-    impl->pMap->set_instance_type(instancet);
     
-    impl->m_isolate = ctx->m_isolate;
+    ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(ctx->m_isolate, sizeof(ValueImpl)));
+    impl->pMap->set_instance_type(instancet);
     impl->m_value = value;
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     
@@ -65,7 +62,7 @@ bool Value::IsName() const { return IsString() || IsSymbol(); }
 /**
  * Returns true if this value is a symbol.
  */
-bool Value::IsSymbol() const { return IS(IsSymbol, "return typeof v === 'symbol'"); }
+bool Value::IsSymbol() const { return IS(IsSymbol, "return typeof _1 === 'symbol'"); }
 /*
 bool Value::IsSymbol() const {
     ContextImpl *ctx = V82JSC::ToContextImpl<Value>(this);
@@ -77,7 +74,7 @@ bool Value::IsSymbol() const {
 /**
  * Returns true if this value is a function.
  */
-bool Value::IsFunction() const { return IS(IsFunction, "return typeof v === 'function'"); }
+bool Value::IsFunction() const { return IS(IsFunction, "return typeof _1 === 'function'"); }
 
 /**
  * Returns true if this value is an array. Note that it will return false for
@@ -103,7 +100,7 @@ bool Value::IsNumber() const { FROMTHIS(c,v); return JSValueIsNumber(c->m_ctxRef
 /**
  * Returns true if this value is external.
  */
-bool Value::IsExternal() const { return IS(IsExternal, "return Object.prototype.toString.call( v ) === '[object External]';"); }
+bool Value::IsExternal() const { return IS(IsExternal, "return Object.prototype.toString.call( _1 ) === '[object External]';"); }
 
 /**
  * Returns true if this value is a 32-bit signed integer.
@@ -147,67 +144,67 @@ bool Value::IsDate() const { FROMTHIS(c,v); return JSValueIsDate(c->m_ctxRef, v)
 /**
  * Returns true if this value is an Arguments object.
  */
-bool Value::IsArgumentsObject() const { return IS(IsArgumentsObject, "return Object.prototype.toString.call( v ) === '[object Arguments]';"); }
+bool Value::IsArgumentsObject() const { return IS(IsArgumentsObject, "return Object.prototype.toString.call( _1 ) === '[object Arguments]';"); }
 
 /**
  * Returns true if this value is a Boolean object.
  */
-bool Value::IsBooleanObject() const { return IS(IsBooleanObject, "return (typeof v === 'object' && v !== null && typeof v.valueOf() === 'boolean');"); }
+bool Value::IsBooleanObject() const { return IS(IsBooleanObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'boolean');"); }
 
 /**
  * Returns true if this value is a Number object.
  */
-bool Value::IsNumberObject() const { return IS(IsNumberObject, "return (typeof v === 'object' && v !== null && typeof v.valueOf() === 'number');"); }
+bool Value::IsNumberObject() const { return IS(IsNumberObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'number');"); }
 
 /**
  * Returns true if this value is a String object.
  */
-bool Value::IsStringObject() const { return IS(IsStringObject, "return (typeof v === 'object' && v !== null && typeof v.valueOf() === 'string');"); }
+bool Value::IsStringObject() const { return IS(IsStringObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'string');"); }
 
 /**
  * Returns true if this value is a Symbol object.
  */
-bool Value::IsSymbolObject() const { return IS(IsSymbolObject, "return (typeof v === 'object' && v !== null && typeof v.valueOf() === 'symbol');"); }
+bool Value::IsSymbolObject() const { return IS(IsSymbolObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'symbol');"); }
 
 /**
  * Returns true if this value is a NativeError.
  */
-bool Value::IsNativeError() const { return IS(IsNativeError, "return v instanceof Error"); }
+bool Value::IsNativeError() const { return IS(IsNativeError, "return _1 instanceof Error"); }
 
 /**
  * Returns true if this value is a RegExp.
  */
-bool Value::IsRegExp() const { return IS(IsRegExp, "return Object.prototype.toString.call( v ) === '[object RegExp]';);"); }
+bool Value::IsRegExp() const { return IS(IsRegExp, "return Object.prototype.toString.call( _1 ) === '[object RegExp]';);"); }
 
 /**
  * Returns true if this value is an async function.
  */
-bool Value::IsAsyncFunction() const { return IS(IsAsyncFunction, "return v && v.constructor && v.constructor.name === 'AsyncFunction';"); }
+bool Value::IsAsyncFunction() const { return IS(IsAsyncFunction, "return _1 && _1.constructor && _1.constructor.name === 'AsyncFunction';"); }
 
 /**
  * Returns true if this value is a Generator function.
  */
-bool Value::IsGeneratorFunction() const { return IS(IsGeneratorFunction, "var Generator = (function*(){}).constructor; return v instanceof Generator"); }
+bool Value::IsGeneratorFunction() const { return IS(IsGeneratorFunction, "var Generator = (function*(){}).constructor; return _1 instanceof Generator"); }
 
 /**
  * Returns true if this value is a Generator object (iterator).
  */
-bool Value::IsGeneratorObject() const { return IS(IsGeneratorObject, "return v && typeof v[Symbol.iterator] === 'function'"); }
+bool Value::IsGeneratorObject() const { return IS(IsGeneratorObject, "return _1 && typeof _1[Symbol.iterator] === 'function'"); }
 
 /**
  * Returns true if this value is a Promise.
  */
-bool Value::IsPromise() const { return IS(IsPromise, "return v && Promise && Promise.resolve && Promise.resolve(v) == v"); }
+bool Value::IsPromise() const { return IS(IsPromise, "return _1 && Promise && Promise.resolve && Promise.resolve(_1) == _1"); }
 
 /**
  * Returns true if this value is a Map.
  */
-bool Value::IsMap() const { return IS(IsMap, "return v instanceof Map"); }
+bool Value::IsMap() const { return IS(IsMap, "return _1 instanceof Map"); }
 
 /**
  * Returns true if this value is a Set.
  */
-bool Value::IsSet() const { return IS(IsSet, "return v instanceof Set"); }
+bool Value::IsSet() const { return IS(IsSet, "return _1 instanceof Set"); }
 
 /**
  * Returns true if this value is a Map Iterator.
@@ -222,77 +219,77 @@ bool Value::IsSetIterator() const { return false; } // FIXME
 /**
  * Returns true if this value is a WeakMap.
  */
-bool Value::IsWeakMap() const { return IS(IsWeakMap, "return v instanceof WeakMap"); }
+bool Value::IsWeakMap() const { return IS(IsWeakMap, "return _1 instanceof WeakMap"); }
 
 /**
  * Returns true if this value is a WeakSet.
  */
-bool Value::IsWeakSet() const { return IS(IsWeakSet, "return v instanceof WeakSet"); }
+bool Value::IsWeakSet() const { return IS(IsWeakSet, "return _1 instanceof WeakSet"); }
 
 /**
  * Returns true if this value is an ArrayBuffer.
  */
-bool Value::IsArrayBuffer() const { return IS(IsArrayBuffer, "return v instanceof ArrayBuffer"); }
+bool Value::IsArrayBuffer() const { return IS(IsArrayBuffer, "return _1 instanceof ArrayBuffer"); }
 
 /**
  * Returns true if this value is an ArrayBufferView.
  */
-bool Value::IsArrayBufferView() const { return IS(IsArrayBufferView, "return v && v.buffer instanceof ArrayBuffer && v.byteLength !== undefined"); }
+bool Value::IsArrayBufferView() const { return IS(IsArrayBufferView, "return _1 && _1.buffer instanceof ArrayBuffer && _1.byteLength !== undefined"); }
 
 /**
  * Returns true if this value is one of TypedArrays.
  */
-bool Value::IsTypedArray() const { return IS(IsTypedArray, "return v && ArrayBuffer.isView(v) && Object.prototype.toString.call(v) !== '[object DataView]'"); }
+bool Value::IsTypedArray() const { return IS(IsTypedArray, "return _1 && ArrayBuffer.isView(_1) && Object.prototype.toString.call(_1) !== '[object DataView]'"); }
 
 /**
  * Returns true if this value is an Uint8Array.
  */
-bool Value::IsUint8Array() const { return IS(IsUint8Array, "return v instanceof Uint8Array"); }
+bool Value::IsUint8Array() const { return IS(IsUint8Array, "return _1 instanceof Uint8Array"); }
 
 /**
  * Returns true if this value is an Uint8ClampedArray.
  */
-bool Value::IsUint8ClampedArray() const { return IS(IsUint8ClampedArray, "return v instanceof Uint8ClampedArray"); }
+bool Value::IsUint8ClampedArray() const { return IS(IsUint8ClampedArray, "return _1 instanceof Uint8ClampedArray"); }
 
 /**
  * Returns true if this value is an Int8Array.
  */
-bool Value::IsInt8Array() const { return IS(IsInt8Array, "return v instanceof Int8Array"); }
+bool Value::IsInt8Array() const { return IS(IsInt8Array, "return _1 instanceof Int8Array"); }
 
 /**
  * Returns true if this value is an Uint16Array.
  */
-bool Value::IsUint16Array() const { return IS(IsUint16Array, "return v instanceof Uint16Array"); }
+bool Value::IsUint16Array() const { return IS(IsUint16Array, "return _1 instanceof Uint16Array"); }
 
 /**
  * Returns true if this value is an Int16Array.
  */
-bool Value::IsInt16Array() const { return IS(IsInt16Array, "return v instanceof Int16Array"); }
+bool Value::IsInt16Array() const { return IS(IsInt16Array, "return _1 instanceof Int16Array"); }
 
 /**
  * Returns true if this value is an Uint32Array.
  */
-bool Value::IsUint32Array() const { return IS(IsUint32Array, "return v instanceof Uint32Array"); }
+bool Value::IsUint32Array() const { return IS(IsUint32Array, "return _1 instanceof Uint32Array"); }
 
 /**
  * Returns true if this value is an Int32Array.
  */
-bool Value::IsInt32Array() const { return IS(IsInt32Array, "return v instanceof Int32Array"); }
+bool Value::IsInt32Array() const { return IS(IsInt32Array, "return _1 instanceof Int32Array"); }
 
 /**
  * Returns true if this value is a Float32Array.
  */
-bool Value::IsFloat32Array() const { return IS(IsFloat32Array, "return v instanceof Float32Array"); }
+bool Value::IsFloat32Array() const { return IS(IsFloat32Array, "return _1 instanceof Float32Array"); }
 
 /**
  * Returns true if this value is a Float64Array.
  */
-bool Value::IsFloat64Array() const { return IS(IsFloat64Array, "return v instanceof Float64Array"); }
+bool Value::IsFloat64Array() const { return IS(IsFloat64Array, "return _1 instanceof Float64Array"); }
 
 /**
  * Returns true if this value is a DataView.
  */
-bool Value::IsDataView() const { return IS(IsDataView, "return v && Object.prototype.toString.call(v) === '[object DataView]'"); }
+bool Value::IsDataView() const { return IS(IsDataView, "return _1 && Object.prototype.toString.call(_1) === '[object DataView]'"); }
 
 /**
  * Returns true if this value is a SharedArrayBuffer.
@@ -373,7 +370,7 @@ Local<String> Value::TypeOf(Isolate* isolate)
 {
     FROMTHIS(c,v);
     JSValueRef exception = nullptr;
-    JSValueRef to = JSObjectCallAsFunction(c->m_ctxRef, JSFUNC(TypeOf, "return typeof v", c), 0, 1, &v, &exception);
+    JSValueRef to = V82JSC::exec(c->m_ctxRef, "return typeof _1", 1, &v);
     return ValueImpl::New(isolate, JSValueToStringCopy(c->m_ctxRef, to, &exception));
 }
 

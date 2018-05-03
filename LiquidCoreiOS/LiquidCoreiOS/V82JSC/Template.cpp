@@ -210,16 +210,11 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
 /** Creates a function template.*/
 TemplateImpl* TemplateImpl::New(Isolate* isolate, size_t size)
 {
-    TemplateImpl *templ = (TemplateImpl *) malloc(size);
-    memset(templ, 0, size);
-    templ->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&templ->map) & ~3) + 1);
+    TemplateImpl * templ = static_cast<TemplateImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), size));
     
     templ->m_properties = std::vector<Prop>();
     templ->m_property_accessors = std::vector<PropAccessor>();
     templ->m_accessors = std::vector<ObjAccessor>();
-    templ->m_isolate = isolate;
-    templ->m_definition = kJSClassDefinitionEmpty;
-    templ->m_definition.attributes = kJSClassAttributeNoAutomaticPrototype;
     templ->m_parent = nullptr;
 
     return templ;

@@ -13,12 +13,10 @@ using namespace v8;
 Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal::InstanceType type, void *resource)
 {
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::OperatingContext(isolate));
-    ValueImpl * string = (ValueImpl *) malloc(sizeof(ValueImpl));
+
+    ValueImpl *string = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
     _local<String> local(string);
-    memset(string, 0, sizeof(ValueImpl));
-    string->pMap = (v8::internal::Map *)((reinterpret_cast<intptr_t>(&string->map) & ~3) + 1);
     string->m_value = JSValueMakeString(ctx, str);
-    string->m_isolate = V82JSC::ToIsolateImpl(isolate);
     JSValueProtect(ctx, string->m_value);
     if (type == v8::internal::FIRST_NONSTRING_TYPE) {
         if (local.val_->ContainsOnlyOneByte()) {

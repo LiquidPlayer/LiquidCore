@@ -35,21 +35,21 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         JSStringRelease(s);
         return MaybeLocal<Script>();
     } else {
-        ScriptImpl * script = (ScriptImpl *) malloc(sizeof(ScriptImpl));
-        memset(script, 0, sizeof(ScriptImpl));
-        
+        ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(ctx->m_isolate, sizeof(ScriptImpl)));
+        script->pMap->set_instance_type(internal::SCRIPT_TYPE);
+
         script->m_sourceURL = sourceURL;
         script->m_startingLineNumber = startingLineNumber;
         script->m_script = s;
         
-        return MaybeLocal<Script>(_local<Script>(script).toLocal());
+        return _local<Script>(script).toLocal();
     }
 }
 
 MaybeLocal<Value> Script::Run(Local<Context> context)
 {
     ContextImpl * ctx = V82JSC::ToContextImpl(context);
-    ScriptImpl * script = static_cast<ScriptImpl *>(this);
+    ScriptImpl * script = V82JSC::ToImpl<ScriptImpl, Script>(this);
 
     LocalException exception(ctx->m_isolate);
     JSValueRef value = JSEvaluateScript(ctx->m_ctxRef, script->m_script, nullptr, script->m_sourceURL,

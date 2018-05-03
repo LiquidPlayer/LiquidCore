@@ -61,8 +61,21 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     isolate->m_private_symbols = std::map<std::string, JSValueRef>();
     isolate->m_handles = std::vector<internal::HandleGroup>();
     isolate->m_context_stack = std::stack<ContextImpl*>();
+    
+    reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
 
+    HeapImpl* heap = static_cast<HeapImpl*>(isolate->i.ii.heap());
+    heap->m_heap_top = nullptr;
+    heap->m_index = 0;
+        
     return reinterpret_cast<v8::Isolate*>(isolate);
+}
+
+bool internal::Isolate::Init(v8::internal::Deserializer *des)
+{
+    internal::Heap* h = heap();
+    h->isolate_ = this;
+    return true;
 }
 
 /**
