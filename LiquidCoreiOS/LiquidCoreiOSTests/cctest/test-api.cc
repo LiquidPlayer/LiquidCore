@@ -3999,10 +3999,10 @@ THREADED_TEST(External) {
 
   {
     i::Handle<i::Object> obj = v8::Utils::OpenHandle(*ext);
-    CHECK_EQ(i::HeapObject::cast(*obj)->map(), CcTest::heap()->external_map());
+//    CHECK_EQ(i::HeapObject::cast(*obj)->map(), CcTest::heap()->external_map());
     CHECK(ext->IsExternal());
     CHECK(!CompileRun("new Set().add(this.ext)").IsEmpty());
-    CHECK_NE(i::HeapObject::cast(*obj)->map(), CcTest::heap()->external_map());
+//    CHECK_NE(i::HeapObject::cast(*obj)->map(), CcTest::heap()->external_map());
     CHECK(ext->IsExternal());
   }
 
@@ -16427,10 +16427,17 @@ static void ObjectWithExternalArrayTestHelper(Local<Context> context,
     CHECK(result->BooleanValue(context).FromJust());
   }
 
+    // V82JSC: This relies too much on the internal implementation
+/*
   i::Handle<ExternalArrayClass> array(ExternalArrayClass::cast(
       i::Handle<i::JSObject>::cast(jsobj)->elements()));
   for (int i = 0; i < element_count; i++) {
     array->set(i, static_cast<ElementType>(i));
+  }
+*/
+  for (int i = 0; i < element_count; i++) {
+      Local<v8::Number> elem = v8::Number::New(v8::Isolate::GetCurrent(), static_cast<ElementType>(i));
+      CHECK(obj->Set(v8::Isolate::GetCurrent()->GetCurrentContext(), i, elem).FromJust());
   }
 
   // Test complex assignments
@@ -16468,13 +16475,16 @@ static void ObjectWithExternalArrayTestHelper(Local<Context> context,
                       "ext_array[3];");
   CHECK_EQ(33, result->Int32Value(context).FromJust());
 
+  // V82JSC: Incompatibility with JSC; JSC will throw on an attempt to mess with an accessor property of a typed array, whereas V8 fails quietly
+/*
   result = CompileRun("ext_array[0] = 10; ext_array[1] = 11;"
                       "ext_array[2] = 12; ext_array[3] = 13;"
                       "ext_array.__defineGetter__('2',"
                       "function() { return 120; });"
                       "ext_array[2];");
   CHECK_EQ(12, result->Int32Value(context).FromJust());
-
+*/
+    
   result = CompileRun("var js_array = new Array(40);"
                       "js_array[0] = 77;"
                       "js_array;");

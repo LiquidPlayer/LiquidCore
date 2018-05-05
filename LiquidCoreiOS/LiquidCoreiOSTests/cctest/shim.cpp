@@ -199,40 +199,11 @@ char* internal::StrDup(const char* str)
 }
 
 //
-// internal::HandleScope
-//
-// Deallocates any extensions used by the current scope.
-void internal::HandleScope::DeleteExtensions(Isolate* isolate)
-{
-    assert(0);
-}
-
-// Counts the number of allocated handles.
-int internal::HandleScope::NumberOfHandles(Isolate* isolate)
-{
-    assert(0);
-    return 0;
-}
-
-// Extend the handle scope making room for more handles.
-internal::Object** internal::HandleScope::Extend(Isolate* isolate)
-{
-    assert(0);
-    return nullptr;
-}
-
-internal::Object** CanonicalHandleScope::Lookup(Object* object)
-{
-    assert(0);
-    return nullptr;
-}
-
-//
 // internal::LookupIterator
 //
 template <bool is_element>
 void LookupIterator::Start() {
-    assert(0);
+    //assert(0);
 }
 template void LookupIterator::Start<false>();
 template void LookupIterator::Start<true>();
@@ -374,8 +345,15 @@ Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 
 MaybeHandle<internal::Object> internal::Object::GetProperty(LookupIterator* it)
 {
-    assert(0);
-    return MaybeHandle<Object>();
+    internal::Object *o = *it->GetReceiver();
+    Local<v8::Object> obj = _local<v8::Object>(&o).toLocal();
+    Local<v8::Context> context = V82JSC::ToCurrentContext(*obj);
+    MaybeLocal<v8::Value> val = obj->Get(context, it->index());
+    if (val.IsEmpty()) {
+        return MaybeHandle<Object>();
+    }
+    return Handle<Object>(HandleScope::GetHandle(reinterpret_cast<internal::Isolate*>(V82JSC::ToIsolate(*obj)),
+                                                 * reinterpret_cast<internal::Object**>(*val.ToLocalChecked())));
 }
 
 //

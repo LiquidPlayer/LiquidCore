@@ -14,28 +14,48 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
 {
     JSType t = JSValueGetType(ctx->m_ctxRef, value);
     v8::internal::InstanceType instancet = v8::internal::JS_VALUE_TYPE;
+    double num = 0.0;
     switch (t) {
-        case kJSTypeUndefined:
+        case kJSTypeUndefined: {
             return _local<Value>(&ctx->m_isolate->i.roots.undefined_value).toLocal();
-        case kJSTypeNull:
+        }
+        case kJSTypeNull: {
             return _local<Value>(&ctx->m_isolate->i.roots.null_value).toLocal();
-        case kJSTypeBoolean:
+        }
+        case kJSTypeBoolean: {
             if (JSValueToBoolean(ctx->m_ctxRef, value))
                 return _local<Value>(&ctx->m_isolate->i.roots.true_value).toLocal();
             else
                 return _local<Value>(&ctx->m_isolate->i.roots.false_value).toLocal();
-        case kJSTypeString:
+        }
+        case kJSTypeString: {
             instancet = v8::internal::STRING_TYPE;
             break;
+        }
+        case kJSTypeNumber: {
+            num = JSValueToNumber(ctx->m_ctxRef, value, 0);
+            double intpart;
+            if (modf(num, &intpart) == 0.0) {
+                if (internal::Smi::IsValid(intpart)) {
+                    Local<Value> lv = _local<Value>(internal::HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(ctx->m_isolate),
+                                                                                        internal::Smi::FromInt(intpart))).toLocal();
+                    return lv;
+                }
+            }
+            instancet = v8::internal::HEAP_NUMBER_TYPE;
+        }
         default:
             break;
     }
     
     ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(ctx->m_isolate, sizeof(ValueImpl)));
-    impl->pMap->set_instance_type(instancet);
     impl->m_value = value;
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
-    
+    if (t == kJSTypeNumber) {
+        reinterpret_cast<internal::HeapNumber*>(impl->pMap)->set_value(num);
+    }
+    impl->pMap->set_instance_type(instancet);
+
     return _local<Value>(impl).toLocal();
 }
 

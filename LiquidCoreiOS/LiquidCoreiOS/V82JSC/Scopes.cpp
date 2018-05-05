@@ -15,8 +15,8 @@ HandleScope::HandleScope(Isolate* isolate)
     IsolateImpl* impl = V82JSC::ToIsolateImpl(isolate);
     
     this->isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
-    this->prev_next_ = reinterpret_cast<internal::Object **>(impl->m_handle_index);
-    this->prev_limit_ = nullptr;
+    this->prev_next_ = impl->i.ii.handle_scope_data()->next;
+    this->prev_limit_ = impl->i.ii.handle_scope_data()->limit;
 }
 
 HandleScope::~HandleScope()
@@ -24,26 +24,56 @@ HandleScope::~HandleScope()
     // FIXME: Here is where we would decrement count the internal objects
 }
 
+//
+// internal::HandleScope
+//
+// Deallocates any extensions used by the current scope.
+void internal::HandleScope::DeleteExtensions(Isolate* isolate)
+{
+    assert(0);
+}
+
+// Counts the number of allocated handles.
+int internal::HandleScope::NumberOfHandles(Isolate* isolate)
+{
+    assert(0);
+    return 0;
+}
+
+// Extend the handle scope making room for more handles.
+internal::Object** internal::HandleScope::Extend(Isolate* isolate)
+{
+    IsolateImpl* isolateimpl = reinterpret_cast<IsolateImpl*>(isolate);
+    // FIXME: Deal with actual expanison later
+    assert(isolateimpl->i.ii.handle_scope_data()->next == nullptr);
+
+    internal::Object **handles = new internal::Object * [16384];
+    HandleScopeData *data = isolateimpl->i.ii.handle_scope_data();
+    data->next = handles;
+    data->limit = &handles[16384];
+    
+    return handles;
+}
+
+internal::Object** internal::CanonicalHandleScope::Lookup(Object* object)
+{
+    assert(0);
+    return nullptr;
+}
+
 int HandleScope::NumberOfHandles(Isolate* isolate)
 {
-    IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
+    //IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
     
-    return impl->m_handle_index;
+    printf("FIXME! HandleScope::NumberOfHandles\n");
+    return 1;
 }
 
 internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
                                        internal::Object* value)
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
-    if (impl->m_handle_index % MAX_HANDLES_PER_GROUP == 0) {
-        internal::HandleGroup grp;
-        impl->m_handles.push_back(grp);
-    }
-    internal::HandleGroup& group = impl->m_handles.back();
-    internal::Object ** handle = & group.handles_[impl->m_handle_index % MAX_HANDLES_PER_GROUP];
-    impl->m_handle_index++;
-    *handle = value;
-    return handle;
+    return internal::HandleScope::CreateHandle(&impl->i.ii, value);
 }
 
 internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,

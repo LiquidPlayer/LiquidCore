@@ -59,7 +59,6 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     isolate->m_global_symbols = std::map<std::string, JSValueRef>();
     isolate->m_private_symbols = std::map<std::string, JSValueRef>();
-    isolate->m_handles = std::vector<internal::HandleGroup>();
     isolate->m_context_stack = std::stack<ContextImpl*>();
     
     reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);

@@ -12,8 +12,8 @@ using namespace v8;
 
 InternalObjectImpl* HeapAllocator::Alloc(IsolateImpl *isolate, size_t size)
 {
-    static const size_t kAlignment = 0x20000;
-    static const size_t kSlotSize = 0x100;
+    static const size_t kAlignment = 0x80000;
+    static const size_t kSlotSize = 0x80;
     static const size_t kReserved = (sizeof(HeapAllocator) + kSlotSize - 1) / kSlotSize;
     
     struct Slot { unsigned char _[kSlotSize]; };

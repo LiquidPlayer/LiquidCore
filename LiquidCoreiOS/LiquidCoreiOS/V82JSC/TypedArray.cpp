@@ -8,9 +8,7 @@
 
 #include "V82JSC.h"
 
-using namespace v8;
-
-size_t TypedArray::Length()
+size_t v8::TypedArray::Length()
 {
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
@@ -23,44 +21,44 @@ size_t TypedArray::Length()
 }
 
 template <typename T>
-Local<T> NewTypedArray(JSTypedArrayType arrayType, Local<ArrayBuffer> array_buffer, size_t byte_offset, size_t byte_length)
+v8::Local<T> NewTypedArray(JSTypedArrayType arrayType, v8::Local<v8::ArrayBuffer> array_buffer, size_t byte_offset, size_t byte_length)
 {
-    Local<Context> context = V82JSC::ToCurrentContext(*array_buffer);
+    v8::Local<v8::Context> context = V82JSC::ToCurrentContext(*array_buffer);
     JSContextRef ctx = V82JSC::ToContextRef(context);
 
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(array_buffer);
     JSValueRef excp=0;
     JSObjectRef typed_array = JSObjectMakeTypedArrayWithArrayBufferAndOffset(ctx, arrayType, (JSObjectRef) impl->m_value, byte_offset, byte_length, &excp);
     assert(excp==0);
-    Local<T> array = ValueImpl::New(V82JSC::ToContextImpl(context), typed_array).As<T>();
-    GetArrayBufferViewInfo(V82JSC::ToImpl<ArrayBufferView>(array));
+    v8::Local<T> array = ValueImpl::New(V82JSC::ToContextImpl(context), typed_array).As<T>();
+    GetArrayBufferViewInfo(V82JSC::ToImpl<v8::ArrayBufferView>(array));
     return array;
 }
 template <typename T>
-Local<T> NewSharedTypedArray(JSTypedArrayType arrayType, Local<SharedArrayBuffer> shared_array_buffer,
+v8::Local<T> NewSharedTypedArray(JSTypedArrayType arrayType, v8::Local<v8::SharedArrayBuffer> shared_array_buffer,
                 size_t byte_offset, size_t byte_length)
 {
     assert(0);
-    return Local<T>();
+    return v8::Local<T>();
 }
 
 #define TYPEDARRAY_CONSTRUCTORS(T,type) \
-Local<T> T::New(Local<ArrayBuffer> array_buffer, size_t byte_offset, size_t length) \
+v8::Local<T> T::New(v8::Local<v8::ArrayBuffer> array_buffer, size_t byte_offset, size_t length) \
 { \
     return NewTypedArray<T>(type, array_buffer, byte_offset, length); \
 } \
-Local<T> T::New(Local<SharedArrayBuffer> shared_array_buffer, size_t byte_offset, size_t length) \
+v8::Local<T> T::New(v8::Local<v8::SharedArrayBuffer> shared_array_buffer, size_t byte_offset, size_t length) \
 { \
     return NewSharedTypedArray<T>(type, shared_array_buffer, byte_offset, length); \
 }
 
-TYPEDARRAY_CONSTRUCTORS(Uint8ClampedArray, kJSTypedArrayTypeUint8ClampedArray)
-TYPEDARRAY_CONSTRUCTORS(Uint8Array, kJSTypedArrayTypeUint8Array)
-TYPEDARRAY_CONSTRUCTORS(Uint16Array, kJSTypedArrayTypeUint16Array)
-TYPEDARRAY_CONSTRUCTORS(Uint32Array, kJSTypedArrayTypeUint32Array)
-TYPEDARRAY_CONSTRUCTORS(Int8Array, kJSTypedArrayTypeInt8Array)
-TYPEDARRAY_CONSTRUCTORS(Int16Array, kJSTypedArrayTypeInt16Array)
-TYPEDARRAY_CONSTRUCTORS(Int32Array, kJSTypedArrayTypeInt32Array)
-TYPEDARRAY_CONSTRUCTORS(Float32Array, kJSTypedArrayTypeFloat32Array)
-TYPEDARRAY_CONSTRUCTORS(Float64Array, kJSTypedArrayTypeFloat64Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Uint8ClampedArray, kJSTypedArrayTypeUint8ClampedArray)
+TYPEDARRAY_CONSTRUCTORS(v8::Uint8Array, kJSTypedArrayTypeUint8Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Uint16Array, kJSTypedArrayTypeUint16Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Uint32Array, kJSTypedArrayTypeUint32Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Int8Array, kJSTypedArrayTypeInt8Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Int16Array, kJSTypedArrayTypeInt16Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Int32Array, kJSTypedArrayTypeInt32Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Float32Array, kJSTypedArrayTypeFloat32Array)
+TYPEDARRAY_CONSTRUCTORS(v8::Float64Array, kJSTypedArrayTypeFloat64Array)
 
