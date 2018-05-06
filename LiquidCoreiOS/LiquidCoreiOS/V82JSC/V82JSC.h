@@ -95,6 +95,7 @@ struct IsolateImpl {
     } i;
     JSContextGroupRef m_group;
     ContextImpl* m_nullContext;
+    JSValueRef m_negative_zero;
 
     void EnterContext(v8::Context *ctx);
     void ExitContext(v8::Context *ctx);

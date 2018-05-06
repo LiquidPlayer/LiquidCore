@@ -35,7 +35,7 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
         case kJSTypeNumber: {
             num = JSValueToNumber(ctx->m_ctxRef, value, 0);
             double intpart;
-            if (modf(num, &intpart) == 0.0) {
+            if (value != ctx->m_isolate->m_negative_zero && modf(num, &intpart) == 0.0) {
                 if (internal::Smi::IsValid(intpart)) {
                     Local<Value> lv = _local<Value>(internal::HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(ctx->m_isolate),
                                                                                         internal::Smi::FromInt(intpart))).toLocal();
@@ -132,6 +132,7 @@ bool Value::IsInt32() const
         FROMTHIS(c,v);
         double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
+        if (v == c->m_isolate->m_negative_zero) return false;
         if (std::modf(number, &intpart) == 0.0) {
             return (intpart >= std::numeric_limits<std::int32_t>::min() && intpart <= std::numeric_limits<std::int32_t>::max());
         }
@@ -149,6 +150,7 @@ bool Value::IsUint32() const
         FROMTHIS(c,v);
         double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
+        if (v == c->m_isolate->m_negative_zero) return false;
         if (std::modf(number, &intpart) == 0.0) {
             return (intpart >= 0 && intpart <= std::numeric_limits<std::uint32_t>::max());
         }
@@ -383,7 +385,15 @@ bool Value::StrictEquals(Local<Value> that) const
 }
 bool Value::SameValue(Local<Value> that) const
 {
-    return StrictEquals(that);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSValueRef this_ = V82JSC::ToJSValueRef(this, context);
+    JSValueRef that_ = V82JSC::ToJSValueRef(that, context);
+    if (this_ == that_) return true;
+    if (this_ == V82JSC::ToContextImpl(context)->m_isolate->m_negative_zero ||
+        that_ == V82JSC::ToContextImpl(context)->m_isolate->m_negative_zero) {
+        return false;
+    }
+    return JSValueIsStrictEqual(V82JSC::ToContextRef(context), this_, that_);
 }
 
 Local<String> Value::TypeOf(Isolate* isolate)
@@ -427,7 +437,7 @@ MaybeLocal<Object> Value::ToObject(Local<Context> context) const
     return _local<Object>(*ValueImpl::New(ctx, o)).toLocal();
 }
 
-template<class T>
+template<class T, typename C>
 MaybeLocal<T> ToNum(const Value* thiz, Local<Context> context)
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
@@ -437,24 +447,32 @@ MaybeLocal<T> ToNum(const Value* thiz, Local<Context> context)
     if (exception.ShouldThow()) {
         return MaybeLocal<T>();
     }
-    return _local<T>(*T::New(reinterpret_cast<Isolate*>(ctx->m_isolate), num)).toLocal();
+    C val;
+    if (std::is_same<C, double>::value ) {
+        val = num;
+    } else {
+        int64_t ival = static_cast<int64_t>(num);
+        uint32_t uval = ival & 0xffffffff;
+        val = *reinterpret_cast<C*>(&uval);
+    }
+    return _local<T>(*T::New(reinterpret_cast<Isolate*>(ctx->m_isolate), val)).toLocal();
 }
 
 MaybeLocal<Number> Value::ToNumber(Local<Context> context) const
 {
-    return ToNum<Number>(this, context);
+    return ToNum<Number, double>(this, context);
 }
 MaybeLocal<Integer> Value::ToInteger(Local<Context> context) const
 {
-    return ToNum<Integer>(this, context);
+    return ToNum<Integer, int32_t>(this, context);
 }
 MaybeLocal<Uint32> Value::ToUint32(Local<Context> context) const
 {
-    return ToNum<Uint32>(this, context);
+    return ToNum<Uint32, uint32_t>(this, context);
 }
 MaybeLocal<Int32> Value::ToInt32(Local<Context> context) const
 {
-    return ToNum<Int32>(this, context);
+    return ToNum<Int32, int32_t>(this, context);
 }
 
 JSClassRef s_externalClass = nullptr;

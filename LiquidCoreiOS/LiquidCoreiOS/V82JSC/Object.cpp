@@ -88,8 +88,33 @@ Maybe<bool> Object::DefineOwnProperty(
                                       Local<Context> context, Local<Name> key, Local<Value> value,
                                       PropertyAttribute attributes)
 {
-    assert(0);
-    return Nothing<bool>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    JSValueRef key_ = V82JSC::ToJSValueRef(key, context);
+    JSValueRef v = V82JSC::ToJSValueRef(value, context);
+
+    JSValueRef args[] = {
+        obj,
+        key_,
+        v,
+        JSValueMakeNumber(ctx, attributes)
+    };
+    
+    /* None = 0,
+     ReadOnly = 1 << 0,
+     DontEnum = 1 << 1,
+     DontDelete = 1 << 2
+     */
+    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    V82JSC::exec(ctx,
+                 "Object.defineProperty(_1, _2, "
+                 "{ writable : !(_4&(1<<0)), "
+                 "  enumerable : !(_4&(1<<1)), "
+                 "  configurable : !(_4&(1<<2)), "
+                 "  value: _3 })", 4, args, &exception);
+    if (exception.ShouldThow()) return Nothing<bool>();
+
+    return _maybe<bool>(true).toMaybe();
 }
 
 // Implements Object.DefineProperty(O, P, Attributes), see Ecma-262 19.1.2.4.

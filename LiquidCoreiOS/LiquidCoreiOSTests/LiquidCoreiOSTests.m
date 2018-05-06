@@ -268,6 +268,10 @@ V(Float32Array)
 V(Float64Array)
 V(Uint8ClampedArray)
 V(External)
+V(PropertyAttributes)
+V(ConversionNumber)
+V(isNumberType)
+V(Equality)
 
 #undef V
 #define V(tst) \
@@ -292,9 +296,6 @@ V(MessageHandler3)
 V(MessageHandler4)
 V(MessageHandler5)
 V(NativeWeakMap)
-V(PropertyAttributes)
-V(ConversionNumber)
-V(isNumberType)
 V(CustomErrorToString)
 V(CustomErrorMessage)
 V(CustomErrorRethrowsOnToString)
@@ -305,7 +306,6 @@ V(TryCatchNested)
 V(TryCatchMixedNesting)
 V(TryCatchNative)
 V(TryCatchNativeReset)
-V(Equality)
 V(InstanceOf)
 V(DontDeleteAPIAccessorsCannotBeOverriden)
 V(MultiContexts)
@@ -437,15 +437,6 @@ V(CreateDataProperty)
 V(DefineOwnProperty)
 V(DefineProperty)
 V(ReplaceConstantFunction)
-V(FixedUint8Array)
-V(FixedUint8ClampedArray)
-V(FixedInt8Array)
-V(FixedUint16Array)
-V(FixedInt16Array)
-V(FixedUint32Array)
-V(FixedInt32Array)
-V(FixedFloat32Array)
-V(FixedFloat64Array)
 V(SkipArrayBufferBackingStoreDuringGC)
 V(SkipArrayBufferDuringScavenge)
 V(SharedUint8Array)
@@ -650,6 +641,10 @@ V(AllowAtomicsWait)
 V(CorrectEnteredContext)
 V(DynamicImport)
 
+#undef V
+#define V(tst) \
+;
+
 // Incompatible tests
 // Neutering is not supported on JavaScriptCore
 V(ArrayBuffer_DisableNeuter)
@@ -662,6 +657,16 @@ V(SharedArrayBuffer_JSInternalToExternal)
 V(SharedArrayBuffer_External)
 // Native calls (%<func>) not supported in JSC
 V(NativeCallInExtensions)
+// Fixed typed arrays are internal constructs, not accessible to the API
+V(FixedUint8Array)
+V(FixedUint8ClampedArray)
+V(FixedInt8Array)
+V(FixedUint16Array)
+V(FixedInt16Array)
+V(FixedUint32Array)
+V(FixedInt32Array)
+V(FixedFloat32Array)
+V(FixedFloat64Array)
 
 
 @end
