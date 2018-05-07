@@ -38,6 +38,7 @@ bool InstallExtension(Local<Context> context, const char *extension_name)
     Extension& extension = *s_extensions[extension_name];
     
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(ctximpl);
     if (ctximpl->m_loaded_extensions.count(extension.name())) return true;
     
     ctximpl->m_loaded_extensions[extension.name()] = true;
@@ -150,7 +151,7 @@ bool InstallExtension(Local<Context> context, const char *extension_name)
         }
     }
     
-    Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToContextImpl(context)->m_isolate);
+    Isolate *isolate = V82JSC::ToIsolate(iso);
     {
         context->Enter();
         HandleScope handle_scope(isolate);

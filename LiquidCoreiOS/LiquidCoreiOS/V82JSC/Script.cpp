@@ -14,15 +14,16 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
                                    ScriptOrigin* origin)
 {
     ContextImpl * ctx = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
     JSValueRef src = V82JSC::ToJSValueRef<String>(source, context);
     JSStringRef s = JSValueToStringCopy(ctx->m_ctxRef, src, 0);
     JSStringRef sourceURL = nullptr;
     int startingLineNumber = 0;
-    LocalException exception(ctx->m_isolate);
+    LocalException exception(iso);
 
     if (origin) {
         if (*origin->ResourceName()) {
-            ValueImpl * v = static_cast<ValueImpl *>(*origin->ResourceName());
+            ValueImpl * v = V82JSC::ToImpl<ValueImpl>(origin->ResourceName());
             sourceURL = JSValueToStringCopy(ctx->m_ctxRef, v->m_value, &exception);
         }
         if (*origin->ResourceLineOffset()) {
@@ -35,23 +36,24 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         JSStringRelease(s);
         return MaybeLocal<Script>();
     } else {
-        ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(ctx->m_isolate, sizeof(ScriptImpl)));
-        script->pMap->set_instance_type(internal::SCRIPT_TYPE);
+        ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(iso, sizeof(ScriptImpl)));
+        V82JSC::Map(script)->set_instance_type(internal::SCRIPT_TYPE);
 
         script->m_sourceURL = sourceURL;
         script->m_startingLineNumber = startingLineNumber;
         script->m_script = s;
         
-        return _local<Script>(script).toLocal();
+        return V82JSC::MakeLocal<Script>(iso, script);
     }
 }
 
 MaybeLocal<Value> Script::Run(Local<Context> context)
 {
     ContextImpl * ctx = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
     ScriptImpl * script = V82JSC::ToImpl<ScriptImpl, Script>(this);
 
-    LocalException exception(ctx->m_isolate);
+    LocalException exception(iso);
     JSValueRef value = JSEvaluateScript(ctx->m_ctxRef, script->m_script, nullptr, script->m_sourceURL,
                                         script->m_startingLineNumber, &exception);
     if (!exception.ShouldThow()) {

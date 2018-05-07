@@ -14,19 +14,21 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
 {
     JSType t = JSValueGetType(ctx->m_ctxRef, value);
     v8::internal::InstanceType instancet = v8::internal::JS_VALUE_TYPE;
+    IsolateImpl* isolateimpl = V82JSC::ToIsolateImpl(ctx);
+    
     double num = 0.0;
     switch (t) {
         case kJSTypeUndefined: {
-            return _local<Value>(&ctx->m_isolate->i.roots.undefined_value).toLocal();
+            return __local<Value>(&isolateimpl->i.roots.undefined_value).toLocal();
         }
         case kJSTypeNull: {
-            return _local<Value>(&ctx->m_isolate->i.roots.null_value).toLocal();
+            return __local<Value>(&isolateimpl->i.roots.null_value).toLocal();
         }
         case kJSTypeBoolean: {
             if (JSValueToBoolean(ctx->m_ctxRef, value))
-                return _local<Value>(&ctx->m_isolate->i.roots.true_value).toLocal();
+                return __local<Value>(&isolateimpl->i.roots.true_value).toLocal();
             else
-                return _local<Value>(&ctx->m_isolate->i.roots.false_value).toLocal();
+                return __local<Value>(&isolateimpl->i.roots.false_value).toLocal();
         }
         case kJSTypeString: {
             instancet = v8::internal::STRING_TYPE;
@@ -35,11 +37,10 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
         case kJSTypeNumber: {
             num = JSValueToNumber(ctx->m_ctxRef, value, 0);
             double intpart;
-            if (value != ctx->m_isolate->m_negative_zero && modf(num, &intpart) == 0.0) {
+            if (value != isolateimpl->m_negative_zero && modf(num, &intpart) == 0.0) {
                 if (internal::Smi::IsValid(intpart)) {
-                    Local<Value> lv = _local<Value>(internal::HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(ctx->m_isolate),
-                                                                                        internal::Smi::FromInt(intpart))).toLocal();
-                    return lv;
+                    return V82JSC::MakeLocalSmi<Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
+                                                       internal::Smi::FromInt(intpart));
                 }
             }
             instancet = v8::internal::HEAP_NUMBER_TYPE;
@@ -48,15 +49,15 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
             break;
     }
     
-    ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(ctx->m_isolate, sizeof(ValueImpl)));
+    ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(isolateimpl, sizeof(ValueImpl)));
     impl->m_value = value;
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     if (t == kJSTypeNumber) {
-        reinterpret_cast<internal::HeapNumber*>(impl->pMap)->set_value(num);
+        reinterpret_cast<internal::HeapNumber*>(V82JSC::Map(impl))->set_value(num);
     }
-    impl->pMap->set_instance_type(instancet);
+    V82JSC::Map(impl)->set_instance_type(instancet);
 
-    return _local<Value>(impl).toLocal();
+    return V82JSC::MakeLocal<Value>(isolateimpl, impl);
 }
 
 #define FROMTHIS(c,v) \
@@ -83,13 +84,6 @@ bool Value::IsName() const { return IsString() || IsSymbol(); }
  * Returns true if this value is a symbol.
  */
 bool Value::IsSymbol() const { return IS(IsSymbol, "return typeof _1 === 'symbol'"); }
-/*
-bool Value::IsSymbol() const {
-    ContextImpl *ctx = V82JSC::ToContextImpl<Value>(this);
-    JSValueRef v = V82JSC::ToJSValueRef(this, V82JSC::ToIsolate(ctx->isolate));
-    return V82JSC::exec(ctx->m_context, "return typeof _1 === 'symbol'", 1, &v);
-}
-*/
 
 /**
  * Returns true if this value is a function.
@@ -132,7 +126,7 @@ bool Value::IsInt32() const
         FROMTHIS(c,v);
         double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
-        if (v == c->m_isolate->m_negative_zero) return false;
+        if (v == V82JSC::ToIsolateImpl(c)->m_negative_zero) return false;
         if (std::modf(number, &intpart) == 0.0) {
             return (intpart >= std::numeric_limits<std::int32_t>::min() && intpart <= std::numeric_limits<std::int32_t>::max());
         }
@@ -150,7 +144,7 @@ bool Value::IsUint32() const
         FROMTHIS(c,v);
         double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
-        if (v == c->m_isolate->m_negative_zero) return false;
+        if (v == V82JSC::ToIsolateImpl(c)->m_negative_zero) return false;
         if (std::modf(number, &intpart) == 0.0) {
             return (intpart >= 0 && intpart <= std::numeric_limits<std::uint32_t>::max());
         }
@@ -342,7 +336,9 @@ Maybe<T> toValue(const Value* thiz, Local<Context> context)
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     JSValueRef value = V82JSC::ToJSValueRef<Value>(thiz, context);
-    LocalException exception(ctx->m_isolate);
+    IsolateImpl* i = V82JSC::ToIsolateImpl(ctx);
+
+    LocalException exception(i);
     T ret;
     if (std::is_same<T,bool>::value) {
         ret = JSValueToBoolean(ctx->m_ctxRef, value);
@@ -367,7 +363,7 @@ Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const
     JSValueRef this_ = V82JSC::ToJSValueRef<Value>(this, context);
     JSValueRef that_ = V82JSC::ToJSValueRef<Value>(that, context);
     JSContextRef context_ = V82JSC::ToContextRef(context);
-    IsolateImpl* i = V82JSC::ToContextImpl(context)->m_isolate;
+    IsolateImpl* i = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
 
     LocalException exception(i);
     bool is = JSValueIsEqual(context_, this_, that_, &exception);
@@ -388,9 +384,10 @@ bool Value::SameValue(Local<Value> that) const
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef this_ = V82JSC::ToJSValueRef(this, context);
     JSValueRef that_ = V82JSC::ToJSValueRef(that, context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+
     if (this_ == that_) return true;
-    if (this_ == V82JSC::ToContextImpl(context)->m_isolate->m_negative_zero ||
-        that_ == V82JSC::ToContextImpl(context)->m_isolate->m_negative_zero) {
+    if (this_ == iso->m_negative_zero || that_ == iso->m_negative_zero) {
         return false;
     }
     return JSValueIsStrictEqual(V82JSC::ToContextRef(context), this_, that_);
@@ -410,39 +407,45 @@ MaybeLocal<Uint32> Value::ToArrayIndex(Local<Context> context) const { return Ma
 
 MaybeLocal<v8::Boolean> Value::ToBoolean(Local<Context> context) const
 {
-    _local<Boolean> local(const_cast<Value*>(this));
-    return MaybeLocal<Boolean>(local.toLocal());
+    ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    JSValueRef v = V82JSC::ToJSValueRef(this, context);
+    return ValueImpl::New(ctx, JSValueMakeBoolean(ctx->m_ctxRef, JSValueToBoolean(ctx->m_ctxRef, v))).As<v8::Boolean>();
 }
 MaybeLocal<String> Value::ToString(Local<Context> context) const
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+
     JSValueRef v = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(ctx->m_isolate);
+    LocalException exception(iso);
     JSStringRef s = JSValueToStringCopy (ctx->m_ctxRef, v, &exception);
     if (exception.ShouldThow()) {
         return MaybeLocal<String>();
     }
-    return ValueImpl::New(reinterpret_cast<Isolate*>(ctx->m_isolate), s);
+    return ValueImpl::New(reinterpret_cast<Isolate*>(iso), s);
 }
 MaybeLocal<String> Value::ToDetailString(Local<Context> context) const { return ToString(context); } // FIXME
 MaybeLocal<Object> Value::ToObject(Local<Context> context) const
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+
     JSValueRef v = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(ctx->m_isolate);
+    LocalException exception(iso);
     JSObjectRef o = JSValueToObject(ctx->m_ctxRef, v, &exception);
     if (exception.ShouldThow()) {
         return MaybeLocal<Object>();
     }
-    return _local<Object>(*ValueImpl::New(ctx, o)).toLocal();
+    return ValueImpl::New(ctx, o).As<Object>();
 }
 
 template<class T, typename C>
 MaybeLocal<T> ToNum(const Value* thiz, Local<Context> context)
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
     JSValueRef v = V82JSC::ToJSValueRef(thiz, context);
-    LocalException exception(ctx->m_isolate);
+    LocalException exception(iso);
     double num = JSValueToNumber(ctx->m_ctxRef, v, &exception);
     if (exception.ShouldThow()) {
         return MaybeLocal<T>();
@@ -455,7 +458,8 @@ MaybeLocal<T> ToNum(const Value* thiz, Local<Context> context)
         uint32_t uval = ival & 0xffffffff;
         val = *reinterpret_cast<C*>(&uval);
     }
-    return _local<T>(*T::New(reinterpret_cast<Isolate*>(ctx->m_isolate), val)).toLocal();
+    Local<Number> nval = Number::New(reinterpret_cast<Isolate*>(iso), val);
+    return nval.As<T>();
 }
 
 MaybeLocal<Number> Value::ToNumber(Local<Context> context) const

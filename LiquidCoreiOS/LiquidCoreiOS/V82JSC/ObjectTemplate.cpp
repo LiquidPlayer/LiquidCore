@@ -20,9 +20,9 @@ Local<ObjectTemplate> ObjectTemplate::New(
         return constructor->InstanceTemplate();
     } else {
         ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl));
-        otempl->pMap->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
+        V82JSC::Map(otempl)->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
 
-        return _local<ObjectTemplate>(otempl).toLocal();
+        return V82JSC::MakeLocal<ObjectTemplate>(V82JSC::ToIsolateImpl(otempl), otempl);
     }
 }
 
@@ -39,12 +39,13 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
 {
     ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(this);
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
     
-    LocalException exception(ctx->m_isolate);
+    LocalException exception(iso);
     
     JSObjectRef instance = 0;
     if (impl->m_constructor_template) {
-        MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(context);
+        MaybeLocal<Function> ctor = V82JSC::MakeLocal<FunctionTemplate>(iso, impl->m_constructor_template)->GetFunction(context);
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
             instance = JSObjectCallAsConstructor(ctx->m_ctxRef, (JSObjectRef)ctor_func, 0, 0, &exception);
@@ -136,7 +137,6 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     PropertyCallbackImpl<V> info(implicit);
     Local<Value> set = ValueImpl::New(ctximpl, value);
     
-    //internal::Object* held_exception = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
     isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
     TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
 
@@ -151,11 +151,12 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
     } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-        Local<Value> excp = _local<Value>(&isolateimpl->i.ii.thread_local_top()->scheduled_exception_).toLocal();
+        InternalObjectImpl* i = reinterpret_cast<InternalObjectImpl*>(
+                                reinterpret_cast<intptr_t>(isolateimpl->i.ii.thread_local_top()->scheduled_exception_ - internal::kHeapObjectTag));
+        Local<Value> excp = V82JSC::MakeLocal<Value>(isolateimpl, i);
         *exception = V82JSC::ToJSValueRef(excp, context);
         isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
     }
-    //isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = held_exception;
 
     if (implicit[4] == O(isolateimpl->i.roots.the_hole_value)) {
         return NULL;
@@ -168,8 +169,9 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
 v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root)
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
-    
-    LocalException exception(ctx->m_isolate);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
+
+    LocalException exception(iso);
     
     // Structure:
     //
@@ -177,7 +179,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     
     // Create lifecycle object
     InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_ctxRef, root);
-    wrap->m_isolate = ctx->m_isolate;
+    wrap->m_isolate = iso;
     wrap->m_object_template = this;
     wrap->m_num_internal_fields = m_internal_fields;
     wrap->m_internal_fields = new JSValueRef[m_internal_fields]();

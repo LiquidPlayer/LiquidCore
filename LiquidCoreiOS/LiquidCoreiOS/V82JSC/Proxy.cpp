@@ -50,7 +50,7 @@ MaybeLocal<Proxy> Proxy::New(Local<Context> context,
         V82JSC::ToJSValueRef(local_target, context),
         V82JSC::ToJSValueRef(local_handler, context)
     };
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    LocalException exception(V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context)));
     JSValueRef proxy = V82JSC::exec(V82JSC::ToContextRef(context), "return new Proxy(_1, _2)", 2, args, &exception);
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), proxy).As<Proxy>();

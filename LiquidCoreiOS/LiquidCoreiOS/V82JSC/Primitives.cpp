@@ -24,22 +24,20 @@ Local<Number> Number::New(Isolate* isolate, double value)
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     ValueImpl *num = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
-    num->pMap->set_instance_type(v8::internal::HEAP_NUMBER_TYPE);
+    V82JSC::Map(num)->set_instance_type(v8::internal::HEAP_NUMBER_TYPE);
     num->m_value = JSValueMakeNumber(ctx, value);
-    num->m_isolate = V82JSC::ToIsolateImpl(isolate);
     JSValueProtect(ctx, num->m_value);
 
-    _local<Number> number(num);
-    return number.toLocal();
+    return V82JSC::MakeLocal<Number>(isolate, num);
 }
 
 Local<Integer> Integer::New(Isolate* isolate, int32_t value)
 {
-    return _local<Integer>(*Number::New(isolate, value)).toLocal();
+    return Number::New(isolate, value).As<Integer>();
 }
 Local<Integer> Integer::NewFromUnsigned(Isolate* isolate, uint32_t value)
 {
-    return _local<Integer>(*Number::New(isolate, value)).toLocal();
+    return Number::New(isolate, value).As<Integer>();
 }
 int64_t Integer::Value() const
 {
@@ -82,8 +80,8 @@ v8::Primitive * ValueImpl::NewUndefined(v8::Isolate *isolate)
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     ValueImpl *undefined = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
-    undefined->pMap->set_instance_type(v8::internal::ODDBALL_TYPE);
-    internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(undefined->pMap);
+    V82JSC::Map(undefined)->set_instance_type(v8::internal::ODDBALL_TYPE);
+    internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(V82JSC::Map(undefined));
     oddball_handle->set_kind(internal::Internals::kUndefinedOddballKind);
     undefined->m_value = JSValueMakeUndefined(ctx);
     JSValueProtect(ctx, undefined->m_value);
@@ -96,8 +94,8 @@ v8::Primitive * ValueImpl::NewNull(v8::Isolate *isolate)
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     ValueImpl *null = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
-    null->pMap->set_instance_type(v8::internal::ODDBALL_TYPE);
-    internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(null->pMap);
+    V82JSC::Map(null)->set_instance_type(v8::internal::ODDBALL_TYPE);
+    internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(V82JSC::Map(null));
     oddball_handle->set_kind(internal::Internals::kNullOddballKind);
     null->m_value = JSValueMakeNull(ctx);
     JSValueProtect(ctx, null->m_value);

@@ -89,7 +89,7 @@ bool internal::String::MakeExternal(v8::String::ExternalStringResource* resource
 internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, internal::Handle<internal::String> string)
 {
     ValueImpl *impl = reinterpret_cast<ValueImpl *>(reinterpret_cast<uintptr_t>(*string) & ~3);
-    impl->pMap->set_instance_type(v8::internal::INTERNALIZED_STRING_TYPE);
+    V82JSC::Map(impl)->set_instance_type(v8::internal::INTERNALIZED_STRING_TYPE);
     return string;
 }
 
@@ -313,7 +313,7 @@ internal::Object* internal::Object::GetHash()
     if (this->IsSmi()) return this;
 
     ValueImpl* impl = (ValueImpl*)(reinterpret_cast<uintptr_t>(this) & ~3);
-    Local<v8::Context> context = V82JSC::ToIsolate(impl->m_isolate)->GetCurrentContext();
+    Local<v8::Context> context = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(impl))->GetCurrentContext();
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef value = impl->m_value;
     
@@ -332,7 +332,7 @@ Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 {
     if ((*object.location())->IsSmi()) return (reinterpret_cast<Smi*>(*object.location()));
     
-    Local<v8::Object> o = _local<v8::Object>(object.location()).toLocal();
+    Local<v8::Object> o = __local<v8::Object>(object.location()).toLocal();
     Local<v8::Context> context = V82JSC::ToCurrentContext(*o);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef value = V82JSC::ToJSValueRef(o, context);
@@ -346,7 +346,7 @@ Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 MaybeHandle<internal::Object> internal::Object::GetProperty(LookupIterator* it)
 {
     internal::Object *o = *it->GetReceiver();
-    Local<v8::Object> obj = _local<v8::Object>(&o).toLocal();
+    Local<v8::Object> obj = __local<v8::Object>(&o).toLocal();
     Local<v8::Context> context = V82JSC::ToCurrentContext(*obj);
     MaybeLocal<v8::Value> val = obj->Get(context, it->index());
     if (val.IsEmpty()) {

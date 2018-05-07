@@ -24,7 +24,7 @@ using namespace v8;
  */
 Local<Object> Context::Global()
 {
-    ContextImpl *impl = V82JSC::ToContextImpl(_local<Context>(this).toLocal());
+    ContextImpl *impl = V82JSC::ToContextImpl(this);
     JSObjectRef glob = JSContextGetGlobalObject(impl->m_ctxRef);
     return ValueImpl::New(impl, glob).As<Object>();
 }
@@ -43,8 +43,7 @@ Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
     ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
     context->m_ctxRef = ctx;
-    
-    return _local<Context>(context).toLocal();
+    return V82JSC::MakeLocal<Context>(isolate, context);
 }
 
 
@@ -71,9 +70,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<Value> global_object)
 {
     ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
-    context->pMap->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
+    V82JSC::Map(context)->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    Local<Context> ctx = _local<Context>(context).toLocal();
+    Local<Context> ctx = V82JSC::MakeLocal<Context>(isolate, context);
     int hash = 0;
     context->m_loaded_extensions = std::map<std::string, bool>();
     
@@ -95,7 +94,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         //JSObjectSetPrototype(context->m_ctxRef, global, instance);
         
         if (impl->m_constructor_template) {
-            MaybeLocal<Function> ctor = _local<FunctionTemplate>(impl->m_constructor_template).toLocal()->GetFunction(ctx);
+            MaybeLocal<Function> ctor = V82JSC::MakeLocal<FunctionTemplate>(isolate, impl->m_constructor_template)->GetFunction(ctx);
             if (!ctor.IsEmpty()) {
                 JSObjectRef ctor_func = (JSObjectRef) V82JSC::ToJSValueRef(ctor.ToLocalChecked(), ctx);
                 JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
@@ -228,9 +227,8 @@ Local<Value> Context::GetSecurityToken()
  */
 void Context::Enter()
 {
-    ContextImpl *impl = V82JSC::ToContextImpl(this);
-
-    impl->m_isolate->EnterContext(this);
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    V82JSC::ToIsolateImpl(isolate)->EnterContext(this);
 }
 
 /**
@@ -239,17 +237,14 @@ void Context::Enter()
  */
 void Context::Exit()
 {
-    ContextImpl *impl = V82JSC::ToContextImpl(this);
-    
-    impl->m_isolate->ExitContext(this);
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    V82JSC::ToIsolateImpl(isolate)->ExitContext(this);
 }
 
 /** Returns an isolate associated with a current context. */
 Isolate* Context::GetIsolate()
 {
-    ContextImpl *impl = V82JSC::ToContextImpl(this);
-    
-    return V82JSC::ToIsolate(impl->m_isolate);
+    return V82JSC::ToIsolate(this);
 }
 
 /**
@@ -302,7 +297,7 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
     if (embedder_data) {
         EmbedderDataImpl *ed = reinterpret_cast<EmbedderDataImpl*>(reinterpret_cast<uint8_t*>(embedder_data) - internal::kHeapObjectTag);
         if (ed->m_size <= index) {
-            copy = &ed->m_embedder_data[0];
+            copy = &ed->m_embedder_data;
             copy_pointers = ed->m_size;
             embedder_data = nullptr;
             defunct = ed;
@@ -311,12 +306,11 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
     if (!embedder_data) {
         int size = ((index + 32) / 32) * 32;
         EmbedderDataImpl* io = (EmbedderDataImpl*) malloc(sizeof(EmbedderDataImpl) + size * internal::kApiPointerSize);
-        memset(io, 0, sizeof(InternalObjectImpl) + size * internal::kApiPointerSize);
-        io->pMap = (v8::internal::Map*)(reinterpret_cast<uintptr_t>(io) + 1);
+        memset(io, 0, sizeof(EmbedderDataImpl) + size * internal::kApiPointerSize);
         io->m_size = size;
-        memcpy(&io->m_embedder_data[0], copy, copy_pointers * internal::kApiPointerSize);
-        /* FIXME if (defunct) free(defunct); */
-        embedder_data = reinterpret_cast<O*>(io->pMap);
+        memcpy(&io->m_embedder_data, copy, copy_pointers * internal::kApiPointerSize);
+        if (defunct) free(defunct);
+        embedder_data = reinterpret_cast<O*>(reinterpret_cast<intptr_t>(io) + internal::kHeapObjectTag);
         WriteField<O*>(ctx, embedder_data_offset, embedder_data);
     }
     int value_offset =

@@ -48,11 +48,11 @@ public:
 };
 
 template <class T>
-class _local {
+class __local {
 public:
     T* val_;
     v8::Local<T> toLocal() { return *(reinterpret_cast<v8::Local<T> *>(this)); }
-    _local(void *v) { val_ = reinterpret_cast<T*>(v); }
+    __local(void *v) { val_ = reinterpret_cast<T*>(v); }
 };
 
 struct ContextImpl;
@@ -124,8 +124,7 @@ struct InternalObjectImpl {
     };
     size_t m_slots;
     size_t m_count;
-    JSValueRef  m_value;
-    IsolateImpl* m_isolate;
+    //IsolateImpl* m_isolate;
 };
 
 class HeapAllocator : public v8::internal::MemoryChunk
@@ -158,8 +157,10 @@ struct ScriptImpl : InternalObjectImpl, v8::Script
     JSStringRef m_script;
 };
 
-struct ValueImpl : InternalObjectImpl, v8::Value {
-    static v8::Local<Value> New(const ContextImpl *ctx, JSValueRef value);
+struct ValueImpl : InternalObjectImpl {
+    JSValueRef  m_value;
+
+    static v8::Local<v8::Value> New(const ContextImpl *ctx, JSValueRef value);
     static v8::Local<v8::String> New(v8::Isolate *isolate, JSStringRef string,
                                      v8::internal::InstanceType type=v8::internal::FIRST_NONSTRING_TYPE,
                                      void *resource = nullptr);
@@ -172,12 +173,11 @@ struct ValueImpl : InternalObjectImpl, v8::Value {
 struct EmbedderDataImpl {
     union {
         struct {
-            v8::internal::Map *pMap;
-            int m_size;
+            uint8_t buffer[v8::internal::Internals::kFixedArrayHeaderSize];
+            v8::internal::Object* m_embedder_data;
         };
-        uint8_t buffer[v8::internal::Internals::kFixedArrayHeaderSize];
+        int m_size;
     };
-    v8::internal::Object* m_embedder_data[1];
 };
 
 struct FunctionCallbackImpl : public v8::FunctionCallbackInfo<v8::Value>
@@ -295,12 +295,8 @@ struct InstanceWrap {
     int m_hash;
 };
 
-struct SignatureImpl
+struct SignatureImpl : InternalObjectImpl
 {
-    SignatureImpl();
-    ~SignatureImpl();
-
-    v8::Isolate *m_isolate;
     FunctionTemplateImpl *m_template;
 };
 
@@ -320,6 +316,31 @@ struct TryCatchCopy {
 
 struct V82JSC {
     template <class T>
+    static inline v8::Local<T> MakeLocal(v8::internal::Isolate *isolate, InternalObjectImpl *o)
+    {
+        v8::internal::Object ** handle =
+            v8::internal::HandleScope::CreateHandle(isolate,
+                reinterpret_cast<v8::internal::Object*>(reinterpret_cast<intptr_t>(o) + v8::internal::kHeapObjectTag));
+        return __local<T>(handle).toLocal();
+    }
+    template <class T>
+    static inline v8::Local<T> MakeLocal(v8::Isolate *isolate, InternalObjectImpl *o)
+    {
+        return MakeLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o);
+    }
+    template <class T>
+    static inline v8::Local<T> MakeLocal(IsolateImpl *isolate, InternalObjectImpl *o)
+    {
+        return MakeLocal<T>(&isolate->i.ii, o);
+    }
+    template <class T>
+    static inline v8::Local<T> MakeLocalSmi(v8::internal::Isolate *isolate, v8::internal::Smi* smi)
+    {
+        v8::internal::Object ** handle = v8::internal::HandleScope::CreateHandle(isolate, smi);
+        return __local<T>(handle).toLocal();
+    }
+    
+    template <class T>
     static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Local<v8::Context> context)
     {
         if (v.IsEmpty()) return 0;
@@ -332,6 +353,28 @@ struct V82JSC {
             return that_->m_value;
         }
     }
+    template<class T>
+    static inline JSValueRef ToJSValueRef(const T* v, v8::Local<v8::Context> context)
+    {
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<T*>(v));
+        if (obj->IsSmi()) {
+            return JSValueMakeNumber(ToContextRef(context), v8::internal::Smi::ToInt(obj));
+        } else {
+            ValueImpl *o = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
+            return o->m_value;
+        }
+    }
+    template <class T>
+    static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Isolate *isolate)
+    {
+        return ToJSValueRef(v, OperatingContext(isolate));
+    }
+    template <class T>
+    static inline JSValueRef ToJSValueRef(const T* v, v8::Isolate *isolate)
+    {
+        return ToJSValueRef(v, OperatingContext(isolate));
+    }
+
     template <class I, class T>
     static inline I* ToImpl(v8::Local<T> v)
     {
@@ -346,29 +389,26 @@ struct V82JSC {
     template <class I, class T>
     static inline I* ToImpl(const T* thiz)
     {
-        return ToImpl<I>(_local<T>(const_cast<T*>(thiz)).toLocal());
-    }
-    template <class T>
-    static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Isolate *isolate)
-    {
-        return ToJSValueRef(v, OperatingContext(isolate));
-    }
-    template <class T>
-    static inline JSValueRef ToJSValueRef(const T* v, v8::Local<v8::Context> context)
-    {
-        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<T*>(v));
-        if (obj->IsSmi()) {
-            return JSValueMakeNumber(ToContextRef(context), v8::internal::Smi::ToInt(obj));
-        } else {
-            ValueImpl *o = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-            return o->m_value;
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<T*>(thiz));
+        if (!obj->IsSmi()) {
+            I *that_ = reinterpret_cast<I*>(reinterpret_cast<intptr_t>(obj) & ~3);
+            return that_;
         }
+        return nullptr;
     }
-    template <class T>
-    static inline JSValueRef ToJSValueRef(const T* v, v8::Isolate *isolate)
+    
+    static inline ContextImpl* ToContextImpl(v8::Local<v8::Context> context)
     {
-        return ToJSValueRef(v, OperatingContext(isolate));
+        return ToImpl<ContextImpl, v8::Context>(context);
     }
+    static inline ContextImpl* ToContextImpl(const v8::Context* thiz)
+    {
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<v8::Context*>(thiz));
+        assert(!obj->IsSmi());
+        ContextImpl *ctx = reinterpret_cast<ContextImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
+        return ctx;
+    }
+
     static inline JSContextRef ToContextRef(v8::Local<v8::Context> context)
     {
         return ToContextImpl(context)->m_ctxRef;
@@ -377,24 +417,28 @@ struct V82JSC {
     {
         return ToContextImpl(OperatingContext(isolate))->m_ctxRef;
     }
-    static inline ContextImpl* ToContextImpl(v8::Local<v8::Context> context)
-    {
-        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<v8::Context*>(*context));
-        ContextImpl *ctx = reinterpret_cast<ContextImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-        return ctx;
-    }
-    static inline ContextImpl* ToContextImpl(const v8::Context* thiz)
-    {
-        return ToContextImpl(_local<v8::Context>(const_cast<v8::Context*>(thiz)).toLocal());
-    }
+
     static inline IsolateImpl* ToIsolateImpl(v8::Isolate *isolate)
     {
+        return reinterpret_cast<IsolateImpl*>(isolate);
+    }
+    static inline IsolateImpl* ToIsolateImpl(const InternalObjectImpl *io)
+    {
+        v8::internal::Isolate* isolate = reinterpret_cast<v8::internal::HeapObject*>(V82JSC::Map(io))->GetIsolate();
         return reinterpret_cast<IsolateImpl*>(isolate);
     }
     static inline v8::Isolate* ToIsolate(IsolateImpl *isolate)
     {
         return reinterpret_cast<v8::Isolate*>(isolate);
     }
+    static inline IsolateImpl* ToIsolateImpl(const v8::Value *val)
+    {
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<v8::Value*>(val));
+        assert(!obj->IsSmi());
+        v8::internal::Isolate* isolate = reinterpret_cast<v8::internal::HeapObject*>(obj)->GetIsolate();
+        return reinterpret_cast<IsolateImpl*>(isolate);
+    }
+    
     template <class T>
     static inline v8::Isolate* ToIsolate(const T* thiz)
     {
@@ -402,15 +446,16 @@ struct V82JSC {
         if (obj->IsSmi()) {
             return v8::Isolate::GetCurrent();
         } else {
-            ValueImpl *v = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-            return ToIsolate(v->m_isolate);
+            v8::internal::Isolate *i = reinterpret_cast<v8::internal::HeapObject*>(obj)->GetIsolate();
+            return reinterpret_cast<v8::Isolate*>(i);
         }
     }
+    
     static inline v8::Local<v8::Context> OperatingContext(v8::Isolate* isolate)
     {
         v8::Local<v8::Context> context = isolate->GetCurrentContext();
         if (context.IsEmpty()) {
-            context = _local<v8::Context>(ToIsolateImpl(isolate)->m_nullContext).toLocal();
+            context = MakeLocal<v8::Context>(isolate, ToIsolateImpl(isolate)->m_nullContext);
         }
         return context;
     }
@@ -419,6 +464,7 @@ struct V82JSC {
     {
         return OperatingContext(ToIsolate<T>(thiz));
     }
+    
     static inline bool is__(const v8::Value* thiz, const char *name_, const char *code_)
     {
         v8::Local<v8::Context> context = ToCurrentContext(thiz);
@@ -498,6 +544,11 @@ struct V82JSC {
             }
         }
         return nullptr;
+    }
+
+    static inline v8::internal::Map* Map(const InternalObjectImpl *io)
+    {
+        return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(io) + v8::internal::kHeapObjectTag);
     }
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)

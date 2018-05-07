@@ -24,28 +24,31 @@ size_t Set::Size() const
 }
 void Set::Clear()
 {
-    _local<Map>(this).toLocal()->Clear();
+    reinterpret_cast<Map*>(this)->Clear();
 }
 MaybeLocal<Set> Set::Add(Local<Context> context, Local<Value> key)
 {
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+
+    LocalException exception(iso);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl, Set>(this);
     JSValueRef args[] = {
         obj,
         V82JSC::ToJSValueRef(key, context),
     };
     V82JSC::exec(ctx, "_1.add(_2)", 2, args, &exception);
     if (exception.ShouldThow()) return MaybeLocal<Set>();
-    return _local<Set>(this).toLocal();
+    return V82JSC::MakeLocal<Set>(iso, impl);
 }
 Maybe<bool> Set::Has(Local<Context> context, Local<Value> key)
 {
-    return _local<Map>(this).toLocal()->Has(context, key);
+    return reinterpret_cast<Map*>(this)->Has(context, key);
 }
 Maybe<bool> Set::Delete(Local<Context> context, Local<Value> key)
 {
-    return _local<Map>(this).toLocal()->Delete(context, key);
+    return reinterpret_cast<Map*>(this)->Delete(context, key);
 }
 
 /**

@@ -30,11 +30,19 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     IsolateImpl * isolate = (IsolateImpl *) malloc(sizeof (IsolateImpl));
     memset(isolate, 0, sizeof(IsolateImpl));
     
+    HeapImpl* heap = static_cast<HeapImpl*>(isolate->i.ii.heap());
+    heap->m_heap_top = nullptr;
+    heap->m_index = 0;
+    isolate->m_global_symbols = std::map<std::string, JSValueRef>();
+    isolate->m_private_symbols = std::map<std::string, JSValueRef>();
+    isolate->m_context_stack = std::stack<ContextImpl*>();
+    
     isolate->m_params = params;
     
     isolate->m_group = JSContextGroupCreate();
-    isolate->m_nullContext = reinterpret_cast<ContextImpl*>(*Context::New(V82JSC::ToIsolate(isolate)));
-    isolate->EnterContext(reinterpret_cast<Context*>(isolate->m_nullContext));
+    Local<Context> nullContext = Context::New(V82JSC::ToIsolate(isolate));
+    isolate->m_nullContext = V82JSC::ToImpl<ContextImpl>(nullContext);
+    isolate->EnterContext(*nullContext);
 
     Primitive *undefined = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
     isolate->i.roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);
@@ -59,16 +67,10 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     isolate->i.roots.empty_string = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(es) & ~3) +1);;
     JSStringRelease(empty_string);
     
-    isolate->m_global_symbols = std::map<std::string, JSValueRef>();
-    isolate->m_private_symbols = std::map<std::string, JSValueRef>();
-    isolate->m_context_stack = std::stack<ContextImpl*>();
-    
     reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
-
-    HeapImpl* heap = static_cast<HeapImpl*>(isolate->i.ii.heap());
-    heap->m_heap_top = nullptr;
-    heap->m_index = 0;
-        
+    
+    isolate->ExitContext(*nullContext);
+    
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
 
@@ -325,7 +327,7 @@ Local<Context> Isolate::GetCurrentContext()
         return Local<Context>();
     }
     
-    return _local<Context>(impl->m_context_stack.top()).toLocal();
+    return V82JSC::MakeLocal<Context>(impl, impl->m_context_stack.top());
 }
 
 /** Returns the last context entered through V8's C++ API. */

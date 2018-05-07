@@ -39,6 +39,5 @@ Local<Array> Array::New(Isolate* isolate, int length)
         args[ndx] = JSValueMakeUndefined(ctx);
     }
     Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectMakeArray(ctx, length, args, 0));
-    _local<Array> obj(*o);
-    return obj.toLocal();
+    return o.As<Array>();
 }

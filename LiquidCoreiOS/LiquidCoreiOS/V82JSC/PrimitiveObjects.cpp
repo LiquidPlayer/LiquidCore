@@ -66,7 +66,7 @@ Local<String> StringObject::ValueOf() const
     JSValueRef exception = nullptr;
     JSStringRef ret = JSValueToStringCopy(ctx, V82JSC::exec(ctx, VALUE_OF_CODE, 1, &v), &exception);
     assert(exception==nullptr);
-    return ValueImpl::New(V82JSC::ToIsolate(V82JSC::ToContextImpl(context)->m_isolate), ret);
+    return ValueImpl::New(V82JSC::ToIsolate(*context), ret);
 }
 
 Local<Value> SymbolObject::New(Isolate* isolate, Local<Symbol> value)

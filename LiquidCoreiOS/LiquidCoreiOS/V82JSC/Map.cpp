@@ -59,9 +59,10 @@ void Map::Clear()
 
 MaybeLocal<Value> Map::Get(Local<Context> context, Local<Value> key)
 {
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    LocalException exception(iso);
     JSValueRef args[] = {
         obj,
         V82JSC::ToJSValueRef(key, context)
@@ -75,9 +76,11 @@ MaybeLocal<Map> Map::Set(Local<Context> context,
                          Local<Value> key,
                          Local<Value> value)
 {
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    LocalException exception(iso);
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl, Map>(this);
     JSValueRef args[] = {
         obj,
         V82JSC::ToJSValueRef(key, context),
@@ -85,14 +88,15 @@ MaybeLocal<Map> Map::Set(Local<Context> context,
     };
     V82JSC::exec(ctx, "_1.set(_2, _3)", 3, args, &exception);
     if (exception.ShouldThow()) return MaybeLocal<Map>();
-    return _local<Map>(this).toLocal();
+    return V82JSC::MakeLocal<Map>(iso, impl);
 }
 
 Maybe<bool> Map::Has(Local<Context> context, Local<Value> key)
 {
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    LocalException exception(iso);
     JSValueRef args[] = {
         obj,
         V82JSC::ToJSValueRef(key, context)
@@ -105,9 +109,10 @@ Maybe<bool> Map::Has(Local<Context> context, Local<Value> key)
 Maybe<bool> Map::Delete(Local<Context> context,
                                          Local<Value> key)
 {
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    LocalException exception(iso);
     JSValueRef args[] = {
         obj,
         V82JSC::ToJSValueRef(key, context)

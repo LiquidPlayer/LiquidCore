@@ -39,8 +39,7 @@ InternalObjectImpl* HeapAllocator::Alloc(IsolateImpl *isolate, size_t size)
                     memset(slot, 0, num_slots * kSlotSize);
                     slot->m_count = 1;
                     slot->m_slots = num_slots;
-                    slot->pMap = reinterpret_cast<internal::Map*>(reinterpret_cast<intptr_t>(&slots[index]) + internal::kHeapObjectTag);
-                    slot->m_isolate = isolate;
+                    slot->pMap = reinterpret_cast<internal::Map*>(reinterpret_cast<intptr_t>(slot) + internal::kHeapObjectTag);
                     heapimpl->m_index = index + num_slots;
                     return reinterpret_cast<InternalObjectImpl*>(&slots[index]);
                 } else {

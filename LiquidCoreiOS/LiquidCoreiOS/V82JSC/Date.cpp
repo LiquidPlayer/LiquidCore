@@ -14,7 +14,9 @@ MaybeLocal<Value> Date::New(Local<Context> context, double time)
 {
     auto c = V82JSC::ToContextRef(context);
     auto t = JSValueMakeNumber(c, time);
-    LocalException exception(V82JSC::ToContextImpl(context)->m_isolate);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+
+    LocalException exception(iso);
     auto r = JSObjectMakeDate(c, 1, &t, &exception);
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), r);

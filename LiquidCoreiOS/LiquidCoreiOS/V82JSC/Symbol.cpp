@@ -149,7 +149,7 @@ Local<Symbol> Symbol::GetUnscopables(Isolate* isolate)
 
 Local<Value> Private::Name() const
 {
-    return _local<Symbol>(const_cast<Private*>(this)).toLocal()->Name();
+    return reinterpret_cast<const Symbol*>(this)->Name();
 }
 
 /**
@@ -159,7 +159,7 @@ Local<Private> Private::New(Isolate* isolate,
                           Local<String> name)
 {
     Local<Symbol> symbol = Symbol::New(isolate, name);
-    return _local<Private>(*symbol).toLocal();
+    return * reinterpret_cast<Local<Private>*>(&symbol);
 }
 
 /**
@@ -183,5 +183,6 @@ Local<Private> Private::ForApi(Isolate* isolate, Local<String> name)
         JSValueProtect(ctx, impl->m_private_symbols[*symbol_name]);
     }
     JSValueRef symbol = impl->m_private_symbols[*symbol_name];
-    return _local<Private>(*ValueImpl::New(V82JSC::ToContextImpl(context), symbol)).toLocal();
+    Local<Value> priv = ValueImpl::New(V82JSC::ToContextImpl(context), symbol);
+    return * reinterpret_cast<Local<Private>*>(&priv);
 }

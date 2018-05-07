@@ -116,7 +116,7 @@ void proxyArrayBuffer(ContextImpl *ctx)
         def.callAsFunction = callback;
         def.className = name;
         JSClassRef claz = JSClassCreate(&def);
-        JSObjectRef f = JSObjectMake(ctx->m_ctxRef, claz, (void*)ctx->m_isolate);
+        JSObjectRef f = JSObjectMake(ctx->m_ctxRef, claz, (void*)V82JSC::ToIsolateImpl(ctx));
         JSObjectSetProperty(ctx->m_ctxRef, handler, sname, f, 0, &excp);
         JSStringRelease(sname);
         assert(excp==0);
@@ -182,7 +182,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
     Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
     buffer->SetAlignedPointerInInternalField(1, info);
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(buffer);
-    impl->pMap->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
+    V82JSC::Map(impl)->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(false);
     return buffer;
@@ -226,7 +226,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
     Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
     buffer->SetAlignedPointerInInternalField(1, info);
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(buffer);
-    impl->pMap->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
+    V82JSC::Map(impl)->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(false);
     return buffer;
@@ -235,13 +235,14 @@ Local<ArrayBuffer> ArrayBuffer::New(
 ArrayBufferInfo * GetArrayBufferInfo(const ArrayBuffer *ab)
 {
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBuffer>(ab);
-    Local<Object> thiz = _local<Object>(const_cast<ArrayBuffer*>(ab)).toLocal();
+    
+    Object * thiz = reinterpret_cast<Object*>(impl);
     Local<Context> context = V82JSC::ToCurrentContext(ab);
     InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), (JSObjectRef)impl->m_value);
     ArrayBufferInfo *info;
     assert(wrap);
     info = (ArrayBufferInfo*) thiz->GetAlignedPointerFromInternalField(1);
-    impl->pMap->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
+    V82JSC::Map(impl)->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(info->isNeuterable);
     return info;
@@ -403,7 +404,8 @@ SharedArrayBuffer::Contents SharedArrayBuffer::GetContents()
 ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
 {
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(ab);
-    Local<Object> thiz = _local<Object>(const_cast<ArrayBufferView*>(ab)).toLocal();
+
+    Object * thiz = reinterpret_cast<Object*>(impl);
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::ToCurrentContext(ab));
     
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
@@ -416,7 +418,7 @@ ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
         wrap->m_internal_fields = new JSValueRef[ArrayBufferView::kInternalFieldCount];
         memset(wrap->m_internal_fields, 0, ArrayBufferView::kInternalFieldCount * sizeof(JSValueRef) );
         thiz->SetAlignedPointerInInternalField(1, info);
-        impl->pMap->set_instance_type(v8::internal::JS_TYPED_ARRAY_TYPE);
+        V82JSC::Map(impl)->set_instance_type(v8::internal::JS_TYPED_ARRAY_TYPE);
     } else {
         info = (ArrayBufferViewInfo*) thiz->GetAlignedPointerFromInternalField(1);
     }
