@@ -210,8 +210,7 @@ bool V8::RegisterDefaultSignalHandler()
 internal::Object** V8::GlobalizeReference(internal::Isolate* isolate,
                                              internal::Object** handle)
 {
-    printf("FIXME! GlobalizeReference\n");
-    return handle;
+    return isolate->global_handles()->Create(*handle).location();
 }
 internal::Object** V8::CopyPersistent(internal::Object** handle)
 {
@@ -220,7 +219,7 @@ internal::Object** V8::CopyPersistent(internal::Object** handle)
 }
 void V8::DisposeGlobal(internal::Object** global_handle)
 {
-    printf("FIXME! DisposeGlobal\n");
+    internal::GlobalHandles::Destroy(global_handle);
 }
 void V8::MakeWeak(internal::Object** location, void* data,
                      WeakCallbackInfo<void>::Callback weak_callback,

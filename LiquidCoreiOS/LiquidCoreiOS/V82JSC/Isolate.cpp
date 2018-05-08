@@ -29,10 +29,13 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
 {
     IsolateImpl * isolate = (IsolateImpl *) malloc(sizeof (IsolateImpl));
     memset(isolate, 0, sizeof(IsolateImpl));
-    
+
+    reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
+
     HeapImpl* heap = static_cast<HeapImpl*>(isolate->i.ii.heap());
     heap->m_heap_top = nullptr;
     heap->m_index = 0;
+    
     isolate->m_global_symbols = std::map<std::string, JSValueRef>();
     isolate->m_private_symbols = std::map<std::string, JSValueRef>();
     isolate->m_context_stack = std::stack<ContextImpl*>();
@@ -67,8 +70,6 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     isolate->i.roots.empty_string = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(es) & ~3) +1);;
     JSStringRelease(empty_string);
     
-    reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
-    
     isolate->ExitContext(*nullContext);
     
     return reinterpret_cast<v8::Isolate*>(isolate);
@@ -78,6 +79,8 @@ bool internal::Isolate::Init(v8::internal::Deserializer *des)
 {
     internal::Heap* h = heap();
     h->isolate_ = this;
+    
+    global_handles_ = new internal::GlobalHandles(this);
     return true;
 }
 

@@ -16,8 +16,18 @@ InternalObjectImpl* HeapAllocator::Alloc(IsolateImpl *isolate, size_t size)
     static const size_t kSlotSize = 0x80;
     static const size_t kReserved = (sizeof(HeapAllocator) + kSlotSize - 1) / kSlotSize;
     
-    struct Slot { unsigned char _[kSlotSize]; };
-    if (size == 0) size = 1; // Throws off the math otherwise and makes no difference
+    struct Slot {
+        union {
+            struct {
+                uint32_t m_count;
+                uint32_t m_slots;
+                InternalObjectImpl m_io;
+            };
+            unsigned char _[kSlotSize];
+        };
+    };
+    // Make room for m_count and m_slots
+    size += sizeof(uint32_t) * 2;
     
     internal::Heap *heap = reinterpret_cast<internal::Isolate*>(isolate)->heap();
     HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(heap);
@@ -29,19 +39,19 @@ InternalObjectImpl* HeapAllocator::Alloc(IsolateImpl *isolate, size_t size)
             for (size_t index=start; index < end; ) {
                 // Reserve the first kReserved slots for the MemoryChunk
                 if (index < kReserved) { index++; continue; }
-                InternalObjectImpl *slot = (InternalObjectImpl*) &slots[index];
+                Slot *slot = &slots[index];
                 bool free = true;
                 for(size_t i=0; i<num_slots && free; i++) {
-                    InternalObjectImpl *check_slot = (InternalObjectImpl*) &slots[index + i];
+                    Slot *check_slot = &slots[index + i];
                     free = check_slot->m_count == 0;
                 }
                 if (free) {
                     memset(slot, 0, num_slots * kSlotSize);
                     slot->m_count = 1;
-                    slot->m_slots = num_slots;
-                    slot->pMap = reinterpret_cast<internal::Map*>(reinterpret_cast<intptr_t>(slot) + internal::kHeapObjectTag);
+                    slot->m_slots = (uint32_t) num_slots;
+                    slot->m_io.pMap = reinterpret_cast<internal::Map*>(reinterpret_cast<intptr_t>(&slot->m_io) + internal::kHeapObjectTag);
                     heapimpl->m_index = index + num_slots;
-                    return reinterpret_cast<InternalObjectImpl*>(&slots[index]);
+                    return &slot->m_io;
                 } else {
                     index += slot->m_slots;
                 }
@@ -55,7 +65,6 @@ InternalObjectImpl* HeapAllocator::Alloc(IsolateImpl *isolate, size_t size)
         }
         return slot;
     };
-    
     InternalObjectImpl *alloc = nullptr;
     if (chunk) {
         alloc = find_space(chunk, (size + kSlotSize - 1) / kSlotSize);

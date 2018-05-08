@@ -122,9 +122,6 @@ struct InternalObjectImpl {
         v8::internal::Oddball oddball;
         v8::internal::Map map;
     };
-    size_t m_slots;
-    size_t m_count;
-    //IsolateImpl* m_isolate;
 };
 
 class HeapAllocator : public v8::internal::MemoryChunk
@@ -150,7 +147,7 @@ struct ContextImpl : InternalObjectImpl
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
 
-struct ScriptImpl : InternalObjectImpl, v8::Script
+struct ScriptImpl : InternalObjectImpl
 {
     JSStringRef m_sourceURL;
     int m_startingLineNumber;

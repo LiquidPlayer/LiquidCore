@@ -137,3 +137,115 @@ bool MicrotasksScope::IsRunningMicrotasks(Isolate* isolate)
     return false;
 }
 
+class internal::GlobalHandles::Node {
+public:
+    union {
+        internal::Object* handle_;
+        uint8_t reserved_[internal::kApiPointerSize * 2];
+    };
+    int index_;
+};
+
+class internal::GlobalHandles::NodeBlock {
+public:
+    NodeBlock(GlobalHandles *global_handles) {
+        global_handles_ = global_handles;
+        next_used_block_ = nullptr;
+        prev_used_block_ = nullptr;
+        bitmap_ = 0xffffffffffffffff;
+        next_block_ = global_handles->first_block_;
+        prev_block_ = nullptr;
+        global_handles->first_block_ = this;
+    }
+    internal::Object ** New(internal::Object *value)
+    {
+        if (bitmap_ == 0) return nullptr;
+        uint64_t rightmost_set_bit_index = (bitmap_ & (-bitmap_)) - 1;
+        uint64_t mask = pow(2,rightmost_set_bit_index);
+        bitmap_ &= ~mask;
+        if (bitmap_ == 0) {
+            // Remove from available pool and add to used list
+            if (prev_block_) {
+                prev_block_->next_block_ = next_block_;
+            } else {
+                global_handles_->first_block_ = next_block_;
+            }
+            next_block_ = nullptr;
+            prev_block_ = nullptr;
+            next_used_block_ = global_handles_->first_used_block_;
+            global_handles_->first_used_block_ = this;
+        }
+        global_handles_->number_of_global_handles_ ++;
+        memset(&handles_[rightmost_set_bit_index], 0, sizeof(Node));
+        handles_[rightmost_set_bit_index].index_ = (int) rightmost_set_bit_index;
+        handles_[rightmost_set_bit_index].handle_ = value;
+        return &handles_[rightmost_set_bit_index].handle_;
+    }
+    void Reset(internal::Object ** handle)
+    {
+        int64_t index = (reinterpret_cast<intptr_t>(handle) - reinterpret_cast<intptr_t>(&handles_[0])) / sizeof(Node);
+        assert(index >= 0 && index < 64);
+        uint64_t mask = pow(2,index);
+        assert((bitmap_ & mask) == 0);
+        bitmap_ |= mask;
+        global_handles_->number_of_global_handles_ --;
+        if (bitmap_ == 0xffffffffffffffff) {
+            // NodeBlock is empty, remove from available list and delete
+            if (prev_block_) {
+                prev_block_->next_block_ = next_block_;
+            } else {
+                global_handles_->first_block_ = next_block_;
+            }
+            delete this;
+        } else if (next_used_block_) {
+            // Remove from used list and add to avaialable pool
+            if (prev_used_block_) {
+                prev_used_block_->next_used_block_ = next_used_block_;
+            } else {
+                global_handles_->first_used_block_ = next_used_block_;
+            }
+            prev_used_block_ = nullptr;
+            next_used_block_ = nullptr;
+            next_block_ = global_handles_->first_block_;
+            global_handles_->first_block_ = this;
+        }
+    }
+    
+private:
+    NodeBlock *next_block_;
+    NodeBlock *prev_block_;
+    NodeBlock *next_used_block_;
+    NodeBlock *prev_used_block_;
+    GlobalHandles *global_handles_;
+    uint64_t bitmap_;
+    Node handles_[64];
+    friend class internal::GlobalHandles;
+};
+
+internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
+{
+    isolate_ = isolate;
+    number_of_global_handles_ = 0;
+    first_block_ = nullptr;
+    first_used_block_ = nullptr;
+    first_free_ = nullptr;
+}
+
+internal::Handle<internal::Object> internal::GlobalHandles::Create(Object* value)
+{
+    if (!first_block_) {
+        new NodeBlock(this);
+    }
+    return Handle<Object>(first_block_->New(value));
+}
+
+void internal::GlobalHandles::Destroy(internal::Object** location)
+{
+    // Get NodeBlock from location
+    Node * handle_loc = reinterpret_cast<Node*>(location);
+    int index = handle_loc->index_;
+    intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
+    intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+    NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+    block->Reset(location);
+}
