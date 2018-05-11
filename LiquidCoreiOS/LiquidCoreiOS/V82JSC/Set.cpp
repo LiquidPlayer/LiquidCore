@@ -40,7 +40,7 @@ MaybeLocal<Set> Set::Add(Local<Context> context, Local<Value> key)
     };
     V82JSC::exec(ctx, "_1.add(_2)", 2, args, &exception);
     if (exception.ShouldThow()) return MaybeLocal<Set>();
-    return V82JSC::MakeLocal<Set>(iso, impl);
+    return V82JSC::CreateLocal<Set>(V82JSC::ToIsolate(iso), impl);
 }
 Maybe<bool> Set::Has(Local<Context> context, Local<Value> key)
 {

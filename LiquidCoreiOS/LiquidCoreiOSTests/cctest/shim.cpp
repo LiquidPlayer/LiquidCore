@@ -332,7 +332,9 @@ Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 {
     if ((*object.location())->IsSmi()) return (reinterpret_cast<Smi*>(*object.location()));
     
-    Local<v8::Object> o = __local<v8::Object>(object.location()).toLocal();
+    HandleScope scope(isolate);
+    
+    Local<v8::Object> o = V82JSC::__local<v8::Object>(object.location()).toLocal();
     Local<v8::Context> context = V82JSC::ToCurrentContext(*o);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef value = V82JSC::ToJSValueRef(o, context);
@@ -346,7 +348,7 @@ Smi* internal::Object::GetOrCreateHash(Isolate* isolate, Handle<Object> object)
 MaybeHandle<internal::Object> internal::Object::GetProperty(LookupIterator* it)
 {
     internal::Object *o = *it->GetReceiver();
-    Local<v8::Object> obj = __local<v8::Object>(&o).toLocal();
+    Local<v8::Object> obj = V82JSC::__local<v8::Object>(&o).toLocal();
     Local<v8::Context> context = V82JSC::ToCurrentContext(*obj);
     MaybeLocal<v8::Value> val = obj->Get(context, it->index());
     if (val.IsEmpty()) {

@@ -383,10 +383,13 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
         if (try_catch.HasCaught()) {
             *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
         } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-            InternalObjectImpl* i = reinterpret_cast<InternalObjectImpl*>(
-                                    reinterpret_cast<intptr_t>(isolateimpl->i.ii.thread_local_top()->scheduled_exception_ - internal::kHeapObjectTag));
-            Local<Value> excp = V82JSC::MakeLocal<Value>(isolateimpl, i);
-            *exception = V82JSC::ToJSValueRef(excp, context);
+            internal::Object * excep = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+            if (excep->IsHeapObject()) {
+                ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
+                *exception = i->m_value;
+            } else {
+                *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
+            }
             isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
         }
 
@@ -442,8 +445,8 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(name, context),
-        *getter ? V82JSC::ToJSValueRef(getter, context) : 0,
-        *setter ? V82JSC::ToJSValueRef(setter, context) : 0
+        !getter.IsEmpty() ? V82JSC::ToJSValueRef(getter, context) : 0,
+        !setter.IsEmpty() ? V82JSC::ToJSValueRef(setter, context) : 0
     };
     
     V82JSC::exec(ctx,
@@ -657,19 +660,24 @@ Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    Isolate *isolate = V82JSC::ToIsolate(iso);
 
-    ValueImpl *object = V82JSC::ToImpl<ValueImpl, Object>(this);
     FunctionTemplateImpl* tmplimpl = V82JSC::ToImpl<FunctionTemplateImpl>(tmpl);
     
-    Local<Value> proto = V82JSC::MakeLocal<Value>(iso, object);
+    Local<Value> proto = Local<Value>::New(isolate, this);
     while (proto->IsObject()) {
         JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, context);
         InstanceWrap *instance_wrap = V82JSC::getPrivateInstance(ctx, obj);
-        if (instance_wrap && instance_wrap->m_object_template) {
-            for (const TemplateImpl *t = instance_wrap->m_object_template->m_constructor_template; t; t = t->m_parent) {
-                if (t == tmplimpl) {
+        if (instance_wrap && !instance_wrap->m_object_template.IsEmpty()) {
+            Local<ObjectTemplate> objtempl = Local<ObjectTemplate>::New(isolate, instance_wrap->m_object_template);
+            Local<FunctionTemplate> t = Local<FunctionTemplate>::New(isolate, V82JSC::ToImpl<ObjectTemplateImpl>(objtempl)->m_constructor_template);
+            
+            while (!t.IsEmpty()) {
+                FunctionTemplateImpl *tt = V82JSC::ToImpl<FunctionTemplateImpl>(t);
+                if (tt == tmplimpl) {
                     return proto.As<Object>();
                 }
+                t = Local<FunctionTemplate>::New(isolate, tt->m_parent);
             }
         }
         proto = proto.As<Object>()->GetPrototype();

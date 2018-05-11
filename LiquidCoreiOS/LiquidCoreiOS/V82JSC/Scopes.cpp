@@ -10,18 +10,31 @@
 
 using namespace v8;
 
+#define HANDLEBLOCK_SIZE 0x10000
+struct HandleBlock {
+    internal::Object * handles_[HANDLEBLOCK_SIZE / internal::kApiPointerSize];
+};
+
+
 HandleScope::HandleScope(Isolate* isolate)
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(isolate);
     
-    this->isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
-    this->prev_next_ = impl->i.ii.handle_scope_data()->next;
-    this->prev_limit_ = impl->i.ii.handle_scope_data()->limit;
+    isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
+    prev_next_ = impl->i.ii.handle_scope_data()->next;
+    prev_limit_ = impl->i.ii.handle_scope_data()->limit;
+
+    impl->m_scope_stack.push(this);
 }
 
 HandleScope::~HandleScope()
 {
-    // FIXME: Here is where we would decrement count the internal objects
+    IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(isolate_);
+    
+    impl->i.ii.handle_scope_data()->next = prev_next_;
+    impl->i.ii.handle_scope_data()->limit = prev_limit_;
+    
+    impl->m_scope_stack.pop();
 }
 
 //
@@ -44,14 +57,18 @@ int internal::HandleScope::NumberOfHandles(Isolate* isolate)
 internal::Object** internal::HandleScope::Extend(Isolate* isolate)
 {
     IsolateImpl* isolateimpl = reinterpret_cast<IsolateImpl*>(isolate);
+    DCHECK(!isolateimpl->m_scope_stack.empty());
+    
     // FIXME: Deal with actual expanison later
     assert(isolateimpl->i.ii.handle_scope_data()->next == nullptr);
 
-    internal::Object **handles = new internal::Object * [16384];
+    HandleBlock *ptr;
+    posix_memalign((void**)&ptr, HANDLEBLOCK_SIZE, sizeof(HandleBlock));
+
+    internal::Object **handles = &ptr->handles_[0];
     HandleScopeData *data = isolateimpl->i.ii.handle_scope_data();
     data->next = handles;
-    data->limit = &handles[16384];
-    
+    data->limit = &handles[HANDLEBLOCK_SIZE / internal::kApiPointerSize];
     return handles;
 }
 
@@ -154,13 +171,14 @@ public:
         prev_used_block_ = nullptr;
         bitmap_ = 0xffffffffffffffff;
         next_block_ = global_handles->first_block_;
+        if (next_block_) next_block_->prev_block_ = this;
         prev_block_ = nullptr;
         global_handles->first_block_ = this;
     }
     internal::Object ** New(internal::Object *value)
     {
         if (bitmap_ == 0) return nullptr;
-        uint64_t rightmost_set_bit_index = (bitmap_ & (-bitmap_)) - 1;
+        int rightmost_set_bit_index = ffsll(bitmap_) - 1;
         uint64_t mask = pow(2,rightmost_set_bit_index);
         bitmap_ &= ~mask;
         if (bitmap_ == 0) {
@@ -173,18 +191,26 @@ public:
             next_block_ = nullptr;
             prev_block_ = nullptr;
             next_used_block_ = global_handles_->first_used_block_;
+            if (next_used_block_) next_used_block_->prev_used_block_ = this;
+            prev_used_block_ = nullptr;
             global_handles_->first_used_block_ = this;
         }
         global_handles_->number_of_global_handles_ ++;
         memset(&handles_[rightmost_set_bit_index], 0, sizeof(Node));
         handles_[rightmost_set_bit_index].index_ = (int) rightmost_set_bit_index;
         handles_[rightmost_set_bit_index].handle_ = value;
+        if(value->IsHeapObject()) {
+            InternalObjectImpl *impl = reinterpret_cast<InternalObjectImpl*>(reinterpret_cast<intptr_t>(value) - internal::kHeapObjectTag);
+            impl->Retain();
+        }
         return &handles_[rightmost_set_bit_index].handle_;
     }
     void Reset(internal::Object ** handle)
     {
+        internal::Object *value = *handle;
         int64_t index = (reinterpret_cast<intptr_t>(handle) - reinterpret_cast<intptr_t>(&handles_[0])) / sizeof(Node);
         assert(index >= 0 && index < 64);
+        bool wasFull = bitmap_ == 0;
         uint64_t mask = pow(2,index);
         assert((bitmap_ & mask) == 0);
         bitmap_ |= mask;
@@ -197,7 +223,7 @@ public:
                 global_handles_->first_block_ = next_block_;
             }
             delete this;
-        } else if (next_used_block_) {
+        } else if (wasFull) {
             // Remove from used list and add to avaialable pool
             if (prev_used_block_) {
                 prev_used_block_->next_used_block_ = next_used_block_;
@@ -208,6 +234,11 @@ public:
             next_used_block_ = nullptr;
             next_block_ = global_handles_->first_block_;
             global_handles_->first_block_ = this;
+            prev_block_ = nullptr;
+        }
+        if (value->IsHeapObject()) {
+            InternalObjectImpl *impl = reinterpret_cast<InternalObjectImpl*>(reinterpret_cast<intptr_t>(value) - internal::kHeapObjectTag);
+            impl->Release();
         }
     }
     
@@ -248,4 +279,37 @@ void internal::GlobalHandles::Destroy(internal::Object** location)
     intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
     NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
     block->Reset(location);
+}
+
+internal::Handle<internal::Object> internal::GlobalHandles::CopyGlobal(v8::internal::Object **location)
+{
+    Node * handle_loc = reinterpret_cast<Node*>(location);
+    int index = handle_loc->index_;
+    intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
+    intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+    NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+    
+    Handle<Object> new_handle = block->global_handles_->Create(*location);
+    // Copy traits (preserve index of new handle)
+    internal::GlobalHandles::Node * new_handle_loc = reinterpret_cast<internal::GlobalHandles::Node*>(new_handle.location());
+    index = new_handle_loc->index_;
+    memcpy(new_handle_loc, handle_loc, sizeof(Node));
+    new_handle_loc->index_ = index;
+    
+    return new_handle;
+}
+
+
+internal::Object** V8::GlobalizeReference(internal::Isolate* isolate,
+                                          internal::Object** handle)
+{
+    return isolate->global_handles()->Create(*handle).location();
+}
+internal::Object** V8::CopyPersistent(internal::Object** handle)
+{
+    return internal::GlobalHandles::CopyGlobal(handle).location();
+}
+void V8::DisposeGlobal(internal::Object** global_handle)
+{
+    internal::GlobalHandles::Destroy(global_handle);
 }

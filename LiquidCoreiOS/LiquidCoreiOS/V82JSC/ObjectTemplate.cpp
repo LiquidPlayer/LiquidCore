@@ -22,7 +22,7 @@ Local<ObjectTemplate> ObjectTemplate::New(
         ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl));
         V82JSC::Map(otempl)->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
 
-        return V82JSC::MakeLocal<ObjectTemplate>(V82JSC::ToIsolateImpl(otempl), otempl);
+        return V82JSC::CreateLocal<ObjectTemplate>(isolate, otempl);
     }
 }
 
@@ -40,12 +40,13 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(this);
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
+    Isolate* isolate = V82JSC::ToIsolate(iso);
     
     LocalException exception(iso);
     
     JSObjectRef instance = 0;
-    if (impl->m_constructor_template) {
-        MaybeLocal<Function> ctor = V82JSC::MakeLocal<FunctionTemplate>(iso, impl->m_constructor_template)->GetFunction(context);
+    if (!impl->m_constructor_template.IsEmpty()) {
+        MaybeLocal<Function> ctor = impl->m_constructor_template.Get(isolate)->GetFunction(context);
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
             instance = JSObjectCallAsConstructor(ctx->m_ctxRef, (JSObjectRef)ctor_func, 0, 0, &exception);
@@ -110,7 +111,10 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         value = JSValueMakeUndefined(ctx);
     }
     InstanceWrap* wrap = V82JSC::getPrivateInstance(ctx, target);
-    const ObjectTemplateImpl *templ = reinterpret_cast<const ObjectTemplateImpl*>(wrap->m_object_template);
+    Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
+    HandleScope scope(isolate);
+    
+    const ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
     IsolateImpl *isolateimpl = wrap->m_isolate;
     Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
@@ -151,10 +155,13 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
     } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-        InternalObjectImpl* i = reinterpret_cast<InternalObjectImpl*>(
-                                reinterpret_cast<intptr_t>(isolateimpl->i.ii.thread_local_top()->scheduled_exception_ - internal::kHeapObjectTag));
-        Local<Value> excp = V82JSC::MakeLocal<Value>(isolateimpl, i);
-        *exception = V82JSC::ToJSValueRef(excp, context);
+        internal::Object * excep = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+        if (excep->IsHeapObject()) {
+            ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
+            *exception = i->m_value;
+        } else {
+            *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
+        }
         isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
     }
 
@@ -170,8 +177,10 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
-
+    Isolate* isolate = V82JSC::ToIsolate(iso);
+    
     LocalException exception(iso);
+    Local<ObjectTemplate> thiz = V82JSC::CreateLocal<ObjectTemplate>(isolate, this);
     
     // Structure:
     //
@@ -180,7 +189,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     // Create lifecycle object
     InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_ctxRef, root);
     wrap->m_isolate = iso;
-    wrap->m_object_template = this;
+    wrap->m_object_template = Copyable(ObjectTemplate)(isolate, thiz);
     wrap->m_num_internal_fields = m_internal_fields;
     wrap->m_internal_fields = new JSValueRef[m_internal_fields]();
 
@@ -331,8 +340,8 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     }
 
     MaybeLocal<Object> instance;
-    if (m_constructor_template) {
-        instance = InitInstance(context, root, exception, m_constructor_template);
+    if (!m_constructor_template.IsEmpty()) {
+        instance = InitInstance(context, root, exception, m_constructor_template.Get(isolate));
     } else {
         instance = InitInstance(context, root, exception);
     }
@@ -394,17 +403,20 @@ void ObjectTemplate::SetAccessor(
                  Local<AccessorSignature> signature)
 {
     ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
-    ValueImpl *name_ = V82JSC::ToImpl<ValueImpl>(name);
-    ValueImpl *data_ = V82JSC::ToImpl<ValueImpl>(data);
+    Isolate* isolate = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(this_));
     
     ObjAccessor accessor;
-    accessor.name = name_;
+    accessor.name = Copyable(Name)(isolate, name);
     accessor.getter = getter;
     accessor.setter = setter;
-    accessor.data = data_;
+    accessor.data = Copyable(Value)(isolate, data);
     accessor.settings = settings;
     accessor.attribute = attribute;
-    accessor.signature = reinterpret_cast<SignatureImpl*>(*signature); // FIXME
+    
+    // For now, Signature and AccessorSignature are the same
+    Local<Signature> sig = * reinterpret_cast<Local<Signature>*>(&signature);
+    
+    accessor.signature = Copyable(Signature)(isolate, sig);
     
     this_->m_accessors.push_back(accessor);
 }

@@ -207,20 +207,6 @@ bool V8::RegisterDefaultSignalHandler()
     return false;
 }
 
-internal::Object** V8::GlobalizeReference(internal::Isolate* isolate,
-                                             internal::Object** handle)
-{
-    return isolate->global_handles()->Create(*handle).location();
-}
-internal::Object** V8::CopyPersistent(internal::Object** handle)
-{
-    assert(0);
-    return nullptr;
-}
-void V8::DisposeGlobal(internal::Object** global_handle)
-{
-    internal::GlobalHandles::Destroy(global_handle);
-}
 void V8::MakeWeak(internal::Object** location, void* data,
                      WeakCallbackInfo<void>::Callback weak_callback,
                      WeakCallbackType type)

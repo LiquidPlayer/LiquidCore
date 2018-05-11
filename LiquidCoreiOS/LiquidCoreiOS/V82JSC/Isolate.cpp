@@ -27,50 +27,58 @@ ISOLATE_INIT_LIST(DECLARE_FIELDS);
  */
 Isolate * Isolate::New(Isolate::CreateParams const&params)
 {
-    IsolateImpl * isolate = (IsolateImpl *) malloc(sizeof (IsolateImpl));
-    memset(isolate, 0, sizeof(IsolateImpl));
+    IsolateImpl * impl = (IsolateImpl *) malloc(sizeof (IsolateImpl));
+    memset(impl, 0, sizeof(IsolateImpl));
+    Isolate * isolate = V82JSC::ToIsolate(impl);
 
     reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
 
-    HeapImpl* heap = static_cast<HeapImpl*>(isolate->i.ii.heap());
+    HeapImpl* heap = static_cast<HeapImpl*>(impl->i.ii.heap());
     heap->m_heap_top = nullptr;
     heap->m_index = 0;
     
-    isolate->m_global_symbols = std::map<std::string, JSValueRef>();
-    isolate->m_private_symbols = std::map<std::string, JSValueRef>();
-    isolate->m_context_stack = std::stack<ContextImpl*>();
+    impl->m_global_symbols = std::map<std::string, JSValueRef>();
+    impl->m_private_symbols = std::map<std::string, JSValueRef>();
+    impl->m_context_stack = std::stack<Copyable(v8::Context)>();
+    impl->m_scope_stack = std::stack<HandleScope*>();
     
-    isolate->m_params = params;
+    HandleScope scope(isolate);
     
-    isolate->m_group = JSContextGroupCreate();
-    Local<Context> nullContext = Context::New(V82JSC::ToIsolate(isolate));
-    isolate->m_nullContext = V82JSC::ToImpl<ContextImpl>(nullContext);
-    isolate->EnterContext(*nullContext);
+    impl->m_params = params;
+    
+    impl->m_group = JSContextGroupCreate();
+    Local<Context> nullContext = Context::New(isolate);
+    impl->m_nullContext.Reset(isolate, nullContext);
+    impl->EnterContext(nullContext);
+    
+    impl->m_undefined.Reset(isolate, ValueImpl::NewUndefined(isolate));
+    impl->i.roots.undefined_value = * reinterpret_cast<internal::Object***> (*impl->m_undefined);
 
-    Primitive *undefined = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
-    isolate->i.roots.undefined_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(undefined) & ~3) +1);
-    Primitive *the_hole = ValueImpl::NewUndefined(reinterpret_cast<v8::Isolate*>(isolate));
-    isolate->i.roots.the_hole_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(the_hole) & ~3) +1);
-    Primitive *null = ValueImpl::NewNull(reinterpret_cast<v8::Isolate*>(isolate));
-    isolate->i.roots.null_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(null) & ~3) +1);
-    Primitive *yup = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), true);
-    isolate->i.roots.true_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(yup) & ~3) +1);
-    Primitive *nope = ValueImpl::NewBoolean(reinterpret_cast<v8::Isolate*>(isolate), false);
-    isolate->i.roots.false_value = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(nope) & ~3) +1);
+    impl->m_the_hole.Reset(isolate, ValueImpl::NewUndefined(isolate));
+    impl->i.roots.the_hole_value = * reinterpret_cast<internal::Object***> (*impl->m_the_hole);
+
+    impl->m_null.Reset(isolate, ValueImpl::NewNull(isolate));
+    impl->i.roots.null_value = * reinterpret_cast<internal::Object***> (*impl->m_null);
+
+    impl->m_yup.Reset(isolate, ValueImpl::NewBoolean(isolate, true));
+    impl->i.roots.true_value = * reinterpret_cast<internal::Object ***>(*impl->m_yup);
+
+    impl->m_nope.Reset(isolate, ValueImpl::NewBoolean(isolate, false));
+    impl->i.roots.false_value = * reinterpret_cast<internal::Object ***>(*impl->m_nope);
     
-    isolate->m_negative_zero = V82JSC::exec(isolate->m_nullContext->m_ctxRef, "return -0", 0, 0);
+    impl->m_negative_zero = V82JSC::exec(V82JSC::ToContextRef(nullContext), "return -0", 0, 0);
     
-    isolate->i.ii.thread_local_top_ = internal::ThreadLocalTop();
-    isolate->i.ii.thread_local_top_.isolate_ = &isolate->i.ii;
-    isolate->i.ii.thread_local_top_.pending_exception_ = *isolate->i.roots.the_hole_value;
+    impl->i.ii.thread_local_top_ = internal::ThreadLocalTop();
+    impl->i.ii.thread_local_top_.isolate_ = &impl->i.ii;
+    impl->i.ii.thread_local_top_.pending_exception_ = *impl->i.roots.the_hole_value;
     
     JSStringRef empty_string = JSStringCreateWithUTF8CString("");
-    Local<String> esv = ValueImpl::New(V82JSC::ToIsolate(isolate), empty_string);
-    ValueImpl *es = V82JSC::ToImpl<ValueImpl>(esv);
-    isolate->i.roots.empty_string = reinterpret_cast<internal::Object **>((reinterpret_cast<intptr_t>(es) & ~3) +1);;
+    Local<String> esv = ValueImpl::New(isolate, empty_string);
+    impl->m_empty_string.Reset(isolate, esv);
+    impl->i.roots.empty_string = * reinterpret_cast<internal::Object ***>(*impl->m_empty_string);
     JSStringRelease(empty_string);
     
-    isolate->ExitContext(*nullContext);
+    impl->ExitContext(nullContext);
     
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
@@ -159,12 +167,12 @@ void Isolate::Exit()
     current = nullptr;
 }
 
-void IsolateImpl::EnterContext(v8::Context *ctx)
+void IsolateImpl::EnterContext(Local<v8::Context> ctx)
 {
-    m_context_stack.push(V82JSC::ToContextImpl(ctx));
+    m_context_stack.push(Persistent<v8::Context>(V82JSC::ToIsolate(this), ctx));
 }
 
-void IsolateImpl::ExitContext(v8::Context *ctx)
+void IsolateImpl::ExitContext(Local<v8::Context> ctx)
 {
     assert(m_context_stack.size());
     m_context_stack.pop();
@@ -330,7 +338,7 @@ Local<Context> Isolate::GetCurrentContext()
         return Local<Context>();
     }
     
-    return V82JSC::MakeLocal<Context>(impl, impl->m_context_stack.top());
+    return Local<Context>::New(this, impl->m_context_stack.top());
 }
 
 /** Returns the last context entered through V8's C++ API. */

@@ -47,13 +47,8 @@ public:
     _maybe() : has_value_(false) {}
 };
 
-template <class T>
-class __local {
-public:
-    T* val_;
-    v8::Local<T> toLocal() { return *(reinterpret_cast<v8::Local<T> *>(this)); }
-    __local(void *v) { val_ = reinterpret_cast<T*>(v); }
-};
+#define Copyable(T) \
+v8::Persistent<T, v8::CopyablePersistentTraits<T>>
 
 struct ContextImpl;
 
@@ -94,13 +89,18 @@ struct IsolateImpl {
         };
     } i;
     JSContextGroupRef m_group;
-    ContextImpl* m_nullContext;
+    Copyable(v8::Context) m_nullContext;
     JSValueRef m_negative_zero;
 
-    void EnterContext(v8::Context *ctx);
-    void ExitContext(v8::Context *ctx);
-    
-    v8::Context *m_external_context;
+    Copyable(v8::Primitive) m_undefined;
+    Copyable(v8::Primitive) m_the_hole;
+    Copyable(v8::Primitive) m_null;
+    Copyable(v8::Primitive) m_yup;
+    Copyable(v8::Primitive) m_nope;
+    Copyable(v8::String) m_empty_string;
+
+    void EnterContext(v8::Local<v8::Context> ctx);
+    void ExitContext(v8::Local<v8::Context> ctx);
     
     v8::TryCatch *m_handlers;
     
@@ -109,7 +109,8 @@ struct IsolateImpl {
     
     v8::Isolate::CreateParams m_params;
     
-    std::stack<ContextImpl*> m_context_stack;
+    std::stack<Copyable(v8::Context)> m_context_stack;
+    std::stack<v8::HandleScope*> m_scope_stack;
 };
 }} // namespaces
 
@@ -122,25 +123,26 @@ struct InternalObjectImpl {
         v8::internal::Oddball oddball;
         v8::internal::Map map;
     };
+    void Retain();
+    void Release();
 };
+
+typedef void (*InternalObjectDestructor)(InternalObjectImpl* obj);
 
 class HeapAllocator : public v8::internal::MemoryChunk
 {
 public:
-    static InternalObjectImpl* Alloc(IsolateImpl *isolate, size_t size);
+    static InternalObjectImpl* Alloc(IsolateImpl *isolate, size_t size,
+                                     InternalObjectDestructor destructor=nullptr);
 };
 
 struct HeapImpl : v8::internal::Heap {
     v8::internal::MemoryChunk *m_heap_top;
     size_t m_index;
-    
-    static InternalObjectImpl* Alloc(v8::internal::Isolate *isolate, size_t size);
 };
 
 struct ContextImpl : InternalObjectImpl
 {
-    v8::internal::Context *pInternal;
-    
     JSContextRef m_ctxRef;
     std::map<std::string, bool> m_loaded_extensions;
     
@@ -161,10 +163,10 @@ struct ValueImpl : InternalObjectImpl {
     static v8::Local<v8::String> New(v8::Isolate *isolate, JSStringRef string,
                                      v8::internal::InstanceType type=v8::internal::FIRST_NONSTRING_TYPE,
                                      void *resource = nullptr);
-    static v8::Primitive * NewUndefined(v8::Isolate *isolate);
-    static v8::Primitive * New(v8::Isolate *isolate, double number);
-    static v8::Primitive * NewBoolean(v8::Isolate *isolate, bool value);
-    static v8::Primitive * NewNull(v8::Isolate *isolate);
+    static v8::Local<v8::Primitive> NewUndefined(v8::Isolate *isolate);
+    static v8::Local<v8::Primitive> New(v8::Isolate *isolate, double number);
+    static v8::Local<v8::Primitive> NewBoolean(v8::Isolate *isolate, bool value);
+    static v8::Local<v8::Primitive> NewNull(v8::Isolate *isolate);
 };
 
 struct EmbedderDataImpl {
@@ -196,25 +198,25 @@ struct ObjectTemplateImpl;
 struct FunctionTemplateImpl;
 
 struct PropAccessor {
-    ValueImpl* name;
-    FunctionTemplateImpl *setter;
-    FunctionTemplateImpl *getter;
+    Copyable(v8::Name) name;
+    Copyable(v8::FunctionTemplate) setter;
+    Copyable(v8::FunctionTemplate) getter;
     v8::PropertyAttribute attribute;
     v8::AccessControl settings;
 };
 struct Prop {
-    ValueImpl* name;
-    ValueImpl* value;
+    Copyable(v8::Name) name;
+    Copyable(v8::Data) value;
     v8::PropertyAttribute attributes;
 };
 struct ObjAccessor {
-    ValueImpl *name;
+    Copyable(v8::Name) name;
     v8::AccessorNameGetterCallback getter;
     v8::AccessorNameSetterCallback setter;
-    ValueImpl *data;
+    Copyable(v8::Value) data;
     v8::AccessControl settings;
     v8::PropertyAttribute attribute;
-    SignatureImpl *signature;
+    Copyable(v8::Signature) signature;
 };
 
 struct LocalException;
@@ -226,9 +228,9 @@ struct TemplateImpl : InternalObjectImpl
     std::vector<ObjAccessor> m_accessors;
     v8::FunctionCallback m_callback;
     JSValueRef m_data;
-    SignatureImpl *m_signature;
-    ObjectTemplateImpl *m_prototype_template;
-    FunctionTemplateImpl *m_parent;
+    Copyable(v8::Signature) m_signature;
+    Copyable(v8::ObjectTemplate) m_prototype_template;
+    Copyable(v8::FunctionTemplate) m_parent;
 
     static JSValueRef callAsFunctionCallback(JSContextRef ctx,
                                              JSObjectRef function,
@@ -239,7 +241,7 @@ struct TemplateImpl : InternalObjectImpl
     static v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                                    JSObjectRef instance,
                                                    LocalException& excep,
-                                                   const FunctionTemplateImpl *impl);
+                                                   v8::Local<v8::FunctionTemplate> ftempl);
     v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                             JSObjectRef instance, LocalException& exception);
     static TemplateImpl* New(v8::Isolate* isolate, size_t size);
@@ -250,8 +252,8 @@ struct FunctionTemplateImpl : TemplateImpl
     v8::ConstructorBehavior m_behavior;
     std::string m_name;
     int m_length;
-    ObjectTemplateImpl *m_instance_template;
-    std::map<const ContextImpl*, JSObjectRef> m_functions;
+    Copyable(v8::ObjectTemplate) m_instance_template;
+    std::map<JSContextRef, JSObjectRef> m_functions;
     JSClassRef m_class;
 
     static JSValueRef callAsConstructorCallback(JSContextRef ctx,
@@ -264,7 +266,7 @@ struct FunctionTemplateImpl : TemplateImpl
 
 struct ObjectTemplateImpl : TemplateImpl
 {
-    FunctionTemplateImpl *m_constructor_template;
+    Copyable(v8::FunctionTemplate) m_constructor_template;
     v8::NamedPropertyHandlerConfiguration m_named_handler;
     v8::IndexedPropertyHandlerConfiguration m_indexed_handler;
     JSValueRef m_named_data;
@@ -276,7 +278,7 @@ struct ObjectTemplateImpl : TemplateImpl
 };
 
 struct TemplateWrap {
-    const TemplateImpl *m_template;
+    Copyable(v8::FunctionTemplate) m_template;
     IsolateImpl* m_isolate;
     std::map<JSStringRef, JSObjectRef> m_getters;
     std::map<JSStringRef, JSObjectRef> m_setters;
@@ -284,7 +286,7 @@ struct TemplateWrap {
 
 struct InstanceWrap {
     JSValueRef m_security;
-    const ObjectTemplateImpl *m_object_template;
+    Copyable(v8::ObjectTemplate) m_object_template;
     IsolateImpl *m_isolate;
     int m_num_internal_fields;
     JSValueRef *m_internal_fields;
@@ -294,7 +296,7 @@ struct InstanceWrap {
 
 struct SignatureImpl : InternalObjectImpl
 {
-    FunctionTemplateImpl *m_template;
+    Copyable(v8::FunctionTemplate) m_template;
 };
 
 /* IMPORTANT!  This must match v8::TryCatch */
@@ -313,7 +315,15 @@ struct TryCatchCopy {
 
 struct V82JSC {
     template <class T>
-    static inline v8::Local<T> MakeLocal(v8::internal::Isolate *isolate, InternalObjectImpl *o)
+    class __local {
+    public:
+        T* val_;
+        v8::Local<T> toLocal() { return *(reinterpret_cast<v8::Local<T> *>(this)); }
+        __local(void *v) { val_ = reinterpret_cast<T*>(v); }
+    };
+
+    template <class T>
+    static inline v8::Local<T> CreateLocal(v8::internal::Isolate *isolate, InternalObjectImpl *o)
     {
         v8::internal::Object ** handle =
             v8::internal::HandleScope::CreateHandle(isolate,
@@ -321,17 +331,19 @@ struct V82JSC {
         return __local<T>(handle).toLocal();
     }
     template <class T>
-    static inline v8::Local<T> MakeLocal(v8::Isolate *isolate, InternalObjectImpl *o)
+    static inline v8::Local<T> CreateLocal(v8::Isolate *isolate, InternalObjectImpl *o)
     {
-        return MakeLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o);
+        return CreateLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o);
     }
+    /*
     template <class T>
     static inline v8::Local<T> MakeLocal(IsolateImpl *isolate, InternalObjectImpl *o)
     {
         return MakeLocal<T>(&isolate->i.ii, o);
     }
+    */
     template <class T>
-    static inline v8::Local<T> MakeLocalSmi(v8::internal::Isolate *isolate, v8::internal::Smi* smi)
+    static inline v8::Local<T> CreateLocalSmi(v8::internal::Isolate *isolate, v8::internal::Smi* smi)
     {
         v8::internal::Object ** handle = v8::internal::HandleScope::CreateHandle(isolate, smi);
         return __local<T>(handle).toLocal();
@@ -452,7 +464,7 @@ struct V82JSC {
     {
         v8::Local<v8::Context> context = isolate->GetCurrentContext();
         if (context.IsEmpty()) {
-            context = MakeLocal<v8::Context>(isolate, ToIsolateImpl(isolate)->m_nullContext);
+            context = v8::Local<v8::Context>::New(isolate, ToIsolateImpl(isolate)->m_nullContext);
         }
         return context;
     }

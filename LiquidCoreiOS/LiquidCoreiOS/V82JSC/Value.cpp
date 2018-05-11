@@ -15,20 +15,21 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
     JSType t = JSValueGetType(ctx->m_ctxRef, value);
     v8::internal::InstanceType instancet = v8::internal::JS_VALUE_TYPE;
     IsolateImpl* isolateimpl = V82JSC::ToIsolateImpl(ctx);
+    v8::Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
     
     double num = 0.0;
     switch (t) {
         case kJSTypeUndefined: {
-            return __local<Value>(&isolateimpl->i.roots.undefined_value).toLocal();
+            return isolateimpl->m_undefined.Get(isolate);
         }
         case kJSTypeNull: {
-            return __local<Value>(&isolateimpl->i.roots.null_value).toLocal();
+            return isolateimpl->m_null.Get(isolate);
         }
         case kJSTypeBoolean: {
             if (JSValueToBoolean(ctx->m_ctxRef, value))
-                return __local<Value>(&isolateimpl->i.roots.true_value).toLocal();
+                return isolateimpl->m_yup.Get(isolate);
             else
-                return __local<Value>(&isolateimpl->i.roots.false_value).toLocal();
+                return isolateimpl->m_nope.Get(isolate);
         }
         case kJSTypeString: {
             instancet = v8::internal::STRING_TYPE;
@@ -39,8 +40,8 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
             double intpart;
             if (value != isolateimpl->m_negative_zero && modf(num, &intpart) == 0.0) {
                 if (internal::Smi::IsValid(intpart)) {
-                    return V82JSC::MakeLocalSmi<Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
-                                                       internal::Smi::FromInt(intpart));
+                    return V82JSC::CreateLocalSmi<Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
+                                                         internal::Smi::FromInt(intpart));
                 }
             }
             instancet = v8::internal::HEAP_NUMBER_TYPE;
@@ -57,7 +58,7 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
     }
     V82JSC::Map(impl)->set_instance_type(instancet);
 
-    return V82JSC::MakeLocal<Value>(isolateimpl, impl);
+    return V82JSC::CreateLocal<Value>(V82JSC::ToIsolate(isolateimpl), impl);
 }
 
 #define FROMTHIS(c,v) \
@@ -490,13 +491,9 @@ Local<External> External::New(Isolate* isolate, void* value)
         s_externalClass = JSClassCreate(&definition);
     }
     
-    IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(isolate);
-    if (!impl->m_external_context) {
-        impl->m_external_context = reinterpret_cast<Context*>(V82JSC::ToContextImpl(Context::New(isolate)));
-    }
-    ContextImpl *ctx = V82JSC::ToContextImpl(impl->m_external_context);
-    JSObjectRef external = JSObjectMake(ctx->m_ctxRef, s_externalClass, value);
-    auto e = ValueImpl::New(ctx, external);
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSObjectRef external = JSObjectMake(V82JSC::ToContextRef(context), s_externalClass, value);
+    auto e = ValueImpl::New(V82JSC::ToContextImpl(context), external);
     
     return * reinterpret_cast<Local<External> *>(&e);
 }

@@ -88,7 +88,7 @@ MaybeLocal<Map> Map::Set(Local<Context> context,
     };
     V82JSC::exec(ctx, "_1.set(_2, _3)", 3, args, &exception);
     if (exception.ShouldThow()) return MaybeLocal<Map>();
-    return V82JSC::MakeLocal<Map>(iso, impl);
+    return V82JSC::CreateLocal<Map>(V82JSC::ToIsolate(iso), impl);
 }
 
 Maybe<bool> Map::Has(Local<Context> context, Local<Value> key)

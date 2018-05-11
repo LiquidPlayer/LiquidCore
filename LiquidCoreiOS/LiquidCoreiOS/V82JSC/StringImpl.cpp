@@ -15,7 +15,7 @@ Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::OperatingContext(isolate));
 
     ValueImpl *string = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
-    Local<String> local = V82JSC::MakeLocal<String>(isolate, string);
+    Local<String> local = V82JSC::CreateLocal<String>(isolate, string);
     string->m_value = JSValueMakeString(ctx, str);
     JSValueProtect(ctx, string->m_value);
     if (type == v8::internal::FIRST_NONSTRING_TYPE) {

@@ -274,6 +274,9 @@ V(isNumberType)
 V(Equality)
 V(ReadOnlyPropertyInGlobalProto)
 V(ReadOnlyIndexedProperties)
+V(ResettingGlobalHandle)
+V(ResettingGlobalHandleToEmpty)
+V(Global)
 
 #undef V
 #define V(tst) \
@@ -284,9 +287,6 @@ cctest_main(2, argv); \
 
 V(StackTraceInExtension)
 V(AccessorIsPreservedOnAttributeChange)
-V(ResettingGlobalHandle)
-V(ResettingGlobalHandleToEmpty)
-V(Global)
 V(TwoPassPhantomCallbacks)
 V(TwoPassPhantomCallbacksNestedGc)
 V(GlobalValueMap)

@@ -43,7 +43,7 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         script->m_startingLineNumber = startingLineNumber;
         script->m_script = s;
         
-        return V82JSC::MakeLocal<Script>(iso, script);
+        return V82JSC::CreateLocal<Script>(V82JSC::ToIsolate(iso), script);
     }
 }
 

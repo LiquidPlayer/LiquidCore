@@ -41,9 +41,10 @@ void Context::DetachGlobal()
 
 Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
+    printf ("FIXME! ContextImpl::New() from JSContextRef\n");
     ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
     context->m_ctxRef = ctx;
-    return V82JSC::MakeLocal<Context>(isolate, context);
+    return V82JSC::CreateLocal<Context>(isolate, context);
 }
 
 
@@ -69,10 +70,17 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<ObjectTemplate> global_template,
                           MaybeLocal<Value> global_object)
 {
-    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
+    auto dealloc = [](InternalObjectImpl *thiz)
+    {
+        printf("Dealloc context!\n");
+    };
+    
+    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
+                                                                            sizeof(ContextImpl),
+                                                                            dealloc));
     V82JSC::Map(context)->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
-    Local<Context> ctx = V82JSC::MakeLocal<Context>(isolate, context);
+    Local<Context> ctx = V82JSC::CreateLocal<Context>(isolate, context);
     int hash = 0;
     context->m_loaded_extensions = std::map<std::string, bool>();
     
@@ -92,9 +100,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSObjectRef instance = global;
         //JSObjectRef instance = JSObjectMake(context->m_ctxRef, 0, nullptr);
         //JSObjectSetPrototype(context->m_ctxRef, global, instance);
+        auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
         
-        if (impl->m_constructor_template) {
-            MaybeLocal<Function> ctor = V82JSC::MakeLocal<FunctionTemplate>(isolate, impl->m_constructor_template)->GetFunction(ctx);
+        if (!ctortempl.IsEmpty()) {
+            MaybeLocal<Function> ctor = ctortempl->GetFunction(ctx);
             if (!ctor.IsEmpty()) {
                 JSObjectRef ctor_func = (JSObjectRef) V82JSC::ToJSValueRef(ctor.ToLocalChecked(), ctx);
                 JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
@@ -123,7 +132,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     }
     
     // Don't do anything fancy if we are setting up the default context
-    if (i->m_nullContext != nullptr) {
+    if (!i->m_nullContext.IsEmpty()) {
         proxyArrayBuffer(context);
 
         InstallAutoExtensions(ctx);
@@ -228,7 +237,9 @@ Local<Value> Context::GetSecurityToken()
 void Context::Enter()
 {
     Isolate *isolate = V82JSC::ToIsolate(this);
-    V82JSC::ToIsolateImpl(isolate)->EnterContext(this);
+    HandleScope scope(isolate);
+    Local<Context> thiz = Local<Context>::New(isolate, this);
+    V82JSC::ToIsolateImpl(isolate)->EnterContext(thiz);
 }
 
 /**
@@ -238,7 +249,9 @@ void Context::Enter()
 void Context::Exit()
 {
     Isolate *isolate = V82JSC::ToIsolate(this);
-    V82JSC::ToIsolateImpl(isolate)->ExitContext(this);
+    HandleScope scope(isolate);
+    Local<Context> thiz = Local<Context>::New(isolate, this);
+    V82JSC::ToIsolateImpl(isolate)->ExitContext(thiz);
 }
 
 /** Returns an isolate associated with a current context. */

@@ -28,7 +28,7 @@ Local<Number> Number::New(Isolate* isolate, double value)
     num->m_value = JSValueMakeNumber(ctx, value);
     JSValueProtect(ctx, num->m_value);
 
-    return V82JSC::MakeLocal<Number>(isolate, num);
+    return V82JSC::CreateLocal<Number>(isolate, num);
 }
 
 Local<Integer> Integer::New(Isolate* isolate, int32_t value)
@@ -75,7 +75,7 @@ int Name::GetIdentityHash()
     return 1;
 }
 
-v8::Primitive * ValueImpl::NewUndefined(v8::Isolate *isolate)
+Local<Primitive> ValueImpl::NewUndefined(v8::Isolate *isolate)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
@@ -86,10 +86,10 @@ v8::Primitive * ValueImpl::NewUndefined(v8::Isolate *isolate)
     undefined->m_value = JSValueMakeUndefined(ctx);
     JSValueProtect(ctx, undefined->m_value);
 
-    return reinterpret_cast<v8::Primitive*>(undefined);
+    return V82JSC::CreateLocal<Primitive>(isolate, undefined);
 }
 
-v8::Primitive * ValueImpl::NewNull(v8::Isolate *isolate)
+Local<Primitive>  ValueImpl::NewNull(v8::Isolate *isolate)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
@@ -100,10 +100,10 @@ v8::Primitive * ValueImpl::NewNull(v8::Isolate *isolate)
     null->m_value = JSValueMakeNull(ctx);
     JSValueProtect(ctx, null->m_value);
 
-    return reinterpret_cast<v8::Primitive*>(null);
+    return V82JSC::CreateLocal<Primitive>(isolate, null);
 }
 
-v8::Primitive * ValueImpl::NewBoolean(v8::Isolate *isolate, bool value)
+Local<Primitive>  ValueImpl::NewBoolean(v8::Isolate *isolate, bool value)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
@@ -112,6 +112,6 @@ v8::Primitive * ValueImpl::NewBoolean(v8::Isolate *isolate, bool value)
     is->m_value = JSValueMakeBoolean(ctx, value);
     JSValueProtect(ctx, is->m_value);
 
-    return reinterpret_cast<v8::Primitive*>(is);
+    return V82JSC::CreateLocal<Primitive>(isolate, is);
 }
 
