@@ -10,9 +10,12 @@
 
 using namespace v8;
 
-#define HANDLEBLOCK_SIZE 0x10000
+#define HANDLEBLOCK_SIZE 0x4000
+#define NUM_HANDLES ((HANDLEBLOCK_SIZE - 2*sizeof(HandleBlock*))/ sizeof(internal::Object*))
 struct HandleBlock {
-    internal::Object * handles_[HANDLEBLOCK_SIZE / internal::kApiPointerSize];
+    HandleBlock * previous_;
+    HandleBlock * next_;
+    internal::Object * handles_[NUM_HANDLES];
 };
 
 
@@ -27,12 +30,35 @@ HandleScope::HandleScope(Isolate* isolate)
     impl->m_scope_stack.push(this);
 }
 
+
+void delBlock(HandleBlock *block)
+{
+    if (block && block->next_) delBlock(block->next_);
+    free (block);
+}
+
 HandleScope::~HandleScope()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(isolate_);
+    internal::HandleScopeData *data = impl->i.ii.handle_scope_data();
+
+    data->next = prev_next_;
+    data->limit = prev_limit_;
     
-    impl->i.ii.handle_scope_data()->next = prev_next_;
-    impl->i.ii.handle_scope_data()->limit = prev_limit_;
+    // Clear any HandleBlocks that are done
+    if (data->limit) {
+        intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
+        addr &= ~(HANDLEBLOCK_SIZE-1);
+        HandleBlock *thisBlock = reinterpret_cast<HandleBlock*>(addr);
+        delBlock(thisBlock->next_);
+        thisBlock->next_ = nullptr;
+        if (impl->m_scope_stack.size() == 1) {
+            CHECK_EQ(data->next, data->limit);
+            free (thisBlock);
+            data->next = nullptr;
+            data->limit = nullptr;
+        }
+    }
     
     impl->m_scope_stack.pop();
 }
@@ -59,16 +85,25 @@ internal::Object** internal::HandleScope::Extend(Isolate* isolate)
     IsolateImpl* isolateimpl = reinterpret_cast<IsolateImpl*>(isolate);
     DCHECK(!isolateimpl->m_scope_stack.empty());
     
-    // FIXME: Deal with actual expanison later
-    assert(isolateimpl->i.ii.handle_scope_data()->next == nullptr);
-
     HandleBlock *ptr;
     posix_memalign((void**)&ptr, HANDLEBLOCK_SIZE, sizeof(HandleBlock));
-
+    
     internal::Object **handles = &ptr->handles_[0];
     HandleScopeData *data = isolateimpl->i.ii.handle_scope_data();
+
+    if (data->next != nullptr) {
+        intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
+        addr &= ~HANDLEBLOCK_SIZE;
+        ptr->previous_ = reinterpret_cast<HandleBlock*>(addr);
+        ptr->previous_->next_ = ptr;
+    } else {
+        ptr->previous_ = nullptr;
+    }
+    ptr->next_ = nullptr;
+
     data->next = handles;
-    data->limit = &handles[HANDLEBLOCK_SIZE / internal::kApiPointerSize];
+    data->limit = &handles[NUM_HANDLES];
+
     return handles;
 }
 

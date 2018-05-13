@@ -402,9 +402,26 @@ Local<String> Value::TypeOf(Isolate* isolate)
     return ValueImpl::New(isolate, JSValueToStringCopy(c->m_ctxRef, to, &exception));
 }
 
-Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object) { return Nothing<bool>(); }
+Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object)
+{
+    FROMTHIS(c,v);
+    JSValueRef args[] = {
+        v,
+        V82JSC::ToJSValueRef(object, context)
+    };
+    LocalException exception(V82JSC::ToIsolateImpl(this));
+    JSValueRef is = V82JSC::exec(c->m_ctxRef, "return _1 instanceof _2", 2, args, &exception);
+    if (exception.ShouldThow()) {
+        return Nothing<bool>();
+    }
+    return _maybe<bool>(JSValueToBoolean(c->m_ctxRef, is)).toMaybe();
+}
 
-MaybeLocal<Uint32> Value::ToArrayIndex(Local<Context> context) const { return MaybeLocal<Uint32>(); }
+MaybeLocal<Uint32> Value::ToArrayIndex(Local<Context> context) const
+{
+    assert(0);
+    return MaybeLocal<Uint32>();
+}
 
 MaybeLocal<v8::Boolean> Value::ToBoolean(Local<Context> context) const
 {

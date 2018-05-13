@@ -267,6 +267,7 @@
 				076F58E7201E7F5A004780FD /* ArrayBuffer.cpp */,
 				076F58D7201E7EF9004780FD /* Context.cpp */,
 				076F58D9201E7EF9004780FD /* Scopes.cpp */,
+				071D9A4B209A2015002351EB /* Heap.cpp */,
 				076F58D8201E7EF9004780FD /* Isolate.cpp */,
 				076F58E5201E7F2E004780FD /* ResourceConstraints.cpp */,
 				076F58EE201E7FCD004780FD /* Script.cpp */,
@@ -300,7 +301,6 @@
 				07F804FC202DDA4400FDFC27 /* Locker.cpp */,
 				07F8054320395FA700FDFC27 /* internals.cpp */,
 				07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */,
-				071D9A4B209A2015002351EB /* Heap.cpp */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";

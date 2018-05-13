@@ -142,6 +142,7 @@ bool String::ContainsOnlyOneByte() const
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
+    if (!s) return false;
 
     size_t len = JSStringGetLength(s);
     const uint16_t *buffer = JSStringGetCharactersPtr(s);

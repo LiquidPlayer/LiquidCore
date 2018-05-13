@@ -33,7 +33,7 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
     
     bool success = !exception.ShouldThow() && JSCheckScriptSyntax(ctx->m_ctxRef, s, sourceURL, startingLineNumber, &exception);
     if (!success) {
-        JSStringRelease(s);
+        if (s) JSStringRelease(s);
         return MaybeLocal<Script>();
     } else {
         ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(iso, sizeof(ScriptImpl)));
