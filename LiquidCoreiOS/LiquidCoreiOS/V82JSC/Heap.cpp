@@ -10,7 +10,7 @@
 
 using namespace v8;
 
-static const size_t kSlotSize = 0x80;
+const size_t kSlotSize = 0x80;
 static const size_t kReserved = (sizeof(HeapAllocator) + kSlotSize - 1) / kSlotSize;
 
 struct Slot {

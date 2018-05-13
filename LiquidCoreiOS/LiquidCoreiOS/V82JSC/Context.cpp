@@ -39,10 +39,51 @@ void Context::DetachGlobal()
     //assert(0);
 }
 
+EmbedderDataImpl * get_embedder_data(const Context* cx)
+{
+    typedef internal::Object O;
+    typedef internal::Internals I;
+    O* ctx = *reinterpret_cast<O* const*>(cx);
+    int embedder_data_offset = I::kContextHeaderSize +
+        (internal::kApiPointerSize * I::kContextEmbedderDataIndex);
+    O* embedder_data = I::ReadField<O*>(ctx, embedder_data_offset);
+    if (embedder_data) {
+        EmbedderDataImpl *ed = reinterpret_cast<EmbedderDataImpl*>(reinterpret_cast<uint8_t*>(embedder_data) - internal::kHeapObjectTag);
+        return ed;
+    }
+    return nullptr;
+}
+
+static void constructor(ContextImpl *context)
+{
+    context->m_isGlobalContext = false;
+    context->m_ctxRef = 0;
+    context->m_loaded_extensions = std::map<std::string, bool>();
+}
+
+static void destructor(InternalObjectImpl *cx)
+{
+    ContextImpl* context = static_cast<ContextImpl*>(cx);
+    context->m_loaded_extensions.clear();
+    
+    internal::Object * heap_ptr = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(context) + internal::kHeapObjectTag);
+    const Context *ctx = reinterpret_cast<const Context*>(&heap_ptr);
+    
+    EmbedderDataImpl *ed = get_embedder_data(ctx);
+    if (ed) {
+        ed->io.Release();
+    }
+    
+    if (context->m_ctxRef != 0 && context->m_isGlobalContext) {
+        JSGlobalContextRelease((JSGlobalContextRef)context->m_ctxRef);
+    }
+}
+
 Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
-    printf ("FIXME! ContextImpl::New() from JSContextRef\n");
-    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ContextImpl)));
+    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
+                                                                            sizeof(ContextImpl),
+                                                                            destructor));
     context->m_ctxRef = ctx;
     return V82JSC::CreateLocal<Context>(isolate, context);
 }
@@ -70,14 +111,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<ObjectTemplate> global_template,
                           MaybeLocal<Value> global_object)
 {
-    auto dealloc = [](InternalObjectImpl *thiz)
-    {
-        printf("Dealloc context!\n");
-    };
-    
     ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
                                                                             sizeof(ContextImpl),
-                                                                            dealloc));
+                                                                            destructor));
     V82JSC::Map(context)->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
     Local<Context> ctx = V82JSC::CreateLocal<Context>(isolate, context);
@@ -130,6 +166,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     } else {
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
     }
+    
+    context->m_isGlobalContext = true;
     
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
@@ -286,9 +324,55 @@ static void WriteField(internal::Object* ptr, int offset, T value) {
  */
 void Context::SetEmbedderData(int index, Local<Value> value)
 {
-    typedef internal::Object O;
-    O* val = *reinterpret_cast<O* const*>(*value);
-    SetAlignedPointerInEmbedderData(index, val);
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    EmbedderDataImpl *ed = get_embedder_data(this);
+    auto embedder_data_destructor = [](InternalObjectImpl *io)
+    {
+        EmbedderDataImpl *ed = reinterpret_cast<EmbedderDataImpl *>(io);
+        for (int i=0; i<ed->m_size; i++) {
+            if (ed->m_embedder_data[i]->IsHeapObject()) {
+                reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(ed->m_embedder_data[i]) - internal::kHeapObjectTag)->Release();
+            }
+        }
+    };
+    
+    if (!ed || ed->m_size <= index) {
+        int size = ((index + 32) / 32) * 32;
+        EmbedderDataImpl * newed = reinterpret_cast<EmbedderDataImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
+                                                                                             sizeof(EmbedderDataImpl::buffer) + size * sizeof(internal::Object *),
+                                                                                             embedder_data_destructor));
+        int start_index = 0;
+        if (ed) {
+            for (int i=0; i<ed->m_size; i++) {
+                newed->m_embedder_data[i] = ed->m_embedder_data[i];
+                if (newed->m_embedder_data[i]->IsHeapObject()) {
+                    reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(newed->m_embedder_data[i]) - internal::kHeapObjectTag)->Retain();
+                }
+            }
+            start_index = ed->m_size;
+            ed->io.Release();
+        }
+        memset(&newed->m_embedder_data[start_index], 0, (size - start_index) * sizeof(internal::Object*));
+        newed->m_size = size;
+        newed->io.Retain();
+        ed = newed;
+    }
+    
+    internal::Object *current = ed->m_embedder_data[index];
+    if (current->IsHeapObject()) {
+        reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(current) - internal::kHeapObjectTag)->Release();
+    }
+    internal::Object * val = *reinterpret_cast<internal::Object* const*>(*value);
+    ed->m_embedder_data[index] = val;
+    if (val->IsHeapObject()) {
+        reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(val) - internal::kHeapObjectTag)->Retain();
+    }
+    
+    int embedder_data_offset = internal::Internals::kContextHeaderSize +
+        (internal::kApiPointerSize * internal::Internals::kContextEmbedderDataIndex);
+    internal::Object * ctx = *reinterpret_cast<internal::Object* const*>(this);
+    internal::Object *embedder_data = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(ed) + internal::kHeapObjectTag);
+    WriteField<internal::Object*>(ctx, embedder_data_offset, embedder_data);
 }
 
 /**
@@ -298,37 +382,17 @@ void Context::SetEmbedderData(int index, Local<Value> value)
  */
 void Context::SetAlignedPointerInEmbedderData(int index, void* value)
 {
-    typedef internal::Object O;
-    typedef internal::Internals I;
-    O* ctx = *reinterpret_cast<O* const*>(this);
-    int embedder_data_offset = I::kContextHeaderSize +
-        (internal::kApiPointerSize * I::kContextEmbedderDataIndex);
-    O* embedder_data = I::ReadField<O*>(ctx, embedder_data_offset);
-    O** copy = nullptr;
-    int copy_pointers = 0;
-    void *defunct = nullptr;
-    if (embedder_data) {
-        EmbedderDataImpl *ed = reinterpret_cast<EmbedderDataImpl*>(reinterpret_cast<uint8_t*>(embedder_data) - internal::kHeapObjectTag);
-        if (ed->m_size <= index) {
-            copy = &ed->m_embedder_data;
-            copy_pointers = ed->m_size;
-            embedder_data = nullptr;
-            defunct = ed;
-        }
-    }
-    if (!embedder_data) {
-        int size = ((index + 32) / 32) * 32;
-        EmbedderDataImpl* io = (EmbedderDataImpl*) malloc(sizeof(EmbedderDataImpl) + size * internal::kApiPointerSize);
-        memset(io, 0, sizeof(EmbedderDataImpl) + size * internal::kApiPointerSize);
-        io->m_size = size;
-        memcpy(&io->m_embedder_data, copy, copy_pointers * internal::kApiPointerSize);
-        if (defunct) free(defunct);
-        embedder_data = reinterpret_cast<O*>(reinterpret_cast<intptr_t>(io) + internal::kHeapObjectTag);
-        WriteField<O*>(ctx, embedder_data_offset, embedder_data);
-    }
-    int value_offset =
-        I::kFixedArrayHeaderSize + (internal::kApiPointerSize * index);
-    WriteField<void*>(embedder_data, value_offset, value);
+    value = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(value) & ~1);
+    class FakeLocal {
+    public:
+        Value* val_;
+    };
+    FakeLocal fl;
+    
+    fl.val_ = reinterpret_cast<Value*>(&value);
+
+    Local<Value> * v = reinterpret_cast<Local<Value>*>(&fl);
+    SetEmbedderData(index, *v);
 }
 
 /**

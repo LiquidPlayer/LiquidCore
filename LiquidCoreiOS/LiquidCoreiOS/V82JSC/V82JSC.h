@@ -143,6 +143,7 @@ struct HeapImpl : v8::internal::Heap {
 
 struct ContextImpl : InternalObjectImpl
 {
+    bool m_isGlobalContext;
     JSContextRef m_ctxRef;
     std::map<std::string, bool> m_loaded_extensions;
     
@@ -173,9 +174,10 @@ struct EmbedderDataImpl {
     union {
         struct {
             uint8_t buffer[v8::internal::Internals::kFixedArrayHeaderSize];
-            v8::internal::Object* m_embedder_data;
+            v8::internal::Object* m_embedder_data[0];
         };
         int m_size;
+        InternalObjectImpl io;
     };
 };
 
