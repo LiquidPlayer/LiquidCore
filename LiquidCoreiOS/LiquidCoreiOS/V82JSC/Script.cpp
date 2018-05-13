@@ -36,7 +36,15 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         if (s) JSStringRelease(s);
         return MaybeLocal<Script>();
     } else {
-        ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(iso, sizeof(ScriptImpl)));
+        auto destructor = [](InternalObjectImpl *o)
+        {
+            JSStringRef script = static_cast<ScriptImpl*>(o)->m_script;
+            JSStringRef sourceURL = static_cast<ScriptImpl*>(o)->m_sourceURL;
+            if (script) JSStringRelease(script);
+            if (sourceURL) JSStringRelease(sourceURL);
+        };
+
+        ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(iso, sizeof(ScriptImpl), destructor));
         V82JSC::Map(script)->set_instance_type(internal::SCRIPT_TYPE);
 
         script->m_sourceURL = sourceURL;

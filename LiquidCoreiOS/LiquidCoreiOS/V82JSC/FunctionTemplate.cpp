@@ -12,10 +12,17 @@ using namespace v8;
 
 #define PROXY_CALL_MAGIC_NUMBER ((void*)0x0133707eel)
 
+static void signatureDestructor(InternalObjectImpl* o)
+{
+    static_cast<SignatureImpl*>(o)->m_template.Reset();
+}
+
 Local<Signature> Signature::New(Isolate* isolate,
                                 Local<FunctionTemplate> receiver)
 {
-    SignatureImpl * signature = static_cast<SignatureImpl *>(HeapAllocator::Alloc(reinterpret_cast<IsolateImpl*>(isolate), sizeof(SignatureImpl)));
+    SignatureImpl * signature = static_cast<SignatureImpl *>(HeapAllocator::Alloc(reinterpret_cast<IsolateImpl*>(isolate),
+                                                                                  sizeof(SignatureImpl),
+                                                                                  signatureDestructor));
     signature->m_template = Copyable(FunctionTemplate)(isolate, receiver);
     
     return V82JSC::CreateLocal<Signature>(isolate, signature);
@@ -24,7 +31,9 @@ Local<Signature> Signature::New(Isolate* isolate,
 Local<AccessorSignature> AccessorSignature::New(Isolate* isolate,
                                                 Local<FunctionTemplate> receiver)
 {
-    SignatureImpl * signature = static_cast<SignatureImpl *>(HeapAllocator::Alloc(reinterpret_cast<IsolateImpl*>(isolate), sizeof(SignatureImpl)));
+    SignatureImpl * signature = static_cast<SignatureImpl *>(HeapAllocator::Alloc(reinterpret_cast<IsolateImpl*>(isolate),
+                                                                                  sizeof(SignatureImpl),
+                                                                                  signatureDestructor));
     signature->m_template = Copyable(FunctionTemplate)(isolate, receiver);
     
     return V82JSC::CreateLocal<AccessorSignature>(isolate, signature);
@@ -42,17 +51,25 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
                                           Local<Signature> signature, int length,
                                           ConstructorBehavior behavior)
 {
+    auto destructor = [](InternalObjectImpl *o)
+    {
+        FunctionTemplateImpl *templ = static_cast<FunctionTemplateImpl*>(o);
+        for (auto i=templ->m_functions.begin(); i!=templ->m_functions.end(); ++i) {
+            JSValueUnprotect(i->first, i->second);
+        }
+        templ->m_functions.clear();
+        templ->m_name.clear();
+        templateDestructor(o);
+    };
     Local<Context> context = V82JSC::OperatingContext(isolate);
-    FunctionTemplateImpl *templ = (FunctionTemplateImpl*) TemplateImpl::New(isolate, sizeof(FunctionTemplateImpl));
+    FunctionTemplateImpl *templ = (FunctionTemplateImpl*) TemplateImpl::New(isolate, sizeof(FunctionTemplateImpl), destructor);
     V82JSC::Map(templ)->set_instance_type(v8::internal::FUNCTION_TEMPLATE_INFO_TYPE);
 
     templ->m_name = std::string();
     templ->m_callback = callback;
-    templ->m_signature = Copyable(Signature)(isolate, signature);
+    templ->m_signature.Reset(isolate, signature);
     templ->m_behavior = behavior;
     templ->m_length = length;
-    templ->m_instance_template = Copyable(ObjectTemplate)();
-    templ->m_prototype_template = Copyable(ObjectTemplate)();
     
     if (data.IsEmpty()) {
         data = Undefined(isolate);
@@ -126,6 +143,12 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     JSClassDefinition function_def = kJSClassDefinitionEmpty;
     function_def.callAsFunction = TemplateImpl::callAsFunctionCallback;
     function_def.className = "function_proxy";
+    function_def.finalize = [](JSObjectRef object) {
+        TemplateWrap *wrap = (TemplateWrap*) JSObjectGetPrivate(object);
+        if (--wrap->m_count == 0) {
+            delete wrap;
+        }
+    };
     JSClassRef function_class = JSClassCreate(&function_def);
     JSObjectRef function_proxy = JSObjectMake(ctx, function_class, (void*)wrap);
     JSObjectSetPrototype(ctx, function_proxy, generic_function_prototype);
@@ -134,6 +157,12 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     JSClassDefinition constructor_def = kJSClassDefinitionEmpty;
     constructor_def.callAsFunction = FunctionTemplateImpl::callAsConstructorCallback;
     constructor_def.className = "constructor_proxy";
+    constructor_def.finalize = [](JSObjectRef object) {
+        TemplateWrap *wrap = (TemplateWrap*) JSObjectGetPrivate(object);
+        if (--wrap->m_count == 0) {
+            delete wrap;
+        }
+    };
     JSClassRef constructor_class = JSClassCreate(&constructor_def);
     JSObjectRef constructor_proxy = JSObjectMake(ctx, constructor_class, (void*)wrap);
     JSObjectSetPrototype(ctx, constructor_proxy, generic_function_prototype);

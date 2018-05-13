@@ -200,6 +200,12 @@ struct ObjectTemplateImpl;
 struct FunctionTemplateImpl;
 
 struct PropAccessor {
+    ~PropAccessor()
+    {
+        name.Reset();
+        setter.Reset();
+        getter.Reset();
+    }
     Copyable(v8::Name) name;
     Copyable(v8::FunctionTemplate) setter;
     Copyable(v8::FunctionTemplate) getter;
@@ -207,11 +213,23 @@ struct PropAccessor {
     v8::AccessControl settings;
 };
 struct Prop {
+    ~Prop()
+    {
+        name.Reset();
+        value.Reset();
+    }
     Copyable(v8::Name) name;
     Copyable(v8::Data) value;
     v8::PropertyAttribute attributes;
 };
 struct ObjAccessor {
+    ~ObjAccessor()
+    
+    {
+        name.Reset();
+        data.Reset();
+        signature.Reset();
+    }
     Copyable(v8::Name) name;
     v8::AccessorNameGetterCallback getter;
     v8::AccessorNameSetterCallback setter;
@@ -246,8 +264,10 @@ struct TemplateImpl : InternalObjectImpl
                                                    v8::Local<v8::FunctionTemplate> ftempl);
     v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                             JSObjectRef instance, LocalException& exception);
-    static TemplateImpl* New(v8::Isolate* isolate, size_t size);
+    static TemplateImpl* New(v8::Isolate* isolate, size_t size, InternalObjectDestructor destructor);
 };
+
+void templateDestructor(InternalObjectImpl* o);
 
 struct FunctionTemplateImpl : TemplateImpl
 {
@@ -256,7 +276,6 @@ struct FunctionTemplateImpl : TemplateImpl
     int m_length;
     Copyable(v8::ObjectTemplate) m_instance_template;
     std::map<JSContextRef, JSObjectRef> m_functions;
-    JSClassRef m_class;
 
     static JSValueRef callAsConstructorCallback(JSContextRef ctx,
                                                 JSObjectRef constructor,
@@ -280,13 +299,17 @@ struct ObjectTemplateImpl : TemplateImpl
 };
 
 struct TemplateWrap {
+    ~TemplateWrap()
+    {
+        m_template.Reset();
+    }
     Copyable(v8::FunctionTemplate) m_template;
     IsolateImpl* m_isolate;
-    std::map<JSStringRef, JSObjectRef> m_getters;
-    std::map<JSStringRef, JSObjectRef> m_setters;
+    int m_count;
 };
 
 struct InstanceWrap {
+    ~InstanceWrap();
     JSValueRef m_security;
     Copyable(v8::ObjectTemplate) m_object_template;
     IsolateImpl *m_isolate;
@@ -337,13 +360,6 @@ struct V82JSC {
     {
         return CreateLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o);
     }
-    /*
-    template <class T>
-    static inline v8::Local<T> MakeLocal(IsolateImpl *isolate, InternalObjectImpl *o)
-    {
-        return MakeLocal<T>(&isolate->i.ii, o);
-    }
-    */
     template <class T>
     static inline v8::Local<T> CreateLocalSmi(v8::internal::Isolate *isolate, v8::internal::Smi* smi)
     {
@@ -524,13 +540,14 @@ struct V82JSC {
     {
         InstanceWrap *wrap = new InstanceWrap();
         wrap->m_security = object;
+        // Keep only a weak reference to m_security to avoid cyclical references
         wrap->m_hash = 1 + rand();
-        JSValueProtect(ctx, wrap->m_security);
         
         JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes = kJSClassAttributeNoAutomaticPrototype;
         def.finalize = [](JSObjectRef object) {
-            // FIXME: Do something
+            InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(object);
+            delete wrap;
         };
         JSClassRef klass = JSClassCreate(&def);
         JSObjectRef private_object = JSObjectMake(ctx, klass, (void*)wrap);
@@ -563,6 +580,16 @@ struct V82JSC {
     }
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)
+
+inline void valueDestructor(InternalObjectImpl *o)
+{
+    JSValueRef ref = static_cast<ValueImpl*>(o)->m_value;
+    if (ref) {
+        v8::Isolate* i = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(o));
+        JSContextRef ctx = V82JSC::ToContextRef(i);
+        JSValueUnprotect(ctx, ref);
+    }
+}
 
 struct LocalException {
     LocalException(IsolateImpl *i) : exception_(0), isolate_(i) {}

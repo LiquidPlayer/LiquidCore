@@ -50,7 +50,7 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
             break;
     }
     
-    ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(isolateimpl, sizeof(ValueImpl)));
+    ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(isolateimpl, sizeof(ValueImpl), valueDestructor));
     impl->m_value = value;
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     if (t == kJSTypeNumber) {

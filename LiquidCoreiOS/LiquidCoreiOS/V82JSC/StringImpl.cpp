@@ -14,7 +14,7 @@ Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal
 {
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::OperatingContext(isolate));
 
-    ValueImpl *string = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
+    ValueImpl *string = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl), valueDestructor));
     Local<String> local = V82JSC::CreateLocal<String>(isolate, string);
     string->m_value = JSValueMakeString(ctx, str);
     JSValueProtect(ctx, string->m_value);

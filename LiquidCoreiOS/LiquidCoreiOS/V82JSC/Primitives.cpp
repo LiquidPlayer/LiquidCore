@@ -23,7 +23,7 @@ Local<Number> Number::New(Isolate* isolate, double value)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    ValueImpl *num = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
+    ValueImpl *num = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl), valueDestructor));
     V82JSC::Map(num)->set_instance_type(v8::internal::HEAP_NUMBER_TYPE);
     num->m_value = JSValueMakeNumber(ctx, value);
     JSValueProtect(ctx, num->m_value);
@@ -79,7 +79,7 @@ Local<Primitive> ValueImpl::NewUndefined(v8::Isolate *isolate)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    ValueImpl *undefined = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
+    ValueImpl *undefined = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl), valueDestructor));
     V82JSC::Map(undefined)->set_instance_type(v8::internal::ODDBALL_TYPE);
     internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(V82JSC::Map(undefined));
     oddball_handle->set_kind(internal::Internals::kUndefinedOddballKind);
@@ -93,7 +93,7 @@ Local<Primitive>  ValueImpl::NewNull(v8::Isolate *isolate)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    ValueImpl *null = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
+    ValueImpl *null = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl), valueDestructor));
     V82JSC::Map(null)->set_instance_type(v8::internal::ODDBALL_TYPE);
     internal::Oddball* oddball_handle = reinterpret_cast<internal::Oddball*>(V82JSC::Map(null));
     oddball_handle->set_kind(internal::Internals::kNullOddballKind);
@@ -107,7 +107,7 @@ Local<Primitive>  ValueImpl::NewBoolean(v8::Isolate *isolate, bool value)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    ValueImpl *is = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl)));
+    ValueImpl *is = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl), valueDestructor));
     is->map.set_instance_type(v8::internal::JS_VALUE_TYPE);
     is->m_value = JSValueMakeBoolean(ctx, value);
     JSValueProtect(ctx, is->m_value);

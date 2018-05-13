@@ -215,15 +215,36 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
     return V82JSC::ToJSValueRef<Value>(ret, context);
 }
 
-/** Creates a function template.*/
-TemplateImpl* TemplateImpl::New(Isolate* isolate, size_t size)
+void templateDestructor(InternalObjectImpl *o)
 {
-    TemplateImpl * templ = static_cast<TemplateImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), size));
+    TemplateImpl * templ = static_cast<TemplateImpl*>(o);
+    
+    templ->m_prototype_template.Reset();
+    templ->m_signature.Reset();
+    if (templ->m_data) {
+        v8::Isolate* i = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(o));
+        JSContextRef ctx = V82JSC::ToContextRef(i);
+        JSValueUnprotect(ctx, templ->m_data);
+    }
+    templ->m_parent.Reset();
+    templ->m_accessors.clear();
+    templ->m_property_accessors.clear();
+    templ->m_properties.clear();
+}
+
+/** Creates a function template.*/
+TemplateImpl* TemplateImpl::New(Isolate* isolate, size_t size, InternalObjectDestructor destructor)
+{
+    TemplateImpl * templ = static_cast<TemplateImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), size, destructor));
     
     templ->m_properties = std::vector<Prop>();
     templ->m_property_accessors = std::vector<PropAccessor>();
     templ->m_accessors = std::vector<ObjAccessor>();
     templ->m_parent = Copyable(FunctionTemplate)();
+    templ->m_callback = nullptr;
+    templ->m_data = 0;
+    templ->m_signature = Copyable(v8::Signature)();
+    templ->m_prototype_template = Copyable(v8::ObjectTemplate)();
 
     return templ;
 }

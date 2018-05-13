@@ -84,6 +84,7 @@ Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
     ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
                                                                             sizeof(ContextImpl),
                                                                             destructor));
+    constructor(context);
     context->m_ctxRef = ctx;
     return V82JSC::CreateLocal<Context>(isolate, context);
 }
@@ -118,7 +119,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
     Local<Context> ctx = V82JSC::CreateLocal<Context>(isolate, context);
     int hash = 0;
-    context->m_loaded_extensions = std::map<std::string, bool>();
+    constructor(context);
     
     if (!global_object.IsEmpty()) {
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();

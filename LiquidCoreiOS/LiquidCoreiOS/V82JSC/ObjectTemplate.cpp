@@ -16,11 +16,26 @@ Local<ObjectTemplate> ObjectTemplate::New(
                                  Isolate* isolate,
                                  Local<FunctionTemplate> constructor)
 {
+    auto destructor = [](InternalObjectImpl *o)
+    {
+        ObjectTemplateImpl *otempl = static_cast<ObjectTemplateImpl*>(o);
+        v8::Isolate* i = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(o));
+        JSContextRef ctx = V82JSC::ToContextRef(i);
+        if (otempl->m_indexed_data) JSValueUnprotect(ctx, otempl->m_indexed_data);
+        if (otempl->m_named_data) JSValueUnprotect(ctx, otempl->m_named_data);
+        otempl->m_constructor_template.Reset();
+        templateDestructor(o);
+    };
+    
     if (!constructor.IsEmpty()) {
         return constructor->InstanceTemplate();
     } else {
-        ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl));
+        ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl), destructor);
         V82JSC::Map(otempl)->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
+
+        otempl->m_constructor_template = Copyable(v8::FunctionTemplate)();
+        otempl->m_named_data = 0;
+        otempl->m_indexed_data = 0;
 
         return V82JSC::CreateLocal<ObjectTemplate>(isolate, otempl);
     }
@@ -171,6 +186,25 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     
     Local<Value> retVal = info.GetReturnValue().Get();
     return V82JSC::ToJSValueRef<Value>(retVal, context);
+}
+
+InstanceWrap::~InstanceWrap()
+{
+    Isolate* isolate = reinterpret_cast<Isolate*>(m_isolate);
+    HandleScope scope(isolate);
+    
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    if (m_num_internal_fields && m_internal_fields) {
+        for (int i=0; i<m_num_internal_fields; i++) {
+            if (m_internal_fields[i]) JSValueUnprotect(ctx, m_internal_fields[i]);
+        }
+        delete m_internal_fields;
+    }
+    if (m_private_properties) {
+        JSValueUnprotect(ctx, m_private_properties);
+    }
+    m_object_template.Reset();
 }
 
 v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root)
