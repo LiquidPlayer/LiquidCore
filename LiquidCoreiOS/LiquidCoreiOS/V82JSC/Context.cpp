@@ -427,6 +427,7 @@ void Context::AllowCodeGenerationFromStrings(bool allow)
  */
 bool Context::IsCodeGenerationFromStringsAllowed()
 {
+    assert(0);
     return false;
 }
 

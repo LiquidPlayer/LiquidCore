@@ -14388,11 +14388,12 @@ void SetFunctionEntryHookTest::RunLoopInNewEnv(v8::Isolate* isolate) {
   CHECK_EQ(9801.0, v8::Number::Cast(*value)->Value());
 
   // Test the optimized codegen path.
+/*
   value = CompileRun("%OptimizeFunctionOnNextCall(foo);"
                      "bar();");
   CHECK(value->IsNumber());
   CHECK_EQ(9801.0, v8::Number::Cast(*value)->Value());
-
+*/
   env->Exit();
 }
 
@@ -20582,7 +20583,8 @@ TEST(DontDeleteCellLoadIC) {
                  "    return e.toString();"
                  "  }"
                  "})()",
-                 "ReferenceError: cell is not defined");
+//                 "ReferenceError: cell is not defined");
+                 "ReferenceError: Can't find variable: cell");
     CompileRun("cell = \"new_second\";");
     CcTest::CollectAllGarbage();
     ExpectString("readCell()", "new_second");
@@ -22559,15 +22561,15 @@ static void Helper137002(bool do_store,
              "function f(x) { return x.foo; }");
   CompileRun("obj.y = void 0;");
   if (!interceptor) {
-    CompileRun("%OptimizeObjectForAddingMultipleProperties(obj, 1);");
+//    CompileRun("%OptimizeObjectForAddingMultipleProperties(obj, 1);");
   }
   CompileRun("obj.__proto__ = null;"
              "f(obj); f(obj); f(obj);");
   if (polymorphic) {
     CompileRun("f({});");
   }
-  CompileRun("obj.y = void 0;"
-             "%OptimizeFunctionOnNextCall(f);");
+    CompileRun("obj.y = void 0;");
+//             "%OptimizeFunctionOnNextCall(f);");
   if (remove_accessor) {
     CompileRun("delete obj.foo;");
   }
@@ -22631,7 +22633,7 @@ THREADED_TEST(Regress137002b) {
              "var subobj = {};"
              "subobj.y = void 0;"
              "subobj.__proto__ = obj;"
-             "%OptimizeObjectForAddingMultipleProperties(obj, 1);"
+//             "%OptimizeObjectForAddingMultipleProperties(obj, 1);"
 
              // Make the ICs monomorphic.
              "load(obj); load(obj);"
@@ -22706,7 +22708,7 @@ THREADED_TEST(Regress142088) {
 
   CompileRun("function load(x) { return x.foo; }"
              "var o = Object.create(obj);"
-             "%OptimizeObjectForAddingMultipleProperties(obj, 1);"
+//             "%OptimizeObjectForAddingMultipleProperties(obj, 1);"
              "load(o); load(o); load(o); load(o);");
 }
 
@@ -25451,7 +25453,7 @@ TEST(TurboAsmDisablesNeuter) {
       "}"
       "var buffer = new ArrayBuffer(4);"
       "var module = Module(this, {}, buffer);"
-      "%OptimizeFunctionOnNextCall(module.load);"
+//      "%OptimizeFunctionOnNextCall(module.load);"
       "module.load();"
       "buffer";
 
@@ -25467,7 +25469,7 @@ TEST(TurboAsmDisablesNeuter) {
       "}"
       "var buffer = new ArrayBuffer(4);"
       "var module = Module(this, {}, buffer);"
-      "%OptimizeFunctionOnNextCall(module.store);"
+//      "%OptimizeFunctionOnNextCall(module.store);"
       "module.store();"
       "buffer";
 

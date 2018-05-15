@@ -105,14 +105,17 @@ Maybe<bool> Object::DefineOwnProperty(
      DontEnum = 1 << 1,
      DontDelete = 1 << 2
      */
-    LocalException exception(V82JSC::ToIsolateImpl(this));
-    V82JSC::exec(ctx,
-                 "Object.defineProperty(_1, _2, "
-                 "{ writable : !(_4&(1<<0)), "
-                 "  enumerable : !(_4&(1<<1)), "
-                 "  configurable : !(_4&(1<<2)), "
-                 "  value: _3 })", 4, args, &exception);
-    if (exception.ShouldThow()) return Nothing<bool>();
+    TryCatch try_catch(V82JSC::ToIsolate(this));
+    {
+        LocalException exception(V82JSC::ToIsolateImpl(this));
+        V82JSC::exec(ctx,
+                     "Object.defineProperty(_1, _2, "
+                     "{ writable : !(_4&(1<<0)), "
+                     "  enumerable : !(_4&(1<<1)), "
+                     "  configurable : !(_4&(1<<2)), "
+                     "  value: _3 })", 4, args, &exception);
+    }
+    if (try_catch.HasCaught()) return _maybe<bool>(false).toMaybe();
 
     return _maybe<bool>(true).toMaybe();
 }
@@ -660,7 +663,9 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
     JSValueRef proto = V82JSC::ToJSValueRef<Value>(prototype, context);
     
     JSObjectSetPrototype(ctx, (JSObjectRef)obj, proto);
-    return _maybe<bool>(true).toMaybe();
+    bool ok = JSValueIsStrictEqual(ctx, proto, JSObjectGetPrototype(ctx, (JSObjectRef)obj));
+    if (!ok) return Nothing<bool>();
+    return _maybe<bool>(ok).toMaybe();
 }
 
 /**

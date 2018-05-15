@@ -420,7 +420,10 @@ Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object)
 
 MaybeLocal<Uint32> Value::ToArrayIndex(Local<Context> context) const
 {
-    assert(0);
+    MaybeLocal<Number> num = ToNumber(context);
+    if (!num.IsEmpty() && num.ToLocalChecked()->IsUint32()) {
+        return ToUint32(context);
+    }
     return MaybeLocal<Uint32>();
 }
 

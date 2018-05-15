@@ -72,7 +72,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     impl->ii.thread_local_top_.isolate_ = &impl->ii;
     impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
-    
+    impl->ii.thread_local_top_.pending_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
+
     JSStringRef empty_string = JSStringCreateWithUTF8CString("");
     Local<String> esv = ValueImpl::New(isolate, empty_string);
     impl->m_empty_string.Reset(isolate, esv);
@@ -1044,7 +1045,7 @@ void Isolate::SetAllowAtomicsWait(bool allow)
 
 void Isolate::ReportExternalAllocationLimitReached()
 {
-    assert(0);
+    printf ("FIXME! Isolate::ReportExternalAllocationLimitReached()\n");
 }
 
 Isolate::DisallowJavascriptExecutionScope::DisallowJavascriptExecutionScope(Isolate* isolate, OnFailure on_failure)

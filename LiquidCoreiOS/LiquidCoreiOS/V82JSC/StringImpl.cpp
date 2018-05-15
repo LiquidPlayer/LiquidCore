@@ -116,9 +116,16 @@ int String::Utf8Length() const
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
-    int r = (int) JSStringGetMaximumUTF8CStringSize(s);
+    const JSChar * chars = JSStringGetCharactersPtr(s);
+    int c = 0;
+    for (int i=0; i<JSStringGetLength(s); ) {
+        uint32_t unicode = (chars[i] >= 0xd800) ? (chars[i] - 0xd800) * 0x400 + (chars[i+1] - 0xdc00) : chars[i];
+        i += (chars[i] >= 0xd800) ? 2 : 1;
+        c += unicode >= 0x10000 ? 4 : unicode >= 0x800 ? 3 : unicode >= 0x80 ? 2 : 1;
+    }
+    
     JSStringRelease(s);
-    return r;
+    return c;
 }
 
 /**
@@ -233,7 +240,7 @@ int String::WriteUtf8(char* buffer,
     }
     size_t chars = JSStringGetUTF8CString(s, buffer, length);
     if (nchars_ref) {
-        *nchars_ref = (int) chars;
+        *nchars_ref = (int) JSStringGetLength(s);
     }
     JSStringRelease(s);
     return (int) chars;
