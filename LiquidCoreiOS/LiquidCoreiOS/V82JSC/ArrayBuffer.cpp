@@ -235,10 +235,12 @@ Local<ArrayBuffer> ArrayBuffer::New(
 ArrayBufferInfo * GetArrayBufferInfo(const ArrayBuffer *ab)
 {
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBuffer>(ab);
-    
-    Object * thiz = reinterpret_cast<Object*>(impl);
-    Local<Context> context = V82JSC::ToCurrentContext(ab);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), (JSObjectRef)impl->m_value);
+    Isolate* isolate = V82JSC::ToIsolate(ab);
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
+    Object * thiz = reinterpret_cast<Object*>(const_cast<ArrayBuffer*>(ab));
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
     ArrayBufferInfo *info;
     assert(wrap);
     info = (ArrayBufferInfo*) thiz->GetAlignedPointerFromInternalField(1);
@@ -403,10 +405,12 @@ SharedArrayBuffer::Contents SharedArrayBuffer::GetContents()
 
 ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
 {
+    Isolate *isolate = V82JSC::ToIsolate(ab);
+    HandleScope scope(isolate);
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(ab);
-
-    Object * thiz = reinterpret_cast<Object*>(impl);
-    JSContextRef ctx = V82JSC::ToContextRef(V82JSC::ToCurrentContext(ab));
+    Local<Context> context = V82JSC::ToCurrentContext(ab);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    Object * thiz = reinterpret_cast<Object*>(const_cast<ArrayBufferView*>(ab));
     
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
     ArrayBufferViewInfo *info;

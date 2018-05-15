@@ -90,6 +90,41 @@ InternalObjectImpl* HeapAllocator::Alloc(IsolateImpl *isolate, size_t size, Inte
     return alloc;
 }
 
+void HeapAllocator::CollectGarbage(IsolateImpl *isolate)
+{
+    internal::Heap *heap = reinterpret_cast<internal::Isolate*>(isolate)->heap();
+    HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(heap);
+    
+    // Pass One: Deallocate anything that has no global or local references to it
+
+    auto dont_delete = std::map<internal::Object *,bool>();
+    isolate->GetActiveLocalHandles(dont_delete);
+    
+    for (HeapAllocator *chunk = static_cast<HeapAllocator*>(heapimpl->m_heap_top);
+         chunk;
+         chunk = static_cast<HeapAllocator*>(chunk->next_chunk())) {
+        
+        Slot* slots = (Slot*)chunk;
+        for (size_t index=0; index < (kAlignment / kSlotSize); ) {
+            // Reserve the first kReserved slots for the MemoryChunk
+            if (index < kReserved) { index++; continue; }
+            Slot *slot = &slots[index];
+
+            bool free = (slot->header.m_count == 0) && (dont_delete.count(V82JSC::Map(&slot->m_io)) == 0);
+            if (free) {
+                slot->m_io.Release();
+            }
+            
+            if (slot->header.m_count == -1) {
+                index++;
+            } else {
+                index += slot->header.m_slots;
+            }
+        }
+    }
+
+}
+
 internal::MemoryChunk* internal::MemoryChunk::Initialize(internal::Heap* heap, internal::Address base, size_t size,
                                                          internal::Address area_start, internal::Address area_end,
                                                          internal::Executability executable, internal::Space* owner,
@@ -118,5 +153,9 @@ void InternalObjectImpl::Release()
     assert(slot->header.m_count >= 0);
     if (--slot->header.m_count == -1 && slot->header.m_dtor) {
         slot->header.m_dtor(this);
+        for (size_t i = slot->header.m_slots; i > 0; --i) {
+            slot[i-1].header.m_count = -1;
+            slot[i-i].header.m_slots = 1;
+        }
     }
 }

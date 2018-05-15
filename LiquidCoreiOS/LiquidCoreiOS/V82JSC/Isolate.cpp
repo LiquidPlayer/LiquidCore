@@ -33,7 +33,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
 
     reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
 
-    HeapImpl* heap = static_cast<HeapImpl*>(impl->i.ii.heap());
+    HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
     heap->m_heap_top = nullptr;
     heap->m_index = 0;
     
@@ -51,31 +51,32 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_nullContext.Reset(isolate, nullContext);
     impl->EnterContext(nullContext);
     
+    Roots* roots = reinterpret_cast<Roots *>(impl->ii.heap()->roots_array_start());
+    
     impl->m_undefined.Reset(isolate, ValueImpl::NewUndefined(isolate));
-    impl->i.roots.undefined_value = * reinterpret_cast<internal::Object***> (*impl->m_undefined);
+    roots->undefined_value = * reinterpret_cast<internal::Object***> (*impl->m_undefined);
 
     impl->m_the_hole.Reset(isolate, ValueImpl::NewUndefined(isolate));
-    impl->i.roots.the_hole_value = * reinterpret_cast<internal::Object***> (*impl->m_the_hole);
+    roots->the_hole_value = * reinterpret_cast<internal::Object***> (*impl->m_the_hole);
 
     impl->m_null.Reset(isolate, ValueImpl::NewNull(isolate));
-    impl->i.roots.null_value = * reinterpret_cast<internal::Object***> (*impl->m_null);
+    roots->null_value = * reinterpret_cast<internal::Object***> (*impl->m_null);
 
     impl->m_yup.Reset(isolate, ValueImpl::NewBoolean(isolate, true));
-    impl->i.roots.true_value = * reinterpret_cast<internal::Object ***>(*impl->m_yup);
+    roots->true_value = * reinterpret_cast<internal::Object ***>(*impl->m_yup);
 
     impl->m_nope.Reset(isolate, ValueImpl::NewBoolean(isolate, false));
-    impl->i.roots.false_value = * reinterpret_cast<internal::Object ***>(*impl->m_nope);
+    roots->false_value = * reinterpret_cast<internal::Object ***>(*impl->m_nope);
     
     impl->m_negative_zero = V82JSC::exec(V82JSC::ToContextRef(nullContext), "return -0", 0, 0);
     
-    impl->i.ii.thread_local_top_ = internal::ThreadLocalTop();
-    impl->i.ii.thread_local_top_.isolate_ = &impl->i.ii;
-    impl->i.ii.thread_local_top_.pending_exception_ = *impl->i.roots.the_hole_value;
+    impl->ii.thread_local_top_.isolate_ = &impl->ii;
+    impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
     
     JSStringRef empty_string = JSStringCreateWithUTF8CString("");
     Local<String> esv = ValueImpl::New(isolate, empty_string);
     impl->m_empty_string.Reset(isolate, esv);
-    impl->i.roots.empty_string = * reinterpret_cast<internal::Object ***>(*impl->m_empty_string);
+    roots->empty_string = * reinterpret_cast<internal::Object ***>(*impl->m_empty_string);
     JSStringRelease(empty_string);
     
     impl->ExitContext(nullContext);
@@ -379,7 +380,7 @@ Local<Context> Isolate::GetIncumbentContext()
 Local<Value> Isolate::ThrowException(Local<Value> exception)
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
-    impl->i.ii.thread_local_top()->scheduled_exception_ = * reinterpret_cast<internal::Object**>(*exception);
+    impl->ii.thread_local_top()->scheduled_exception_ = * reinterpret_cast<internal::Object**>(*exception);
 
     return exception;
 }

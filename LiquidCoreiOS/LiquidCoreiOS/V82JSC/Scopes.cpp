@@ -24,8 +24,8 @@ HandleScope::HandleScope(Isolate* isolate)
     IsolateImpl* impl = V82JSC::ToIsolateImpl(isolate);
     
     isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
-    prev_next_ = impl->i.ii.handle_scope_data()->next;
-    prev_limit_ = impl->i.ii.handle_scope_data()->limit;
+    prev_next_ = impl->ii.handle_scope_data()->next;
+    prev_limit_ = impl->ii.handle_scope_data()->limit;
 
     impl->m_scope_stack.push(this);
 }
@@ -40,7 +40,7 @@ void delBlock(HandleBlock *block)
 HandleScope::~HandleScope()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(isolate_);
-    internal::HandleScopeData *data = impl->i.ii.handle_scope_data();
+    internal::HandleScopeData *data = impl->ii.handle_scope_data();
 
     data->next = prev_next_;
     data->limit = prev_limit_;
@@ -89,11 +89,11 @@ internal::Object** internal::HandleScope::Extend(Isolate* isolate)
     posix_memalign((void**)&ptr, HANDLEBLOCK_SIZE, sizeof(HandleBlock));
     
     internal::Object **handles = &ptr->handles_[0];
-    HandleScopeData *data = isolateimpl->i.ii.handle_scope_data();
+    HandleScopeData *data = isolateimpl->ii.handle_scope_data();
 
     if (data->next != nullptr) {
         intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
-        addr &= ~HANDLEBLOCK_SIZE;
+        addr &= ~(HANDLEBLOCK_SIZE - 1);
         ptr->previous_ = reinterpret_cast<HandleBlock*>(addr);
         ptr->previous_->next_ = ptr;
     } else {
@@ -105,6 +105,26 @@ internal::Object** internal::HandleScope::Extend(Isolate* isolate)
     data->limit = &handles[NUM_HANDLES];
 
     return handles;
+}
+
+void IsolateImpl::GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap)
+{
+    HandleScopeData *data = ii.handle_scope_data();
+    if (data->limit) {
+        intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
+        addr &= ~(HANDLEBLOCK_SIZE -1);
+        HandleBlock *block = reinterpret_cast<HandleBlock*>(addr);
+        internal::Object ** limit = data->next;
+        while (block) {
+            for (internal::Object ** handle = &block->handles_[0]; handle < limit; handle++ ) {
+                if ((*handle)->IsHeapObject()) {
+                    dontDeleteMap[*handle] = true;
+                }
+            }
+            block = block->next_;
+            limit = block ? &block->next_->handles_[NUM_HANDLES] : nullptr;
+        }
+    }
 }
 
 internal::Object** internal::CanonicalHandleScope::Lookup(Object* object)
@@ -125,7 +145,7 @@ internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
                                        internal::Object* value)
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
-    return internal::HandleScope::CreateHandle(&impl->i.ii, value);
+    return internal::HandleScope::CreateHandle(&impl->ii, value);
 }
 
 internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,

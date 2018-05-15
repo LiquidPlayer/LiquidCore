@@ -9,7 +9,7 @@
 #include "V82JSC.h"
 
 using namespace v8;
-
+#define THE_HOLE reinterpret_cast<IsolateImpl*>(isolate_)->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex)
 /**
  * Creates a new try/catch block and registers it with v8.  Note that
  * all TryCatch blocks should be stack allocated because the memory
@@ -26,6 +26,8 @@ TryCatch::TryCatch(Isolate* isolate)
     exception_ = nullptr;
     message_obj_ = nullptr;
     js_stack_comparable_address_ = nullptr;
+    is_verbose_ = false;
+    rethrow_ = false;
 }
 
 /**
@@ -33,8 +35,17 @@ TryCatch::TryCatch(Isolate* isolate)
  */
 TryCatch::~TryCatch()
 {
-    isolate_->thread_local_top()->scheduled_exception_ = * reinterpret_cast<IsolateImpl*>(isolate_)->i.roots.the_hole_value;
     reinterpret_cast<IsolateImpl*>(isolate_)->m_handlers = next_;
+    
+    if (next_ && is_verbose_) {
+        next_->exception_ = exception_;
+    }
+
+    if (rethrow_ && !Exception().IsEmpty()) {
+        reinterpret_cast<v8::Isolate*>(isolate_)->ThrowException(Exception());
+    } else {
+        isolate_->thread_local_top()->scheduled_exception_ = THE_HOLE;
+    }
 }
 
 /**
@@ -42,7 +53,7 @@ TryCatch::~TryCatch()
  */
 bool TryCatch::HasCaught() const
 {
-    return exception_ != nullptr;
+    return exception_ != nullptr || isolate_->thread_local_top()->scheduled_exception_ != THE_HOLE;
 }
 
 /**
@@ -86,8 +97,8 @@ bool TryCatch::HasTerminated() const
  */
 Local<Value> TryCatch::ReThrow()
 {
-    assert(0);
-    return Local<Value>();
+    rethrow_ = true;
+    return Exception();
 }
 
 /**
@@ -99,8 +110,19 @@ Local<Value> TryCatch::ReThrow()
 Local<Value> TryCatch::Exception() const
 {
     Local<Context> context = reinterpret_cast<Isolate*>(this->isolate_)->GetCurrentContext();
-    if (exception_) {
-        return ValueImpl::New(V82JSC::ToContextImpl(context), (JSValueRef)exception_);
+    
+    internal::Object *sched = isolate_->thread_local_top()->scheduled_exception_;
+    JSValueRef excep = (JSValueRef) exception_;
+    if (sched != THE_HOLE) {
+        if (sched->IsSmi()) {
+            excep = JSValueMakeNumber(V82JSC::ToContextRef(context), internal::Smi::ToInt(sched));
+        } else {
+            excep = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(sched) - internal::kHeapObjectTag)->m_value;
+        }
+    }
+
+    if (excep) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), (JSValueRef)excep);
     }
     return Local<Value>();
 }
@@ -143,6 +165,8 @@ void TryCatch::Reset()
     exception_ = nullptr;
     message_obj_ = nullptr;
     js_stack_comparable_address_ = nullptr;
+    rethrow_ = false;
+    isolate_->thread_local_top()->scheduled_exception_ = THE_HOLE;
 }
 
 /**
@@ -155,7 +179,7 @@ void TryCatch::Reset()
  */
 void TryCatch::SetVerbose(bool value)
 {
-    assert(0);
+    is_verbose_ = true;
 }
 
 /**
@@ -163,8 +187,7 @@ void TryCatch::SetVerbose(bool value)
  */
 bool TryCatch::IsVerbose() const
 {
-    assert(0);
-    return false;
+    return is_verbose_;
 }
 
 /**

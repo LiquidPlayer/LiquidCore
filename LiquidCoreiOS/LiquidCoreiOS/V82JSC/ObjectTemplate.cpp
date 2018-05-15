@@ -142,13 +142,15 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     }
     
     Local<Value> thiz = ValueImpl::New(ctximpl, target);
-    
+    typedef v8::internal::Heap::RootListIndex R;
+    internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
+
     v8::internal::Object * implicit[] = {
         0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
         O(isolateimpl),                                      // kIsolateIndex = 2;
-        O(isolateimpl->i.roots.undefined_value),             // kReturnValueDefaultValueIndex = 3;
-        O(isolateimpl->i.roots.the_hole_value),              // kReturnValueIndex = 4;
+        the_hole,                                            // kReturnValueDefaultValueIndex = 3;
+        the_hole,                                            // kReturnValueIndex = 4;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
     };
@@ -156,7 +158,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     PropertyCallbackImpl<V> info(implicit);
     Local<Value> set = ValueImpl::New(ctximpl, value);
     
-    isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
+    isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
 
     if (isSymbol || p!=nullptr) {
@@ -169,18 +171,18 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-        internal::Object * excep = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+    } else if (isolateimpl->ii.thread_local_top()->scheduled_exception_ != the_hole) {
+        internal::Object * excep = isolateimpl->ii.thread_local_top()->scheduled_exception_;
         if (excep->IsHeapObject()) {
             ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
             *exception = i->m_value;
         } else {
             *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
         }
-        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+        isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
 
-    if (implicit[4] == O(isolateimpl->i.roots.the_hole_value)) {
+    if (implicit[4] == the_hole) {
         return NULL;
     }
     
@@ -223,7 +225,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     // Create lifecycle object
     InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_ctxRef, root);
     wrap->m_isolate = iso;
-    wrap->m_object_template = Copyable(ObjectTemplate)(isolate, thiz);
+    wrap->m_object_template.Reset(isolate, thiz);
     wrap->m_num_internal_fields = m_internal_fields;
     wrap->m_internal_fields = new JSValueRef[m_internal_fields]();
 

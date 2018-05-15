@@ -25,7 +25,7 @@ def get_test_list(prefix = 'test'):
 
 q = Queue()
 
-def run_test(test):
+def run_test(test, verbose):
     test_scheme = TEST_SCHEME + ':' + TEST_SCHEME + '/' + test
     args = [
         "xctool",
@@ -40,17 +40,20 @@ def run_test(test):
     except CalledProcessError as e:
         raw = e.output
         success = 0
-    for line in raw.split("\n"):
-        if "[" + TEST_SCHEME + " " + test + "]" in line and line.strip()[0] != '-':
-            sys.stdout.write(line + '\n')
-            break
+    if verbose:
+        sys.stdout.write(raw)
+    else:
+        for line in raw.split("\n"):
+            if "[" + TEST_SCHEME + " " + test + "]" in line and line.strip()[0] != '-':
+                sys.stdout.write(line + '\n')
+                break
     q.put(success)
 
-def run_tests(prefix):
+def run_tests(prefix, verbose):
     tests = get_test_list(prefix)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        {executor.submit(run_test, test): test for test in tests}
+        {executor.submit(run_test, test, verbose): test for test in tests}
 
     total_tests = 0
     successful_tests = 0
@@ -64,10 +67,18 @@ def run_tests(prefix):
     print 'DONE: ' + str(successful_tests) + ' of ' + str(total_tests) + ' passed (' + str(p) + '%), ' + str(failed_tests) + ' failed.'
 
 def main():
-    if (len(sys.argv) > 1):
-        run_tests(sys.argv[1])
+    verbose = False
+    if '--verbose' in sys.argv:
+        verbose = True
+
+    i = 1
+    while i < len(sys.argv) and sys.argv[i].startswith('--'):
+        i=i+1
+
+    if i < len(sys.argv):
+        run_tests(sys.argv[i], verbose)
     else:
-        run_tests('testCcPassing')
+        run_tests('testCcPassing', verbose)
 
 if __name__ == '__main__':
     main()

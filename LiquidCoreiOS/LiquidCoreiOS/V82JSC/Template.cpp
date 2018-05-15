@@ -169,16 +169,19 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         return 0;
     }
     Local<Value> data = ValueImpl::New(ctximpl, ftempl->m_data);
-    
+    typedef v8::internal::Heap::RootListIndex R;
+    internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
+    internal::Object *undefined = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
+
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
         O(isolateimpl),                                      // kIsolateIndex = 1;
-        O(isolateimpl->i.roots.undefined_value),             // kReturnValueDefaultValueIndex = 2;
-        O(isolateimpl->i.roots.undefined_value),             // kReturnValueIndex = 3;
+        the_hole,                                            // kReturnValueDefaultValueIndex = 2;
+        the_hole,                                            // kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
-        O(isolateimpl->i.roots.undefined_value),             // kNewTargetIndex = 7;
+        undefined,                                           // kNewTargetIndex = 7;
     };
     v8::internal::Object * values_[argumentCount + 1];
     v8::internal::Object ** values = values_ + argumentCount - 1;
@@ -188,7 +191,7 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
     }
     
-    isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
+    isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
@@ -199,15 +202,15 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
 
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-        internal::Object * excep = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+    } else if (isolateimpl->ii.thread_local_top()->scheduled_exception_ != the_hole) {
+        internal::Object * excep = isolateimpl->ii.thread_local_top()->scheduled_exception_;
         if (excep->IsHeapObject()) {
             ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
             *exception = i->m_value;
         } else {
             *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
         }
-        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+        isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
     
     Local<Value> ret = info.GetReturnValue().Get();

@@ -339,36 +339,47 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
     struct AccessorInfo {
         AccessorNameGetterCallback getter;
         AccessorNameSetterCallback setter;
-        ContextImpl *m_context;
+        IsolateImpl *m_isolate;
         JSValueRef m_property;
         JSValueRef m_data;
+        ~AccessorInfo()
+        {
+            Isolate* isolate = reinterpret_cast<Isolate*>(m_isolate);
+            HandleScope scope(isolate);
+            
+            Local<Context> context = V82JSC::OperatingContext(isolate);
+            JSContextRef ctx = V82JSC::ToContextRef(context);
+            if (m_property) JSValueUnprotect(ctx, m_property);
+            if (m_data) JSValueUnprotect(ctx, m_data);
+        }
     };
     
     const auto callback = [](JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
-                             size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception)
+                             size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) -> JSValueRef
     {
         AccessorInfo* wrap = reinterpret_cast<AccessorInfo*>(JSObjectGetPrivate(function));
-        IsolateImpl* isolateimpl = V82JSC::ToIsolateImpl(wrap->m_context);
-        Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+        Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(wrap->m_isolate), ctx);
         ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
         
         Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
         Local<Value> data = ValueImpl::New(ctximpl, wrap->m_data);
+        typedef v8::internal::Heap::RootListIndex R;
+        internal::Object *the_hole = wrap->m_isolate->ii.heap()->root(R::kTheHoleValueRootIndex);
         
         v8::internal::Object * implicit[] = {
-            0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
-            * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
-            O(isolateimpl),                                      // kIsolateIndex = 2;
-            O(isolateimpl->i.roots.the_hole_value),              // kReturnValueDefaultValueIndex = 3;
-            O(isolateimpl->i.roots.the_hole_value),              // kReturnValueIndex = 4;
-            * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 5;
-            * reinterpret_cast<v8::internal::Object**>(*thiz),   // kThisIndex = 6;
+            0 /*FIXME*/,                                             // kShouldThrowOnErrorIndex = 0;
+            * reinterpret_cast<v8::internal::Object**>(*thiz),       // kHolderIndex = 1;
+            O(wrap->m_isolate),                                      // kIsolateIndex = 2;
+            the_hole,                                                // kReturnValueDefaultValueIndex = 3;
+            the_hole,                                                // kReturnValueIndex = 4;
+            * reinterpret_cast<v8::internal::Object**>(*data),       // kDataIndex = 5;
+            * reinterpret_cast<v8::internal::Object**>(*thiz),       // kThisIndex = 6;
         };
         
-        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
-        TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
+        wrap->m_isolate->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        TryCatch try_catch(V82JSC::ToIsolate(wrap->m_isolate));
 
-        Local<Value> ret = Undefined(V82JSC::ToIsolate(isolateimpl));
+        Local<Value> ret = Undefined(V82JSC::ToIsolate(wrap->m_isolate));
         if (argumentCount == 0) {
             PropertyCallbackImpl<Value> info(implicit);
             wrap->getter(ValueImpl::New(ctximpl, wrap->m_property).As<Name>(), info);
@@ -382,22 +393,22 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
         
         if (try_catch.HasCaught()) {
             *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-        } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-            internal::Object * excep = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+        } else if (wrap->m_isolate->ii.thread_local_top()->scheduled_exception_ != the_hole) {
+            internal::Object * excep = wrap->m_isolate->ii.thread_local_top()->scheduled_exception_;
             if (excep->IsHeapObject()) {
                 ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
                 *exception = i->m_value;
             } else {
                 *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
             }
-            isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+            wrap->m_isolate->ii.thread_local_top()->scheduled_exception_ = the_hole;
         }
 
         return V82JSC::ToJSValueRef<Value>(ret, context);
     };
     
     AccessorInfo *wrap = new AccessorInfo();
-    wrap->m_context = ctximpl;
+    wrap->m_isolate = iso;
     wrap->m_property = V82JSC::ToJSValueRef(name, context);
     JSValueProtect(ctximpl->m_ctxRef, wrap->m_property);
     wrap->getter = getter;
@@ -409,6 +420,11 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
     JSClassDefinition def = kJSClassDefinitionEmpty;
     def.attributes = kJSClassAttributeNoAutomaticPrototype;
     def.callAsFunction = callback;
+    def.finalize = [](JSObjectRef obj)
+    {
+        AccessorInfo *info = (AccessorInfo*) JSObjectGetPrivate(obj);
+        delete info;
+    };
     JSClassRef claz = JSClassCreate(&def);
     JSObjectRef accessor_function = JSObjectMake(ctximpl->m_ctxRef, claz, wrap);
     JSClassRelease(claz);
@@ -422,11 +438,7 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
                         attribute,
                         settings);
 
-    if (try_catch.HasCaught()) {
-        return Nothing<bool>();
-    } else {
-        return _maybe<bool>(true).toMaybe();
-    }
+    return _maybe<bool>(!try_catch.HasCaught()).toMaybe();
 }
 
 void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
@@ -627,11 +639,11 @@ MaybeLocal<Array> Object::GetOwnPropertyNames(Local<Context> context, PropertyFi
  */
 Local<Value> Object::GetPrototype()
 {
-    Local<Context> context = Isolate::GetCurrent()->GetCurrentContext();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
     ContextImpl* ctximpl = V82JSC::ToContextImpl(context);
     JSContextRef ctx = ctximpl->m_ctxRef;
     JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, context);
-    JSValueRef proto = V82JSC::exec(ctx, "return Object.getPrototypeOf(_1)", 1, &obj);
+    JSValueRef proto = V82JSC::exec(ctx, "return Object.getPrototypeOf(_1)", 1, &obj); //JSObjectGetPrototype(ctx, (JSObjectRef) obj);
     return ValueImpl::New(ctximpl, proto);
 }
 
@@ -658,9 +670,9 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
     Local<Context> context = V82JSC::ToCurrentContext(this);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     Isolate *isolate = V82JSC::ToIsolate(iso);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
 
     FunctionTemplateImpl* tmplimpl = V82JSC::ToImpl<FunctionTemplateImpl>(tmpl);
     
@@ -734,9 +746,11 @@ Maybe<bool> Object::SetIntegrityLevel(Local<Context> context, IntegrityLevel lev
 int Object::InternalFieldCount()
 {
     Local<Context> context = V82JSC::ToCurrentContext(this);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-    
+
+    ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(this);
+    JSContextRef ctx = impl->m_creationCtx;
+
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
     if (wrap) return wrap->m_num_internal_fields;
     else if (IsArrayBufferView()) {

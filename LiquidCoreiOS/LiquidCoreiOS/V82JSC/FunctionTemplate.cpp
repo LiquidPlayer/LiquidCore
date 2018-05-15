@@ -481,12 +481,14 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     }
 
     Local<Value> data = ValueImpl::New(V82JSC::ToContextImpl(context), ftempl->m_data);
-    
+    typedef v8::internal::Heap::RootListIndex R;
+    internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
+
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
         O(isolateimpl),                                      // kIsolateIndex = 1;
-        O(isolateimpl->i.roots.the_hole_value),              // kReturnValueDefaultValueIndex = 2;
-        O(isolateimpl->i.roots.the_hole_value),              // kReturnValueIndex = 3;
+        the_hole,                                            // kReturnValueDefaultValueIndex = 2;
+        the_hole,                                            // kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
@@ -502,8 +504,7 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     
-    //internal::Object* held_exception = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
-    isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = *isolateimpl->i.roots.the_hole_value;
+    isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
 
     if (ftempl->m_callback) {
         ftempl->m_callback(info);
@@ -511,18 +512,18 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (isolateimpl->i.ii.thread_local_top()->scheduled_exception_ != *isolateimpl->i.roots.the_hole_value) {
-        internal::Object * excep = isolateimpl->i.ii.thread_local_top()->scheduled_exception_;
+    } else if (isolateimpl->ii.thread_local_top()->scheduled_exception_ != the_hole) {
+        internal::Object * excep = isolateimpl->ii.thread_local_top()->scheduled_exception_;
         if (excep->IsHeapObject()) {
             ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
             *exception = i->m_value;
         } else {
             *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
         }
-        isolateimpl->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolateimpl->i.roots.the_hole_value);
+        isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
 
-    if (implicit[3] == O(isolateimpl->i.roots.the_hole_value)) {
+    if (implicit[3] == the_hole) {
         return V82JSC::ToJSValueRef<Object>(thiz, context);
     }
 

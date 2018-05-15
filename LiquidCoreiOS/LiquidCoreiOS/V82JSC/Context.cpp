@@ -125,18 +125,24 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
     }
 
-    ctx->Enter();    
+    ctx->Enter();
 
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
-        
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
-        context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
-        JSObjectRef global = JSContextGetGlobalObject(context->m_ctxRef);
-        JSObjectRef instance = global;
-        //JSObjectRef instance = JSObjectMake(context->m_ctxRef, 0, nullptr);
-        //JSObjectSetPrototype(context->m_ctxRef, global, instance);
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        def.initialize = [](JSContextRef ctx, JSObjectRef global)
+        {
+        };
+        JSClassRef claz = JSClassCreate(&def);
+        context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
+        JSClassRelease(claz);
+        JSContextRef ctxRef = context->m_ctxRef;
+
+        JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
+        JSObjectRef global = (JSObjectRef) JSObjectGetPrototype(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef));
+        JSObjectSetPrototype(context->m_ctxRef, global, instance);
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
         
         if (!ctortempl.IsEmpty()) {
@@ -146,10 +152,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
                 JSStringRef sconstructor = JSStringCreateWithUTF8CString("constructor");
                 JSValueRef excp = 0;
-                JSValueRef prototype = JSObjectGetProperty(context->m_ctxRef, ctor_func, sprototype, &excp);
+                JSValueRef prototype = JSObjectGetProperty(ctxRef, ctor_func, sprototype, &excp);
                 assert(excp == 0);
-                JSObjectSetPrototype(context->m_ctxRef, instance, prototype);
-                JSObjectSetProperty(context->m_ctxRef, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum, &excp);
+                JSObjectSetPrototype(ctxRef, instance, prototype);
+                JSObjectSetProperty(ctxRef, instance, sconstructor, ctor_func, kJSPropertyAttributeDontEnum, &excp);
                 assert(excp == 0);
                 JSStringRelease(sprototype);
                 JSStringRelease(sconstructor);
@@ -169,7 +175,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     }
     
     context->m_isGlobalContext = true;
-    
+
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
         proxyArrayBuffer(context);
@@ -251,7 +257,8 @@ MaybeLocal<Object> Context::NewRemoteContext(
  */
 void Context::SetSecurityToken(Local<Value> token)
 {
-    assert(0);
+    printf( "FIXME! Context::SetSecurityToken()\n" );
+    //assert(0);
 }
 
 /** Restores the security token to the default value. */

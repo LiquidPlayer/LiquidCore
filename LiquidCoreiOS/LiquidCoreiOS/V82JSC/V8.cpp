@@ -246,7 +246,7 @@ void V8::RegisterExternallyReferencedObject(internal::Object** object,
 void V8::FromJustIsNothing()
 {
     printf ("FIXME! V8::FromJustIsNothing()\n");
-    //assert(0);
+    assert(0);
 }
 void V8::ToLocalEmpty()
 {

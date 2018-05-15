@@ -73,21 +73,8 @@ using v8::internal::Isolate;
 #define kUC16AlphabetSize v8::internal::Isolate::kUC16AlphabetSize
 
 struct IsolateImpl {
-    union i_ {
-        v8::internal::Isolate ii;
-         struct {
-            void *i0; // kHeapObjectMapOffset, kIsolateEmbedderDataOffset
-            void *i1; // kForeignAddressOffset
-            void *i2;
-            void *i3;
-            uint64_t i64_0; // kExternalMemoryOffset
-            uint64_t i64_1; // kExternalMemoryLimitOffset
-            uint64_t i64_2;
-            void *i4;
-            void *i5;
-            struct Roots roots; // kIsolateRootsOffset
-        };
-    } i;
+    v8::internal::Isolate ii;
+    
     JSContextGroupRef m_group;
     Copyable(v8::Context) m_nullContext;
     JSValueRef m_negative_zero;
@@ -111,6 +98,8 @@ struct IsolateImpl {
     
     std::stack<Copyable(v8::Context)> m_context_stack;
     std::stack<v8::HandleScope*> m_scope_stack;
+    
+    void GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap);
 };
 }} // namespaces
 
@@ -134,6 +123,7 @@ class HeapAllocator : public v8::internal::MemoryChunk
 public:
     static InternalObjectImpl* Alloc(IsolateImpl *isolate, size_t size,
                                      InternalObjectDestructor destructor=nullptr);
+    static void CollectGarbage(IsolateImpl *isolate);
 };
 
 struct HeapImpl : v8::internal::Heap {
@@ -158,7 +148,8 @@ struct ScriptImpl : InternalObjectImpl
 };
 
 struct ValueImpl : InternalObjectImpl {
-    JSValueRef  m_value;
+    JSValueRef         m_value;
+    JSGlobalContextRef m_creationCtx;
 
     static v8::Local<v8::Value> New(const ContextImpl *ctx, JSValueRef value);
     static v8::Local<v8::String> New(v8::Isolate *isolate, JSStringRef string,
@@ -569,6 +560,16 @@ struct V82JSC {
             InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(private_object);
             if (wrap && JSValueIsStrictEqual(ctx, object, wrap->m_security)) {
                 return wrap;
+            } else if (wrap) {
+                JSObjectRef proto = JSContextGetGlobalObject(ctx);
+                bool isGlobal = false;
+                while (JSValueIsObject(ctx, proto)) {
+                    isGlobal = isGlobal || JSValueIsStrictEqual(ctx, proto, object);
+                    if (isGlobal && JSValueIsStrictEqual(ctx, proto, wrap->m_security)) {
+                        return wrap;
+                    }
+                    proto = (JSObjectRef) JSObjectGetPrototype(ctx, proto);
+                }
             }
         }
         return nullptr;
@@ -597,7 +598,8 @@ struct LocalException {
     {
         if (isolate_->m_handlers && exception_) {
             reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers)->exception_ = (void*)exception_;
-            isolate_->i.ii.thread_local_top()->scheduled_exception_ = reinterpret_cast<v8::internal::Object*>(isolate_->i.roots.the_hole_value);
+            isolate_->ii.thread_local_top()->scheduled_exception_ =
+                isolate_->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
         }
     }
     inline JSValueRef* operator&()
