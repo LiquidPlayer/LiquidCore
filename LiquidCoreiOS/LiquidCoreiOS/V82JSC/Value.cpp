@@ -123,9 +123,10 @@ bool Value::IsExternal() const { return IS(IsExternal, "return Object.prototype.
  */
 bool Value::IsInt32() const
 {
-    if (IsNumber()) {
-        JSValueRef exception = nullptr;
+    MaybeLocal<Number> num = ToNumber();
+    if (!num.IsEmpty()) {
         FROMTHIS(c,v);
+        JSValueRef exception = nullptr;
         double number = JSValueToNumber(c->m_ctxRef, v, &exception);
         double intpart;
         if (v == V82JSC::ToIsolateImpl(c)->m_negative_zero) return false;
@@ -141,7 +142,8 @@ bool Value::IsInt32() const
  */
 bool Value::IsUint32() const
 {
-    if (IsNumber()) {
+    MaybeLocal<Number> num = ToNumber();
+    if (!num.IsEmpty()) {
         JSValueRef exception = nullptr;
         FROMTHIS(c,v);
         double number = JSValueToNumber(c->m_ctxRef, v, &exception);

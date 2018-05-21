@@ -25,7 +25,7 @@ void Template::Set(Local<Name> name, Local<Data> value, PropertyAttribute attrib
     prop.value.Reset(isolate, value);
     prop.attributes = attributes;
     
-    this_->m_properties.push_back(prop);
+    this_->m_properties.push_back(std::move(prop));
 }
 void Template::SetPrivate(Local<Private> name, Local<Data> value, PropertyAttribute attributes)
 {
@@ -277,7 +277,10 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     Isolate *isolate = V82JSC::ToIsolate(iso);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     Local<Object> thiz = ValueImpl::New(ctximpl, instance).As<Object>();
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, instance);
     
+    Local<Object> real_properties = Object::New(isolate);
+
     for (auto i=m_properties.begin(); i!=m_properties.end(); ++i) {
         typedef internal::Object O;
         typedef internal::Internals I;
@@ -306,7 +309,8 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
             instance,
             V82JSC::ToJSValueRef(i->name.Get(isolate), context),
             v,
-            JSValueMakeNumber(ctx, i->attributes)
+            JSValueMakeNumber(ctx, i->attributes),
+            V82JSC::ToJSValueRef(real_properties, context)
         };
         
         /* None = 0,
@@ -314,12 +318,24 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
            DontEnum = 1 << 1,
            DontDelete = 1 << 2
         */
-        V82JSC::exec(ctx,
-                     "Object.defineProperty(_1, _2, "
-                     "{ writable : !(_4&(1<<0)), "
-                     "  enumerable : !(_4&(1<<1)), "
-                     "  configurable : !(_4&(1<<2)), "
-                     "  value: _3 })", 4, args, &exception);
+        
+        if (wrap->m_isHiddenPrototype) {
+            V82JSC::exec(ctx,
+                         "_5[_2] = _3; "
+                         "Object.defineProperty(_1, _2, "
+                         "{ enumerable : !(_4&(1<<1)), "
+                         "  configurable : !(_4&(1<<2)), "
+                         "  set(v) { return _5[_2] = v; }, "
+                         "  get()  { return _5[_2] } "
+                         "})", 5, args, &exception);
+        } else {
+            V82JSC::exec(ctx,
+                         "Object.defineProperty(_1, _2, "
+                         "{ writable : !(_4&(1<<0)), "
+                         "  enumerable : !(_4&(1<<1)), "
+                         "  configurable : !(_4&(1<<2)), "
+                         "  value: _3 })", 4, args, &exception);
+        }
         if (exception.ShouldThow()) return MaybeLocal<Object>();
     }
     

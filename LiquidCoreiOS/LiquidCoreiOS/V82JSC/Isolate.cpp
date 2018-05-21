@@ -41,6 +41,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_private_symbols = std::map<std::string, JSValueRef>();
     impl->m_context_stack = std::stack<Copyable(v8::Context)>();
     impl->m_scope_stack = std::stack<HandleScope*>();
+    impl->m_global_contexts = std::map<JSGlobalContextRef, Copyable(Context)>();
     
     HandleScope scope(isolate);
     
@@ -381,7 +382,11 @@ Local<Context> Isolate::GetIncumbentContext()
 Local<Value> Isolate::ThrowException(Local<Value> exception)
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
-    impl->ii.thread_local_top()->scheduled_exception_ = * reinterpret_cast<internal::Object**>(*exception);
+    if (exception.IsEmpty()) {
+        impl->ii.thread_local_top()->scheduled_exception_ = impl->ii.heap()->root(v8::internal::Heap::RootListIndex::kUndefinedValueRootIndex);
+    } else {
+        impl->ii.thread_local_top()->scheduled_exception_ = * reinterpret_cast<internal::Object**>(*exception);
+    }
 
     return exception;
 }

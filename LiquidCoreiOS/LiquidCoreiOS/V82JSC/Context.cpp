@@ -59,12 +59,16 @@ static void constructor(ContextImpl *context)
     context->m_isGlobalContext = false;
     context->m_ctxRef = 0;
     context->m_loaded_extensions = std::map<std::string, bool>();
+    context->ObjectGetPrototypeOf = Copyable(Function)();
+    context->ObjectSetPrototypeOf = Copyable(Function)();
 }
 
 static void destructor(InternalObjectImpl *cx)
 {
     ContextImpl* context = static_cast<ContextImpl*>(cx);
     context->m_loaded_extensions.clear();
+    context->ObjectGetPrototypeOf.Reset();
+    context->ObjectSetPrototypeOf.Reset();
     
     internal::Object * heap_ptr = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(context) + internal::kHeapObjectTag);
     const Context *ctx = reinterpret_cast<const Context*>(&heap_ptr);
@@ -141,6 +145,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSContextRef ctxRef = context->m_ctxRef;
 
         JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
+        // Don't use V82JSC::SetRealPrototype() or GetRealPrototype() here because we haven't set them up yet,
+        // but otherwise, always use them over the JSC equivalents.  The JSC API legacy functions get confused
+        // by proxies
         JSObjectRef global = (JSObjectRef) JSObjectGetPrototype(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef));
         JSObjectSetPrototype(context->m_ctxRef, global, instance);
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
@@ -161,9 +168,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRelease(sconstructor);
             }
         }
-        impl->NewInstance(ctx, instance);
+        impl->NewInstance(ctx, instance, false);
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(context->m_ctxRef, instance);
         if (hash) {
-            V82JSC::getPrivateInstance(context->m_ctxRef, instance)->m_hash = hash;
+            wrap->m_hash = hash;
         }
 
         if (exception.ShouldThow()) {
@@ -175,10 +183,62 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     }
     
     context->m_isGlobalContext = true;
+    Copyable(Context) persistent = Copyable(Context)(isolate, ctx);
+    //persistent.SetWeak();
+    i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
 
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
         proxyArrayBuffer(context);
+        
+        // Proxy Object.getPrototypeOf and Object.setPrototypeOf
+        Local<FunctionTemplate> setPrototypeOf = FunctionTemplate::New(
+            isolate,
+            [](const FunctionCallbackInfo<Value>& info) {
+                Local<Object> obj = info[0].As<Object>();
+                Local<Value> proto = info[1];
+                if (obj->SetPrototype(info.GetIsolate()->GetCurrentContext(), proto).FromJust()) {
+                    info.GetReturnValue().Set(True(info.GetIsolate()));
+                } else {
+                    info.GetReturnValue().Set(False(info.GetIsolate()));
+                }
+            });
+        Local<FunctionTemplate> getPrototypeOf = FunctionTemplate::New(
+            isolate,
+            [](const FunctionCallbackInfo<Value>& info) {
+              Local<Object> obj = info[0].As<Object>();
+              info.GetReturnValue().Set(obj->GetPrototype());
+            });
+        Local<Object> object = ctx->Global()->Get(ctx,
+            String::NewFromUtf8(isolate, "Object", NewStringType::kNormal).ToLocalChecked()).ToLocalChecked().As<Object>();
+        Local<String> SsetPrototypeOf = String::NewFromUtf8(isolate, "setPrototypeOf", NewStringType::kNormal).ToLocalChecked();
+        Local<String> SgetPrototypeOf = String::NewFromUtf8(isolate, "getPrototypeOf", NewStringType::kNormal).ToLocalChecked();
+
+        context->ObjectSetPrototypeOf.Reset(isolate, object->Get(ctx, SsetPrototypeOf).ToLocalChecked().As<Function>());
+        context->ObjectGetPrototypeOf.Reset(isolate, object->Get(ctx, SgetPrototypeOf).ToLocalChecked().As<Function>());
+        CHECK(object->Set(ctx,
+                          SsetPrototypeOf,
+                          setPrototypeOf->GetFunction(ctx).ToLocalChecked()).ToChecked());
+        CHECK(object->Set(ctx,
+                          SgetPrototypeOf,
+                          getPrototypeOf->GetFunction(ctx).ToLocalChecked()).ToChecked());
+        
+        // ... and capture all attempts to set the prototype through __proto__
+        V82JSC::exec(context->m_ctxRef,
+                     "Object.defineProperty( Object.prototype, '__proto__',"
+                     "{"
+                     "  get() { return Object.getPrototypeOf(this); },"
+                     "  set(p) { return Object.setPrototypeOf(this, p); },"
+                     "  enumerable: false,"
+                     "  configurable: false"
+                     "});", 0, nullptr);
+        
+        // Filter out our private symbol.  Nobody needs to see that.
+        V82JSC::exec(context->m_ctxRef,
+                     "var old = Object.getOwnPropertySymbols; "
+                     "Object.getOwnPropertySymbols = "
+                     "    (o) => old(o).filter( (s)=> s!= Symbol.for('" GLOBAL_PRIVATE_SYMBOL "') )",
+                     0, nullptr);
 
         InstallAutoExtensions(ctx);
         if (extensions) {

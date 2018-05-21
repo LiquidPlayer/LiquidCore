@@ -99,6 +99,8 @@ struct IsolateImpl {
     std::stack<Copyable(v8::Context)> m_context_stack;
     std::stack<v8::HandleScope*> m_scope_stack;
     
+    std::map<JSGlobalContextRef, Copyable(v8::Context)> m_global_contexts;
+    
     void GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap);
 };
 }} // namespaces
@@ -136,6 +138,8 @@ struct ContextImpl : InternalObjectImpl
     bool m_isGlobalContext;
     JSContextRef m_ctxRef;
     std::map<std::string, bool> m_loaded_extensions;
+    Copyable(v8::Function) ObjectSetPrototypeOf;
+    Copyable(v8::Function) ObjectGetPrototypeOf;
     
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
@@ -267,6 +271,7 @@ struct FunctionTemplateImpl : TemplateImpl
     int m_length;
     Copyable(v8::ObjectTemplate) m_instance_template;
     std::map<JSContextRef, JSObjectRef> m_functions;
+    bool m_isHiddenPrototype;
 
     static JSValueRef callAsConstructorCallback(JSContextRef ctx,
                                                 JSObjectRef constructor,
@@ -286,7 +291,7 @@ struct ObjectTemplateImpl : TemplateImpl
     bool m_need_proxy;
     int m_internal_fields;
     
-    v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root);
+    v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root, bool isHiddenPrototype);
 };
 
 struct TemplateWrap {
@@ -302,12 +307,14 @@ struct TemplateWrap {
 struct InstanceWrap {
     ~InstanceWrap();
     JSValueRef m_security;
+    JSValueRef m_proxy_security;
     Copyable(v8::ObjectTemplate) m_object_template;
     IsolateImpl *m_isolate;
     int m_num_internal_fields;
     JSValueRef *m_internal_fields;
     JSValueRef m_private_properties;
     int m_hash;
+    bool m_isHiddenPrototype;
 };
 
 struct SignatureImpl : InternalObjectImpl
@@ -527,12 +534,13 @@ struct V82JSC {
         return result;
     }
 #define GLOBAL_PRIVATE_SYMBOL "org.liquidplayer.javascript.__v82jsc_private__"
-    static inline InstanceWrap * makePrivateInstance(JSContextRef ctx, JSObjectRef object)
+    static inline InstanceWrap * makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object)
     {
         InstanceWrap *wrap = new InstanceWrap();
         wrap->m_security = object;
         // Keep only a weak reference to m_security to avoid cyclical references
         wrap->m_hash = 1 + rand();
+        wrap->m_isolate = iso;
         
         JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes = kJSClassAttributeNoAutomaticPrototype;
@@ -548,17 +556,18 @@ struct V82JSC {
             object, private_object
         };
 
-        exec(ctx,
-             "_1[Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')] = _2",
+        exec(JSContextGetGlobalContext(ctx),
+             "Object.defineProperty(_1, Symbol.for('" GLOBAL_PRIVATE_SYMBOL "'), {value: _2, enumerable: false, configurable: true, writable: true})",
              2, args);
         return wrap;
     }
     static inline InstanceWrap * getPrivateInstance(JSContextRef ctx, JSObjectRef object)
     {
-        JSObjectRef private_object = (JSObjectRef) exec(ctx, "return _1[Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')]", 1, &object);
+        JSObjectRef private_object = (JSObjectRef) exec(JSContextGetGlobalContext(ctx), "return _1[Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')]", 1, &object);
         if (JSValueIsObject(ctx, private_object)) {
             InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(private_object);
-            if (wrap && JSValueIsStrictEqual(ctx, object, wrap->m_security)) {
+            if (wrap && (JSValueIsStrictEqual(ctx, object, wrap->m_security) ||
+                         (wrap->m_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_proxy_security)))) {
                 return wrap;
             } else if (wrap) {
                 JSObjectRef proto = JSContextGetGlobalObject(ctx);
@@ -578,6 +587,52 @@ struct V82JSC {
     static inline v8::internal::Map* Map(const InternalObjectImpl *io)
     {
         return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(io) + v8::internal::kHeapObjectTag);
+    }
+    
+    static inline v8::Local<v8::Context> FindGlobalContext(v8::Local<v8::Context> context)
+    {
+        v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
+        IsolateImpl *i = ToIsolateImpl(isolate);
+        JSGlobalContextRef gctx = JSContextGetGlobalContext(V82JSC::ToContextRef(context));
+        if (i->m_global_contexts.count(gctx) > 0) {
+            return i->m_global_contexts[gctx].Get(isolate);
+        }
+        return v8::Local<v8::Context>();
+    }
+    static inline JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj)
+    {
+        v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
+        v8::Local<v8::Context> global_context = FindGlobalContext(context);
+        if (global_context.IsEmpty()) {
+            // No worries, it just means this hasn't been set up yet; use the native API
+            return JSObjectGetPrototype(ToContextRef(context), obj);
+        }
+        v8::Local<v8::Function> getPrototype = ToContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
+        CHECK(!getPrototype.IsEmpty());
+        v8::Local<v8::Value> args[] = {
+            v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj))
+        };
+        v8::Local<v8::Value> our_proto_local = getPrototype->Call(context, Null(isolate), 1, args).ToLocalChecked();
+        JSValueRef our_proto = ToJSValueRef(our_proto_local, context);
+        return our_proto;
+    }
+    static inline void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto)
+    {
+        v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
+        v8::Local<v8::Context> global_context = FindGlobalContext(context);
+        if (global_context.IsEmpty()) {
+            // No worries, it just means this hasn't been set up yet; use the native API
+            JSObjectSetPrototype(ToContextRef(context), obj, proto);
+            return;
+        }
+        v8::Local<v8::Function> setPrototype = ToContextImpl(global_context)->ObjectSetPrototypeOf.Get(isolate);
+        CHECK(!setPrototype.IsEmpty());
+        v8::Local<v8::Value> args[] = {
+            v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj)),
+            v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), proto))
+        };
+        v8::TryCatch try_catch(isolate);
+        setPrototype->Call(context, Null(isolate), 2, args).IsEmpty();
     }
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)
@@ -607,6 +662,7 @@ struct LocalException {
         return &exception_;
     }
     inline bool ShouldThow() { return exception_ != nullptr; }
+    inline void Clear() { exception_ = nullptr; }
     JSValueRef exception_;
     IsolateImpl *isolate_;
 };

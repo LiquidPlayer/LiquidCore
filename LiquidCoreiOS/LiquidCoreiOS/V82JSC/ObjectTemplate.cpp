@@ -65,14 +65,14 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
             instance = JSObjectCallAsConstructor(ctx->m_ctxRef, (JSObjectRef)ctor_func, 0, 0, &exception);
+            return ValueImpl::New(ctx, instance).As<Object>();
+        } else {
+            return MaybeLocal<Object>();
         }
     } else {
         instance = JSObjectMake(ctx->m_ctxRef, nullptr, nullptr);
     }
-    if (!instance) {
-        return MaybeLocal<Object>();
-    }
-    return impl->NewInstance(context, instance);
+    return impl->NewInstance(context, instance, false);
 }
 
 #undef O
@@ -98,8 +98,8 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     JSObjectRef target = (JSObjectRef) arguments[0];
     JSStringRef propertyName = 0;
     bool isSymbol = false;
+    bool isIndex = false;
     int index = 0;
-    char *p = nullptr;
     if (argumentCount > 1) {
         isSymbol = JSValueToBoolean(ctx, V82JSC::exec(ctx, "return typeof _1 === 'symbol'", 1, &arguments[1]));
         if (!isSymbol) {
@@ -113,10 +113,12 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         size_t size = JSStringGetMaximumUTF8CStringSize(propertyName);
         char property[size];
         JSStringGetUTF8CString(propertyName, property, size);
+        char *p = nullptr;
         index = strtod(property, &p);
         if (p && (!strcmp(p, "constructor") || !strcmp(p, "__proto__") )) {
             return NULL;
         }
+        if (!p || *p==0) isIndex = true;
     }
 
     JSValueRef value;
@@ -135,10 +137,14 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
 
     Local<Value> data;
-    if (isSymbol || p!=nullptr) { /* Is named */
-        data = ValueImpl::New(ctximpl, templ->m_named_data);
-    } else { /* Is Indexed */
-        data = ValueImpl::New(ctximpl, templ->m_indexed_data);
+    if (templ) {
+        if (isSymbol || !isIndex) { /* Is named */
+            data = ValueImpl::New(ctximpl, templ->m_named_data);
+        } else { /* Is Indexed */
+            data = ValueImpl::New(ctximpl, templ->m_indexed_data);
+        }
+    } else {
+        data = Undefined(isolate);
     }
     
     Local<Value> thiz = ValueImpl::New(ctximpl, target);
@@ -161,9 +167,13 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
 
-    if (isSymbol || p!=nullptr) {
+    if (isSymbol || !isIndex) {
+        Local<Name> prop = Local<Name>();
+        if (argumentCount>1) {
+            prop = ValueImpl::New(ctximpl, arguments[1]).As<Name>();
+        }
         named_handler(templ,
-                      ValueImpl::New(ctximpl, arguments[1]).As<Name>(),
+                      prop,
                       set, info);
     } else {
         indexed_handler(templ, index, set, info);
@@ -209,7 +219,7 @@ InstanceWrap::~InstanceWrap()
     m_object_template.Reset();
 }
 
-v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root)
+v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root, bool isHiddenPrototype)
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
@@ -223,11 +233,11 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     // proxy -----> root . Symbol.for('org.liquidplayer.javascript.__v82jsc_private__') -->  lifecycle_object(wrap) --> InstanceWrap*
     
     // Create lifecycle object
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx->m_ctxRef, root);
-    wrap->m_isolate = iso;
+    InstanceWrap *wrap = V82JSC::makePrivateInstance(iso, ctx->m_ctxRef, root);
     wrap->m_object_template.Reset(isolate, thiz);
     wrap->m_num_internal_fields = m_internal_fields;
     wrap->m_internal_fields = new JSValueRef[m_internal_fields]();
+    wrap->m_isHiddenPrototype = isHiddenPrototype;
 
     // Create proxy
     JSObjectRef handler = 0;
@@ -244,10 +254,12 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         
         handler_func("apply", [](CALLBACK_PARAMS) -> JSValueRef
         {
+            printf ("Handling Apply!\n");
             return NULL;
         });
         handler_func("get", [](CALLBACK_PARAMS) -> JSValueRef
         {
+            printf ("Handling get!\n");
             JSValueRef ret = PropertyHandler<Value>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
             {
@@ -268,6 +280,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("set", [](CALLBACK_PARAMS) -> JSValueRef
         {
+            printf ("Handling set!\n");
             JSValueRef ret = PropertyHandler<Value>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
             {
@@ -286,12 +299,15 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             }
             if (ret == NULL) {
                 assert(argumentCount>2);
+                InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+                assert(wrap);
                 return V82JSC::exec(ctx, "return _1[_2] = _3", 3, arguments, exception);
             }
             return JSValueMakeBoolean(ctx, true);
         });
         handler_func("has", [](CALLBACK_PARAMS) -> JSValueRef
         {
+            printf ("Handling has!\n");
             JSValueRef ret = PropertyHandler<Integer>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
             {
@@ -320,6 +336,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("deleteProperty", [](CALLBACK_PARAMS) -> JSValueRef
         {
+            printf ("Handling deleteProperty!\n");
             JSValueRef ret = PropertyHandler<v8::Boolean>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
             {
@@ -341,6 +358,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("ownKeys", [](CALLBACK_PARAMS) -> JSValueRef
         {
+            printf ("Handling ownKeys!\n");
             JSValueRef ret = PropertyHandler<v8::Array>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
             {
@@ -356,22 +374,102 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             });
             if (!*exception && ret == NULL) {
                 assert(argumentCount>0);
-                return V82JSC::exec(ctx, "return Object.getOwnPropertyNames(_1)", 1, arguments, exception);
+                return V82JSC::exec(ctx,
+                                    "return Array.from(new Set("
+                                    "  Object.getOwnPropertyNames(_1)"
+                                    "    .concat(Object.getOwnPropertySymbols(_1))"
+                                    ")).filter(p => p!==Symbol.for('" GLOBAL_PRIVATE_SYMBOL "'))",
+                                    1, arguments, exception);
             }
             return ret;
         });
+        handler_func("defineProperty", [](CALLBACK_PARAMS) -> JSValueRef {
+            printf ("Handling defineProperty!\n");
+            assert(argumentCount>2);
+            return V82JSC::exec(ctx, "return Object.defineProperty(_1, _2, _3)", 3, arguments, exception);
+        });
         handler_func("getPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>0);
-            return JSObjectGetPrototype(ctx, (JSObjectRef) arguments[0]);
+            InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+            printf ("Handling getPrototypeOf! wrap = %p\n", wrap);
+            Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
+            HandleScope scope(isolate);
+            Local<Context> context = ContextImpl::New(isolate, ctx);
+            Local<Value> proto = ValueImpl::New(V82JSC::ToContextImpl(context),
+                                                arguments[0]).As<Object>()->GetPrototype();
+            return V82JSC::ToJSValueRef(proto, context);
         });
         handler_func("setPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
+            printf ("Handling setPrototypeOf!\n");
             assert(argumentCount>1);
-            JSObjectSetPrototype(ctx, (JSObjectRef) arguments[0], arguments[1]);
-            return JSValueMakeBoolean(ctx, true);
+            InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+            Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
+            HandleScope scope(isolate);
+            Local<Context> context = ContextImpl::New(isolate, ctx);
+            Maybe<bool> r = ValueImpl::New(V82JSC::ToContextImpl(context),arguments[0])
+                .As<Object>()->SetPrototype(context, ValueImpl::New(V82JSC::ToContextImpl(context), arguments[1]));
+            return JSValueMakeBoolean(ctx, r.FromJust());
         });
         handler_func("getOwnPropertyDescriptor", [](CALLBACK_PARAMS) -> JSValueRef {
+            printf ("Handling getOwnPropertyDescriptor!\n");
             assert(argumentCount>1);
-            return V82JSC::exec(ctx, "return Object.getOwnPropertyDescriptor(_1, _2)", 2, arguments, exception);
+            JSValueRef attributes = PropertyHandler<Integer>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
+            {
+                if (impl->m_named_handler.query) {
+                    impl->m_named_handler.query(property, info);
+                } else {
+                    info.GetReturnValue().Set(-1);
+                }
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Integer>& info)
+            {
+                if (impl->m_indexed_handler.query) {
+                    impl->m_indexed_handler.query(index, info);
+                } else {
+                    info.GetReturnValue().Set(-1);
+                }
+            });
+            // attributes can be NULL (has querier, property does not exist), -1 (no querier, defer to value), PropertyAttribute (has property)
+
+            JSValueRef value = PropertyHandler<Value>(PASS,
+            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
+            {
+                if (impl->m_named_handler.getter)
+                    impl->m_named_handler.getter(property, info);
+            },
+            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
+            {
+                if (impl->m_indexed_handler.getter)
+                    impl->m_indexed_handler.getter(index, info);
+            });
+
+            if (attributes != NULL) {
+                int pattr = static_cast<int>(JSValueToNumber(ctx, attributes, 0));
+                if (pattr != -1 || value != NULL) {
+                    v8::PropertyAttribute attr = PropertyAttribute::None;
+                    if (pattr != -1) {
+                        attr = static_cast<v8::PropertyAttribute>(pattr);
+                    }
+                    JSValueRef args[] = {
+                        JSValueMakeBoolean(ctx, !(attr & v8::PropertyAttribute::ReadOnly)),
+                        JSValueMakeBoolean(ctx, !(attr & PropertyAttribute::DontEnum)),
+                        value
+                    };
+                    if (value != NULL) {
+                        return V82JSC::exec(ctx, "return { writable: _1, enumerable: _2, configurable: true, value: _3 }", 3, args);
+                    } else {
+                        return V82JSC::exec(ctx, "return { writable: _1, enumerable: _2, configurable: true }", 2, args);
+                    }
+                }
+            }
+
+            if (!*exception) {
+                // Not handled.  Pass thru.
+                assert(argumentCount>1);
+                return V82JSC::exec(ctx, "return Object.getOwnPropertyDescriptor(_1, _2)", 2, arguments, exception);
+            }
+            return NULL;
         });
     }
 
@@ -384,9 +482,13 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     if (instance.IsEmpty()) {
         return instance;
     }
+
     if (m_need_proxy) {
         JSValueRef args[] = {root, handler};
-        return ValueImpl::New(ctx, V82JSC::exec(ctx->m_ctxRef, "return new Proxy(_1, _2)", 2, args)).As<Object>();
+        JSValueRef proxy_object = V82JSC::exec(ctx->m_ctxRef, "return new Proxy(_1, _2)", 2, args);
+        Local<Object> proxy = ValueImpl::New(ctx, proxy_object).As<Object>();
+        wrap->m_proxy_security = V82JSC::ToJSValueRef(proxy, context);
+        return proxy;
     }
     
     return instance;

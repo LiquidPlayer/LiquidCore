@@ -176,7 +176,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
         }
         delete info;
     }, (void*) byte_length, &exception);
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx, array_buffer);
+    InstanceWrap *wrap = V82JSC::makePrivateInstance(isolateimpl, ctx, array_buffer);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
     wrap->m_internal_fields = new JSValueRef[ArrayBuffer::kInternalFieldCount]();
     Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
@@ -220,7 +220,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
         }
         delete info;
     }, (void*) byte_length, &exception);
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx, array_buffer);
+    InstanceWrap *wrap = V82JSC::makePrivateInstance(isolateimpl, ctx, array_buffer);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
     wrap->m_internal_fields = new JSValueRef[ArrayBuffer::kInternalFieldCount]();
     Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
@@ -416,8 +416,7 @@ ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
     ArrayBufferViewInfo *info;
     if (!wrap) {
         info = new ArrayBufferViewInfo();
-        
-        InstanceWrap *wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef)impl->m_value);
+        InstanceWrap *wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(isolate), ctx, (JSObjectRef)impl->m_value);
         wrap->m_num_internal_fields = ArrayBufferView::kInternalFieldCount;
         wrap->m_internal_fields = new JSValueRef[ArrayBufferView::kInternalFieldCount];
         memset(wrap->m_internal_fields, 0, ArrayBufferView::kInternalFieldCount * sizeof(JSValueRef) );

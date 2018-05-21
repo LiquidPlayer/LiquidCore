@@ -10909,7 +10909,8 @@ THREADED_TEST(Regress91517) {
   // created object through JavaScript.
   CHECK(context->Global()->Set(context.local(), v8_str("obj"), o4).FromJust());
   // PROPERTY_FILTER_NONE = 0
-  CompileRun("var names = %GetOwnPropertyKeys(obj, 0);");
+//  CompileRun("var names = %GetOwnPropertyKeys(obj, 0);");
+  CompileRun("var names = Object.getOwnPropertyNames(obj);");
 
   ExpectInt32("names.length", 1006);
   ExpectTrue("names.indexOf(\"baz\") >= 0");
@@ -10974,7 +10975,9 @@ THREADED_TEST(Regress269562) {
   CHECK(context->Global()->Set(context.local(), v8_str("obj"), o2).FromJust());
   CHECK(context->Global()->Set(context.local(), v8_str("sym"), sym).FromJust());
   // PROPERTY_FILTER_NONE = 0
-  CompileRun("var names = %GetOwnPropertyKeys(obj, 0);");
+//  CompileRun("var names = %GetOwnPropertyKeys(obj, 0);");
+  CompileRun("var names = Object.getOwnPropertyNames(obj).concat(Object.getOwnPropertySymbols(obj));");
+    ExpectString("JSON.stringify(names)", "foo");
 
   ExpectInt32("names.length", 7);
   ExpectTrue("names.indexOf(\"foo\") >= 0");
@@ -23825,12 +23828,12 @@ class ApiCallOptimizationChecker {
         "\n"
         "check(wrap_f());\n"
         "check(wrap_f());\n"
-        "%%OptimizeFunctionOnNextCall(wrap_f_%d);\n"
+//        "%%OptimizeFunctionOnNextCall(wrap_f_%d);\n"
         "check(wrap_f());\n"
         "\n"
         "check(wrap_get());\n"
         "check(wrap_get());\n"
-        "%%OptimizeFunctionOnNextCall(wrap_get_%d);\n"
+//        "%%OptimizeFunctionOnNextCall(wrap_get_%d);\n"
         "check(wrap_get());\n"
         "\n"
         "check = function(returned) {\n"
@@ -23838,7 +23841,7 @@ class ApiCallOptimizationChecker {
         "}\n"
         "check(wrap_set());\n"
         "check(wrap_set());\n"
-        "%%OptimizeFunctionOnNextCall(wrap_set_%d);\n"
+//        "%%OptimizeFunctionOnNextCall(wrap_set_%d);\n"
         "check(wrap_set());\n",
         wrap_function.start(), key, key, key, key, key, key);
     v8::TryCatch try_catch(isolate);
@@ -25520,12 +25523,14 @@ TEST(GetPrototypeHidden) {
   CHECK(env->Global()->Set(env.local(), v8_str("proto"), proto).FromJust());
   CHECK(env->Global()->Set(env.local(), v8_str("proto2"), proto2).FromJust());
 
-  v8::Local<v8::Value> result = CompileRun("%_GetPrototype(object)");
+//  v8::Local<v8::Value> result = CompileRun("%_GetPrototype(object)");
+  v8::Local<v8::Value> result = CompileRun("Object.getPrototypeOf(object)");
   CHECK(result->Equals(env.local(), proto2).FromJust());
 
   result = CompileRun(
-      "function f() { return %_GetPrototype(object); }"
-      "%OptimizeFunctionOnNextCall(f);"
+//      "function f() { return %_GetPrototype(object); }"
+      "function f() { return Object.getPrototypeOf(object); }"
+//      "%OptimizeFunctionOnNextCall(f);"
       "f()");
   CHECK(result->Equals(env.local(), proto2).FromJust());
 }

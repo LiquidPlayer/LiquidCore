@@ -300,6 +300,19 @@ V(Regress137002b)
 V(Regress142088)
 V(Regress137496)
 V(TurboAsmDisablesNeuter)
+V(ObjectGetOwnPropertyNames)
+V(VariousGetPropertiesAndThrowingCallbacks)
+V(PropertyNames)
+V(ObjectClone)
+V(HasOwnProperty)
+V(GetOwnPropertyDescriptor)
+V(ReplaceConstantFunction)
+V(HiddenPrototype)
+V(HiddenPrototypeSet)
+V(HiddenPrototypeIdentityHash)
+V(GetPrototypeHidden)
+V(NamedEnumeratorAndForIn)
+V(IndexedInterceptorWithStringProto)
 
 #undef V
 #define V(tst) \
@@ -475,6 +488,11 @@ V(EvalInAccessCheckedContext)
 V(ImmutableProtoWithParent)
 V(ImmutableProtoGlobal)
 V(SetPrototypeTemplate)
+V(CreateDataProperty)
+V(InstanceCheckOnInstanceAccessor)
+V(InstanceCheckOnInstanceAccessorWithInterceptor)
+V(InstanceCheckOnPrototypeAccessor)
+V(FunctionReadOnlyPrototype)
 
 // Template unimplemented
 V(TemplateIteratorPrototypeIntrinsics)
@@ -499,34 +517,20 @@ V(CrossDomainAccessors)
 V(AccessControlIC)
 
 // Object unimplemented
-V(ObjectGetOwnPropertyNames)
-V(VariousGetPropertiesAndThrowingCallbacks)
 V(ObjectProtoToString)
 V(ObjectProtoToStringES6)
 V(ObjectGetConstructorName)
-V(PropertyNames)
-V(ObjectClone)
-V(Regress91517)
-V(CreateDataProperty)
-V(ReplaceConstantFunction)
 V(CreationContext)
 V(CreationContextOfJsFunction)
 V(CreationContextOfJsBoundFunction)
-V(HasOwnProperty)
-V(InstanceCheckOnInstanceAccessor)
-V(InstanceCheckOnInstanceAccessorWithInterceptor)
-V(InstanceCheckOnPrototypeAccessor)
-V(GetOwnPropertyDescriptor)
 V(ClassPrototypeCreationContext)
 V(SetIntegrityLevel)
 
-// Hidden prototypes
+// Cannot use proxies on global object prototype chain :(
 V(ShadowObject)
-V(HiddenPrototype)
-V(HiddenPrototypeSet)
-V(HiddenPrototypeIdentityHash)
+
+// Hidden prototypes
 V(Regress269562)
-V(FunctionReadOnlyPrototype)
 V(InterceptorCallICFastApi_SimpleSignatureWithProfiler)
 V(InterceptorCallICFastApi_SimpleSignature)
 V(InterceptorCallICFastApi_SimpleSignature_Miss1WithProfiler)
@@ -547,7 +551,7 @@ V(CallICFastApi_SimpleSignature_TypeErrorWithProfiler)
 V(CallICFastApi_SimpleSignature_TypeError)
 V(FunctionCallOptimization)
 V(PrototypeSignatureCheck)
-V(GetPrototypeHidden)
+V(Regress91517)
 
 // Function name
 V(CallbackFunctionName)
@@ -563,8 +567,6 @@ V(PropertyDescriptor)
 
 // PropertyHandler bug
 V(InterceptorShouldThrowOnError)
-V(NamedEnumeratorAndForIn)
-V(IndexedInterceptorWithStringProto)
 
 // Setting new target bug
 V(NewTargetHandler)

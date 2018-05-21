@@ -319,7 +319,7 @@ internal::Object* internal::Object::GetHash()
     
     if (JSValueIsObject(ctx, value)) {
         InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef) value);
-        if (!wrap) wrap = V82JSC::makePrivateInstance(ctx, (JSObjectRef) value);
+        if (!wrap) wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(impl), ctx, (JSObjectRef) value);
         return Smi::FromInt(wrap->m_hash);
     }
     return Smi::FromInt(JSValueToNumber(ctx, value, 0));
