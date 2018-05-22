@@ -144,22 +144,30 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
     Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
+    Local<Value> holder = thiz;
     FunctionTemplateImpl *ftempl = V82JSC::ToImpl<FunctionTemplateImpl>(wrap->m_template.Get(isolate));
     
     // Check signature
     bool signature_match = ftempl->m_signature.IsEmpty();
     if (!signature_match) {
-        InstanceWrap* thisWrap = V82JSC::getPrivateInstance(ctx, thisObject);
         SignatureImpl *sig = V82JSC::ToImpl<SignatureImpl>(ftempl->m_signature.Get(isolate));
         const TemplateImpl *sig_templ = V82JSC::ToImpl<FunctionTemplateImpl>(sig->m_template.Get(isolate));
-        if (thisWrap) {
-            ObjectTemplateImpl* ot = V82JSC::ToImpl<ObjectTemplateImpl>(thisWrap->m_object_template.Get(isolate));
-            Local<FunctionTemplate> ctort = ot->m_constructor_template.Get(isolate);
-            const TemplateImpl *templ = ctort.IsEmpty() ? nullptr : V82JSC::ToImpl<FunctionTemplateImpl>(ctort);
-            while (!signature_match && templ) {
-                signature_match = sig_templ == templ;
-                templ = templ->m_parent.IsEmpty() ? nullptr : V82JSC::ToImpl<FunctionTemplateImpl>(templ->m_parent.Get(isolate));
+        JSValueRef proto = thisObject;
+        InstanceWrap* thisWrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)proto);
+        while(!signature_match && JSValueIsObject(ctx, proto)) {
+            if (thisWrap && (proto == thisObject || thisWrap->m_isHiddenPrototype)) {
+                holder = proto == thisObject? thiz : ValueImpl::New(ctximpl, proto);
+                ObjectTemplateImpl* ot = V82JSC::ToImpl<ObjectTemplateImpl>(thisWrap->m_object_template.Get(isolate));
+                Local<FunctionTemplate> ctort = ot->m_constructor_template.Get(isolate);
+                const TemplateImpl *templ = ctort.IsEmpty() ? nullptr : V82JSC::ToImpl<FunctionTemplateImpl>(ctort);
+                while (!signature_match && templ) {
+                    signature_match = sig_templ == templ;
+                    templ = templ->m_parent.IsEmpty() ? nullptr : V82JSC::ToImpl<FunctionTemplateImpl>(templ->m_parent.Get(isolate));
+                }
             }
+            proto = V82JSC::GetRealPrototype(context, (JSObjectRef)proto);
+            thisWrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)proto);
+            if (!thisWrap || !thisWrap->m_isHiddenPrototype) break;
         }
     }
     if (!signature_match) {
@@ -174,7 +182,7 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
     internal::Object *undefined = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
 
     v8::internal::Object * implicit[] = {
-        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 0;
+        * reinterpret_cast<v8::internal::Object**>(*holder), // kHolderIndex = 0;
         O(isolateimpl),                                      // kIsolateIndex = 1;
         the_hole,                                            // kReturnValueDefaultValueIndex = 2;
         the_hole,                                            // kReturnValueIndex = 3;

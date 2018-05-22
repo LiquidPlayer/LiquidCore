@@ -313,6 +313,29 @@ V(HiddenPrototypeIdentityHash)
 V(GetPrototypeHidden)
 V(NamedEnumeratorAndForIn)
 V(IndexedInterceptorWithStringProto)
+V(Regress269562)
+V(Regress91517)
+V(InterceptorCallICFastApi_SimpleSignatureWithProfiler)
+V(InterceptorCallICFastApi_SimpleSignature)
+V(InterceptorCallICFastApi_SimpleSignature_Miss1WithProfiler)
+V(InterceptorCallICFastApi_SimpleSignature_Miss1)
+V(InterceptorCallICFastApi_SimpleSignature_Miss2WithProfiler)
+V(InterceptorCallICFastApi_SimpleSignature_Miss2)
+V(InterceptorCallICFastApi_SimpleSignature_Miss3WithProfiler)
+V(InterceptorCallICFastApi_SimpleSignature_Miss3)
+V(InterceptorCallICFastApi_SimpleSignature_TypeErrorWithProfiler)
+V(InterceptorCallICFastApi_SimpleSignature_TypeError)
+V(CallICFastApi_SimpleSignatureWithProfiler)
+V(CallICFastApi_SimpleSignature)
+V(CallICFastApi_SimpleSignature_Miss1WithProfiler)
+V(CallICFastApi_SimpleSignature_Miss1)
+V(CallICFastApi_SimpleSignature_Miss2WithProfiler)
+V(CallICFastApi_SimpleSignature_Miss2)
+V(CallICFastApi_SimpleSignature_TypeErrorWithProfiler)
+V(CallICFastApi_SimpleSignature_TypeError)
+V(PrototypeSignatureCheck)
+V(Constructor)
+V(MutableProtoGlobal)
 
 #undef V
 #define V(tst) \
@@ -530,34 +553,12 @@ V(SetIntegrityLevel)
 V(ShadowObject)
 
 // Hidden prototypes
-V(Regress269562)
-V(InterceptorCallICFastApi_SimpleSignatureWithProfiler)
-V(InterceptorCallICFastApi_SimpleSignature)
-V(InterceptorCallICFastApi_SimpleSignature_Miss1WithProfiler)
-V(InterceptorCallICFastApi_SimpleSignature_Miss1)
-V(InterceptorCallICFastApi_SimpleSignature_Miss2WithProfiler)
-V(InterceptorCallICFastApi_SimpleSignature_Miss2)
-V(InterceptorCallICFastApi_SimpleSignature_Miss3WithProfiler)
-V(InterceptorCallICFastApi_SimpleSignature_Miss3)
-V(InterceptorCallICFastApi_SimpleSignature_TypeErrorWithProfiler)
-V(InterceptorCallICFastApi_SimpleSignature_TypeError)
-V(CallICFastApi_SimpleSignatureWithProfiler)
-V(CallICFastApi_SimpleSignature)
-V(CallICFastApi_SimpleSignature_Miss1WithProfiler)
-V(CallICFastApi_SimpleSignature_Miss1)
-V(CallICFastApi_SimpleSignature_Miss2WithProfiler)
-V(CallICFastApi_SimpleSignature_Miss2)
-V(CallICFastApi_SimpleSignature_TypeErrorWithProfiler)
-V(CallICFastApi_SimpleSignature_TypeError)
 V(FunctionCallOptimization)
-V(PrototypeSignatureCheck)
-V(Regress91517)
 
 // Function name
 V(CallbackFunctionName)
 
 // Constructor bug
-V(Constructor)
 V(InterceptorOnConstructorPrototype)
 
 // PropertyDescriptor
@@ -721,9 +722,6 @@ V(FutexInterruption)
 
 // Proxy
 V(Proxy)
-
-// Mutable proto global (bug)
-V(MutableProtoGlobal)
 
 // Iternal fields on typed arrays (bug)
 V(InternalFieldsOnTypedArray)

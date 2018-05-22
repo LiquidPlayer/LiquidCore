@@ -93,6 +93,62 @@ Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
     return V82JSC::CreateLocal<Context>(isolate, context);
 }
 
+static Local<Value> GetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz)
+{
+    JSValueRef obj = V82JSC::ToJSValueRef<Value>(thiz, context);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef our_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)obj);
+    
+    // If our prototype is hidden, propogate
+    if (JSValueIsObject(ctx, our_proto)) {
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)our_proto);
+        if (wrap && wrap->m_isHiddenPrototype) {
+            return GetPrototypeSkipHidden(context, ValueImpl::New(V82JSC::ToContextImpl(context), our_proto).As<Object>());
+        }
+    }
+    // Our prototype is not hidden
+    return ValueImpl::New(V82JSC::ToContextImpl(context), our_proto);
+}
+
+static bool SetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz, Local<Value> prototype)
+{
+    JSValueRef obj = V82JSC::ToJSValueRef<Value>(thiz, context);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef new_proto = V82JSC::ToJSValueRef(prototype, context);
+    JSValueRef our_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)obj);
+    // If our prototype is hidden, propogate
+    bool isHidden = false;
+    if (JSValueIsObject(ctx, our_proto)) {
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)our_proto);
+        if (wrap && wrap->m_isHiddenPrototype) {
+            return SetPrototypeSkipHidden(context, ValueImpl::New(V82JSC::ToContextImpl(context), our_proto).As<Object>(), prototype);
+        }
+    }
+    
+    bool new_proto_is_hidden = false;
+    if (JSValueIsObject(ctx, new_proto)) {
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)new_proto);
+        new_proto_is_hidden = wrap && wrap->m_isHiddenPrototype;
+        if (new_proto_is_hidden) {
+            if (JSValueIsStrictEqual(ctx, wrap->m_hidden_proxy_security, new_proto)) {
+                // Don't put the hidden proxy in the prototype chain, just the underlying target object
+                new_proto = wrap->m_proxy_security ? wrap->m_proxy_security : wrap->m_security;
+            }
+            // Save a weak reference to this object and propagate our own properties to it
+            wrap->m_hidden_children.push_back((JSObjectRef)obj);
+            V82JSC::ToImpl<HiddenObjectImpl>(ValueImpl::New(V82JSC::ToContextImpl(context), new_proto))
+            ->PropagateOwnPropertiesToChild(context, (JSObjectRef)obj);
+        }
+    }
+    
+    // Our prototype is not hidden
+    if (!isHidden) {
+        V82JSC::SetRealPrototype(context, (JSObjectRef)obj, new_proto);
+    }
+    
+    return new_proto_is_hidden || GetPrototypeSkipHidden(context, thiz)->StrictEquals(prototype);
+}
+
 
 /**
  * Creates a new context and returns a handle to the newly allocated
@@ -168,7 +224,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRelease(sconstructor);
             }
         }
-        impl->NewInstance(ctx, instance, false);
+        impl->NewInstance(ctx, instance, true);
         InstanceWrap *wrap = V82JSC::getPrivateInstance(context->m_ctxRef, instance);
         if (hash) {
             wrap->m_hash = hash;
@@ -197,7 +253,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             [](const FunctionCallbackInfo<Value>& info) {
                 Local<Object> obj = info[0].As<Object>();
                 Local<Value> proto = info[1];
-                if (obj->SetPrototype(info.GetIsolate()->GetCurrentContext(), proto).FromJust()) {
+                if (SetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj, proto)) {
                     info.GetReturnValue().Set(True(info.GetIsolate()));
                 } else {
                     info.GetReturnValue().Set(False(info.GetIsolate()));
@@ -207,7 +263,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             isolate,
             [](const FunctionCallbackInfo<Value>& info) {
               Local<Object> obj = info[0].As<Object>();
-              info.GetReturnValue().Set(obj->GetPrototype());
+              info.GetReturnValue().Set(GetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj));
             });
         Local<Object> object = ctx->Global()->Get(ctx,
             String::NewFromUtf8(isolate, "Object", NewStringType::kNormal).ToLocalChecked()).ToLocalChecked().As<Object>();

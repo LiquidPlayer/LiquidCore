@@ -512,7 +512,7 @@ Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
-            obj,
+            wrap->m_private_properties,
             V82JSC::ToJSValueRef(key, context)
         };
         LocalException exception(iso);
@@ -535,7 +535,7 @@ Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
         wrap->m_private_properties = JSObjectMake(ctx, 0, 0);
     }
     JSValueRef args[] = {
-        obj,
+        wrap->m_private_properties,
         V82JSC::ToJSValueRef(key, context),
         V82JSC::ToJSValueRef(value, context)
     };
@@ -553,7 +553,7 @@ Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
-            obj,
+            wrap->m_private_properties,
             V82JSC::ToJSValueRef(key, context)
         };
         LocalException exception(iso);
@@ -572,7 +572,7 @@ MaybeLocal<Value> Object::GetPrivate(Local<Context> context, Local<Private> key)
     InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
-            obj,
+            wrap->m_private_properties,
             V82JSC::ToJSValueRef(key, context)
         };
         LocalException exception(iso);
@@ -721,17 +721,7 @@ Local<Value> Object::GetPrototype()
 {
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, context);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef our_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)obj);
-
-    // If our prototype is hidden, propogate
-    if (JSValueIsObject(ctx, our_proto)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)our_proto);
-        if (wrap && wrap->m_isHiddenPrototype) {
-            return ValueImpl::New(V82JSC::ToContextImpl(context), our_proto).As<Object>()->GetPrototype();
-        }
-    }
-    // Our prototype is not hidden
     return ValueImpl::New(V82JSC::ToContextImpl(context), our_proto);
 }
 
@@ -747,29 +737,80 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
     Isolate* isolate = V82JSC::ToIsolate(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef new_proto = V82JSC::ToJSValueRef(prototype, isolate);
-    JSValueRef our_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)obj);
-    // If our prototype is hidden, propogate
-    bool isHidden = false;
-    if (JSValueIsObject(ctx, our_proto)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)our_proto);
-        if (wrap && wrap->m_isHiddenPrototype) {
-            return ValueImpl::New(V82JSC::ToContextImpl(context), our_proto).As<Object>()->SetPrototype(context, prototype);
-        }
-    }
-    // Our prototype is not hidden
-    if (!isHidden) {
-        V82JSC::SetRealPrototype(context, (JSObjectRef)obj, V82JSC::ToJSValueRef(prototype, isolate));
-    }
-    
+
     bool new_proto_is_hidden = false;
     if (JSValueIsObject(ctx, new_proto)) {
         InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)new_proto);
         new_proto_is_hidden = wrap && wrap->m_isHiddenPrototype;
+        if (new_proto_is_hidden) {
+            if (JSValueIsStrictEqual(ctx, wrap->m_hidden_proxy_security, new_proto)) {
+                // Don't put the hidden proxy in the prototype chain, just the underlying target object
+                new_proto = wrap->m_proxy_security ? wrap->m_proxy_security : wrap->m_security;
+            }
+            // Save a weak reference to this object and propagate our own properties to it
+            wrap->m_hidden_children.push_back((JSObjectRef)obj);
+            V82JSC::ToImpl<HiddenObjectImpl>(ValueImpl::New(V82JSC::ToContextImpl(context), new_proto))
+            ->PropagateOwnPropertiesToChild(context, (JSObjectRef)obj);
+        }
     }
-
+    
+    V82JSC::SetRealPrototype(context, (JSObjectRef)obj, new_proto);
+    
     bool ok = new_proto_is_hidden || GetPrototype()->StrictEquals(prototype);
     if (!ok) return Nothing<bool>();
     return _maybe<bool>(ok).toMaybe();
+}
+
+void HiddenObjectImpl::PropagateOwnPropertyToChild(v8::Local<v8::Context> context, v8::Local<v8::Name> property, JSObjectRef child)
+{
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        m_value,
+        V82JSC::ToJSValueRef(property, context),
+        child
+    };
+    JSValueRef propagate = V82JSC::exec(ctx,
+                 "var d = Object.getOwnPropertyDescriptor(_3, _2);"
+                 "if (d === undefined) {"
+                 "    d = Object.getOwnPropertyDescriptor(_1, _2);"
+                 "    if (d === undefined) return false;"
+                 "    Object.defineProperty( _3, _2, {"
+                 "        get()  { return _1[_2]; },"
+                 "        set(v) { return _1[_2] = v; },"
+                 "        configurable : d.configurable,"
+                 "        enumerable : d.enumerable"
+                 "    });"
+                 "    return true;"
+                 "}"
+                 "return false;",
+                 3, args);
+    if (JSValueToBoolean(ctx, propagate)) {
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, child);
+        if (wrap && wrap->m_isHiddenPrototype) {
+            reinterpret_cast<HiddenObjectImpl*>(V82JSC::ToImpl<ValueImpl>(ValueImpl::New(V82JSC::ToContextImpl(context), child)))
+            ->PropagateOwnPropertyToChildren(context, property);
+        }
+    }
+}
+void HiddenObjectImpl::PropagateOwnPropertyToChildren(v8::Local<v8::Context> context, v8::Local<v8::Name> property)
+{
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)m_value);
+    assert(wrap);
+    for (auto i=wrap->m_hidden_children.begin(); i != wrap->m_hidden_children.end(); ++i) {
+        PropagateOwnPropertyToChild(context, property, *i);
+    }
+}
+void HiddenObjectImpl::PropagateOwnPropertiesToChild(v8::Local<v8::Context> context, JSObjectRef child)
+{
+    Isolate* isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
+    Local<Object> thiz = V82JSC::CreateLocal<Object>(isolate, this);
+    Local<Array> names = thiz->GetOwnPropertyNames(context, ALL_PROPERTIES).ToLocalChecked();
+    for (uint32_t i=0; i<names->Length(); i++) {
+        Local<Name> property = names->Get(context, i).ToLocalChecked().As<Name>();
+        PropagateOwnPropertyToChild(context, property, child);
+    }
 }
 
 /**
@@ -966,8 +1007,15 @@ Maybe<bool> Object::HasRealNamedProperty(Local<Context> context, Local<Name> key
 {
     JSContextRef ctx = V82JSC::ToContextRef(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+
+    JSObjectRef raw_object = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, raw_object);
+    if (wrap && wrap->m_proxy_security) {
+        raw_object = (JSObjectRef) wrap->m_security;
+    }
+
     JSValueRef args[] = {
-        V82JSC::ToJSValueRef(this, context),
+        raw_object,
         V82JSC::ToJSValueRef(key, context)
     };
     LocalException exception(iso);
@@ -1024,8 +1072,14 @@ MaybeLocal<Value> Object::GetRealNamedProperty(Local<Context> context, Local<Nam
     JSContextRef ctx = V82JSC::ToContextRef(context);
     LocalException exception(V82JSC::ToIsolateImpl(this));
     
+    JSObjectRef raw_object = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, raw_object);
+    if (wrap && wrap->m_proxy_security) {
+        raw_object = (JSObjectRef) wrap->m_security;
+    }
+
     JSValueRef args[] = {
-        V82JSC::ToJSValueRef(this, context),
+        raw_object,
         V82JSC::ToJSValueRef(key, context)
     };
     
@@ -1065,8 +1119,14 @@ Maybe<PropertyAttribute> Object::GetRealNamedPropertyAttributes(Local<Context> c
     {
         LocalException exception(V82JSC::ToIsolateImpl(this));
         
+        JSObjectRef raw_object = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, raw_object);
+        if (wrap && wrap->m_proxy_security) {
+            raw_object = (JSObjectRef) wrap->m_security;
+        }
+
         JSValueRef args[] = {
-            V82JSC::ToJSValueRef(this, context),
+            raw_object,
             V82JSC::ToJSValueRef(key, context)
         };
         

@@ -165,6 +165,12 @@ struct ValueImpl : InternalObjectImpl {
     static v8::Local<v8::Primitive> NewNull(v8::Isolate *isolate);
 };
 
+struct HiddenObjectImpl : ValueImpl {
+    void PropagateOwnPropertyToChild(v8::Local<v8::Context> context, v8::Local<v8::Name> property, JSObjectRef child);
+    void PropagateOwnPropertyToChildren(v8::Local<v8::Context> context, v8::Local<v8::Name> property);
+    void PropagateOwnPropertiesToChild(v8::Local<v8::Context> context, JSObjectRef child);
+};
+
 struct EmbedderDataImpl {
     union {
         struct {
@@ -308,6 +314,7 @@ struct InstanceWrap {
     ~InstanceWrap();
     JSValueRef m_security;
     JSValueRef m_proxy_security;
+    JSValueRef m_hidden_proxy_security;
     Copyable(v8::ObjectTemplate) m_object_template;
     IsolateImpl *m_isolate;
     int m_num_internal_fields;
@@ -315,6 +322,7 @@ struct InstanceWrap {
     JSValueRef m_private_properties;
     int m_hash;
     bool m_isHiddenPrototype;
+    std::vector<JSObjectRef> m_hidden_children;
 };
 
 struct SignatureImpl : InternalObjectImpl
@@ -567,7 +575,8 @@ struct V82JSC {
         if (JSValueIsObject(ctx, private_object)) {
             InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(private_object);
             if (wrap && (JSValueIsStrictEqual(ctx, object, wrap->m_security) ||
-                         (wrap->m_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_proxy_security)))) {
+                         (wrap->m_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_proxy_security)) ||
+                         (wrap->m_hidden_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_hidden_proxy_security)) )) {
                 return wrap;
             } else if (wrap) {
                 JSObjectRef proto = JSContextGetGlobalObject(ctx);
