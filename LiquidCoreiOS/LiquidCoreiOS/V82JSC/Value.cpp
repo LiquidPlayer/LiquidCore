@@ -194,7 +194,7 @@ bool Value::IsNativeError() const { return IS(IsNativeError, "return _1 instance
 /**
  * Returns true if this value is a RegExp.
  */
-bool Value::IsRegExp() const { return IS(IsRegExp, "return Object.prototype.toString.call( _1 ) === '[object RegExp]';);"); }
+bool Value::IsRegExp() const { return IS(IsRegExp, "return Object.prototype.toString.call( _1 ) === '[object RegExp]';"); }
 
 /**
  * Returns true if this value is an async function.

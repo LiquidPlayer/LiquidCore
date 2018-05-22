@@ -19,8 +19,15 @@ using namespace v8;
  */
 MaybeLocal<Value> JSON::Parse(Local<Context> context, Local<String> json_string)
 {
-    assert(0);
-    return MaybeLocal<Value>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef string = V82JSC::ToJSValueRef(json_string, context);
+    
+    LocalException exception(V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context)));
+    JSValueRef value = V82JSC::exec(ctx, "return JSON.parse(_1)", 1, &string, &exception);
+    if (exception.ShouldThow()) {
+        return MaybeLocal<Value>();
+    }
+    return ValueImpl::New(V82JSC::ToContextImpl(context), value);
 }
 
 /**
@@ -33,7 +40,18 @@ MaybeLocal<Value> JSON::Parse(Local<Context> context, Local<String> json_string)
 MaybeLocal<String> JSON::Stringify(Local<Context> context, Local<Object> json_object,
                                    Local<String> gap)
 {
-    assert(0);
-    return MaybeLocal<String>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(json_object, context),
+        V82JSC::ToJSValueRef(gap, context)
+    };
+    
+    LocalException exception(V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context)));
+    JSValueRef value = V82JSC::exec(ctx, "return JSON.stringify(_1, null, _2)", 2, args, &exception);
+    if (exception.ShouldThow()) {
+        return MaybeLocal<String>();
+    }
+    return ValueImpl::New(V82JSC::ToContextImpl(context), value).As<String>();
 }
 

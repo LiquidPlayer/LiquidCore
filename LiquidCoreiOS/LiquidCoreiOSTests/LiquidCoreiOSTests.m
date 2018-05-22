@@ -336,6 +336,12 @@ V(CallICFastApi_SimpleSignature_TypeError)
 V(PrototypeSignatureCheck)
 V(Constructor)
 V(MutableProtoGlobal)
+V(RegExp)
+V(JSONParseObject)
+V(JSONParseNumber)
+V(JSONParseArray)
+V(JSONStringifyObject)
+V(JSONStringifyObjectWithGap)
 
 #undef V
 #define V(tst) \
@@ -538,6 +544,7 @@ V(AccessControlGetOwnPropertyNames)
 V(Regress470113)
 V(CrossDomainAccessors)
 V(AccessControlIC)
+V(JSONStringifyAccessCheck)
 
 // Object unimplemented
 V(ObjectProtoToString)
@@ -678,9 +685,6 @@ V(AbortOnUncaughtExceptionNoAbort)
 V(AllowAtomicsWait)
 V(DynamicImport)
 
-// RegExp
-V(RegExp)
-
 // Disallow code generation
 V(AllowCodeGenFromStrings)
 V(SetErrorMessageForCodeGenFromStrings)
@@ -692,14 +696,6 @@ V(RunMicrotasksIgnoresThrownExceptions)
 V(SetAutorunMicrotasks)
 V(RunMicrotasksWithoutEnteringContext)
 V(ScopedMicrotasks)
-
-// JSON
-V(JSONParseObject)
-V(JSONParseNumber)
-V(JSONParseArray)
-V(JSONStringifyObject)
-V(JSONStringifyObjectWithGap)
-V(JSONStringifyAccessCheck)
 
 // Function unimplemented & request interrupt
 V(RequestInterruptTestWithFunctionCall)
