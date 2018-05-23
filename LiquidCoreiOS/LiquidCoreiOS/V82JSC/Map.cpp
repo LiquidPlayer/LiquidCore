@@ -12,27 +12,55 @@ using namespace v8;
 
 Local<NativeWeakMap> NativeWeakMap::New(Isolate* isolate)
 {
-    assert(0);
-    return Local<NativeWeakMap>();
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    
+    Local<Value> nwm = ValueImpl::New(V82JSC::ToContextImpl(context),
+        V82JSC::exec(V82JSC::ToContextRef(context),
+        "return new WeakMap()", 0, 0));
+    
+    Local<NativeWeakMap> loc = * (reinterpret_cast<Local<NativeWeakMap> *>(&nwm));
+    return loc;
 }
 void NativeWeakMap::Set(Local<Value> key, Local<Value> value)
 {
-    assert(0);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(key, context),
+        V82JSC::ToJSValueRef(value, context)
+    };
+    V82JSC::exec(ctx, "_1[_2] = _3", 3, args);
 }
 Local<Value> NativeWeakMap::Get(Local<Value> key) const
 {
-    assert(0);
-    return Local<Value>();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(key, context),
+    };
+    return ValueImpl::New(V82JSC::ToContextImpl(context), V82JSC::exec(ctx, "return _1[_2]", 2, args));
 }
 bool NativeWeakMap::Has(Local<Value> key)
 {
-    assert(0);
-    return false;
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(key, context),
+    };
+    return JSValueToBoolean(ctx, V82JSC::exec(ctx, "return Object.getOwnPropertyDescriptor(_1,_2) !== undefined", 2, args));
 }
 bool NativeWeakMap::Delete(Local<Value> key)
 {
-    assert(0);
-    return false;
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(key, context),
+    };
+    return JSValueToBoolean(ctx, V82JSC::exec(ctx, "return delete _1[_2]", 2, args));
 }
 
 

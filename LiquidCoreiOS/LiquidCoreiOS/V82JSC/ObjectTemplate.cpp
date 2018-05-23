@@ -81,7 +81,11 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
 size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception
 #define PASS ctx, function, thisObject, argumentCount, arguments, exception
 
-template <typename V>
+class InterceptorGetter {};
+class InterceptorSetter {};
+class InterceptorOther {};
+
+template <typename V, typename I>
 JSValueRef PropertyHandler(CALLBACK_PARAMS,
                            void (*named_handler)(const ObjectTemplateImpl*, Local<Name>, Local<Value>, PropertyCallbackInfo<V>&),
                            void (*indexed_handler)(const ObjectTemplateImpl*, uint32_t, Local<Value>, PropertyCallbackInfo<V>&))
@@ -139,6 +143,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     IsolateImpl *isolateimpl = wrap->m_isolate;
     Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
+    Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_proxy_security);
 
     Local<Value> data;
     if (templ) {
@@ -150,14 +155,19 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     } else {
         data = Undefined(isolate);
     }
-    
-    Local<Value> thiz = ValueImpl::New(ctximpl, target);
+
+    int receiver_loc = std::is_same<I,InterceptorGetter>::value ? 2 : std::is_same<I,InterceptorSetter>::value ? 3 : 0;
+    Local<Value> thiz = ValueImpl::New(ctximpl, arguments[receiver_loc]);
     typedef v8::internal::Heap::RootListIndex R;
     internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
+    
+    // FIXME: This doesn't work
+    bool isStrict = JSValueToBoolean(ctx, V82JSC::exec(ctx, "return (function() { return !this; })();", 0, nullptr));
+    internal::Object *shouldThrow = internal::Smi::FromInt(isStrict?1:0);
 
     v8::internal::Object * implicit[] = {
-        0 /*FIXME*/,                                         // kShouldThrowOnErrorIndex = 0;
-        * reinterpret_cast<v8::internal::Object**>(*thiz),   // kHolderIndex = 1;
+        shouldThrow,                                         // kShouldThrowOnErrorIndex = 0;
+        * reinterpret_cast<v8::internal::Object**>(*holder), // kHolderIndex = 1;
         O(isolateimpl),                                      // kIsolateIndex = 2;
         the_hole,                                            // kReturnValueDefaultValueIndex = 3;
         the_hole,                                            // kReturnValueIndex = 4;
@@ -264,7 +274,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("get", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<Value>(PASS,
+            JSValueRef ret = PropertyHandler<Value,InterceptorGetter>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
             {
                 if (impl->m_named_handler.getter)
@@ -284,7 +294,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("set", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<Value>(PASS,
+            JSValueRef ret = PropertyHandler<Value,InterceptorSetter>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
             {
                 if (impl->m_named_handler.setter) {
@@ -310,7 +320,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("has", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<Integer>(PASS,
+            JSValueRef ret = PropertyHandler<Integer,InterceptorOther>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
             {
                 if (impl->m_named_handler.query) {
@@ -338,7 +348,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("deleteProperty", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<v8::Boolean>(PASS,
+            JSValueRef ret = PropertyHandler<v8::Boolean,InterceptorOther>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
             {
                 if (impl->m_named_handler.deleter) {
@@ -359,7 +369,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("ownKeys", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<v8::Array>(PASS,
+            JSValueRef ret = PropertyHandler<v8::Array,InterceptorOther>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
             {
                 if (impl->m_named_handler.enumerator) {
@@ -411,7 +421,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             assert(argumentCount>1);
             
             // First, try a descriptor interceptor
-            JSValueRef descriptor = PropertyHandler<Value>(PASS,
+            JSValueRef descriptor = PropertyHandler<Value,InterceptorOther>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
             {
                 if (impl->m_named_handler.descriptor) {
@@ -433,7 +443,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             if (exception && *exception) return NULL;
 
             // Third, try calling the querier to see if the property exists
-            JSValueRef attributes = PropertyHandler<Integer>(PASS,
+            JSValueRef attributes = PropertyHandler<Integer,InterceptorOther>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
             {
                 if (impl->m_named_handler.query) {
@@ -458,7 +468,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             }
             int pattr = static_cast<int>(JSValueToNumber(ctx, attributes, 0));
 
-            JSValueRef value = PropertyHandler<Value>(PASS,
+            JSValueRef value = PropertyHandler<Value,InterceptorOther>(PASS,
             [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
             {
                 if (impl->m_named_handler.getter)

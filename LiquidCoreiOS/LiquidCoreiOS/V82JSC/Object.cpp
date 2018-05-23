@@ -358,6 +358,7 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
         IsolateImpl *m_isolate;
         JSValueRef m_property;
         JSValueRef m_data;
+        JSValueRef m_holder;
         ~AccessorInfo()
         {
             Isolate* isolate = reinterpret_cast<Isolate*>(m_isolate);
@@ -367,6 +368,7 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
             JSContextRef ctx = V82JSC::ToContextRef(context);
             if (m_property) JSValueUnprotect(ctx, m_property);
             if (m_data) JSValueUnprotect(ctx, m_data);
+            // m_holder is weak
         }
     };
     
@@ -379,12 +381,18 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
         
         Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
         Local<Value> data = ValueImpl::New(ctximpl, wrap->m_data);
+        Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_holder);
         typedef v8::internal::Heap::RootListIndex R;
         internal::Object *the_hole = wrap->m_isolate->ii.heap()->root(R::kTheHoleValueRootIndex);
+
+        // FIXME: This doesn't work
+        JSStringRef s = JSStringCreateWithUTF8CString("(function() {return !this;})()");
+        bool isStrict = JSValueToBoolean(ctx, JSEvaluateScript(ctx, s, 0, 0, 0, 0));
+        internal::Object *shouldThrow = internal::Smi::FromInt(isStrict?1:0);
         
         v8::internal::Object * implicit[] = {
-            0 /*FIXME*/,                                             // kShouldThrowOnErrorIndex = 0;
-            * reinterpret_cast<v8::internal::Object**>(*thiz),       // kHolderIndex = 1;
+            shouldThrow,                                             // kShouldThrowOnErrorIndex = 0;
+            * reinterpret_cast<v8::internal::Object**>(*holder),     // kHolderIndex = 1;
             O(wrap->m_isolate),                                      // kIsolateIndex = 2;
             the_hole,                                                // kReturnValueDefaultValueIndex = 3;
             the_hole,                                                // kReturnValueIndex = 4;
@@ -432,6 +440,7 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
     if (data.IsEmpty()) data = Undefined(V82JSC::ToIsolate(iso));
     wrap->m_data = V82JSC::ToJSValueRef(data.ToLocalChecked(), context);
     JSValueProtect(ctximpl->m_ctxRef, wrap->m_data);
+    wrap->m_holder = V82JSC::ToJSValueRef(this, context);
 
     JSClassDefinition def = kJSClassDefinitionEmpty;
     def.attributes = kJSClassAttributeNoAutomaticPrototype;
@@ -468,21 +477,32 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
 
     LocalException exception(iso);
     
-    // FIXME: Deal with attributes / access control
+    // FIXME: Deal with access control
     
     JSValueRef args[] = {
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(name, context),
         !getter.IsEmpty() ? V82JSC::ToJSValueRef(getter, context) : 0,
-        !setter.IsEmpty() ? V82JSC::ToJSValueRef(setter, context) : 0
+        !setter.IsEmpty() ? V82JSC::ToJSValueRef(setter, context) : 0,
+        JSValueMakeNumber(ctx, attribute)
     };
     
+    /* None = 0,
+     ReadOnly = 1 << 0, // Not used with accessors
+     DontEnum = 1 << 1,
+     DontDelete = 1 << 2
+     */
     V82JSC::exec(ctx,
                  "delete _1[_2]; "
-                 "if (!_4) Object.defineProperty(_1, _2, { get: _3, set: function(v) { delete this[_2]; this[_2] = v; }, configurable: true }); "
-                 "else if (!_3) Object.defineProperty(_1, _2, { set: _4, configurable: true }); "
-                 "else Object.defineProperty(_1, _2, { get: _3, set: _4, configurable: true });",
-                 4, args, &exception);
+                 "var desc = "
+                 "{ "
+                 "  enumerable : !(_5&(1<<1)), "
+                 "  configurable : !(_5&(1<<2))}; "
+                 "if (!_4) { desc.get = _3; desc.set = function(v) { delete this[_2]; this[_2] = v; }; }"
+                 "else if (!_3) { desc.set = _4; }"
+                 "else { desc.get = _3; desc.set = _4; }"
+                 "Object.defineProperty(_1, _2, desc);",
+                 5, args, &exception);
 }
 
 /**

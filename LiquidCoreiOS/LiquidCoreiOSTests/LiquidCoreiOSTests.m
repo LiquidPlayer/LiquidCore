@@ -342,6 +342,10 @@ V(JSONParseNumber)
 V(JSONParseArray)
 V(JSONStringifyObject)
 V(JSONStringifyObjectWithGap)
+V(DontDeleteAPIAccessorsCannotBeOverriden)
+V(GetterHolders)
+V(PreInterceptorHolders)
+V(Regress239669)
 
 #undef V
 #define V(tst) \
@@ -369,6 +373,7 @@ V(ResetWeakHandle)
 V(WeakCallbackApi)
 V(NewPersistentHandleFromWeakCallback)
 V(DoNotUseDeletedNodesInSecondLevelGc)
+V(NativeWeakMap)
 
 // Handle issues
 V(GlobalValueMap)
@@ -408,9 +413,6 @@ V(RethrowBogusErrorStackTrace)
 V(EvalWithSourceURLInMessageScriptResourceNameOrSourceURL)
 V(RecursionWithSourceURLInMessageScriptResourceNameOrSourceURL)
 V(TryFinallyMessage)
-
-// NativeWeakMap
-V(NativeWeakMap)
 
 // ScriptCompiler
 V(TryCatchMixedNesting)
@@ -453,7 +455,6 @@ V(StreamingScriptWithSplitSourceURL)
 V(StreamingScriptWithSourceMappingURLInTheMiddle)
 
 // Property attributes
-V(DontDeleteAPIAccessorsCannotBeOverriden)
 V(Overriding)
 V(AccessorShouldThrowOnError)
 
@@ -472,11 +473,6 @@ V(ExtensibleOnUndetectable)
 
 // Fatal error handler
 V(ErrorReporting)
-
-// Holder
-V(GetterHolders)
-V(PreInterceptorHolders)
-V(Regress239669)
 
 // String bugs
 V(StringWrite)

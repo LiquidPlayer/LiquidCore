@@ -6653,7 +6653,8 @@ THREADED_TEST(DontDeleteAPIAccessorsCannotBeOverriden) {
     CHECK(try_catch.HasCaught());
     String::Utf8Value exception_value(try_catch.Exception());
     CHECK_EQ(
-        0, strcmp(*exception_value, "TypeError: Cannot redefine property: x"));
+//        0, strcmp(*exception_value, "TypeError: Cannot redefine property: x"));
+        0, strcmp(*exception_value, "TypeError: Attempting to change the getter of an unconfigurable property."));
   }
   {
     v8::TryCatch try_catch(isolate);
@@ -6663,7 +6664,8 @@ THREADED_TEST(DontDeleteAPIAccessorsCannotBeOverriden) {
     CHECK(try_catch.HasCaught());
     String::Utf8Value exception_value(try_catch.Exception());
     CHECK_EQ(
-        0, strcmp(*exception_value, "TypeError: Cannot redefine property: x"));
+//        0, strcmp(*exception_value, "TypeError: Cannot redefine property: x"));
+        0, strcmp(*exception_value, "TypeError: Attempting to change the getter of an unconfigurable property."));
   }
 }
 
