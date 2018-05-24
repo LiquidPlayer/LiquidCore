@@ -320,7 +320,23 @@ bool Value::IsSharedArrayBuffer() const { return false; } // FIXME
 /**
  * Returns true if this value is a JavaScript Proxy.
  */
-bool Value::IsProxy() const { return false; } // FIXME
+bool Value::IsProxy() const
+{
+    // We are relying on what may be a bug in the legacy JSC API, so keep vigilant if this stops
+    // working in the future.  But, JSObjectGetPrototype() will return a different value than
+    // Object.getPrototypeOf() when called on a proxy.  We use this inconsistency to detect a proxy.
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef maybe_proxy = V82JSC::ToJSValueRef(this, context);
+    if (JSValueIsObject(ctx, maybe_proxy)) {
+        JSValueRef maybe_proxy_proto = JSObjectGetPrototype(ctx, (JSObjectRef)maybe_proxy);
+        JSValueRef real_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)maybe_proxy);
+        return !JSValueIsStrictEqual(ctx, maybe_proxy_proto, real_proto);
+    }
+    return false;
+}
 
 bool Value::IsWebAssemblyCompiledModule() const { return false; } // FIXME
 

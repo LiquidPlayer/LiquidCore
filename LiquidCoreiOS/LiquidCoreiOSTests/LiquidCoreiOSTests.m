@@ -346,6 +346,18 @@ V(DontDeleteAPIAccessorsCannotBeOverriden)
 V(GetterHolders)
 V(PreInterceptorHolders)
 V(Regress239669)
+V(ObjectProtoToString)
+V(ObjectProtoToStringES6)
+V(Promises)
+V(FunctionRemovePrototype)
+V(ConstructorForObject)
+V(CallAsFunction)
+V(CallableObject)
+V(TemplateIteratorPrototypeIntrinsics)
+V(TemplateErrorPrototypeIntrinsics)
+V(ObjectTemplateArrayProtoIntrinsics)
+V(ObjectTemplatePerContextIntrinsics)
+
 
 #undef V
 #define V(tst) \
@@ -492,10 +504,6 @@ V(ExceptionCreateMessage)
 
 // ObjectTemplate / FunctionTemplate not implemented
 V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
-V(FunctionRemovePrototype)
-V(ConstructorForObject)
-V(CallAsFunction)
-V(CallableObject)
 V(AccessChecksReenabledCorrectly)
 V(DefineOwnProperty)
 V(GCInFailedAccessCheckCallback)
@@ -519,12 +527,6 @@ V(InstanceCheckOnInstanceAccessorWithInterceptor)
 V(InstanceCheckOnPrototypeAccessor)
 V(FunctionReadOnlyPrototype)
 
-// Template unimplemented
-V(TemplateIteratorPrototypeIntrinsics)
-V(TemplateErrorPrototypeIntrinsics)
-V(ObjectTemplateArrayProtoIntrinsics)
-V(ObjectTemplatePerContextIntrinsics)
-
 // Security
 V(SecurityHandler)
 V(SecurityChecks)
@@ -543,8 +545,6 @@ V(AccessControlIC)
 V(JSONStringifyAccessCheck)
 
 // Object unimplemented
-V(ObjectProtoToString)
-V(ObjectProtoToStringES6)
 V(ObjectGetConstructorName)
 V(CreationContext)
 V(CreationContextOfJsFunction)
@@ -645,7 +645,6 @@ V(CaptureStackTraceForStackOverflow)
 // Promise / reject / hook callback
 V(PromiseRejectCallback)
 V(PromiseHook)
-V(Promises)
 V(PromiseThen)
 V(PromiseStateAndValue)
 

@@ -56,6 +56,7 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
     Isolate* isolate = V82JSC::ToIsolate(iso);
+    Local<ObjectTemplate> thiz = V82JSC::CreateLocal<ObjectTemplate>(&iso->ii, impl);
     
     LocalException exception(iso);
     
@@ -69,8 +70,25 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         } else {
             return MaybeLocal<Object>();
         }
+    } else if (impl->m_callback) {
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        if (impl->m_callback) {
+            def.callAsFunction = TemplateImpl::callAsFunctionCallback;
+            def.callAsConstructor = TemplateImpl::callAsConstructorCallback;
+        }
+        JSClassRef claz = JSClassCreate(&def);
+        TemplateWrap *wrap = new TemplateWrap();
+        wrap->m_template.Reset(isolate, thiz);
+        wrap->m_isolate = iso;
+        def.finalize = [](JSObjectRef obj) {
+            TemplateWrap* wrap = (TemplateWrap*) JSObjectGetPrivate(obj);
+            wrap->m_template.Reset();
+            delete wrap;
+        };
+
+        instance = JSObjectMake(ctx->m_ctxRef, claz, wrap);
     } else {
-        instance = JSObjectMake(ctx->m_ctxRef, nullptr, nullptr);
+        instance = JSObjectMake(ctx->m_ctxRef, 0, 0);
     }
     return impl->NewInstance(context, instance, false);
 }
@@ -752,7 +770,16 @@ void ObjectTemplate::SetHandler(const IndexedPropertyHandlerConfiguration& confi
 void ObjectTemplate::SetCallAsFunctionHandler(FunctionCallback callback,
                               Local<Value> data)
 {
-    assert(0);
+    Isolate* isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    templ->m_callback = callback;
+    if (data.IsEmpty()) {
+        data = Undefined(isolate);
+    }
+    templ->m_data = V82JSC::ToJSValueRef<Value>(data, isolate);
+    JSValueProtect(V82JSC::ToContextRef(context), templ->m_data);
 }
 
 /**

@@ -12,8 +12,16 @@ using namespace v8;
 
 MaybeLocal<Promise::Resolver> Promise::Resolver::New(Local<Context> context)
 {
-    assert(0);
-    return MaybeLocal<Promise::Resolver>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    LocalException exception(V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context)));
+    
+    JSValueRef resolver = V82JSC::exec(ctx,
+                                       "var pr = { }; pr.promise = new Promise((resolve,reject) => { pr.resolve = resolve; pr.reject = reject; }); return pr;",
+                                       0, nullptr/*, &exception*/);
+    if (exception.ShouldThow()) {
+        return MaybeLocal<Promise::Resolver>();
+    }
+    return ValueImpl::New(V82JSC::ToContextImpl(context), resolver).As<Promise::Resolver>();
 }
     
 /**
@@ -21,8 +29,10 @@ MaybeLocal<Promise::Resolver> Promise::Resolver::New(Local<Context> context)
  */
 Local<Promise> Promise::Resolver::GetPromise()
 {
-    assert(0);
-    return Local<Promise>();
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef resolver = V82JSC::ToJSValueRef(this, context);
+    return ValueImpl::New(V82JSC::ToContextImpl(context), V82JSC::exec(ctx, "return _1.promise", 1, &resolver)).As<Promise>();
 }
 
 /**
@@ -31,13 +41,31 @@ Local<Promise> Promise::Resolver::GetPromise()
  */
 Maybe<bool> Promise::Resolver::Resolve(Local<Context> context,Local<Value> value)
 {
-    assert(0);
+    LocalException exception(V82JSC::ToIsolateImpl(this));
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(value, context)
+    };
+    JSValueRef success = V82JSC::exec(ctx, "return _1.resolve(_2)", 2, args, &exception);
+    if (!exception.ShouldThow()) {
+        return _maybe<bool>(JSValueToBoolean(ctx, success)).toMaybe();
+    }
     return Nothing<bool>();
 }
 
 Maybe<bool> Promise::Resolver::Reject(Local<Context> context, Local<Value> value)
 {
-    assert(0);
+    LocalException exception(V82JSC::ToIsolateImpl(this));
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(value, context)
+    };
+    JSValueRef success = V82JSC::exec(ctx, "return _1.reject(_2)", 2, args, &exception);
+    if (!exception.ShouldThow()) {
+        return _maybe<bool>(JSValueToBoolean(ctx, success)).toMaybe();
+    }
     return Nothing<bool>();
 }
 
@@ -49,13 +77,31 @@ Maybe<bool> Promise::Resolver::Reject(Local<Context> context, Local<Value> value
  */
 MaybeLocal<Promise> Promise::Catch(Local<Context> context,Local<Function> handler)
 {
-    assert(0);
+    LocalException exception(V82JSC::ToIsolateImpl(this));
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(handler, context)
+    };
+    JSValueRef promise = V82JSC::exec(ctx, "return _1.catch(_2)", 2, args, &exception);
+    if (!exception.ShouldThow()) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), promise).As<Promise>();
+    }
     return MaybeLocal<Promise>();
 }
 
 MaybeLocal<Promise> Promise::Then(Local<Context> context, Local<Function> handler)
 {
-    assert(0);
+    LocalException exception(V82JSC::ToIsolateImpl(this));
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef(this, context),
+        V82JSC::ToJSValueRef(handler, context)
+    };
+    JSValueRef promise = V82JSC::exec(ctx, "return _1.then(_2)", 2, args, &exception);
+    if (!exception.ShouldThow()) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), promise).As<Promise>();
+    }
     return MaybeLocal<Promise>();
 }
 
@@ -84,6 +130,14 @@ Local<Value> Promise::Result()
  */
 Promise::PromiseState Promise::State()
 {
-    assert(0);
-    return PromiseState();
+    //enum PromiseState { kPending, kFulfilled, kRejected };
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef promise = V82JSC::ToJSValueRef(this, context);
+    JSValueRef state = V82JSC::exec(ctx,
+                                    "const t = {};"
+                                    "return Promise.race([_1, t])"
+                                    "    .then(v => (v === t)? 0 : 1, () => 2);",
+                                    1, &promise);
+    return static_cast<PromiseState>(JSValueToNumber(ctx, state, nullptr));
 }

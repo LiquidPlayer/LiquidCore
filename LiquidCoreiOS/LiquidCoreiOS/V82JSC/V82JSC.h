@@ -140,6 +140,7 @@ struct ContextImpl : InternalObjectImpl
     std::map<std::string, bool> m_loaded_extensions;
     Copyable(v8::Function) ObjectSetPrototypeOf;
     Copyable(v8::Function) ObjectGetPrototypeOf;
+    Copyable(v8::Function) ObjectPrototypeToString;
     
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
@@ -225,7 +226,6 @@ struct Prop {
 };
 struct ObjAccessor {
     ~ObjAccessor()
-    
     {
         name.Reset();
         data.Reset();
@@ -239,6 +239,14 @@ struct ObjAccessor {
     v8::PropertyAttribute attribute;
     Copyable(v8::Signature) signature;
 };
+struct IntrinsicProp {
+    ~IntrinsicProp()
+    {
+        name.Reset();
+    }
+    Copyable(v8::Name) name;
+    v8::Intrinsic value;
+};
 
 struct LocalException;
 
@@ -247,6 +255,7 @@ struct TemplateImpl : InternalObjectImpl
     std::vector<Prop> m_properties;
     std::vector<PropAccessor> m_property_accessors;
     std::vector<ObjAccessor> m_accessors;
+    std::vector<IntrinsicProp> m_intrinsics;
     v8::FunctionCallback m_callback;
     JSValueRef m_data;
     Copyable(v8::Signature) m_signature;
@@ -259,6 +268,11 @@ struct TemplateImpl : InternalObjectImpl
                                              size_t argumentCount,
                                              const JSValueRef arguments[],
                                              JSValueRef* exception);
+    static JSObjectRef callAsConstructorCallback(JSContextRef ctx,
+                                                 JSObjectRef constructor,
+                                                 size_t argumentCount,
+                                                 const JSValueRef arguments[],
+                                                 JSValueRef* exception);
     static v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                                    JSObjectRef instance,
                                                    LocalException& excep,
@@ -278,6 +292,7 @@ struct FunctionTemplateImpl : TemplateImpl
     Copyable(v8::ObjectTemplate) m_instance_template;
     std::map<JSContextRef, JSObjectRef> m_functions;
     bool m_isHiddenPrototype;
+    bool m_removePrototype;
 
     static JSValueRef callAsConstructorCallback(JSContextRef ctx,
                                                 JSObjectRef constructor,
@@ -305,7 +320,7 @@ struct TemplateWrap {
     {
         m_template.Reset();
     }
-    Copyable(v8::FunctionTemplate) m_template;
+    Copyable(v8::Template) m_template;
     IsolateImpl* m_isolate;
     int m_count;
 };

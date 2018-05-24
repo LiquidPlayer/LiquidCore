@@ -54,6 +54,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     Roots* roots = reinterpret_cast<Roots *>(impl->ii.heap()->roots_array_start());
     
+    roots->block_context_map = * reinterpret_cast<internal::Object***> (*impl->m_nullContext);
+    
     impl->m_undefined.Reset(isolate, ValueImpl::NewUndefined(isolate));
     roots->undefined_value = * reinterpret_cast<internal::Object***> (*impl->m_undefined);
 

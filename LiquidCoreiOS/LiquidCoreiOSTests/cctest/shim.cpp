@@ -457,8 +457,14 @@ bool FixedArrayBase::IsCowArray() const { assert(0); return false; }
 //
 internal::Handle<internal::Context> JSReceiver::GetCreationContext()
 {
-    assert(0);
-    return Handle<Context>();
+    assert(IsHeapObject());
+    ValueImpl *impl = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(this) - internal::kHeapObjectTag);
+    IsolateImpl* i = V82JSC::ToIsolateImpl(impl);
+    assert(i->m_global_contexts.count(impl->m_creationCtx) == 1);
+    v8::HandleScope scope(V82JSC::ToIsolate(i));
+    Local<v8::Context> context = i->m_global_contexts[impl->m_creationCtx].Get(V82JSC::ToIsolate(i));
+    Handle<Context> c = * reinterpret_cast<Handle<Context>*>(&context);
+    return c;
 }
 
 //

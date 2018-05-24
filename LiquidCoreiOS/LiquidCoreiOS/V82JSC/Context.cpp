@@ -175,8 +175,14 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
                                                                             sizeof(ContextImpl),
                                                                             destructor));
-    V82JSC::Map(context)->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
+    
+    if (i->m_nullContext.Get(isolate).IsEmpty()) {
+        V82JSC::Map(context)->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
+    } else {
+        * reinterpret_cast<internal::Object**>(context) = i->ii.heap()->block_context_map();
+        assert(V82JSC::Map(context)->IsContext());
+    }
     Local<Context> ctx = V82JSC::CreateLocal<Context>(isolate, context);
     int hash = 0;
     constructor(context);
@@ -295,7 +301,11 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                      "Object.getOwnPropertySymbols = "
                      "    (o) => old(o).filter( (s)=> s!= Symbol.for('" GLOBAL_PRIVATE_SYMBOL "') )",
                      0, nullptr);
-
+        
+        // Save a reference to original Object.prototype.toString()
+        JSValueRef toString = V82JSC::exec(context->m_ctxRef, "return Object.prototype.toString", 0, nullptr);
+        context->ObjectPrototypeToString.Reset(isolate, ValueImpl::New(context, toString).As<Function>());
+        
         InstallAutoExtensions(ctx);
         if (extensions) {
             for (const char **extension = extensions->begin(); extension != extensions->end(); extension++) {

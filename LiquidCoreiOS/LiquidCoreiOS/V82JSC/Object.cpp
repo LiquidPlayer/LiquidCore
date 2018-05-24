@@ -876,9 +876,12 @@ Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 MaybeLocal<String> Object::ObjectProtoToString(Local<Context> context)
 {
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    JSObjectRef toString = (JSObjectRef)
+        V82JSC::ToJSValueRef(V82JSC::ToContextImpl(context)->ObjectPrototypeToString.Get(V82JSC::ToIsolate(this)), context);
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+
     LocalException exception(V82JSC::ToIsolateImpl(this));
-    JSValueRef s = V82JSC::exec(ctx, "return Object.prototype.toString.call(_1)", 1, &obj, &exception);
+    JSValueRef s = JSObjectCallAsFunction(ctx, toString, obj, 0, nullptr, &exception);
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), s).As<String>();
     }
@@ -1224,8 +1227,10 @@ Local<Object> Object::Clone()
  */
 Local<Context> Object::CreationContext()
 {
-    assert(0);
-    return Local<Context>();
+    ValueImpl *obj = V82JSC::ToImpl<ValueImpl, Object>(this);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(obj);
+    CHECK_EQ(1, iso->m_global_contexts.count(obj->m_creationCtx));
+    return iso->m_global_contexts[obj->m_creationCtx].Get(V82JSC::ToIsolate(iso));
 }
 
 /**
@@ -1235,8 +1240,18 @@ Local<Context> Object::CreationContext()
  */
 bool Object::IsCallable()
 {
-    assert(0);
-    return false;
+    if (IsFunction()) return true;
+    
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    if (!wrap) return false;
+    Local<ObjectTemplate> templ = wrap->m_object_template.Get(isolate);
+    if (templ.IsEmpty()) return false;
+    return V82JSC::ToImpl<ObjectTemplateImpl>(templ)->m_callback != nullptr;
 }
 
 /**
@@ -1244,8 +1259,10 @@ bool Object::IsCallable()
  */
 bool Object::IsConstructor()
 {
-    assert(0);
-    return false;
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, context);
+    return JSValueToBoolean(ctx, V82JSC::exec(ctx, "try {Reflect.construct(String,[],_1);} catch(e) { return false; } return true", 1, &obj));
 }
 
 /**
@@ -1257,8 +1274,8 @@ MaybeLocal<Value> Object::CallAsFunction(Local<Context> context,
                                          int argc,
                                          Local<Value> argv[])
 {
-    assert(0);
-    return MaybeLocal<Value>();
+    Function *f = static_cast<Function *>(this);
+    return f->Call(context, recv, argc, argv);
 }
 
 /**
@@ -1269,7 +1286,19 @@ MaybeLocal<Value> Object::CallAsFunction(Local<Context> context,
 MaybeLocal<Value> Object::CallAsConstructor(Local<Context> context,
                                             int argc, Local<Value> argv[])
 {
-    assert(0);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+    JSValueRef args[argc+1];
+    args[0] = func;
+    for (int i=0; i<argc; i++) {
+        args[i+1] = V82JSC::ToJSValueRef<Value>(argv[i], context);
+    }
+    LocalException exception(iso);
+    JSValueRef newobj = V82JSC::exec(ctx, "return new _1(...Array.prototype.slice.call(arguments, 1))", argc+1, args, &exception);
+    if (!exception.ShouldThow()) {
+        return ValueImpl::New(V82JSC::ToContextImpl(context), newobj).As<Object>();
+    }
     return MaybeLocal<Value>();
 }
 

@@ -32,7 +32,13 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
         args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
     }
     LocalException exception(iso);
-    JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(context), func, argc, args, &exception);
+    JSValueRef excp = 0;
+    JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(context), func, argc, args, &excp);
+    if (!newobj && !excp) {
+        V82JSC::exec(V82JSC::ToContextRef(context), "throw new TypeError(_1.name + ' is not a constructor');", 1, &func, &exception);
+    } else {
+        exception.exception_ = excp;
+    }
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), newobj).As<Object>();
     }
@@ -51,7 +57,14 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
         args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
     }
     LocalException exception(iso);
-    JSValueRef result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &exception);
+    JSValueRef excp = 0;
+    JSValueRef result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &excp);
+    if (!result && !excp) {
+        V82JSC::exec(V82JSC::ToContextRef(context), "throw new TypeError('object is not a function');", 1, &func, &exception);
+    } else if (excp) {
+        exception.exception_ = excp;
+    }
+    
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), result);
     }

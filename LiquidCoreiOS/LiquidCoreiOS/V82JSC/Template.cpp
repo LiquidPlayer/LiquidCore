@@ -122,20 +122,27 @@ void Template::SetLazyDataProperty(Local<Name> name, AccessorNameGetterCallback 
 void Template::SetIntrinsicDataProperty(Local<Name> name, Intrinsic intrinsic,
                               PropertyAttribute attribute)
 {
-    assert(0);
+    TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl, Template>(this);
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    IntrinsicProp prop;
+    prop.name.Reset(isolate, name);
+    prop.value = intrinsic;
+    templ->m_intrinsics.push_back(std::move(prop));
 }
 
 
 #undef O
 #define O(v) reinterpret_cast<v8::internal::Object*>(v)
 
-JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
-                                                JSObjectRef proxy_function,
-                                                JSObjectRef thisObject,
-                                                size_t argumentCount,
-                                                const JSValueRef *arguments,
-                                                JSValueRef *exception)
+template<typename T>
+static T callAsCallback(JSContextRef ctx,
+                        JSObjectRef proxy_function,
+                        JSObjectRef thisObject,
+                        size_t argumentCount,
+                        const JSValueRef *arguments,
+                        JSValueRef *exception)
 {
+    bool isConstructCall = std::is_same<T, JSObjectRef>::value;
     TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(proxy_function));
     IsolateImpl* isolateimpl = wrap->m_isolate;
     Isolate* isolate = V82JSC::ToIsolate(isolateimpl);
@@ -143,14 +150,18 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
     
     Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
+    TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl>(wrap->m_template.Get(isolate));
+    
+    if (V82JSC::Map(templ)->instance_type() == internal::OBJECT_TEMPLATE_INFO_TYPE) {
+        thisObject = proxy_function;
+    }
     Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
     Local<Value> holder = thiz;
-    FunctionTemplateImpl *ftempl = V82JSC::ToImpl<FunctionTemplateImpl>(wrap->m_template.Get(isolate));
-    
+
     // Check signature
-    bool signature_match = ftempl->m_signature.IsEmpty();
+    bool signature_match = templ->m_signature.IsEmpty();
     if (!signature_match) {
-        SignatureImpl *sig = V82JSC::ToImpl<SignatureImpl>(ftempl->m_signature.Get(isolate));
+        SignatureImpl *sig = V82JSC::ToImpl<SignatureImpl>(templ->m_signature.Get(isolate));
         const TemplateImpl *sig_templ = V82JSC::ToImpl<FunctionTemplateImpl>(sig->m_template.Get(isolate));
         JSValueRef proto = thisObject;
         InstanceWrap* thisWrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)proto);
@@ -176,10 +187,15 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         JSStringRelease(message);
         return 0;
     }
-    Local<Value> data = ValueImpl::New(ctximpl, ftempl->m_data);
+    Local<Value> data = ValueImpl::New(ctximpl, templ->m_data);
     typedef v8::internal::Heap::RootListIndex R;
     internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
-    internal::Object *undefined = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
+    internal::Object *target = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
+    
+    if (isConstructCall) {
+        JSValueRef t = JSObjectMake(ctx, 0, 0);
+        target = * reinterpret_cast<v8::internal::Object**> (*ValueImpl::New(ctximpl, t));
+    }
 
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*holder), // kHolderIndex = 0;
@@ -189,7 +205,7 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
-        undefined,                                           // kNewTargetIndex = 7;
+        target,                                              // kNewTargetIndex = 7;
     };
     v8::internal::Object * values_[argumentCount + 1];
     v8::internal::Object ** values = values_ + argumentCount - 1;
@@ -204,8 +220,8 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
     
-    if (ftempl->m_callback) {
-        ftempl->m_callback(info);
+    if (templ->m_callback) {
+        templ->m_callback(info);
     }
 
     if (try_catch.HasCaught()) {
@@ -223,8 +239,28 @@ JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
     
     Local<Value> ret = info.GetReturnValue().Get();
     
-    return V82JSC::ToJSValueRef<Value>(ret, context);
+    return (T) V82JSC::ToJSValueRef<Value>(ret, context);
 }
+
+JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
+                                                JSObjectRef proxy_function,
+                                                JSObjectRef thisObject,
+                                                size_t argumentCount,
+                                                const JSValueRef *arguments,
+                                                JSValueRef *exception)
+{
+    return callAsCallback<JSValueRef>(ctx, proxy_function, thisObject, argumentCount, arguments, exception);
+}
+
+JSObjectRef TemplateImpl::callAsConstructorCallback(JSContextRef ctx,
+                                                    JSObjectRef constructor,
+                                                    size_t argumentCount,
+                                                    const JSValueRef *arguments,
+                                                    JSValueRef *exception)
+{
+    return callAsCallback<JSObjectRef>(ctx, constructor, 0, argumentCount, arguments, exception);
+}
+
 
 void templateDestructor(InternalObjectImpl *o)
 {
@@ -251,6 +287,7 @@ TemplateImpl* TemplateImpl::New(Isolate* isolate, size_t size, InternalObjectDes
     templ->m_properties = std::vector<Prop>();
     templ->m_property_accessors = std::vector<PropAccessor>();
     templ->m_accessors = std::vector<ObjAccessor>();
+    templ->m_intrinsics = std::vector<IntrinsicProp>();
     templ->m_parent = Copyable(FunctionTemplate)();
     templ->m_callback = nullptr;
     templ->m_data = 0;
@@ -369,6 +406,42 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                                             i->settings,
                                             i->attribute);
         if (set.IsNothing()) return MaybeLocal<Object>();
+    }
+    
+    for (auto i=m_intrinsics.begin(); i!=m_intrinsics.end(); ++i) {
+        JSValueRef args[] = {
+            instance,
+            V82JSC::ToJSValueRef(i->name.Get(isolate), context)
+        };
+        switch(i->value) {
+            case Intrinsic::kIteratorPrototype: {
+                V82JSC::exec(ctx, "_1[_2] = [][Symbol.iterator]().__proto__.__proto__", 2, args, &exception);
+                break;
+            }
+            case Intrinsic::kErrorPrototype: {
+                V82JSC::exec(ctx, "_1[_2] = Error.prototype", 2, args, &exception);
+                break;
+            }
+            case Intrinsic::kArrayProto_keys: {
+                V82JSC::exec(ctx, "_1[_2] = Array.prototype.keys", 2, args, &exception);
+                break;
+            }
+            case Intrinsic::kArrayProto_values: {
+                V82JSC::exec(ctx, "_1[_2] = Array.prototype[Symbol.iterator]", 2, args, &exception);
+                break;
+            }
+            case Intrinsic::kArrayProto_entries: {
+                V82JSC::exec(ctx, "_1[_2] = Array.prototype.entries", 2, args, &exception);
+                break;
+            }
+            case Intrinsic::kArrayProto_forEach: {
+                V82JSC::exec(ctx, "_1[_2] = Array.prototype.forEach", 2, args, &exception);
+                break;
+            }
+            default: {
+                assert(0);
+            }
+        }
     }
     
     return thiz;
