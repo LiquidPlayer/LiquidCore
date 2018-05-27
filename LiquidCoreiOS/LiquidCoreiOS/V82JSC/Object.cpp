@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSObjectRefPrivate.h"
 
 using namespace v8;
 
@@ -1261,10 +1262,7 @@ Local<Context> Object::CreationContext()
 {
     ValueImpl *obj = V82JSC::ToImpl<ValueImpl, Object>(this);
     IsolateImpl *iso = V82JSC::ToIsolateImpl(obj);
-    Local<Context> context = V82JSC::ToCurrentContext(this);
-    JSGlobalContextRef ctx = JSContextGetGlobalContext(V82JSC::ToContextRef(context));
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), (JSObjectRef)obj->m_value);
-    if (wrap) ctx = wrap->m_creation_context;
+    JSGlobalContextRef ctx = JSObjectGetGlobalContext((JSObjectRef)obj->m_value);
     CHECK_EQ(1, iso->m_global_contexts.count(ctx));
     return iso->m_global_contexts[ctx].Get(V82JSC::ToIsolate(iso));
 }
@@ -1343,7 +1341,17 @@ Local<Object> Object::New(Isolate* isolate)
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = JSObjectMake(ctx, 0, 0);
-    V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(isolate), ctx, obj);
+    
+    /*
+    JSStringRef test = JSStringCreateWithUTF8CString("test");
+    CHECK_EQ(JSContextGetGlobalContext(ctx), JSObjectGetGlobalContext(obj));
+    
+    JSObjectSetPrivateProperty(ctx, obj, test, JSValueMakeNumber(ctx, 1));
+    CHECK_EQ(1, JSValueToNumber(ctx, JSObjectGetPrivateProperty(ctx, obj, test), 0));
+    JSStringRelease(test);
+    */
+    
+    //V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(isolate), ctx, obj);
     Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), obj);
     return o.As<Object>();
 }

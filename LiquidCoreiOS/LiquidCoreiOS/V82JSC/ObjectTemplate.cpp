@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSObjectRefPrivate.h"
 #include <string.h>
 
 using namespace v8;
@@ -234,7 +235,9 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_proxy_security);
 
-    bool ok = wrap->m_isGlobalObject && wrap->m_creation_context == JSContextGetGlobalContext(ctx);
+    JSGlobalContextRef creation_context = JSObjectGetGlobalContext(target);
+    
+    bool ok = wrap->m_isGlobalObject && creation_context == JSContextGetGlobalContext(ctx);
     if (!ok && templ->m_access_check) {
         ok = templ->m_access_check(context,
                                    ValueImpl::New(ctximpl, target).As<Object>(),

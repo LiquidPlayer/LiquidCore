@@ -345,7 +345,6 @@ struct InstanceWrap {
     int m_hash;
     bool m_isHiddenPrototype;
     std::vector<JSObjectRef> m_hidden_children;
-    JSGlobalContextRef m_creation_context;
     bool m_isGlobalObject;
 };
 
@@ -576,7 +575,6 @@ struct V82JSC {
         // Keep only a weak reference to m_security to avoid cyclical references
         wrap->m_hash = 1 + rand();
         wrap->m_isolate = iso;
-        wrap->m_creation_context = JSContextGetGlobalContext(ctx);
         
         JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes = kJSClassAttributeNoAutomaticPrototype;

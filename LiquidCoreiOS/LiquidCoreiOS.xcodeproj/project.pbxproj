@@ -121,6 +121,7 @@
 		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
+		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07F8049720260E3F00FDFC27 /* test-api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "test-api.cc"; sourceTree = "<group>"; };
 		07F804992027147F00FDFC27 /* Object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Object.cpp; sourceTree = "<group>"; };
 		07F804A120277DC700FDFC27 /* TypedArray.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TypedArray.cpp; sourceTree = "<group>"; };
@@ -301,6 +302,7 @@
 				07F804FC202DDA4400FDFC27 /* Locker.cpp */,
 				07F8054320395FA700FDFC27 /* internals.cpp */,
 				07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */,
+				07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";

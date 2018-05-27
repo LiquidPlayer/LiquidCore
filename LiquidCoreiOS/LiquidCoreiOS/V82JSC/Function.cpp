@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSObjectRefPrivate.h"
 
 using namespace v8;
 
@@ -26,30 +27,24 @@ MaybeLocal<Function> Function::New(Local<Context> context, FunctionCallback call
 MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local<Value> argv[]) const
 {
     JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
-    IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    JSGlobalContextRef ctx = JSObjectGetGlobalContext((JSObjectRef)V82JSC::ToJSValueRef(this, context));
+    Local<Context> cc = iso->m_global_contexts[ctx].Get(V82JSC::ToIsolate(iso));
     JSValueRef args[argc];
     for (int i=0; i<argc; i++) {
-        args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
+        args[i] = V82JSC::ToJSValueRef<Value>(argv[i], cc);
     }
     LocalException exception(iso);
     JSValueRef excp = 0;
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), func);
-    JSGlobalContextRef creationContext = wrap ? wrap->m_creation_context : JSContextGetGlobalContext(V82JSC::ToContextRef(context));
     
-    JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(context), func, argc, args, &excp);
+    JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(cc), func, argc, args, &excp);
     if (!newobj && !excp) {
         V82JSC::exec(V82JSC::ToContextRef(context), "throw new TypeError(_1.name + ' is not a constructor');", 1, &func, &exception);
     } else {
         exception.exception_ = excp;
     }
     if (!exception.ShouldThow()) {
-        if (wrap) {
-            // A new instance from a function created from a template will always have the creation context
-            // of the original function
-            wrap = V82JSC::makePrivateInstance(iso, V82JSC::ToContextRef(context), newobj);
-            if (wrap) wrap->m_creation_context = creationContext;
-        }
-        return ValueImpl::New(V82JSC::ToContextImpl(context), newobj).As<Object>();
+        return ValueImpl::New(V82JSC::ToContextImpl(cc), newobj).As<Object>();
     }
     return MaybeLocal<Object>();
 }
@@ -75,9 +70,6 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     }
     
     if (!exception.ShouldThow()) {
-        if (JSValueIsObject(V82JSC::ToContextRef(context), result)) {
-            V82JSC::makePrivateInstance(iso, V82JSC::ToContextRef(context), (JSObjectRef)result);
-        }
         return ValueImpl::New(V82JSC::ToContextImpl(context), result);
     }
     

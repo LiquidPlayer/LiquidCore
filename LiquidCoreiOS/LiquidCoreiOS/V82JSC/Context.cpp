@@ -355,7 +355,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSValueRef bind = V82JSC::exec(context->m_ctxRef, "return Function.prototype.bind", 0, nullptr);
         context->FunctionPrototypeBind.Reset(isolate, ValueImpl::New(context, bind).As<Function>());
         Local<FunctionTemplate> bind_template = FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
-            Local<Context> context = info.GetIsolate()->GetCurrentContext();
+            Local<Context> context = info.This()->CreationContext();
             Local<Value> args[info.Length()];
             for (int i=0; i<info.Length(); i++) {
                 args[i] = info[i];
@@ -363,14 +363,6 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             MaybeLocal<Value> bound = V82JSC::ToContextImpl(context)->FunctionPrototypeBind.Get(info.GetIsolate())
                 ->Call(context, info.This(), info.Length(), args);
             if (!bound.IsEmpty()) {
-                InstanceWrap *function_wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(info.GetIsolate()),
-                                                                          V82JSC::ToContextRef(context),
-                                                                          (JSObjectRef)V82JSC::ToJSValueRef(info.This(), context));
-                InstanceWrap *binding_wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(info.GetIsolate()),
-                                                                         V82JSC::ToContextRef(context),
-                                                                         (JSObjectRef)V82JSC::ToJSValueRef(bound.ToLocalChecked(), context));
-                binding_wrap->m_creation_context = function_wrap->m_creation_context;
-
                 info.GetReturnValue().Set(bound.ToLocalChecked());
             }
         });
