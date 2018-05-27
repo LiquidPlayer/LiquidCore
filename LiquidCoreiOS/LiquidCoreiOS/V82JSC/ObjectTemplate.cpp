@@ -11,6 +11,73 @@
 
 using namespace v8;
 
+static GenericNamedPropertyGetterCallback NullNamedGetter = [](Local<Name> property, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertySetterCallback NullNamedSetter = [](Local<Name> property, Local<Value> value, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertyDescriptorCallback NullNamedDescriptor = [](Local<Name> property, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertyDeleterCallback NullNamedDeleter = [](Local<Name> property, const PropertyCallbackInfo<v8::Boolean>& info) {};
+static GenericNamedPropertyEnumeratorCallback NullNamedEnumerator = [](const PropertyCallbackInfo<Array>& info) {};
+static GenericNamedPropertyDefinerCallback NullNamedDefiner = [](Local<Name> property, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertyQueryCallback NullNamedQuery = [](Local<Name> property, const PropertyCallbackInfo<Integer>& info) {};
+
+static IndexedPropertyGetterCallback NullIndexedGetter = [](uint32_t index, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertySetterCallback NullIndexedSetter = [](uint32_t index, Local<Value> value, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertyDescriptorCallback NullIndexedDescriptor = [](uint32_t index, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertyDeleterCallback NullIndexedDeleter = [](uint32_t index, const PropertyCallbackInfo<v8::Boolean>& info) {};
+static IndexedPropertyEnumeratorCallback NullIndexedEnumerator = [](const PropertyCallbackInfo<Array>& info) {};
+static IndexedPropertyDefinerCallback NullIndexedDefiner = [](uint32_t index, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertyQueryCallback NullIndexedQuery = [](uint32_t index, const PropertyCallbackInfo<Integer>& info) {};
+
+struct DefaultNamedHandlers : public NamedPropertyHandlerConfiguration
+{
+    DefaultNamedHandlers() : NamedPropertyHandlerConfiguration
+    (NullNamedGetter, NullNamedSetter, NullNamedDescriptor, NullNamedDeleter,
+     NullNamedEnumerator, NullNamedDefiner) { query = NullNamedQuery; }
+};
+
+struct DefaultIndexedHandlers : public IndexedPropertyHandlerConfiguration
+{
+    DefaultIndexedHandlers() : IndexedPropertyHandlerConfiguration
+    (NullIndexedGetter, NullIndexedSetter, NullIndexedDescriptor, NullIndexedDeleter,
+     NullIndexedEnumerator, NullIndexedDefiner) { query = NullIndexedQuery; }
+};
+
+#define THROW_ACCESS_ERROR() \
+info.GetIsolate()->ThrowException(Exception::TypeError(String::NewFromUtf8(info.GetIsolate(), "access denied", \
+    NewStringType::kNormal).ToLocalChecked()));
+
+struct AccessDeniedNamedHandlers : public NamedPropertyHandlerConfiguration
+{
+    AccessDeniedNamedHandlers() : NamedPropertyHandlerConfiguration
+    (
+     [](Local<Name> property, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() },
+     [](Local<Name> property, Local<Value> value, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() },
+     [](Local<Name> property, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() },
+     [](Local<Name> property, const PropertyCallbackInfo<v8::Boolean>& info) { THROW_ACCESS_ERROR() },
+     [](const PropertyCallbackInfo<Array>& info) { THROW_ACCESS_ERROR() },
+     [](Local<Name> property, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() }
+     )
+    {
+        query = [](Local<Name> property, const PropertyCallbackInfo<Integer>& info) { THROW_ACCESS_ERROR() };
+    }
+};
+
+struct AccessDeniedIndexedHandlers : public IndexedPropertyHandlerConfiguration
+{
+    AccessDeniedIndexedHandlers() : IndexedPropertyHandlerConfiguration
+    (
+     [](uint32_t index, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() },
+     [](uint32_t index, Local<Value> value, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() },
+     [](uint32_t index, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() },
+     [](uint32_t index, const PropertyCallbackInfo<v8::Boolean>& info) { THROW_ACCESS_ERROR() },
+     [](const PropertyCallbackInfo<Array>& info) { THROW_ACCESS_ERROR() },
+     [](uint32_t index, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) { THROW_ACCESS_ERROR() }
+     )
+    {
+        query = [](uint32_t index, const PropertyCallbackInfo<Integer>& info) { THROW_ACCESS_ERROR() };
+    }
+};
+
+
 /** Creates an ObjectTemplate. */
 Local<ObjectTemplate> ObjectTemplate::New(
                                  Isolate* isolate,
@@ -36,6 +103,10 @@ Local<ObjectTemplate> ObjectTemplate::New(
         otempl->m_constructor_template = Copyable(v8::FunctionTemplate)();
         otempl->m_named_data = 0;
         otempl->m_indexed_data = 0;
+        otempl->m_named_handler = DefaultNamedHandlers();
+        otempl->m_indexed_handler = DefaultIndexedHandlers();
+        otempl->m_named_failed_access_handler = AccessDeniedNamedHandlers();
+        otempl->m_indexed_failed_access_handler = AccessDeniedIndexedHandlers();
 
         return V82JSC::CreateLocal<ObjectTemplate>(isolate, otempl);
     }
@@ -105,8 +176,8 @@ class InterceptorOther {};
 
 template <typename V, typename I>
 JSValueRef PropertyHandler(CALLBACK_PARAMS,
-                           void (*named_handler)(const ObjectTemplateImpl*, Local<Name>, Local<Value>, PropertyCallbackInfo<V>&),
-                           void (*indexed_handler)(const ObjectTemplateImpl*, uint32_t, Local<Value>, PropertyCallbackInfo<V>&))
+                           void (*named_handler)(const ObjectTemplateImpl*, Local<Name>, Local<Value>, PropertyCallbackInfo<V>&, const NamedPropertyHandlerConfiguration&),
+                           void (*indexed_handler)(const ObjectTemplateImpl*, uint32_t, Local<Value>, PropertyCallbackInfo<V>&, const IndexedPropertyHandlerConfiguration&))
 {
     // Arguments:
     //  get            - target, property, receiver        -> Value
@@ -163,15 +234,28 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_proxy_security);
 
+    bool ok = wrap->m_isGlobalObject && wrap->m_creation_context == JSContextGetGlobalContext(ctx);
+    if (!ok && templ->m_access_check) {
+        ok = templ->m_access_check(context,
+                                   ValueImpl::New(ctximpl, target).As<Object>(),
+                                   ValueImpl::New(ctximpl, templ->m_access_check_data));
+    } else {
+        ok = true;
+    }
+    
     Local<Value> data;
-    if (templ) {
+    if (!ok) {
+        if (isSymbol || !isIndex) { /* Is named */
+            data = ValueImpl::New(ctximpl, templ->m_failed_named_data);
+        } else { /* Is Indexed */
+            data = ValueImpl::New(ctximpl, templ->m_failed_indexed_data);
+        }
+    } else {
         if (isSymbol || !isIndex) { /* Is named */
             data = ValueImpl::New(ctximpl, templ->m_named_data);
         } else { /* Is Indexed */
             data = ValueImpl::New(ctximpl, templ->m_indexed_data);
         }
-    } else {
-        data = Undefined(isolate);
     }
 
     int receiver_loc = std::is_same<I,InterceptorGetter>::value ? 2 : std::is_same<I,InterceptorSetter>::value ? 3 : 0;
@@ -204,11 +288,9 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         if (argumentCount>1) {
             prop = ValueImpl::New(ctximpl, arguments[1]).As<Name>();
         }
-        named_handler(templ,
-                      prop,
-                      set, info);
+        named_handler(templ, prop, set, info, ok ? templ->m_named_handler : templ->m_named_failed_access_handler);
     } else {
-        indexed_handler(templ, index, set, info);
+        indexed_handler(templ, index, set, info, ok ? templ->m_indexed_handler : templ->m_indexed_failed_access_handler);
     }
     
     if (try_catch.HasCaught()) {
@@ -251,6 +333,11 @@ InstanceWrap::~InstanceWrap()
     m_object_template.Reset();
 }
 
+#define NAMED_PARAMS(R) const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, \
+    PropertyCallbackInfo<R>& info, const NamedPropertyHandlerConfiguration& config
+#define INDEXED_PARAMS(R) const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, \
+    PropertyCallbackInfo<R>& info, const IndexedPropertyHandlerConfiguration& config
+
 v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context> context, JSObjectRef root, bool isHiddenPrototype)
 {
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
@@ -284,25 +371,13 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             assert(excp==0);
         };
         
-        handler_func("apply", [](CALLBACK_PARAMS) -> JSValueRef
-        {
-            // FIXME!
-            assert(0);
-            return NULL;
-        });
         handler_func("get", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<Value,InterceptorGetter>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_named_handler.getter)
-                    impl->m_named_handler.getter(property, info);
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_indexed_handler.getter)
-                    impl->m_indexed_handler.getter(index, info);
-            });
+            JSValueRef ret = PropertyHandler<Value,InterceptorGetter>
+            (
+             PASS, [](NAMED_PARAMS(Value)) { config.getter(property, info); },
+             [](INDEXED_PARAMS(Value)) { config.getter(index, info); }
+            );
             if (ret == NULL && !*exception) {
                 // Not handled.  Pass thru.
                 assert(argumentCount>1);
@@ -312,19 +387,10 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("set", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<Value,InterceptorSetter>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_named_handler.setter) {
-                    impl->m_named_handler.setter(property, value, info);
-                }
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_indexed_handler.setter) {
-                    impl->m_indexed_handler.setter(index, value, info);
-                }
-            });
+            JSValueRef ret = PropertyHandler<Value,InterceptorSetter>
+            (PASS, [](NAMED_PARAMS(Value)) { config.setter(property, value, info); },
+             [](INDEXED_PARAMS(Value)) { config.setter(index, value, info); }
+            );
             if (*exception) {
                 return JSValueMakeBoolean(ctx, false);
             }
@@ -338,23 +404,17 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("has", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<Integer,InterceptorOther>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
-            {
-                if (impl->m_named_handler.query) {
-                    impl->m_named_handler.query(property, info);
-                } else if (impl->m_named_handler.getter) {
-                    info.GetReturnValue().Set(v8::PropertyAttribute::None);
-                }
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Integer>& info)
-            {
-                if (impl->m_indexed_handler.query) {
-                    impl->m_indexed_handler.query(index, info);
-                } else if (impl->m_indexed_handler.getter) {
-                    info.GetReturnValue().Set(v8::PropertyAttribute::None);
-                }
-            });
+            JSValueRef ret = PropertyHandler<Integer,InterceptorOther>
+            (PASS,
+             [](NAMED_PARAMS(Integer)) {
+                 if (config.query != NullNamedQuery) config.query(property, info);
+                 else if(config.getter != NullNamedGetter) info.GetReturnValue().Set(v8::PropertyAttribute::None);
+             },
+             [](INDEXED_PARAMS(Integer)) {
+                 if (config.query != NullIndexedQuery) config.query(index, info);
+                 else if(config.getter != NullIndexedGetter) info.GetReturnValue().Set(v8::PropertyAttribute::None);
+             }
+            );
             if (*exception) {
                 return JSValueMakeBoolean(ctx, false);
             }
@@ -366,40 +426,20 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("deleteProperty", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<v8::Boolean,InterceptorOther>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
-            {
-                if (impl->m_named_handler.deleter) {
-                    impl->m_named_handler.deleter(property, info);
-                }
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<v8::Boolean>& info)
-            {
-                if (impl->m_indexed_handler.deleter) {
-                    impl->m_indexed_handler.deleter(index, info);
-                }
-            });
+            JSValueRef ret = PropertyHandler<v8::Boolean,InterceptorOther>
+            (PASS, [](NAMED_PARAMS(v8::Boolean)) { config.deleter(property, info); },
+             [](INDEXED_PARAMS(v8::Boolean)) { config.deleter(index, info); });
             if (!*exception && ret == NULL) {
                 assert(argumentCount>1);
-                return V82JSC::exec(ctx, "delete _1[_2]", 2, arguments, exception);
+                return V82JSC::exec(ctx, "return delete _1[_2]", 2, arguments, exception);
             }
             return ret;
         });
         handler_func("ownKeys", [](CALLBACK_PARAMS) -> JSValueRef
         {
-            JSValueRef ret = PropertyHandler<v8::Array,InterceptorOther>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
-            {
-                if (impl->m_named_handler.enumerator) {
-                    impl->m_named_handler.enumerator(info);
-                }
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<v8::Array>& info)
-            {
-                if (impl->m_indexed_handler.enumerator) {
-                    impl->m_indexed_handler.enumerator(info);
-                }
-            });
+            JSValueRef ret = PropertyHandler<v8::Array,InterceptorOther>
+            (PASS, [](NAMED_PARAMS(v8::Array)) { config.enumerator(info); },
+             [](INDEXED_PARAMS(v8::Array)) { config.enumerator(info); });
             if (!*exception && ret == NULL) {
                 assert(argumentCount>0);
                 return V82JSC::exec(ctx,
@@ -413,7 +453,13 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("defineProperty", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>2);
-            return V82JSC::exec(ctx, "return Object.defineProperty(_1, _2, _3)", 3, arguments, exception);
+            JSValueRef ret = PropertyHandler<Value,InterceptorOther>
+            (PASS, [](NAMED_PARAMS(Value)) { config.definer(property, value, info); },
+             [](INDEXED_PARAMS(Value)) { config.definer(index, value, info); });
+            if (!*exception && ret == NULL) {
+                return V82JSC::exec(ctx, "return Object.defineProperty(_1, _2, _3)", 3, arguments, exception);
+            }
+            return ret;
         });
         handler_func("getPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>0);
@@ -421,6 +467,17 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
             HandleScope scope(isolate);
             Local<Context> context = ContextImpl::New(isolate, ctx);
+            ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
+            if (templ->m_access_check && !templ->m_access_check(context,
+                                                                ValueImpl::New(V82JSC::ToContextImpl(context), arguments[0]).As<Object>(),
+                                                                ValueImpl::New(V82JSC::ToContextImpl(context), templ->m_access_check_data)))
+            {
+                /*
+                isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "access denied",
+                                                                                 NewStringType::kNormal).ToLocalChecked()));
+                */
+                return JSValueMakeNull(ctx);
+            }
             Local<Value> proto = ValueImpl::New(V82JSC::ToContextImpl(context),
                                                 arguments[0]).As<Object>()->GetPrototype();
             return V82JSC::ToJSValueRef(proto, context);
@@ -431,27 +488,25 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
             HandleScope scope(isolate);
             Local<Context> context = ContextImpl::New(isolate, ctx);
+            ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
+            if (templ->m_access_check && !templ->m_access_check(context,
+                                                                ValueImpl::New(V82JSC::ToContextImpl(context), arguments[0]).As<Object>(),
+                                                                ValueImpl::New(V82JSC::ToContextImpl(context), templ->m_access_check_data)))
+            {
+                isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "access denied",
+                                                                                 NewStringType::kNormal).ToLocalChecked()));
+                
+            }
             Maybe<bool> r = ValueImpl::New(V82JSC::ToContextImpl(context),arguments[0])
                 .As<Object>()->SetPrototype(context, ValueImpl::New(V82JSC::ToContextImpl(context), arguments[1]));
             return JSValueMakeBoolean(ctx, r.FromJust());
         });
         handler_func("getOwnPropertyDescriptor", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>1);
-            
             // First, try a descriptor interceptor
-            JSValueRef descriptor = PropertyHandler<Value,InterceptorOther>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_named_handler.descriptor) {
-                    impl->m_named_handler.descriptor(property, info);
-                }
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_indexed_handler.descriptor) {
-                    impl->m_indexed_handler.descriptor(index, info);
-                }
-            });
+            JSValueRef descriptor = PropertyHandler<Value,InterceptorOther>
+            (PASS, [](NAMED_PARAMS(Value)) { config.descriptor(property, info); },
+             [](INDEXED_PARAMS(Value)) { config.descriptor(index, info); });
             if (descriptor) return descriptor;
             if (exception && *exception) return NULL;
             
@@ -461,23 +516,17 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             if (exception && *exception) return NULL;
 
             // Third, try calling the querier to see if the property exists
-            JSValueRef attributes = PropertyHandler<Integer,InterceptorOther>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Integer>& info)
-            {
-                if (impl->m_named_handler.query) {
-                    impl->m_named_handler.query(property, info);
-                } else {
-                    info.GetReturnValue().Set(-1);
-                }
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Integer>& info)
-            {
-                if (impl->m_indexed_handler.query) {
-                    impl->m_indexed_handler.query(index, info);
-                } else {
-                    info.GetReturnValue().Set(-1);
-                }
-            });
+            JSValueRef attributes = PropertyHandler<Integer,InterceptorOther>
+            (PASS,
+             [](NAMED_PARAMS(Integer)) {
+                 if (config.query != NullNamedQuery) config.query(property, info);
+                 else if(config.getter != NullNamedGetter) info.GetReturnValue().Set(-1);
+             },
+             [](INDEXED_PARAMS(Integer)) {
+                 if (config.query != NullIndexedQuery) config.query(index, info);
+                 else if(config.getter != NullIndexedGetter) info.GetReturnValue().Set(-1);
+             }
+             );
             if (exception && *exception) return NULL;
 
             // attributes can be NULL (has querier, property does not exist), -1 (no querier, defer to value), PropertyAttribute (has property)
@@ -486,17 +535,12 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             }
             int pattr = static_cast<int>(JSValueToNumber(ctx, attributes, 0));
 
-            JSValueRef value = PropertyHandler<Value,InterceptorOther>(PASS,
-            [](const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_named_handler.getter)
-                    impl->m_named_handler.getter(property, info);
-            },
-            [](const ObjectTemplateImpl* impl, uint32_t index, Local<Value> value, PropertyCallbackInfo<Value>& info)
-            {
-                if (impl->m_indexed_handler.getter)
-                    impl->m_indexed_handler.getter(index, info);
-            });
+            // Finally, check the getter to see if we should claim a value
+            JSValueRef value = PropertyHandler<Value,InterceptorOther>
+            (
+             PASS, [](NAMED_PARAMS(Value)) { config.getter(property, info); },
+             [](INDEXED_PARAMS(Value)) { config.getter(index, info); }
+             );
             if (exception && *exception) return NULL;
 
             if (pattr != -1 || value != NULL) {
@@ -534,8 +578,10 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     if (m_need_proxy) {
         JSValueRef args[] = {root, handler};
         JSValueRef proxy_object = V82JSC::exec(ctx->m_ctxRef, "return new Proxy(_1, _2)", 2, args);
-        Local<Object> proxy = ValueImpl::New(ctx, proxy_object).As<Object>();
+        // Important!  Set the security proxy before calling ValueImpl::New().  We don't want the proxy object
+        // to have its own wrap
         wrap->m_proxy_security = proxy_object;
+        Local<Object> proxy = ValueImpl::New(ctx, proxy_object).As<Object>();
         instance = proxy;
     }
     
@@ -604,8 +650,9 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             propagate_delete
         };
         JSValueRef hidden_proxy_object = V82JSC::exec(ctx->m_ctxRef, proxy_code, 3, args);
-        Local<Object> hidden_proxy = ValueImpl::New(ctx, hidden_proxy_object).As<Object>();
+        // Same here.  Set the hidden proxy reference before calling ValueImpl::New()
         wrap->m_hidden_proxy_security = hidden_proxy_object;
+        Local<Object> hidden_proxy = ValueImpl::New(ctx, hidden_proxy_object).As<Object>();
         instance = hidden_proxy;
     }
     
@@ -725,7 +772,14 @@ void ObjectTemplate::SetHandler(const NamedPropertyHandlerConfiguration& configu
 {
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
     Local<Value> data = configuration.data;
-    templ->m_named_handler = configuration;
+    if (configuration.getter) templ->m_named_handler.getter = configuration.getter;
+    if (configuration.setter) templ->m_named_handler.setter = configuration.setter;
+    if (configuration.descriptor) templ->m_named_handler.descriptor = configuration.descriptor;
+    if (configuration.deleter) templ->m_named_handler.deleter = configuration.deleter;
+    if (configuration.enumerator) templ->m_named_handler.enumerator = configuration.enumerator;
+    if (configuration.definer) templ->m_named_handler.definer = configuration.definer;
+    if (configuration.query) templ->m_named_handler.query = configuration.query;
+
     templ->m_named_handler.data.Clear();
 
     if (data.IsEmpty()) {
@@ -750,7 +804,14 @@ void ObjectTemplate::SetHandler(const IndexedPropertyHandlerConfiguration& confi
 {
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
     Local<Value> data = configuration.data;
-    templ->m_indexed_handler = configuration;
+    if (configuration.getter) templ->m_indexed_handler.getter = configuration.getter;
+    if (configuration.setter) templ->m_indexed_handler.setter = configuration.setter;
+    if (configuration.descriptor) templ->m_indexed_handler.descriptor = configuration.descriptor;
+    if (configuration.deleter) templ->m_indexed_handler.deleter = configuration.deleter;
+    if (configuration.enumerator) templ->m_indexed_handler.enumerator = configuration.enumerator;
+    if (configuration.definer) templ->m_indexed_handler.definer = configuration.definer;
+    if (configuration.query) templ->m_indexed_handler.query = configuration.query;
+
     templ->m_indexed_handler.data.Clear();
 
     if (data.IsEmpty()) {
@@ -806,7 +867,18 @@ void ObjectTemplate::MarkAsUndetectable()
 void ObjectTemplate::SetAccessCheckCallback(AccessCheckCallback callback,
                             Local<Value> data)
 {
-    assert(0);
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(templ));
+    HandleScope scope(isolate);
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    templ->m_access_check = callback;
+    if (data.IsEmpty()) {
+        data = Undefined(isolate);
+    }
+    templ->m_access_check_data = V82JSC::ToJSValueRef(data, context);
+    JSValueProtect(ctx, templ->m_access_check_data);
+    templ->m_need_proxy = true;
 }
 
 /**
@@ -821,7 +893,42 @@ void ObjectTemplate::SetAccessCheckCallbackAndHandler(
                                       const IndexedPropertyHandlerConfiguration& indexed_handler,
                                       Local<Value> data)
 {
-    assert(0);
+    SetAccessCheckCallback(callback, data);
+    
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    Local<Value> named_data = named_handler.data;
+    if (named_handler.getter) templ->m_named_failed_access_handler.getter = named_handler.getter;
+    if (named_handler.setter) templ->m_named_failed_access_handler.setter = named_handler.setter;
+    if (named_handler.descriptor) templ->m_named_failed_access_handler.descriptor = named_handler.descriptor;
+    if (named_handler.deleter) templ->m_named_failed_access_handler.deleter = named_handler.deleter;
+    if (named_handler.enumerator) templ->m_named_failed_access_handler.enumerator = named_handler.enumerator;
+    if (named_handler.definer) templ->m_named_failed_access_handler.definer = named_handler.definer;
+    if (named_handler.query) templ->m_named_failed_access_handler.query = named_handler.query;
+    
+    templ->m_named_failed_access_handler.data.Clear();
+    
+    if (named_data.IsEmpty()) {
+        named_data = Undefined(Isolate::GetCurrent());
+    } 
+    templ->m_failed_named_data = V82JSC::ToJSValueRef(named_data, Isolate::GetCurrent());
+    JSValueProtect(V82JSC::ToContextRef(Isolate::GetCurrent()), templ->m_failed_named_data);
+
+    Local<Value> indexed_data = indexed_handler.data;
+    if (indexed_handler.getter) templ->m_indexed_failed_access_handler.getter = indexed_handler.getter;
+    if (indexed_handler.setter) templ->m_indexed_failed_access_handler.setter = indexed_handler.setter;
+    if (indexed_handler.descriptor) templ->m_indexed_failed_access_handler.descriptor = indexed_handler.descriptor;
+    if (indexed_handler.deleter) templ->m_indexed_failed_access_handler.deleter = indexed_handler.deleter;
+    if (indexed_handler.enumerator) templ->m_indexed_failed_access_handler.enumerator = indexed_handler.enumerator;
+    if (indexed_handler.definer) templ->m_indexed_failed_access_handler.definer = indexed_handler.definer;
+    if (indexed_handler.query) templ->m_indexed_failed_access_handler.query = indexed_handler.query;
+    
+    templ->m_indexed_failed_access_handler.data.Clear();
+    
+    if (indexed_data.IsEmpty()) {
+        indexed_data = Undefined(Isolate::GetCurrent());
+    }
+    templ->m_failed_indexed_data = V82JSC::ToJSValueRef(named_data, Isolate::GetCurrent());
+    JSValueProtect(V82JSC::ToContextRef(Isolate::GetCurrent()), templ->m_failed_indexed_data);
 }
 
 /**

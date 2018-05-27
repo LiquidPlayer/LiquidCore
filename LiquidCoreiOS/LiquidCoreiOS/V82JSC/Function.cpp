@@ -33,6 +33,9 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
     }
     LocalException exception(iso);
     JSValueRef excp = 0;
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), func);
+    JSGlobalContextRef creationContext = wrap ? wrap->m_creation_context : JSContextGetGlobalContext(V82JSC::ToContextRef(context));
+    
     JSObjectRef newobj = JSObjectCallAsConstructor(V82JSC::ToContextRef(context), func, argc, args, &excp);
     if (!newobj && !excp) {
         V82JSC::exec(V82JSC::ToContextRef(context), "throw new TypeError(_1.name + ' is not a constructor');", 1, &func, &exception);
@@ -40,6 +43,12 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
         exception.exception_ = excp;
     }
     if (!exception.ShouldThow()) {
+        if (wrap) {
+            // A new instance from a function created from a template will always have the creation context
+            // of the original function
+            wrap = V82JSC::makePrivateInstance(iso, V82JSC::ToContextRef(context), newobj);
+            if (wrap) wrap->m_creation_context = creationContext;
+        }
         return ValueImpl::New(V82JSC::ToContextImpl(context), newobj).As<Object>();
     }
     return MaybeLocal<Object>();
@@ -66,6 +75,9 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     }
     
     if (!exception.ShouldThow()) {
+        if (JSValueIsObject(V82JSC::ToContextRef(context), result)) {
+            V82JSC::makePrivateInstance(iso, V82JSC::ToContextRef(context), (JSObjectRef)result);
+        }
         return ValueImpl::New(V82JSC::ToContextImpl(context), result);
     }
     

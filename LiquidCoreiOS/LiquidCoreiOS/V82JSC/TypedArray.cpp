@@ -31,7 +31,6 @@ v8::Local<T> NewTypedArray(JSTypedArrayType arrayType, v8::Local<v8::ArrayBuffer
     JSObjectRef typed_array = JSObjectMakeTypedArrayWithArrayBufferAndOffset(ctx, arrayType, (JSObjectRef) impl->m_value, byte_offset, byte_length, &excp);
     assert(excp==0);
     v8::Local<T> array = ValueImpl::New(V82JSC::ToContextImpl(context), typed_array).As<T>();
-    GetArrayBufferViewInfo(V82JSC::ToImpl<v8::ArrayBufferView>(array));
     return array;
 }
 template <typename T>

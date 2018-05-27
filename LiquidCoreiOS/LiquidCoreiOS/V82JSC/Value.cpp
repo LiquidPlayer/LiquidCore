@@ -45,6 +45,10 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
                 }
             }
             instancet = v8::internal::HEAP_NUMBER_TYPE;
+            break;
+        }
+        case kJSTypeObject: {
+            break;
         }
         default:
             break;
@@ -52,7 +56,6 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
     
     ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(isolateimpl, sizeof(ValueImpl), valueDestructor));
     impl->m_value = value;
-    impl->m_creationCtx = JSContextGetGlobalContext(ctx->m_ctxRef);
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     if (t == kJSTypeNumber) {
         reinterpret_cast<internal::HeapNumber*>(V82JSC::Map(impl))->set_value(num);

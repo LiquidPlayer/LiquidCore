@@ -230,6 +230,8 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
                                                     get_proxy, 0, sizeof params / sizeof (JSValueRef), params, &exp);
     assert(exp==nullptr);
     
+    V82JSC::makePrivateInstance(iso, ctx, function);
+    
     LocalException exception(iso);
 
     MaybeLocal<Object> thizo = impl->InitInstance(context, function, exception);
@@ -244,8 +246,12 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
             return MaybeLocal<Function>();
         }
         JSValueRef prototype_property = V82JSC::ToJSValueRef(prototype.ToLocalChecked(), context);
-        JSObjectSetProperty(V82JSC::ToContextRef(context), function, sprototype,
-                            prototype_property, kJSPropertyAttributeDontEnum/*|kJSPropertyAttributeReadOnly*/, 0);
+        JSValueRef args[] = {
+            function,
+            prototype_property,
+            JSValueMakeBoolean(ctx, !impl->m_readOnlyPrototype)
+        };
+        V82JSC::exec(ctx, "Object.defineProperty(_1, 'prototype', { value: _2, enumerable: false, writable: _3})", 3, args);
         JSStringRef constructor = JSStringCreateWithUTF8CString("constructor");
         JSObjectSetProperty(V82JSC::ToContextRef(context), (JSObjectRef)prototype_property, constructor, function, kJSPropertyAttributeDontEnum, 0);
         if (!impl->m_parent.IsEmpty()) {
@@ -408,7 +414,8 @@ void FunctionTemplate::SetHiddenPrototype(bool value)
  */
 void FunctionTemplate::ReadOnlyPrototype()
 {
-    assert(0);
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    impl->m_readOnlyPrototype = true;
 }
 
 /**

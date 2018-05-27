@@ -403,32 +403,6 @@ SharedArrayBuffer::Contents SharedArrayBuffer::GetContents()
     return SharedArrayBuffer::Contents();
 }
 
-ArrayBufferViewInfo * GetArrayBufferViewInfo(const ArrayBufferView *ab)
-{
-    Isolate *isolate = V82JSC::ToIsolate(ab);
-    HandleScope scope(isolate);
-    ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBufferView>(ab);
-    Local<Context> context = V82JSC::ToCurrentContext(ab);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
-    Object * thiz = reinterpret_cast<Object*>(const_cast<ArrayBufferView*>(ab));
-    
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
-    ArrayBufferViewInfo *info;
-    if (!wrap) {
-        info = new ArrayBufferViewInfo();
-        InstanceWrap *wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(isolate), ctx, (JSObjectRef)impl->m_value);
-        wrap->m_num_internal_fields = ArrayBufferView::kInternalFieldCount;
-        wrap->m_internal_fields = new JSValueRef[ArrayBufferView::kInternalFieldCount];
-        memset(wrap->m_internal_fields, 0, ArrayBufferView::kInternalFieldCount * sizeof(JSValueRef) );
-        thiz->SetAlignedPointerInInternalField(1, info);
-        V82JSC::Map(impl)->set_instance_type(v8::internal::JS_TYPED_ARRAY_TYPE);
-    } else {
-        info = (ArrayBufferViewInfo*) thiz->GetAlignedPointerFromInternalField(1);
-    }
-    return info;
-}
-
-
 /**
  * Returns underlying ArrayBuffer.
  */
@@ -518,7 +492,6 @@ Local<DataView> DataView::New(Local<ArrayBuffer> array_buffer,
     };
     JSObjectRef data_view = (JSObjectRef) V82JSC::exec(ctx, "return new DataView(_1,_2,_3)", 3, args);
     Local<DataView> view = ValueImpl::New(V82JSC::ToContextImpl(context), data_view).As<DataView>();
-    GetArrayBufferViewInfo(V82JSC::ToImpl<ArrayBufferView>(view));
     return view;
 }
 Local<DataView> DataView::New(Local<SharedArrayBuffer> shared_array_buffer,

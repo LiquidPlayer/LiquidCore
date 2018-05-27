@@ -65,6 +65,9 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     JSValueRef value = JSEvaluateScript(ctx->m_ctxRef, script->m_script, nullptr, script->m_sourceURL,
                                         script->m_startingLineNumber, &exception);
     if (!exception.ShouldThow()) {
+        if (JSValueIsObject(ctx->m_ctxRef, value)) {
+            V82JSC::makePrivateInstance(iso, ctx->m_ctxRef, (JSObjectRef)value);
+        }
         return MaybeLocal<Value>(ValueImpl::New(ctx, value));
     }
 

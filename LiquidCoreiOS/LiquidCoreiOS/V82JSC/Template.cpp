@@ -166,7 +166,7 @@ static T callAsCallback(JSContextRef ctx,
         JSValueRef proto = thisObject;
         InstanceWrap* thisWrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)proto);
         while(!signature_match && JSValueIsObject(ctx, proto)) {
-            if (thisWrap && (proto == thisObject || thisWrap->m_isHiddenPrototype)) {
+            if (thisWrap && !thisWrap->m_object_template.IsEmpty() && (proto == thisObject || thisWrap->m_isHiddenPrototype)) {
                 holder = proto == thisObject? thiz : ValueImpl::New(ctximpl, proto);
                 ObjectTemplateImpl* ot = V82JSC::ToImpl<ObjectTemplateImpl>(thisWrap->m_object_template.Get(isolate));
                 Local<FunctionTemplate> ctort = ot->m_constructor_template.Get(isolate);

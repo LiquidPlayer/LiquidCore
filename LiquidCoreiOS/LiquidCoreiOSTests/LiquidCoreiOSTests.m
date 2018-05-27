@@ -206,7 +206,6 @@ V(NativeFunctionDeclarationErrorEscape)
 V(ExtensionDependency)
 V(FunctionLookup)
 V(GlobalProxyIdentityHash)
-V(GlobalObjectInstanceProperties)
 V(DefineAPIAccessorOnObject)
 V(Arguments)
 V(AccessCheckInIC)
@@ -357,7 +356,17 @@ V(TemplateIteratorPrototypeIntrinsics)
 V(TemplateErrorPrototypeIntrinsics)
 V(ObjectTemplateArrayProtoIntrinsics)
 V(ObjectTemplatePerContextIntrinsics)
-
+V(CreationContextOfJsFunction)
+V(ClassPrototypeCreationContext)
+V(SetIntegrityLevel)
+V(ErrorConstruction)
+V(Regress470113)
+V(AccessControlIC)
+V(CreationContext)
+V(CreationContextOfJsBoundFunction)
+V(Regress93759)
+V(Regress411877)
+V(FunctionReadOnlyPrototype)
 
 #undef V
 #define V(tst) \
@@ -499,7 +508,6 @@ V(StringConcatOverflow)
 V(NewStringRangeError)
 
 // Exception
-V(ErrorConstruction)
 V(ExceptionCreateMessage)
 
 // ObjectTemplate / FunctionTemplate not implemented
@@ -507,10 +515,8 @@ V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
 V(AccessChecksReenabledCorrectly)
 V(DefineOwnProperty)
 V(GCInFailedAccessCheckCallback)
-V(Regress93759)
 V(AccessCheckThrows)
 V(Regress354123)
-V(Regress411877)
 V(GetHiddenPropertyTableAfterAccessCheck)
 V(Regress411793)
 V(GetPrototypeAccessControl)
@@ -525,7 +531,6 @@ V(CreateDataProperty)
 V(InstanceCheckOnInstanceAccessor)
 V(InstanceCheckOnInstanceAccessorWithInterceptor)
 V(InstanceCheckOnPrototypeAccessor)
-V(FunctionReadOnlyPrototype)
 
 // Security
 V(SecurityHandler)
@@ -539,21 +544,15 @@ V(CrossDomainForInOnPrototype)
 V(AccessControl)
 V(AccessControlES5)
 V(AccessControlGetOwnPropertyNames)
-V(Regress470113)
-V(CrossDomainAccessors)
-V(AccessControlIC)
-V(JSONStringifyAccessCheck)
 
-// Object unimplemented
+// Object bugs
 V(ObjectGetConstructorName)
-V(CreationContext)
-V(CreationContextOfJsFunction)
-V(CreationContextOfJsBoundFunction)
-V(ClassPrototypeCreationContext)
-V(SetIntegrityLevel)
 
 // Cannot use proxies on global object prototype chain :(
+V(GlobalObjectInstanceProperties)
 V(ShadowObject)
+V(JSONStringifyAccessCheck)
+V(CrossDomainAccessors)
 
 // Hidden prototypes
 V(FunctionCallOptimization)

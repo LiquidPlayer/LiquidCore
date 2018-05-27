@@ -312,12 +312,22 @@ Maybe<bool> Object::Has(Local<Context> context, uint32_t index)
     JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
 
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
-
-    _maybe<bool> out;
-    out.has_value_ = true;
-    out.value_ = JSObjectHasProperty(ctx, obj, index_);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    
+    LocalException exception(iso);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef<Object>(this, context),
+        JSValueMakeString(ctx, index_)
+    };
     JSStringRelease(index_);
+    JSValueRef ret = V82JSC::exec(ctx, "return (_2 in _1)", 2, args, &exception);
+    
+    _maybe<bool> out;
+    if (!exception.ShouldThow()) {
+        out.value_ = JSValueToBoolean(ctx, ret);
+    }
+    out.has_value_ = !exception.ShouldThow();
+    
     return out.toMaybe();
 }
 
@@ -326,15 +336,25 @@ Maybe<bool> Object::Delete(Local<Context> context, uint32_t index)
     char ndx[50];
     sprintf(ndx, "%d", index);
     JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
-    
-    JSContextRef ctx = V82JSC::ToContextRef(context);
-    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef<Object>(this, context);
 
-    _maybe<bool> out;
-    JSValueRef exception = nullptr;
-    out.value_ = JSObjectDeleteProperty(ctx, obj, index_, &exception);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    
+    LocalException exception(iso);
+    JSValueRef args[] = {
+        V82JSC::ToJSValueRef<Object>(this, context),
+        JSValueMakeString(ctx, index_)
+    };
     JSStringRelease(index_);
-    out.has_value_ = exception == nullptr;
+    
+    JSValueRef ret = V82JSC::exec(ctx, "return delete _1[_2]", 2, args, &exception);
+    
+    _maybe<bool> out;
+    if (!exception.ShouldThow()) {
+        out.value_ = JSValueToBoolean(ctx, ret);
+    }
+    out.has_value_ = !exception.ShouldThow();
+    
     return out.toMaybe();
 }
 
@@ -918,8 +938,21 @@ Local<String> Object::GetConstructorName()
  */
 Maybe<bool> Object::SetIntegrityLevel(Local<Context> context, IntegrityLevel level)
 {
-    assert(0);
-    return Nothing<bool>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+    
+    JSValueRef r;
+    LocalException exception(V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context)));
+    if (level == IntegrityLevel::kFrozen) {
+        r = V82JSC::exec(ctx, "return _1 === Object.freeze(_1)", 1, &obj, &exception);
+    } else {
+        r = V82JSC::exec(ctx, "return _1 === Object.seal(_1)", 1, &obj, &exception);
+    }
+
+    if (exception.ShouldThow()) {
+        return Nothing<bool>();
+    }
+    return _maybe<bool>(JSValueToBoolean(ctx, r)).toMaybe();
 }
 
 /** Gets the number of internal fields for this Object. */
@@ -928,17 +961,16 @@ int Object::InternalFieldCount()
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
-    ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(this);
-    JSContextRef ctx = impl->m_creationCtx;
-
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
-    if (wrap) return wrap->m_num_internal_fields;
-    else if (IsArrayBufferView()) {
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), obj);
+    
+    if (IsArrayBufferView() && (!wrap || wrap->m_internal_fields == 0)) {
         // ArrayBufferViews have internal fields by default.  This was created in JS.
-        GetArrayBufferViewInfo(reinterpret_cast<const ArrayBufferView*>(this));
-        return ArrayBufferView::kInternalFieldCount;
+        wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(this), V82JSC::ToContextRef(context), obj);
+        wrap->m_num_internal_fields = ArrayBufferView::kInternalFieldCount;
+        wrap->m_internal_fields = new JSValueRef[ArrayBufferView::kInternalFieldCount];
+        memset(wrap->m_internal_fields, 0, sizeof(JSValueRef) * ArrayBufferView::kInternalFieldCount);
     }
-    return 0;
+    return wrap ? wrap->m_num_internal_fields : 0;
 }
 
 /** Sets the value in an internal field. */
@@ -1229,8 +1261,12 @@ Local<Context> Object::CreationContext()
 {
     ValueImpl *obj = V82JSC::ToImpl<ValueImpl, Object>(this);
     IsolateImpl *iso = V82JSC::ToIsolateImpl(obj);
-    CHECK_EQ(1, iso->m_global_contexts.count(obj->m_creationCtx));
-    return iso->m_global_contexts[obj->m_creationCtx].Get(V82JSC::ToIsolate(iso));
+    Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSGlobalContextRef ctx = JSContextGetGlobalContext(V82JSC::ToContextRef(context));
+    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), (JSObjectRef)obj->m_value);
+    if (wrap) ctx = wrap->m_creation_context;
+    CHECK_EQ(1, iso->m_global_contexts.count(ctx));
+    return iso->m_global_contexts[ctx].Get(V82JSC::ToIsolate(iso));
 }
 
 /**
@@ -1306,8 +1342,9 @@ Local<Object> Object::New(Isolate* isolate)
 {
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
-
-    Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), JSObjectMake(ctx, 0, 0));
+    JSObjectRef obj = JSObjectMake(ctx, 0, 0);
+    V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(isolate), ctx, obj);
+    Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), obj);
     return o.As<Object>();
 }
 

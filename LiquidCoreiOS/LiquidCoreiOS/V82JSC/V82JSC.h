@@ -141,6 +141,7 @@ struct ContextImpl : InternalObjectImpl
     Copyable(v8::Function) ObjectSetPrototypeOf;
     Copyable(v8::Function) ObjectGetPrototypeOf;
     Copyable(v8::Function) ObjectPrototypeToString;
+    Copyable(v8::Function) FunctionPrototypeBind;
     
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
@@ -154,7 +155,6 @@ struct ScriptImpl : InternalObjectImpl
 
 struct ValueImpl : InternalObjectImpl {
     JSValueRef         m_value;
-    JSGlobalContextRef m_creationCtx;
 
     static v8::Local<v8::Value> New(const ContextImpl *ctx, JSValueRef value);
     static v8::Local<v8::String> New(v8::Isolate *isolate, JSStringRef string,
@@ -293,6 +293,7 @@ struct FunctionTemplateImpl : TemplateImpl
     std::map<JSContextRef, JSObjectRef> m_functions;
     bool m_isHiddenPrototype;
     bool m_removePrototype;
+    bool m_readOnlyPrototype;
 
     static JSValueRef callAsConstructorCallback(JSContextRef ctx,
                                                 JSObjectRef constructor,
@@ -311,7 +312,13 @@ struct ObjectTemplateImpl : TemplateImpl
     JSValueRef m_indexed_data;
     bool m_need_proxy;
     int m_internal_fields;
-    
+    v8::AccessCheckCallback m_access_check;
+    JSValueRef m_access_check_data;
+    v8::NamedPropertyHandlerConfiguration m_named_failed_access_handler;
+    v8::IndexedPropertyHandlerConfiguration m_indexed_failed_access_handler;
+    JSValueRef m_failed_named_data;
+    JSValueRef m_failed_indexed_data;
+
     v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root, bool isHiddenPrototype);
 };
 
@@ -338,6 +345,8 @@ struct InstanceWrap {
     int m_hash;
     bool m_isHiddenPrototype;
     std::vector<JSObjectRef> m_hidden_children;
+    JSGlobalContextRef m_creation_context;
+    bool m_isGlobalObject;
 };
 
 struct SignatureImpl : InternalObjectImpl
@@ -540,7 +549,7 @@ struct V82JSC {
         }
         assert(exception==0);
 
-        JSValueRef result = JSObjectCallAsFunction(ctx, function, JSObjectMake(ctx,0,0), argc, argv, &exception);
+        JSValueRef result = JSObjectCallAsFunction(ctx, function, 0, argc, argv, &exception);
         if (!pexcp) {
             if (exception!=0) {
                 JSStringRef error = JSValueToStringCopy(ctx, exception, 0);
@@ -559,11 +568,15 @@ struct V82JSC {
 #define GLOBAL_PRIVATE_SYMBOL "org.liquidplayer.javascript.__v82jsc_private__"
     static inline InstanceWrap * makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object)
     {
-        InstanceWrap *wrap = new InstanceWrap();
+        InstanceWrap *wrap = getPrivateInstance(ctx, object);
+        if (wrap) return wrap;
+        
+        wrap = new InstanceWrap();
         wrap->m_security = object;
         // Keep only a weak reference to m_security to avoid cyclical references
         wrap->m_hash = 1 + rand();
         wrap->m_isolate = iso;
+        wrap->m_creation_context = JSContextGetGlobalContext(ctx);
         
         JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes = kJSClassAttributeNoAutomaticPrototype;
@@ -593,12 +606,10 @@ struct V82JSC {
                          (wrap->m_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_proxy_security)) ||
                          (wrap->m_hidden_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_hidden_proxy_security)) )) {
                 return wrap;
-            } else if (wrap) {
-                JSObjectRef proto = JSContextGetGlobalObject(ctx);
-                bool isGlobal = false;
+            } else if (wrap && wrap->m_isGlobalObject) {
+                JSObjectRef proto = object;
                 while (JSValueIsObject(ctx, proto)) {
-                    isGlobal = isGlobal || JSValueIsStrictEqual(ctx, proto, object);
-                    if (isGlobal && JSValueIsStrictEqual(ctx, proto, wrap->m_security)) {
+                    if (JSValueIsStrictEqual(ctx, proto, wrap->m_security) || JSValueIsStrictEqual(ctx, proto, wrap->m_proxy_security)) {
                         return wrap;
                     }
                     proto = (JSObjectRef) JSObjectGetPrototype(ctx, proto);
@@ -700,11 +711,6 @@ struct ArrayBufferInfo {
 };
 
 ArrayBufferInfo * GetArrayBufferInfo(const v8::ArrayBuffer *ab);
-
-struct ArrayBufferViewInfo {
-};
-
-ArrayBufferViewInfo * GetArrayBufferViewInfo(const v8::ArrayBufferView *abv);
 void proxyArrayBuffer(ContextImpl *ctx);
 bool InstallAutoExtensions(v8::Local<v8::Context> context);
 bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name);

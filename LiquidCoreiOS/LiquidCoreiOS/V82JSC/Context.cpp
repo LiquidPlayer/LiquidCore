@@ -207,11 +207,6 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSContextRef ctxRef = context->m_ctxRef;
 
         JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
-        // Don't use V82JSC::SetRealPrototype() or GetRealPrototype() here because we haven't set them up yet,
-        // but otherwise, always use them over the JSC equivalents.  The JSC API legacy functions get confused
-        // by proxies
-        JSObjectRef global = (JSObjectRef) JSObjectGetPrototype(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef));
-        JSObjectSetPrototype(context->m_ctxRef, global, instance);
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
         
         if (!ctortempl.IsEmpty()) {
@@ -230,19 +225,34 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRelease(sconstructor);
             }
         }
-        impl->NewInstance(ctx, instance, true);
+        MaybeLocal<Object> thiz = impl->NewInstance(ctx, instance, false);
         InstanceWrap *wrap = V82JSC::getPrivateInstance(context->m_ctxRef, instance);
         if (hash) {
             wrap->m_hash = hash;
         }
+        wrap->m_isGlobalObject = true;
+        
+        // Don't use V82JSC::SetRealPrototype() or GetRealPrototype() here because we haven't set them up yet,
+        // but otherwise, always use them over the JSC equivalents.  The JSC API legacy functions get confused
+        // by proxies
+        JSObjectRef global = (JSObjectRef) JSObjectGetPrototype(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef));
+        JSObjectSetPrototype(context->m_ctxRef, global, V82JSC::ToJSValueRef(thiz.ToLocalChecked(), ctx));
 
         if (exception.ShouldThow()) {
             ctx->Exit();
             return Local<Context>();
         }
     } else {
-        context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, nullptr);
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        JSClassRef claz = JSClassCreate(&def);
+        context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
+        JSClassRelease(claz);
     }
+    
+    JSObjectRef global_o = JSContextGetGlobalObject(context->m_ctxRef);
+    // Set a reference back to our context so we can find our way back to the creation context
+    JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
+    assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
     
     context->m_isGlobalContext = true;
     Copyable(Context) persistent = Copyable(Context)(isolate, ctx);
@@ -259,6 +269,22 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             [](const FunctionCallbackInfo<Value>& info) {
                 Local<Object> obj = info[0].As<Object>();
                 Local<Value> proto = info[1];
+                JSContextRef ctx = V82JSC::ToContextRef(info.GetIsolate());
+                Local<Context> context = info.GetIsolate()->GetCurrentContext();
+                JSValueRef o = V82JSC::ToJSValueRef(info[0], context);
+
+                if (JSValueIsObject(ctx, o)) {
+                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
+                    if (gctx && V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
+                        Local<Context> other = V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts[gctx].Get(info.GetIsolate());
+                        bool isGlobal = other->Global()->StrictEquals(info[0]);
+                        if (isGlobal && !context->Global()->StrictEquals(info[0])) {
+                            info.GetReturnValue().Set(False(info.GetIsolate()));
+                            return;
+                        }
+                    }
+                }
+
                 if (SetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj, proto)) {
                     info.GetReturnValue().Set(True(info.GetIsolate()));
                 } else {
@@ -268,8 +294,24 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         Local<FunctionTemplate> getPrototypeOf = FunctionTemplate::New(
             isolate,
             [](const FunctionCallbackInfo<Value>& info) {
-              Local<Object> obj = info[0].As<Object>();
-              info.GetReturnValue().Set(GetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj));
+                JSContextRef ctx = V82JSC::ToContextRef(info.GetIsolate());
+                Local<Context> context = info.GetIsolate()->GetCurrentContext();
+                JSValueRef o = V82JSC::ToJSValueRef(info[0], context);
+                
+                if (JSValueIsObject(ctx, o)) {
+                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
+                    if (gctx && V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
+                        Local<Context> other = V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts[gctx].Get(info.GetIsolate());
+                        bool isGlobal = other->Global()->StrictEquals(info[0]);
+                        if (isGlobal && !context->Global()->StrictEquals(info[0])) {
+                            info.GetReturnValue().Set(Null(info.GetIsolate()));
+                            return;
+                        }
+                    }
+                }
+
+                Local<Object> obj = info[0].As<Object>();
+                info.GetReturnValue().Set(GetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj));
             });
         Local<Object> object = ctx->Global()->Get(ctx,
             String::NewFromUtf8(isolate, "Object", NewStringType::kNormal).ToLocalChecked()).ToLocalChecked().As<Object>();
@@ -305,6 +347,35 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         // Save a reference to original Object.prototype.toString()
         JSValueRef toString = V82JSC::exec(context->m_ctxRef, "return Object.prototype.toString", 0, nullptr);
         context->ObjectPrototypeToString.Reset(isolate, ValueImpl::New(context, toString).As<Function>());
+        
+        // Override Function.prototype.bind()
+        // All we are doing intercepting calls to bind and then calling the original bind and returning the
+        // value.  But we need to ensure that the creation context of the bound object is the same as the
+        // creation context of the function.
+        JSValueRef bind = V82JSC::exec(context->m_ctxRef, "return Function.prototype.bind", 0, nullptr);
+        context->FunctionPrototypeBind.Reset(isolate, ValueImpl::New(context, bind).As<Function>());
+        Local<FunctionTemplate> bind_template = FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+            Local<Context> context = info.GetIsolate()->GetCurrentContext();
+            Local<Value> args[info.Length()];
+            for (int i=0; i<info.Length(); i++) {
+                args[i] = info[i];
+            }
+            MaybeLocal<Value> bound = V82JSC::ToContextImpl(context)->FunctionPrototypeBind.Get(info.GetIsolate())
+                ->Call(context, info.This(), info.Length(), args);
+            if (!bound.IsEmpty()) {
+                InstanceWrap *function_wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(info.GetIsolate()),
+                                                                          V82JSC::ToContextRef(context),
+                                                                          (JSObjectRef)V82JSC::ToJSValueRef(info.This(), context));
+                InstanceWrap *binding_wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(info.GetIsolate()),
+                                                                         V82JSC::ToContextRef(context),
+                                                                         (JSObjectRef)V82JSC::ToJSValueRef(bound.ToLocalChecked(), context));
+                binding_wrap->m_creation_context = function_wrap->m_creation_context;
+
+                info.GetReturnValue().Set(bound.ToLocalChecked());
+            }
+        });
+        JSValueRef new_bind = V82JSC::ToJSValueRef(bind_template->GetFunction(ctx).ToLocalChecked(), ctx);
+        V82JSC::exec(context->m_ctxRef, "Function.prototype.bind = _1", 1, &new_bind);
         
         InstallAutoExtensions(ctx);
         if (extensions) {
