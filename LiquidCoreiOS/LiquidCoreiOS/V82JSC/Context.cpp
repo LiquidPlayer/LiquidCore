@@ -10,6 +10,8 @@
 
 using namespace v8;
 
+#define H V82JSC_HeapObject
+
 /**
  * Returns the global proxy object.
  *
@@ -54,43 +56,9 @@ EmbedderDataImpl * get_embedder_data(const Context* cx)
     return nullptr;
 }
 
-static void constructor(ContextImpl *context)
-{
-    context->m_isGlobalContext = false;
-    context->m_ctxRef = 0;
-    context->m_loaded_extensions = std::map<std::string, bool>();
-    context->ObjectGetPrototypeOf = Copyable(Function)();
-    context->ObjectSetPrototypeOf = Copyable(Function)();
-}
-
-static void destructor(InternalObjectImpl *cx)
-{
-    ContextImpl* context = static_cast<ContextImpl*>(cx);
-    context->m_loaded_extensions.clear();
-    context->ObjectGetPrototypeOf.Reset();
-    context->ObjectSetPrototypeOf.Reset();
-    
-    internal::Object * heap_ptr = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(context) + internal::kHeapObjectTag);
-    const Context *ctx = reinterpret_cast<const Context*>(&heap_ptr);
-    
-    EmbedderDataImpl *ed = get_embedder_data(ctx);
-    if (ed) {
-        ed->io.Release();
-    }
-    
-    if (context->m_ctxRef != 0 && context->m_isGlobalContext) {
-        JSGlobalContextRelease((JSGlobalContextRef)context->m_ctxRef);
-    }
-}
-
 Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
-    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
-                                                                            sizeof(ContextImpl),
-                                                                            destructor));
-    constructor(context);
-    context->m_ctxRef = ctx;
-    return V82JSC::CreateLocal<Context>(isolate, context);
+    return V82JSC::ToIsolateImpl(isolate)->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(isolate);
 }
 
 static Local<Value> GetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz)
@@ -101,7 +69,7 @@ static Local<Value> GetPrototypeSkipHidden(Local<Context> context, Local<Object>
     
     // If our prototype is hidden, propogate
     if (JSValueIsObject(ctx, our_proto)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)our_proto);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)our_proto);
         if (wrap && wrap->m_isHiddenPrototype) {
             return GetPrototypeSkipHidden(context, ValueImpl::New(V82JSC::ToContextImpl(context), our_proto).As<Object>());
         }
@@ -119,7 +87,7 @@ static bool SetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz, L
     // If our prototype is hidden, propogate
     bool isHidden = false;
     if (JSValueIsObject(ctx, our_proto)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)our_proto);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)our_proto);
         if (wrap && wrap->m_isHiddenPrototype) {
             return SetPrototypeSkipHidden(context, ValueImpl::New(V82JSC::ToContextImpl(context), our_proto).As<Object>(), prototype);
         }
@@ -127,15 +95,19 @@ static bool SetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz, L
     
     bool new_proto_is_hidden = false;
     if (JSValueIsObject(ctx, new_proto)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)new_proto);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)new_proto);
         new_proto_is_hidden = wrap && wrap->m_isHiddenPrototype;
         if (new_proto_is_hidden) {
             if (JSValueIsStrictEqual(ctx, wrap->m_hidden_proxy_security, new_proto)) {
                 // Don't put the hidden proxy in the prototype chain, just the underlying target object
                 new_proto = wrap->m_proxy_security ? wrap->m_proxy_security : wrap->m_security;
             }
-            // Save a weak reference to this object and propagate our own properties to it
-            wrap->m_hidden_children.push_back((JSObjectRef)obj);
+            // Save a reference to this object and propagate our own properties to it
+            if (!wrap->m_hidden_children_array) {
+                wrap->m_hidden_children_array = JSObjectMakeArray(ctx, 0, nullptr, 0);
+            }
+            JSValueRef args[] = { wrap->m_hidden_children_array, obj };
+            V82JSC::exec(ctx, "_1.push(_2)", 2, args);
             V82JSC::ToImpl<HiddenObjectImpl>(ValueImpl::New(V82JSC::ToContextImpl(context), new_proto))
             ->PropagateOwnPropertiesToChild(context, (JSObjectRef)obj);
         }
@@ -172,20 +144,13 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<ObjectTemplate> global_template,
                           MaybeLocal<Value> global_object)
 {
-    ContextImpl * context = static_cast<ContextImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
-                                                                            sizeof(ContextImpl),
-                                                                            destructor));
     IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
+    ContextImpl * context = static_cast<ContextImpl *>(H::HeapAllocator::Alloc(i, i->m_context_map));
     
-    if (i->m_nullContext.Get(isolate).IsEmpty()) {
-        V82JSC::Map(context)->set_instance_type(internal::CONTEXT_EXTENSION_TYPE);
-    } else {
-        * reinterpret_cast<internal::Object**>(context) = i->ii.heap()->block_context_map();
-        assert(V82JSC::Map(context)->IsContext());
-    }
+    assert(H::ToHeapPointer(context)->IsContext());
+
     Local<Context> ctx = V82JSC::CreateLocal<Context>(isolate, context);
     int hash = 0;
-    constructor(context);
     
     if (!global_object.IsEmpty()) {
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
@@ -205,6 +170,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
         JSClassRelease(claz);
         JSContextRef ctxRef = context->m_ctxRef;
+        IsolateImpl::s_context_to_isolate_map[context->m_ctxRef] = i;
 
         JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
@@ -226,7 +192,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             }
         }
         MaybeLocal<Object> thiz = impl->NewInstance(ctx, instance, false);
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(context->m_ctxRef, instance);
+        TrackedObjectImpl *wrap = getPrivateInstance(context->m_ctxRef, instance);
         if (hash) {
             wrap->m_hash = hash;
         }
@@ -246,6 +212,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSClassDefinition def = kJSClassDefinitionEmpty;
         JSClassRef claz = JSClassCreate(&def);
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
+        IsolateImpl::s_context_to_isolate_map[context->m_ctxRef] = i;
         JSClassRelease(claz);
     }
     
@@ -254,7 +221,6 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
     assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
     
-    context->m_isGlobalContext = true;
     Copyable(Context) persistent = Copyable(Context)(isolate, ctx);
     //persistent.SetWeak();
     i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
@@ -276,7 +242,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 if (JSValueIsObject(ctx, o)) {
                     JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
                     if (gctx && V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
-                        Local<Context> other = V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts[gctx].Get(info.GetIsolate());
+                        Local<Context> other = V82JSC::ToIsolateImpl(info.GetIsolate())->
+                            m_global_contexts[gctx].Get(info.GetIsolate());
                         bool isGlobal = other->Global()->StrictEquals(info[0]);
                         if (isGlobal && !context->Global()->StrictEquals(info[0])) {
                             info.GetReturnValue().Set(False(info.GetIsolate()));
@@ -341,8 +308,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         V82JSC::exec(context->m_ctxRef,
                      "var old = Object.getOwnPropertySymbols; "
                      "Object.getOwnPropertySymbols = "
-                     "    (o) => old(o).filter( (s)=> s!= Symbol.for('" GLOBAL_PRIVATE_SYMBOL "') )",
-                     0, nullptr);
+                     "    (o) => old(o).filter( (s)=> s!= _1 )",
+                     1, &i->m_private_symbol);
         
         // Save a reference to original Object.prototype.toString()
         JSValueRef toString = V82JSC::exec(context->m_ctxRef, "return Object.prototype.toString", 0, nullptr);
@@ -369,10 +336,12 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSValueRef new_bind = V82JSC::ToJSValueRef(bind_template->GetFunction(ctx).ToLocalChecked(), ctx);
         V82JSC::exec(context->m_ctxRef, "Function.prototype.bind = _1", 1, &new_bind);
         
-        InstallAutoExtensions(ctx);
+        std::map<std::string, bool> loaded_extensions;
+
+        InstallAutoExtensions(ctx, loaded_extensions);
         if (extensions) {
             for (const char **extension = extensions->begin(); extension != extensions->end(); extension++) {
-                if (!InstallExtension(ctx, *extension)) {
+                if (!InstallExtension(ctx, *extension, loaded_extensions)) {
                     ctx->Exit();
                     return Local<Context>();
                 }
@@ -522,48 +491,29 @@ static void WriteField(internal::Object* ptr, int offset, T value) {
 void Context::SetEmbedderData(int index, Local<Value> value)
 {
     Isolate *isolate = V82JSC::ToIsolate(this);
+    IsolateImpl *i = V82JSC::ToIsolateImpl(isolate);
     EmbedderDataImpl *ed = get_embedder_data(this);
-    auto embedder_data_destructor = [](InternalObjectImpl *io)
-    {
-        EmbedderDataImpl *ed = reinterpret_cast<EmbedderDataImpl *>(io);
-        for (int i=0; i<ed->m_size; i++) {
-            if (ed->m_embedder_data[i]->IsHeapObject()) {
-                reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(ed->m_embedder_data[i]) - internal::kHeapObjectTag)->Release();
-            }
-        }
-    };
     
     if (!ed || ed->m_size <= index) {
-        int size = ((index + 32) / 32) * 32;
-        EmbedderDataImpl * newed = reinterpret_cast<EmbedderDataImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
-                                                                                             sizeof(EmbedderDataImpl::buffer) + size * sizeof(internal::Object *),
-                                                                                             embedder_data_destructor));
-        int start_index = 0;
+        int buffer = H::ReserveSize((index+1) * sizeof(internal::Object*) + sizeof(H::FixedArray));
+        int size = (buffer - sizeof(H::FixedArray)) / sizeof(internal::Object*);
+        EmbedderDataImpl * newed =
+            reinterpret_cast<EmbedderDataImpl *>
+            (H::HeapAllocator::Alloc(i, i->m_fixed_array_map,
+                                     sizeof(H::FixedArray) + size*sizeof(internal::Object *)));
         if (ed) {
-            for (int i=0; i<ed->m_size; i++) {
-                newed->m_embedder_data[i] = ed->m_embedder_data[i];
-                if (newed->m_embedder_data[i]->IsHeapObject()) {
-                    reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(newed->m_embedder_data[i]) - internal::kHeapObjectTag)->Retain();
-                }
-            }
-            start_index = ed->m_size;
-            ed->io.Release();
+            memcpy(newed->m_elements, ed->m_elements, ed->m_size * sizeof(internal::Object*));
         }
-        memset(&newed->m_embedder_data[start_index], 0, (size - start_index) * sizeof(internal::Object*));
         newed->m_size = size;
-        newed->io.Retain();
         ed = newed;
     }
     
-    internal::Object *current = ed->m_embedder_data[index];
-    if (current->IsHeapObject()) {
-        reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(current) - internal::kHeapObjectTag)->Release();
-    }
     internal::Object * val = *reinterpret_cast<internal::Object* const*>(*value);
-    ed->m_embedder_data[index] = val;
-    if (val->IsHeapObject()) {
-        reinterpret_cast<InternalObjectImpl *>(reinterpret_cast<intptr_t>(val) - internal::kHeapObjectTag)->Retain();
-    }
+    ed->m_elements[index] = val;
+    
+    Local<v8::EmbeddedFixedArray> fa = V82JSC::CreateLocal<v8::EmbeddedFixedArray>(isolate, ed);
+    ContextImpl *context = V82JSC::ToContextImpl(this);
+    context->m_embedder_data.Reset(isolate, fa);
     
     int embedder_data_offset = internal::Internals::kContextHeaderSize +
         (internal::kApiPointerSize * internal::Internals::kContextEmbedderDataIndex);

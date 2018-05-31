@@ -31,7 +31,7 @@ void V8_EXPORT v8::RegisterExtension(v8::Extension* extension)
     s_extensions[extension->name()] = extension;
 }
 
-bool InstallExtension(Local<Context> context, const char *extension_name)
+bool InstallExtension(Local<Context> context, const char *extension_name, std::map<std::string, bool>& loaded_extensions)
 {
     if (s_extensions.count(extension_name) == 0) return false;
     
@@ -39,12 +39,12 @@ bool InstallExtension(Local<Context> context, const char *extension_name)
     
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctximpl);
-    if (ctximpl->m_loaded_extensions.count(extension.name())) return true;
+    if (loaded_extensions.count(extension.name())) return true;
     
-    ctximpl->m_loaded_extensions[extension.name()] = true;
+    loaded_extensions[extension.name()] = true;
     
     for (int i=0; i<extension.dependency_count(); i++) {
-        InstallExtension(context, extension.dependencies()[i]);
+        InstallExtension(context, extension.dependencies()[i], loaded_extensions);
     }
     
     // Lex the code looking for "native function <<function_name>();"
@@ -175,11 +175,11 @@ bool InstallExtension(Local<Context> context, const char *extension_name)
     return true;
 }
 
-bool InstallAutoExtensions(v8::Local<v8::Context> context)
+bool InstallAutoExtensions(v8::Local<v8::Context> context, std::map<std::string, bool>& loaded_extensions)
 {
     for (auto i=s_extensions.begin(); i!=s_extensions.end(); ++i) {
         if (i->second->auto_enable()) {
-            if (!InstallExtension(context, i->first)) return false;
+            if (!InstallExtension(context, i->first, loaded_extensions)) return false;
         }
     }
     return true;

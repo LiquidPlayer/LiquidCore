@@ -89,8 +89,8 @@ bool internal::String::MakeExternal(v8::String::ExternalStringResource* resource
 
 internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, internal::Handle<internal::String> string)
 {
-    ValueImpl *impl = reinterpret_cast<ValueImpl *>(reinterpret_cast<uintptr_t>(*string) & ~3);
-    V82JSC::Map(impl)->set_instance_type(v8::internal::INTERNALIZED_STRING_TYPE);
+    ValueImpl *impl = reinterpret_cast<ValueImpl *>(V82JSC_HeapObject::FromHeapPointer(*string));
+    impl->m_map = V82JSC_HeapObject::ToV8Map(reinterpret_cast<IsolateImpl*>(isolate)->m_internalized_string_map);
     return string;
 }
 
@@ -319,8 +319,8 @@ internal::Object* internal::Object::GetHash()
     JSValueRef value = impl->m_value;
     
     if (JSValueIsObject(ctx, value)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef) value);
-        if (!wrap) wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(impl), ctx, (JSObjectRef) value);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef) value);
+        if (!wrap) wrap = makePrivateInstance(V82JSC::ToIsolateImpl(impl), ctx, (JSObjectRef) value);
         return Smi::FromInt(wrap->m_hash);
     }
     return Smi::FromInt(JSValueToNumber(ctx, value, 0));

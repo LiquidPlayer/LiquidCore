@@ -254,15 +254,10 @@ public:
         memset(&handles_[rightmost_set_bit_index], 0, sizeof(Node));
         handles_[rightmost_set_bit_index].index_ = (int) rightmost_set_bit_index;
         handles_[rightmost_set_bit_index].handle_ = value;
-        if(value->IsHeapObject()) {
-            InternalObjectImpl *impl = reinterpret_cast<InternalObjectImpl*>(reinterpret_cast<intptr_t>(value) - internal::kHeapObjectTag);
-            impl->Retain();
-        }
         return &handles_[rightmost_set_bit_index].handle_;
     }
     void Reset(internal::Object ** handle)
     {
-        internal::Object *value = *handle;
         int64_t index = (reinterpret_cast<intptr_t>(handle) - reinterpret_cast<intptr_t>(&handles_[0])) / sizeof(Node);
         assert(index >= 0 && index < 64);
         bool wasFull = bitmap_ == 0;
@@ -290,10 +285,6 @@ public:
             next_block_ = global_handles_->first_block_;
             global_handles_->first_block_ = this;
             prev_block_ = nullptr;
-        }
-        if (value->IsHeapObject()) {
-            InternalObjectImpl *impl = reinterpret_cast<InternalObjectImpl*>(reinterpret_cast<intptr_t>(value) - internal::kHeapObjectTag);
-            impl->Release();
         }
     }
     

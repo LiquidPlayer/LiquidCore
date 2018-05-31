@@ -52,7 +52,7 @@ Local<Value> StringObject::New(Local<String> value)
     Local<Context> context = V82JSC::ToCurrentContext(*value);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     
-    JSValueRef v = V82JSC::ToJSValueRef<String>(value, Local<Context>());
+    JSValueRef v = V82JSC::ToJSValueRef<String>(value, context);
     JSValueRef obj = V82JSC::exec(ctx, "return new String(_1)", 1, &v);
     return ValueImpl::New(V82JSC::ToContextImpl(context), obj);
 }
@@ -66,7 +66,7 @@ Local<String> StringObject::ValueOf() const
     JSValueRef exception = nullptr;
     JSStringRef ret = JSValueToStringCopy(ctx, V82JSC::exec(ctx, VALUE_OF_CODE, 1, &v), &exception);
     assert(exception==nullptr);
-    return ValueImpl::New(V82JSC::ToIsolate(*context), ret);
+    return StringImpl::New(V82JSC::ToIsolate(this), ret);
 }
 
 Local<Value> SymbolObject::New(Isolate* isolate, Local<Symbol> value)

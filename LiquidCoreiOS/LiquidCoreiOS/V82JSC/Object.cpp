@@ -550,7 +550,7 @@ Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
             wrap->m_private_properties,
@@ -570,8 +570,8 @@ Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
-    if (!wrap) wrap = V82JSC::makePrivateInstance(iso, ctx, (JSObjectRef)obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
+    if (!wrap) wrap = makePrivateInstance(iso, ctx, (JSObjectRef)obj);
     if (!wrap->m_private_properties) {
         wrap->m_private_properties = JSObjectMake(ctx, 0, 0);
     }
@@ -591,7 +591,7 @@ Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
             wrap->m_private_properties,
@@ -610,7 +610,7 @@ MaybeLocal<Value> Object::GetPrivate(Local<Context> context, Local<Private> key)
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
         JSValueRef args[] = {
             wrap->m_private_properties,
@@ -781,7 +781,7 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
 
     bool new_proto_is_hidden = false;
     if (JSValueIsObject(ctx, new_proto)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)new_proto);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)new_proto);
         new_proto_is_hidden = wrap && wrap->m_isHiddenPrototype;
         if (new_proto_is_hidden) {
             if (JSValueIsStrictEqual(ctx, wrap->m_hidden_proxy_security, new_proto)) {
@@ -789,9 +789,14 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
                 new_proto = wrap->m_proxy_security ? wrap->m_proxy_security : wrap->m_security;
             }
             // Save a weak reference to this object and propagate our own properties to it
-            wrap->m_hidden_children.push_back((JSObjectRef)obj);
+            if (!wrap->m_hidden_children_array) {
+                wrap->m_hidden_children_array = JSObjectMakeArray(ctx, 0, nullptr, 0);
+                JSValueProtect(ctx, wrap->m_hidden_children_array);
+            }
+            JSValueRef args[] = { wrap->m_hidden_children_array, obj };
+            V82JSC::exec(ctx, "_1.push(_2)", 2, args);
             V82JSC::ToImpl<HiddenObjectImpl>(ValueImpl::New(V82JSC::ToContextImpl(context), new_proto))
-            ->PropagateOwnPropertiesToChild(context, (JSObjectRef)obj);
+                ->PropagateOwnPropertiesToChild(context, (JSObjectRef)obj);
         }
     }
     
@@ -826,7 +831,7 @@ void HiddenObjectImpl::PropagateOwnPropertyToChild(v8::Local<v8::Context> contex
                  "return false;",
                  3, args);
     if (JSValueToBoolean(ctx, propagate)) {
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, child);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, child);
         if (wrap && wrap->m_isHiddenPrototype) {
             reinterpret_cast<HiddenObjectImpl*>(V82JSC::ToImpl<ValueImpl>(ValueImpl::New(V82JSC::ToContextImpl(context), child)))
             ->PropagateOwnPropertyToChildren(context, property);
@@ -836,10 +841,21 @@ void HiddenObjectImpl::PropagateOwnPropertyToChild(v8::Local<v8::Context> contex
 void HiddenObjectImpl::PropagateOwnPropertyToChildren(v8::Local<v8::Context> context, v8::Local<v8::Name> property)
 {
     JSContextRef ctx = V82JSC::ToContextRef(context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)m_value);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)m_value);
     assert(wrap);
-    for (auto i=wrap->m_hidden_children.begin(); i != wrap->m_hidden_children.end(); ++i) {
-        PropagateOwnPropertyToChild(context, property, *i);
+    
+    if (wrap->m_hidden_children_array) {
+        int length = static_cast<int>(JSValueToNumber(ctx, V82JSC::exec(ctx, "return _1.length",
+                                                                        1, &wrap->m_hidden_children_array), 0));
+        char index[32];
+        for (auto i=0; i < length; ++i) {
+            sprintf(index, "%d", i);
+            JSStringRef s = JSStringCreateWithUTF8CString(index);
+            JSValueRef child = JSObjectGetProperty(ctx, wrap->m_hidden_children_array, s, 0);
+            JSStringRelease(s);
+            assert(JSValueIsObject(ctx, child));
+            PropagateOwnPropertyToChild(context, property, (JSObjectRef)child);
+        }
     }
 }
 void HiddenObjectImpl::PropagateOwnPropertiesToChild(v8::Local<v8::Context> context, JSObjectRef child)
@@ -870,7 +886,7 @@ Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
     Local<Value> proto = Local<Value>::New(isolate, this);
     while (proto->IsObject()) {
         JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(proto, context);
-        InstanceWrap *instance_wrap = V82JSC::getPrivateInstance(ctx, obj);
+        TrackedObjectImpl *instance_wrap = getPrivateInstance(ctx, obj);
         if (instance_wrap && !instance_wrap->m_object_template.IsEmpty()) {
             Local<ObjectTemplate> objtempl = Local<ObjectTemplate>::New(isolate, instance_wrap->m_object_template);
             Local<FunctionTemplate> t = Local<FunctionTemplate>::New(isolate, V82JSC::ToImpl<ObjectTemplateImpl>(objtempl)->m_constructor_template);
@@ -962,14 +978,14 @@ int Object::InternalFieldCount()
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(V82JSC::ToContextRef(context), obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(V82JSC::ToContextRef(context), obj);
     
-    if (IsArrayBufferView() && (!wrap || wrap->m_internal_fields == 0)) {
+    if (IsArrayBufferView() && (!wrap || wrap->m_num_internal_fields < ArrayBufferView::kInternalFieldCount)) {
         // ArrayBufferViews have internal fields by default.  This was created in JS.
-        wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(this), V82JSC::ToContextRef(context), obj);
+        wrap = makePrivateInstance(V82JSC::ToIsolateImpl(this), V82JSC::ToContextRef(context), obj);
         wrap->m_num_internal_fields = ArrayBufferView::kInternalFieldCount;
-        wrap->m_internal_fields = new JSValueRef[ArrayBufferView::kInternalFieldCount];
-        memset(wrap->m_internal_fields, 0, sizeof(JSValueRef) * ArrayBufferView::kInternalFieldCount);
+        wrap->m_internal_fields_array = JSObjectMakeArray(V82JSC::ToContextRef(context), 0, nullptr, 0);
+        JSValueProtect(V82JSC::ToContextRef(context), wrap->m_internal_fields_array);
     }
     return wrap ? wrap->m_num_internal_fields : 0;
 }
@@ -981,18 +997,20 @@ void Object::SetInternalField(int index, Local<Value> value)
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, obj);
     if (!wrap && IsArrayBuffer()) {
         // ArrayBuffers have internal fields by default.  This was created in JS.
-        GetArrayBufferInfo(reinterpret_cast<const ArrayBuffer*>(this));
-        wrap = V82JSC::getPrivateInstance(ctx, obj);
+        wrap = makePrivateInstance(V82JSC::ToIsolateImpl(this), ctx, obj);
+        wrap->m_num_internal_fields = ArrayBufferView::kInternalFieldCount;
+        wrap->m_internal_fields_array = JSObjectMakeArray(V82JSC::ToContextRef(context), 0, nullptr, 0);
+        JSValueProtect(ctx, wrap->m_internal_fields_array);
     }
     if (wrap && index < wrap->m_num_internal_fields) {
-        if (wrap->m_internal_fields[index]) {
-            JSValueUnprotect(ctx, wrap->m_internal_fields[index]);
-        }
-        wrap->m_internal_fields[index] = V82JSC::ToJSValueRef(value, context);
-        JSValueProtect(ctx, wrap->m_internal_fields[index]);
+        char ndx[32];
+        sprintf(ndx, "%d", index);
+        JSStringRef s = JSStringCreateWithUTF8CString(ndx);
+        JSObjectSetProperty(ctx, wrap->m_internal_fields_array, s, V82JSC::ToJSValueRef(value, context), 0, 0);
+        JSStringRelease(s);
     }
 }
 
@@ -1065,7 +1083,7 @@ Maybe<bool> Object::HasRealNamedProperty(Local<Context> context, Local<Name> key
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
     JSObjectRef raw_object = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, raw_object);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, raw_object);
     if (wrap && wrap->m_proxy_security) {
         raw_object = (JSObjectRef) wrap->m_security;
     }
@@ -1129,7 +1147,7 @@ MaybeLocal<Value> Object::GetRealNamedProperty(Local<Context> context, Local<Nam
     LocalException exception(V82JSC::ToIsolateImpl(this));
     
     JSObjectRef raw_object = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, raw_object);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, raw_object);
     if (wrap && wrap->m_proxy_security) {
         raw_object = (JSObjectRef) wrap->m_security;
     }
@@ -1176,7 +1194,7 @@ Maybe<PropertyAttribute> Object::GetRealNamedPropertyAttributes(Local<Context> c
         LocalException exception(V82JSC::ToIsolateImpl(this));
         
         JSObjectRef raw_object = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-        InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, raw_object);
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, raw_object);
         if (wrap && wrap->m_proxy_security) {
             raw_object = (JSObjectRef) wrap->m_security;
         }
@@ -1234,9 +1252,9 @@ int Object::GetIdentityHash()
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (!wrap) {
-        wrap = V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(this), ctx, (JSObjectRef)obj);
+        wrap = makePrivateInstance(V82JSC::ToIsolateImpl(this), ctx, (JSObjectRef)obj);
     }
     return wrap->m_hash;
 }
@@ -1281,7 +1299,7 @@ bool Object::IsCallable()
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (!wrap) return false;
     Local<ObjectTemplate> templ = wrap->m_object_template.Get(isolate);
     if (templ.IsEmpty()) return false;
@@ -1296,7 +1314,9 @@ bool Object::IsConstructor()
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, context);
-    return JSValueToBoolean(ctx, V82JSC::exec(ctx, "try {Reflect.construct(String,[],_1);} catch(e) { return false; } return true", 1, &obj));
+    return JSValueToBoolean(ctx, V82JSC::exec(ctx,
+                                              "try {Reflect.construct(String,[],_1);} catch(e) { return false; } return true",
+                                              1, &obj));
 }
 
 /**
@@ -1342,16 +1362,6 @@ Local<Object> Object::New(Isolate* isolate)
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = JSObjectMake(ctx, 0, 0);
     
-    /*
-    JSStringRef test = JSStringCreateWithUTF8CString("test");
-    CHECK_EQ(JSContextGetGlobalContext(ctx), JSObjectGetGlobalContext(obj));
-    
-    JSObjectSetPrivateProperty(ctx, obj, test, JSValueMakeNumber(ctx, 1));
-    CHECK_EQ(1, JSValueToNumber(ctx, JSObjectGetPrivateProperty(ctx, obj, test), 0));
-    JSStringRelease(test);
-    */
-    
-    //V82JSC::makePrivateInstance(V82JSC::ToIsolateImpl(isolate), ctx, obj);
     Local<Value> o = ValueImpl::New(V82JSC::ToContextImpl(context), obj);
     return o.As<Object>();
 }
@@ -1371,13 +1381,15 @@ Local<Value> Object::SlowGetInternalField(int index)
     JSContextRef ctx = V82JSC::ToContextRef(context);
 
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, obj);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, obj);
     if (wrap && index < wrap->m_num_internal_fields) {
-        if (wrap->m_internal_fields[index]) {
-            return ValueImpl::New(V82JSC::ToContextImpl(context), wrap->m_internal_fields[index]);
-        } else {
-            return Undefined(context->GetIsolate());
-        }
+        char ndx[32];
+        sprintf(ndx, "%d", index);
+        JSStringRef s = JSStringCreateWithUTF8CString(ndx);
+        Local<Value> r = ValueImpl::New(V82JSC::ToContextImpl(context),
+                                        JSObjectGetProperty(ctx, wrap->m_internal_fields_array, s, 0));
+        JSStringRelease(s);
+        return r;
     }
     return Local<Value>();
 }

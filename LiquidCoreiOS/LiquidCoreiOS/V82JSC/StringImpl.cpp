@@ -10,25 +10,30 @@
 
 using namespace v8;
 
-Local<String> ValueImpl::New(v8::Isolate *isolate, JSStringRef str, v8::internal::InstanceType type, void *resource)
+#define H V82JSC_HeapObject
+
+Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap* type, void *resource)
 {
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::OperatingContext(isolate));
+    IsolateImpl *i = V82JSC::ToIsolateImpl(isolate);
 
-    ValueImpl *string = static_cast<ValueImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), sizeof(ValueImpl), valueDestructor));
-    Local<String> local = V82JSC::CreateLocal<String>(isolate, string);
+    StringImpl *string = static_cast<StringImpl *>(H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
+                                                                         type ? type : i->m_string_map));
+    Local<v8::String> local = V82JSC::CreateLocal<v8::String>(isolate, string);
     string->m_value = JSValueMakeString(ctx, str);
     JSValueProtect(ctx, string->m_value);
-    if (type == v8::internal::FIRST_NONSTRING_TYPE) {
+    
+    if (type == nullptr) {
         if (local->ContainsOnlyOneByte()) {
-            V82JSC::Map(string)->set_instance_type(v8::internal::ONE_BYTE_STRING_TYPE);
+            type = i->m_one_byte_string_map;
         } else {
-            V82JSC::Map(string)->set_instance_type(v8::internal::STRING_TYPE);
+            type = i->m_string_map;
         }
-    } else {
-        V82JSC::Map(string)->set_instance_type(type);
+        string->m_map = H::ToV8Map(type);
     }
-
-    * reinterpret_cast<void**>(&string->map + internal::Internals::kStringResourceOffset) = resource;
+    
+    * reinterpret_cast<void**>(reinterpret_cast<intptr_t>(string) +
+                               internal::Internals::kStringResourceOffset) = resource;
     
     return local;
 }
@@ -44,7 +49,7 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         str_[length-1] = 0;
         data = str_;
     }
-    return MaybeLocal<String>(ValueImpl::New(isolate, JSStringCreateWithUTF8CString(data)));
+    return MaybeLocal<String>(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data)));
 }
 
 String::Utf8Value::~Utf8Value()
@@ -58,18 +63,24 @@ String::Utf8Value::~Utf8Value()
 
 String::Utf8Value::Utf8Value(Local<v8::Value> obj)
 {
-    Local<Context> context = V82JSC::ToCurrentContext(*obj);
-    JSValueRef value = V82JSC::ToJSValueRef(obj, context);
-
-    JSValueRef exception = nullptr;
-    auto str = JSValueToStringCopy(V82JSC::ToContextRef(context), value, &exception);
-    if (exception) {
-        str_ = nullptr;
+    if (obj.IsEmpty()) {
+        str_ = (char*) malloc(1);
+        length_ = 0;
+        *str_ = 0;
     } else {
-        length_ = (int) JSStringGetMaximumUTF8CStringSize(str);
-        str_ = (char *) malloc(length_);
-        JSStringGetUTF8CString(str, str_, length_);
-        JSStringRelease(str);
+        Local<Context> context = V82JSC::ToCurrentContext(*obj);
+        JSValueRef value = V82JSC::ToJSValueRef(obj, context);
+
+        JSValueRef exception = nullptr;
+        auto str = JSValueToStringCopy(V82JSC::ToContextRef(context), value, &exception);
+        if (exception) {
+            str_ = nullptr;
+        } else {
+            length_ = (int) JSStringGetMaximumUTF8CStringSize(str);
+            str_ = (char *) malloc(length_);
+            JSStringGetUTF8CString(str, str_, length_);
+            JSStringRelease(str);
+        }
     }
 }
 
@@ -279,7 +290,8 @@ const String::ExternalOneByteStringResource* String::GetExternalOneByteStringRes
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
 
     if (IsExternalOneByte()) {
-        return  * reinterpret_cast<ExternalOneByteStringResource**>(&impl->map + internal::Internals::kStringResourceOffset);
+        return  * reinterpret_cast<ExternalOneByteStringResource**>(reinterpret_cast<intptr_t>(impl) +
+                                                                    internal::Internals::kStringResourceOffset);
     }
     return nullptr;
 }
@@ -294,7 +306,8 @@ MaybeLocal<String> String::NewFromOneByte(Isolate* isolate, const uint8_t* data,
     }
     uint16_t str[length];
     for (int i=0; i<length; i++) str[i] = data[i];
-    return ValueImpl::New(isolate, JSStringCreateWithCharacters(str, length), v8::internal::ONE_BYTE_STRING_TYPE);
+    return StringImpl::New(isolate, JSStringCreateWithCharacters(str, length),
+                           V82JSC::ToIsolateImpl(isolate)->m_one_byte_string_map);
 }
 
 /** Allocates a new string from UTF-16 data. Only returns an empty value when
@@ -305,7 +318,7 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
     if (length < 0) {
         for (length = 0; data[length] != 0; length++);
     }
-    return ValueImpl::New(isolate, JSStringCreateWithCharacters(data, length));
+    return StringImpl::New(isolate, JSStringCreateWithCharacters(data, length));
 }
 
 /**
@@ -329,7 +342,7 @@ Local<String> String::Concat(Local<String> left, Local<String> right)
     memcpy(&concat[length_left], JSStringGetCharactersPtr(sright), sizeof(uint16_t) * length_right);
     Isolate *isolate = V82JSC::ToIsolate(iso);
     JSStringRef concatted = JSStringCreateWithCharacters(concat,length_left+length_right);
-    Local<String> ret = ValueImpl::New(isolate, concatted);
+    Local<String> ret = StringImpl::New(isolate, concatted);
     JSStringRelease(sleft);
     JSStringRelease(sright);
     JSStringRelease(concatted);
@@ -349,8 +362,8 @@ MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::External
     if (resource->length() > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
-    return ValueImpl::New(isolate, JSStringCreateWithCharacters(resource->data(), resource->length()),
-                           v8::internal::EXTERNAL_STRING_TYPE, resource);
+    return StringImpl::New(isolate, JSStringCreateWithCharacters(resource->data(), resource->length()),
+                           V82JSC::ToIsolateImpl(isolate)->m_external_string_map, resource);
 }
 
 /**
@@ -365,8 +378,11 @@ MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::External
 bool String::MakeExternal(String::ExternalStringResource* resource)
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
-    V82JSC::Map(impl)->set_instance_type(v8::internal::EXTERNAL_STRING_TYPE);
-    * reinterpret_cast<ExternalStringResource**>(&impl->map + internal::Internals::kStringResourceOffset) = resource;
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(impl);
+    impl->m_map = H::ToV8Map(iso->m_external_string_map);
+    * reinterpret_cast<ExternalStringResource**>(reinterpret_cast<intptr_t>(H::ToHeapPointer(impl)) +
+                               internal::Internals::kStringResourceOffset) = resource;
+
     return true;
 }
 
@@ -386,8 +402,8 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
     uint16_t str[resource->length()];
     for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
     
-    return ValueImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
-                           v8::internal::EXTERNAL_ONE_BYTE_STRING_TYPE, resource);
+    return StringImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
+                           V82JSC::ToIsolateImpl(isolate)->m_external_one_byte_string_map, resource);
 }
 
 /**
@@ -402,11 +418,13 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
 bool String::MakeExternal(ExternalOneByteStringResource* resource)
 {
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(impl);
 
     uint16_t str[resource->length()];
     for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
-    V82JSC::Map(impl)->set_instance_type(v8::internal::EXTERNAL_ONE_BYTE_STRING_TYPE);
-    * reinterpret_cast<ExternalOneByteStringResource**>(&impl->map + internal::Internals::kStringResourceOffset) = resource;
+    impl->m_map = H::ToV8Map(iso->m_external_one_byte_string_map);
+    * reinterpret_cast<ExternalOneByteStringResource**>(reinterpret_cast<intptr_t>(H::ToHeapPointer(impl)) +
+                                                 internal::Internals::kStringResourceOffset) = resource;
 
     return true;
 }

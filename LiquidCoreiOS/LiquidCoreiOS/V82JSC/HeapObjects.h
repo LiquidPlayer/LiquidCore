@@ -1,0 +1,448 @@
+//
+//  HeapObjects.h
+//  LiquidCoreiOS
+//
+//  Created by Eric Lange on 5/27/18.
+//  Copyright © 2018 LiquidPlayer. All rights reserved.
+//
+
+#ifndef HeapObjects_h
+#define HeapObjects_h
+
+#include <JavaScriptCore/JavaScript.h>
+#include "include/v8-util.h"
+#include "src/arguments.h"
+#include "src/base/platform/platform.h"
+#include "src/code-stubs.h"
+#include "src/compilation-cache.h"
+#include "src/debug/debug.h"
+#include "src/execution.h"
+#include "src/futex-emulation.h"
+#include "src/heap/incremental-marking.h"
+#include "src/api.h"
+#include "src/lookup.h"
+#include "src/objects-inl.h"
+#include "src/parsing/preparse-data.h"
+#include "src/profiler/cpu-profiler.h"
+#include "src/unicode-inl.h"
+#include "src/utils.h"
+#include "src/vm-state.h"
+#include "src/heap/heap.h"
+#include <map>
+#include <string>
+
+/* V82JSC Heap Objects are designed to mirror V8 heap objects as much as possible.  Some rules:
+ * --> All heap objects have a reference to their v8::internal::Map at offset 0 to identify their type
+ * --> heap objects cannot be created with 'new' and 'delete'
+ * --> heap objects are fixed in size at creation time and do not expand/contract
+ * --> heap objects must not reference data types that require access to the C heap (e.g. std::vector, std:map, etc.)
+ * --> heap objects must not contain pointers to other heap objects, only Handle<>s, as they may get moved in memory
+ *
+ * The basic goal here is to allow the entire heap to be wiped by deallocting it in one go upon isolate destruction
+ * without need for further cleanup.  So everything that gets allocated must also be a HeapObject.  Anything that is
+ * dynamically allocated with new / malloc are not guaranteed to get destructed and will therefore leak.
+ */
+
+#define HEAP_ALIGNMENT (0x80000) // 512K bytes
+#define HEAP_SLOT_SIZE_LOG (5)
+#define HEAP_SLOT_SIZE (1<<HEAP_SLOT_SIZE_LOG) // 0x20 bytes
+#define HEAP_ALLOC_MAP_SIZE (HEAP_ALIGNMENT / (HEAP_SLOT_SIZE * 8)) // 0x800 bytes
+#define HEAP_RESERVED_SLOTS ((HEAP_ALLOC_MAP_SIZE * 2) / HEAP_SLOT_SIZE) // 0x40 (64) slots
+#define HEAP_SLOTS (HEAP_ALIGNMENT / HEAP_SLOT_SIZE) // 0x4000 (16384)
+#define HEAP_SMALL_SPACE_LOG (8) // Up to 64 slots (2K bytes)
+#define HEAP_SLOTS_PER_BLOCK (64) // bits in a uint64_t
+#define HEAP_BLOCK_SIZE (HEAP_SLOTS_PER_BLOCK * HEAP_SLOT_SIZE) // (2k bytes)
+#define HEAP_BLOCKS (HEAP_ALIGNMENT / HEAP_BLOCK_SIZE) // 256
+
+namespace v8 { namespace internal { class IsolateImpl; } }
+
+#define Copyable(T) \
+v8::Persistent<T, v8::CopyablePersistentTraits<T>>
+
+// These aren't really V8 values, but we want to use V8 handles to manage their
+// lifecycle, so we pretend.
+namespace v8 {
+    struct PropAccessor : v8::Value {};
+    struct Prop : v8::Value {};
+    struct ObjAccessor : v8::Value {};
+    struct IntrinsicProp : v8::Value {};
+    struct EmbeddedFixedArray : v8::Value {};
+    struct TrackedObject : v8::Value {};
+};
+
+namespace V82JSC_HeapObject {
+    using v8::internal::IsolateImpl;
+    
+    struct HeapObject;
+    struct BaseMap;
+    struct FixedArray;
+    
+    typedef void (*Constructor)(HeapObject *);
+    typedef void (*Destructor)(HeapObject *);
+    typedef void (*Mover)(HeapObject *from, HeapObject *to);
+    
+    typedef uint8_t (*Transform)(uint64_t);
+    Transform transform (uint32_t size);
+    static inline uint32_t LogReserveSize(uint32_t x)
+    {
+        const int kWordSize = sizeof(int) * 8;
+        return kWordSize - __builtin_clz((int)((x-1)|1));
+    }
+    static inline uint32_t ReserveSize(uint32_t x)
+    {
+        return 1 << LogReserveSize(x);
+    }
+        
+    class HeapAllocator : public v8::internal::MemoryChunk
+    {
+        struct _info {
+            int m_small_indicies[HEAP_SMALL_SPACE_LOG];
+            int m_large_index;
+            // Anything else we need to store, put here
+        } info;
+        uint8_t reserved_[HEAP_ALLOC_MAP_SIZE - sizeof(struct _info) - sizeof(v8::internal::MemoryChunk)];
+        uint64_t alloc_map[HEAP_ALLOC_MAP_SIZE / 8];
+    public:
+        static HeapObject* Alloc(IsolateImpl *isolate, const BaseMap* map, uint32_t size=0);
+        static void CollectGarbage(IsolateImpl *isolate);
+    };
+    
+    struct HeapImpl : v8::internal::Heap {
+        v8::internal::MemoryChunk *m_heap_top;
+        size_t m_index;
+    };
+
+    // All objects on the heap are dervied from HeapObject
+    struct HeapObject {
+        v8::internal::Map *m_map;
+        
+        IsolateImpl * GetIsolate()
+        {
+            intptr_t addr = reinterpret_cast<intptr_t>(this);
+            addr &= (HEAP_ALIGNMENT - 1);
+            HeapAllocator *chunk = reinterpret_cast<HeapAllocator*>(addr);
+            return reinterpret_cast<IsolateImpl*>(chunk->heap()->isolate());
+        }
+        JSGlobalContextRef GetNullContext();
+    };
+    
+    struct BaseMap /* : HeapObject -- This is implicit */ {
+        union {
+            HeapObject object;
+            unsigned char filler_[v8::internal::Map::kSize];
+            v8::internal::Oddball oddball;
+            v8::internal::Map map;
+        };
+        uint32_t size;
+        Constructor ctor;
+        Destructor  dtor;
+        Mover       mover;
+    };
+    
+    template <typename T>
+    struct Map : BaseMap
+    {
+        static Map<T> * New(IsolateImpl *iso, v8::internal::InstanceType t, uint8_t kind=0xff);
+    };
+    
+    struct Context : HeapObject {
+        JSGlobalContextRef m_ctxRef;
+        Copyable(v8::EmbeddedFixedArray) m_embedder_data;
+        Copyable(v8::Function) ObjectSetPrototypeOf;
+        Copyable(v8::Function) ObjectGetPrototypeOf;
+        Copyable(v8::Function) ObjectPrototypeToString;
+        Copyable(v8::Function) FunctionPrototypeBind;
+
+        static void Constructor(Context *obj) {}
+        static void Destructor(Context *obj)
+        {
+            if (obj->m_ctxRef) JSGlobalContextRelease(obj->m_ctxRef);
+            obj->ObjectSetPrototypeOf.Reset();
+            obj->ObjectGetPrototypeOf.Reset();
+            obj->ObjectPrototypeToString.Reset();
+            obj->FunctionPrototypeBind.Reset();
+            obj->m_embedder_data.Reset();
+        }
+    };
+    
+    struct Script : HeapObject {
+        JSStringRef m_sourceURL;
+        JSStringRef m_script;
+        int m_startingLineNumber;
+
+        static void Constructor(Script *obj) {}
+        static void Destructor(Script *obj)
+        {
+            if (obj->m_sourceURL) JSStringRelease(obj->m_sourceURL);
+            if (obj->m_script) JSStringRelease(obj->m_script);
+        }
+    };
+    
+    struct Value : HeapObject {
+        uint64_t reserved_; // For number, value is stored here
+        JSValueRef m_value;
+
+        static void Constructor(Value *obj) {}
+        static void Destructor(Value *obj)
+        {
+            if (obj->m_value) JSValueUnprotect(obj->GetNullContext(), obj->m_value);
+        }
+    };
+    
+    struct String : Value {
+        uint8_t reserved_[v8::internal::Internals::kStringResourceOffset +
+                          v8::internal::kApiPointerSize - sizeof(Value)];
+        
+        static void Constructor(String *obj)
+        {
+            Value::Constructor(obj);
+        }
+        static void Destructor(String *obj)
+        {
+            Value::Destructor(obj);
+        }
+    };
+    
+    struct FixedArray : HeapObject {
+        union {
+            uint8_t __buffer[v8::internal::Internals::kFixedArrayHeaderSize - sizeof(HeapObject)];
+            int m_size;
+        };
+        v8::internal::Object* m_elements[0];
+
+        static void Constructor(FixedArray *obj) {}
+        static void Destructor(FixedArray *obj)
+        {
+        }
+    };
+    
+    struct PropAccessor : HeapObject {
+        Copyable(v8::Name) name;
+        Copyable(v8::FunctionTemplate) setter;
+        Copyable(v8::FunctionTemplate) getter;
+        v8::PropertyAttribute attribute;
+        v8::AccessControl settings;
+        Copyable(v8::PropAccessor) next_;
+
+        static void Constructor(PropAccessor *obj) {}
+        static void Destructor(PropAccessor *obj)
+        {
+            obj->name.Reset();
+            obj->setter.Reset();
+            obj->getter.Reset();
+            obj->next_.Reset();
+        }
+    };
+    
+    struct Prop : HeapObject {
+        Copyable(v8::Name) name;
+        Copyable(v8::Data) value;
+        v8::PropertyAttribute attributes;
+        Copyable(v8::Prop) next_;
+
+        static void Constructor(Prop *obj) {}
+        static void Destructor(Prop *obj)
+        {
+            obj->name.Reset();
+            obj->value.Reset();
+            obj->next_.Reset();
+        }
+    };
+    
+    struct ObjAccessor : HeapObject {
+        Copyable(v8::Name) name;
+        Copyable(v8::Value) data;
+        Copyable(v8::Signature) signature;
+        v8::AccessorNameGetterCallback getter;
+        v8::AccessorNameSetterCallback setter;
+        v8::AccessControl settings;
+        v8::PropertyAttribute attribute;
+        Copyable(v8::ObjAccessor) next_;
+
+        static void Constructor(ObjAccessor *obj) {}
+        static void Destructor(ObjAccessor *obj)
+        {
+            obj->name.Reset();
+            obj->data.Reset();
+            obj->signature.Reset();
+            obj->next_.Reset();
+        }
+    };
+    
+    struct IntrinsicProp : HeapObject {
+        Copyable(v8::Name) name;
+        v8::Intrinsic value;
+        Copyable(v8::IntrinsicProp) next_;
+
+        static void Constructor(IntrinsicProp *obj) {}
+        static void Destructor(IntrinsicProp *obj)
+        {
+            obj->name.Reset();
+            obj->next_.Reset();
+        }
+    };
+    
+    struct Template : HeapObject {
+        JSValueRef m_data;
+        Copyable(v8::Prop) m_properties;
+        Copyable(v8::PropAccessor) m_property_accessors;
+        Copyable(v8::ObjAccessor) m_accessors;
+        Copyable(v8::IntrinsicProp) m_intrinsics;
+        Copyable(v8::Signature) m_signature;
+        Copyable(v8::ObjectTemplate) m_prototype_template;
+        Copyable(v8::FunctionTemplate) m_parent;
+        v8::FunctionCallback m_callback;
+
+        static void Constructor(Template *obj) {}
+        static void Destructor(Template *obj)
+        {
+            obj->m_properties.Reset();
+            obj->m_property_accessors.Reset();
+            obj->m_accessors.Reset();
+            obj->m_intrinsics.Reset();
+            obj->m_signature.Reset();
+            obj->m_prototype_template.Reset();
+            obj->m_parent.Reset();
+        }
+    };
+    
+    struct FunctionTemplate : Template {
+        Copyable(v8::ObjectTemplate) m_instance_template;
+        v8::ConstructorBehavior m_behavior;
+        Copyable(v8::String) m_name;
+        JSObjectRef m_functions_array;
+        int m_length;
+        bool m_isHiddenPrototype;
+        bool m_removePrototype;
+        bool m_readOnlyPrototype;
+
+        static void Constructor(FunctionTemplate *obj) { Template::Constructor(obj); }
+        static void Destructor(FunctionTemplate *obj)
+        {
+            obj->m_instance_template.Reset();
+            if (obj->m_functions_array) JSValueUnprotect(obj->GetNullContext(), obj->m_functions_array);
+            Template::Destructor(obj);
+        }
+    };
+    
+    struct ObjectTemplate : Template {
+        JSValueRef m_named_data;
+        JSValueRef m_indexed_data;
+        JSValueRef m_access_check_data;
+        JSValueRef m_failed_named_data;
+        JSValueRef m_failed_indexed_data;
+        Copyable(v8::FunctionTemplate) m_constructor_template;
+        v8::NamedPropertyHandlerConfiguration m_named_handler;
+        v8::IndexedPropertyHandlerConfiguration m_indexed_handler;
+        v8::AccessCheckCallback m_access_check;
+        v8::NamedPropertyHandlerConfiguration m_named_failed_access_handler;
+        v8::IndexedPropertyHandlerConfiguration m_indexed_failed_access_handler;
+        bool m_need_proxy;
+        int m_internal_fields;
+
+        static void Constructor(ObjectTemplate *obj) { Template::Constructor(obj); }
+        static void Destructor(ObjectTemplate *obj)
+        {
+            obj->m_constructor_template.Reset();
+            if (obj->m_named_data) JSValueUnprotect(obj->GetNullContext(), obj->m_named_data);
+            if (obj->m_indexed_data) JSValueUnprotect(obj->GetNullContext(), obj->m_indexed_data);
+            if (obj->m_access_check_data) JSValueUnprotect(obj->GetNullContext(), obj->m_access_check_data);
+            if (obj->m_failed_named_data) JSValueUnprotect(obj->GetNullContext(), obj->m_failed_named_data);
+            if (obj->m_failed_indexed_data) JSValueUnprotect(obj->GetNullContext(), obj->m_failed_indexed_data);
+            Template::Destructor(obj);
+        }
+    };
+
+    struct TrackedObject : HeapObject {
+        JSValueRef m_security;
+        JSValueRef m_proxy_security;
+        JSValueRef m_hidden_proxy_security;
+        JSValueRef m_private_properties;
+        JSObjectRef m_hidden_children_array;
+        int m_num_internal_fields;
+        JSObjectRef m_internal_fields_array;
+        Copyable(v8::ObjectTemplate) m_object_template;
+        int m_hash;
+        bool m_isHiddenPrototype;
+        bool m_isGlobalObject;
+
+        struct {
+            void *buffer;
+            size_t byte_length;
+            bool isExternal;
+            bool isNeuterable;
+            IsolateImpl *iso;
+            Copyable(v8::TrackedObject) m_self;
+        } ArrayBufferInfo;
+
+        static void Constructor(TrackedObject *obj) {}
+        static void Destructor(TrackedObject *obj)
+        {
+            obj->m_object_template.Reset();
+            // obj->m_security is a weak reference to avoid circular referencing
+            if (obj->m_proxy_security) JSValueUnprotect(obj->GetNullContext(), obj->m_proxy_security);
+            if (obj->m_hidden_proxy_security) JSValueUnprotect(obj->GetNullContext(), obj->m_hidden_proxy_security);
+            if (obj->m_private_properties) JSValueUnprotect(obj->GetNullContext(), obj->m_private_properties);
+            if (obj->m_hidden_children_array) JSValueUnprotect(obj->GetNullContext(), obj->m_hidden_children_array);
+            if (obj->m_internal_fields_array) JSValueUnprotect(obj->GetNullContext(), obj->m_internal_fields_array);
+        }
+    };
+    
+    struct Signature : HeapObject {
+        Copyable(v8::FunctionTemplate) m_template;
+
+        static void Constructor(Signature *obj) {}
+        static void Destructor(Signature *obj)
+        {
+            obj->m_template.Reset();
+        }
+    };
+    
+    struct Accessor : HeapObject {
+        JSValueRef m_property;
+        JSValueRef m_data;
+        JSValueRef m_holder;
+        v8::AccessorNameGetterCallback getter;
+        v8::AccessorNameSetterCallback setter;
+
+        static void Constructor(Accessor *obj) {}
+        static void Destructor(Accessor *obj)
+        {
+            if (obj->m_property) JSValueUnprotect(obj->GetNullContext(), obj->m_property);
+            if (obj->m_data) JSValueUnprotect(obj->GetNullContext(), obj->m_data);
+            if (obj->m_holder) JSValueUnprotect(obj->GetNullContext(), obj->m_holder);
+        }
+    };
+    
+    inline v8::internal::Map * ToV8Map(BaseMap *map)
+    {
+        return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(map) + v8::internal::kHeapObjectTag);
+    }
+
+    inline v8::internal::Object * ToHeapPointer(HeapObject *obj)
+    {
+        return reinterpret_cast<v8::internal::Object*>(reinterpret_cast<intptr_t>(obj) + v8::internal::kHeapObjectTag);
+    }
+
+    inline HeapObject * FromHeapPointer(v8::internal::Object *obj)
+    {
+        return reinterpret_cast<HeapObject*>(reinterpret_cast<intptr_t>(obj) - v8::internal::kHeapObjectTag);
+    }
+
+    template<typename T> Map<T> * Map<T>::New(IsolateImpl *iso, v8::internal::InstanceType t, uint8_t kind)
+    {
+        auto map = reinterpret_cast<Map<T> *>(HeapAllocator::Alloc(iso, nullptr, sizeof(BaseMap)));
+        ToV8Map(map)->set_instance_type(t);
+        map->ctor = [](HeapObject* o) { T::Constructor(static_cast<T*>(o)); };
+        map->dtor = [](HeapObject* o) { T::Destructor(static_cast<T*>(o)); };
+        map->size = sizeof(T);
+        if (kind != 0xff) {
+            v8::internal::Oddball* oddball_handle = reinterpret_cast<v8::internal::Oddball*>(map->object.m_map);
+            oddball_handle->set_kind(kind);
+            map->size = 0;
+        }
+        return map;
+    }
+}
+
+#endif /* HeapObjects_h */

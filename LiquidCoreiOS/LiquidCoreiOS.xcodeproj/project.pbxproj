@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		071D9A4C209A2015002351EB /* Heap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 071D9A4B209A2015002351EB /* Heap.cpp */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
 		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -26,6 +25,9 @@
 		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
 		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
+		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
+		07E9ADC920BC1281002F2002 /* HeapLookup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC820BC1281002F2002 /* HeapLookup.cpp */; };
+		07E9ADCB20BD359A002F2002 /* TrackedObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADCA20BD359A002F2002 /* TrackedObject.cpp */; };
 		07F8049820260E3F00FDFC27 /* test-api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07F8049720260E3F00FDFC27 /* test-api.cc */; };
 		07F8049B2027147F00FDFC27 /* Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804992027147F00FDFC27 /* Object.cpp */; };
 		07F804A320277DC700FDFC27 /* TypedArray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804A120277DC700FDFC27 /* TypedArray.cpp */; };
@@ -99,7 +101,6 @@
 
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
-		071D9A4B209A2015002351EB /* Heap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Heap.cpp; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -122,6 +123,11 @@
 		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
+		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
+		07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HeapObjects.cpp; sourceTree = "<group>"; };
+		07E9ADC720BBFEE3002F2002 /* Isolate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Isolate.h; sourceTree = "<group>"; };
+		07E9ADC820BC1281002F2002 /* HeapLookup.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HeapLookup.cpp; sourceTree = "<group>"; };
+		07E9ADCA20BD359A002F2002 /* TrackedObject.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TrackedObject.cpp; sourceTree = "<group>"; };
 		07F8049720260E3F00FDFC27 /* test-api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "test-api.cc"; sourceTree = "<group>"; };
 		07F804992027147F00FDFC27 /* Object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Object.cpp; sourceTree = "<group>"; };
 		07F804A120277DC700FDFC27 /* TypedArray.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TypedArray.cpp; sourceTree = "<group>"; };
@@ -268,7 +274,11 @@
 				076F58E7201E7F5A004780FD /* ArrayBuffer.cpp */,
 				076F58D7201E7EF9004780FD /* Context.cpp */,
 				076F58D9201E7EF9004780FD /* Scopes.cpp */,
-				071D9A4B209A2015002351EB /* Heap.cpp */,
+				07E9ADC420BB3F02002F2002 /* HeapObjects.h */,
+				07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */,
+				07E9ADC820BC1281002F2002 /* HeapLookup.cpp */,
+				07E9ADCA20BD359A002F2002 /* TrackedObject.cpp */,
+				07E9ADC720BBFEE3002F2002 /* Isolate.h */,
 				076F58D8201E7EF9004780FD /* Isolate.cpp */,
 				076F58E5201E7F2E004780FD /* ResourceConstraints.cpp */,
 				076F58EE201E7FCD004780FD /* Script.cpp */,
@@ -510,10 +520,12 @@
 				07FE859A2075F6D40013E1B4 /* worker-thread.cc in Sources */,
 				07F804F6202DD5AD00FDFC27 /* Exception.cpp in Sources */,
 				07FE85AC2075F7A90013E1B4 /* file-utils.cc in Sources */,
+				07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */,
+				07E9ADC920BC1281002F2002 /* HeapLookup.cpp in Sources */,
 				07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */,
+				07E9ADCB20BD359A002F2002 /* TrackedObject.cpp in Sources */,
 				07F804C6202CCC3800FDFC27 /* ScriptCompiler.cpp in Sources */,
 				076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */,
-				071D9A4C209A2015002351EB /* Heap.cpp in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
 				07F804FE202DDA4400FDFC27 /* Locker.cpp in Sources */,
 				07FE85A62075F7A90013E1B4 /* cpu.cc in Sources */,

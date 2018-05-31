@@ -9,6 +9,7 @@
 #include "V82JSC.h"
 
 using namespace v8;
+#define H V82JSC_HeapObject
 
 /**
  * Adds a property to each instance created by this template.
@@ -19,13 +20,16 @@ void Template::Set(Local<Name> name, Local<Data> value, PropertyAttribute attrib
 {
     TemplateImpl *this_ = V82JSC::ToImpl<TemplateImpl,Template>(this);
     Isolate *isolate = V82JSC::ToIsolate(this);
-    
-    Prop prop;
-    prop.name.Reset(isolate, name);
-    prop.value.Reset(isolate, value);
-    prop.attributes = attributes;
-    
-    this_->m_properties.push_back(std::move(prop));
+
+    H::Prop *prop = static_cast<H::Prop *>
+    (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(this_), V82JSC::ToIsolateImpl(this_)->m_property_accessor_map));
+
+    prop->name.Reset(isolate, name);
+    prop->value.Reset(isolate, value);
+    prop->attributes = attributes;
+    prop->next_.Reset(isolate, this_->m_properties.Get(isolate));
+    Local<v8::Prop> local = V82JSC::CreateLocal<v8::Prop>(isolate, prop);
+    this_->m_properties.Reset(isolate, local);
 }
 void Template::SetPrivate(Local<Private> name, Local<Data> value, PropertyAttribute attributes)
 {
@@ -42,14 +46,17 @@ void Template::SetAccessorProperty(
     TemplateImpl *this_ = V82JSC::ToImpl<TemplateImpl,Template>(this);
     Isolate *isolate = V82JSC::ToIsolate(this);
 
-    PropAccessor accessor;
-    accessor.name.Reset(isolate, name);
-    accessor.getter.Reset(isolate, getter);
-    accessor.setter.Reset(isolate, setter);
-    accessor.attribute = attribute;
-    accessor.settings = settings;
-    
-    this_->m_property_accessors.push_back(std::move(accessor));
+    H::PropAccessor *accessor = static_cast<H::PropAccessor *>
+    (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(this_), V82JSC::ToIsolateImpl(this_)->m_property_accessor_map));
+
+    accessor->name.Reset(isolate, name);
+    accessor->getter.Reset(isolate, getter);
+    accessor->setter.Reset(isolate, setter);
+    accessor->attribute = attribute;
+    accessor->settings = settings;
+    accessor->next_.Reset(isolate, this_->m_property_accessors.Get(isolate));
+    Local<v8::PropAccessor> local = V82JSC::CreateLocal<v8::PropAccessor>(isolate, accessor);
+    this_->m_property_accessors.Reset(isolate, local);
 }
 
 /**
@@ -124,10 +131,16 @@ void Template::SetIntrinsicDataProperty(Local<Name> name, Intrinsic intrinsic,
 {
     TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl, Template>(this);
     Isolate *isolate = V82JSC::ToIsolate(this);
-    IntrinsicProp prop;
-    prop.name.Reset(isolate, name);
-    prop.value = intrinsic;
-    templ->m_intrinsics.push_back(std::move(prop));
+    
+    H::IntrinsicProp *prop = static_cast<H::IntrinsicProp *>
+    (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), V82JSC::ToIsolateImpl(isolate)->m_intrinsic_property_map));
+    
+    prop->next_.Reset(isolate, templ->m_intrinsics.Get(isolate));
+    Local<v8::IntrinsicProp> local = V82JSC::CreateLocal<v8::IntrinsicProp>(isolate, prop);
+    templ->m_intrinsics.Reset(isolate, local);
+
+    prop->name.Reset(isolate, name);
+    prop->value = intrinsic;
 }
 
 
@@ -143,16 +156,16 @@ static T callAsCallback(JSContextRef ctx,
                         JSValueRef *exception)
 {
     bool isConstructCall = std::is_same<T, JSObjectRef>::value;
-    TemplateWrap *wrap = reinterpret_cast<TemplateWrap*>(JSObjectGetPrivate(proxy_function));
-    IsolateImpl* isolateimpl = wrap->m_isolate;
-    Isolate* isolate = V82JSC::ToIsolate(isolateimpl);
+    IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    Isolate *isolate = V82JSC::ToIsolate(iso);
     HandleScope scope(isolate);
+    Local<v8::Template> local = V82JSC::FromPersistentData<v8::Template>(isolate, JSObjectGetPrivate(proxy_function));
     
-    Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+    Local<Context> context = ContextImpl::New(isolate, ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
-    TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl>(wrap->m_template.Get(isolate));
+    TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl>(local);
     
-    if (V82JSC::Map(templ)->instance_type() == internal::OBJECT_TEMPLATE_INFO_TYPE) {
+    if (templ->m_map->instance_type() == internal::OBJECT_TEMPLATE_INFO_TYPE) {
         thisObject = proxy_function;
     }
     Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
@@ -162,22 +175,22 @@ static T callAsCallback(JSContextRef ctx,
     bool signature_match = templ->m_signature.IsEmpty();
     if (!signature_match) {
         SignatureImpl *sig = V82JSC::ToImpl<SignatureImpl>(templ->m_signature.Get(isolate));
-        const TemplateImpl *sig_templ = V82JSC::ToImpl<FunctionTemplateImpl>(sig->m_template.Get(isolate));
+        const TemplateImpl *sig_templ = V82JSC::ToImpl<TemplateImpl>(sig->m_template.Get(isolate));
         JSValueRef proto = thisObject;
-        InstanceWrap* thisWrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)proto);
+        TrackedObjectImpl* thisWrap = getPrivateInstance(ctx, (JSObjectRef)proto);
         while(!signature_match && JSValueIsObject(ctx, proto)) {
             if (thisWrap && !thisWrap->m_object_template.IsEmpty() && (proto == thisObject || thisWrap->m_isHiddenPrototype)) {
                 holder = proto == thisObject? thiz : ValueImpl::New(ctximpl, proto);
                 ObjectTemplateImpl* ot = V82JSC::ToImpl<ObjectTemplateImpl>(thisWrap->m_object_template.Get(isolate));
                 Local<FunctionTemplate> ctort = ot->m_constructor_template.Get(isolate);
-                const TemplateImpl *templ = ctort.IsEmpty() ? nullptr : V82JSC::ToImpl<FunctionTemplateImpl>(ctort);
+                const TemplateImpl *templ = ctort.IsEmpty() ? nullptr : V82JSC::ToImpl<TemplateImpl>(ctort);
                 while (!signature_match && templ) {
                     signature_match = sig_templ == templ;
-                    templ = templ->m_parent.IsEmpty() ? nullptr : V82JSC::ToImpl<FunctionTemplateImpl>(templ->m_parent.Get(isolate));
+                    templ = templ->m_parent.IsEmpty() ? nullptr : V82JSC::ToImpl<TemplateImpl>(templ->m_parent.Get(isolate));
                 }
             }
             proto = V82JSC::GetRealPrototype(context, (JSObjectRef)proto);
-            thisWrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)proto);
+            thisWrap = getPrivateInstance(ctx, (JSObjectRef)proto);
             if (!thisWrap || !thisWrap->m_isHiddenPrototype) break;
         }
     }
@@ -189,8 +202,8 @@ static T callAsCallback(JSContextRef ctx,
     }
     Local<Value> data = ValueImpl::New(ctximpl, templ->m_data);
     typedef v8::internal::Heap::RootListIndex R;
-    internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
-    internal::Object *target = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
+    internal::Object *the_hole = iso->ii.heap()->root(R::kTheHoleValueRootIndex);
+    internal::Object *target = iso->ii.heap()->root(R::kUndefinedValueRootIndex);
     
     if (isConstructCall) {
         JSValueRef t = JSObjectMake(ctx, 0, 0);
@@ -199,7 +212,7 @@ static T callAsCallback(JSContextRef ctx,
 
     v8::internal::Object * implicit[] = {
         * reinterpret_cast<v8::internal::Object**>(*holder), // kHolderIndex = 0;
-        O(isolateimpl),                                      // kIsolateIndex = 1;
+        O(iso),                                              // kIsolateIndex = 1;
         the_hole,                                            // kReturnValueDefaultValueIndex = 2;
         the_hole,                                            // kReturnValueIndex = 3;
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
@@ -215,10 +228,10 @@ static T callAsCallback(JSContextRef ctx,
         *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
     }
     
-    isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
+    iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
-    TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
+    TryCatch try_catch(V82JSC::ToIsolate(iso));
     
     if (templ->m_callback) {
         templ->m_callback(info);
@@ -226,20 +239,19 @@ static T callAsCallback(JSContextRef ctx,
 
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (isolateimpl->ii.thread_local_top()->scheduled_exception_ != the_hole) {
-        internal::Object * excep = isolateimpl->ii.thread_local_top()->scheduled_exception_;
-        if (excep->IsHeapObject()) {
-            ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
-            *exception = i->m_value;
-        } else {
-            *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
-        }
-        isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
+    } else if (iso->ii.thread_local_top()->scheduled_exception_ != the_hole) {
+        internal::Object * excep = iso->ii.thread_local_top()->scheduled_exception_;
+        *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
+        iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
-    
-    Local<Value> ret = info.GetReturnValue().Get();
-    
-    return (T) V82JSC::ToJSValueRef<Value>(ret, context);
+
+    if (!*exception) {
+        Local<Value> ret = info.GetReturnValue().Get();
+        
+        return (T) V82JSC::ToJSValueRef<Value>(ret, context);
+    } else {
+        return NULL;
+    }
 }
 
 JSValueRef TemplateImpl::callAsFunctionCallback(JSContextRef ctx,
@@ -261,42 +273,6 @@ JSObjectRef TemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     return callAsCallback<JSObjectRef>(ctx, constructor, 0, argumentCount, arguments, exception);
 }
 
-
-void templateDestructor(InternalObjectImpl *o)
-{
-    TemplateImpl * templ = static_cast<TemplateImpl*>(o);
-    
-    templ->m_prototype_template.Reset();
-    templ->m_signature.Reset();
-    if (templ->m_data) {
-        v8::Isolate* i = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(o));
-        JSContextRef ctx = V82JSC::ToContextRef(i);
-        JSValueUnprotect(ctx, templ->m_data);
-    }
-    templ->m_parent.Reset();
-    templ->m_accessors.clear();
-    templ->m_property_accessors.clear();
-    templ->m_properties.clear();
-}
-
-/** Creates a function template.*/
-TemplateImpl* TemplateImpl::New(Isolate* isolate, size_t size, InternalObjectDestructor destructor)
-{
-    TemplateImpl * templ = static_cast<TemplateImpl *>(HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), size, destructor));
-    
-    templ->m_properties = std::vector<Prop>();
-    templ->m_property_accessors = std::vector<PropAccessor>();
-    templ->m_accessors = std::vector<ObjAccessor>();
-    templ->m_intrinsics = std::vector<IntrinsicProp>();
-    templ->m_parent = Copyable(FunctionTemplate)();
-    templ->m_callback = nullptr;
-    templ->m_data = 0;
-    templ->m_signature = Copyable(v8::Signature)();
-    templ->m_prototype_template = Copyable(v8::ObjectTemplate)();
-
-    return templ;
-}
-
 MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRef instance, LocalException& excep,
                                               Local<FunctionTemplate> ft)
 {
@@ -310,7 +286,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
         thiz = InitInstance(context, instance, excep, impl->m_parent.Get(isolate));
     }
     if (!excep.ShouldThow()) {
-        thiz = instance_impl->InitInstance(context, instance, excep);
+        thiz = reinterpret_cast<TemplateImpl*>(instance_impl)->InitInstance(context, instance, excep);
     }
     return thiz;
 };
@@ -322,14 +298,15 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     Isolate *isolate = V82JSC::ToIsolate(iso);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     Local<Object> thiz = ValueImpl::New(ctximpl, instance).As<Object>();
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, instance);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, instance);
     
     Local<Object> real_properties = Object::New(isolate);
 
-    for (auto i=m_properties.begin(); i!=m_properties.end(); ++i) {
+    for (auto i=m_properties.Get(isolate); !i.IsEmpty(); ) {
+        PropImpl *prop = V82JSC::ToImpl<PropImpl>(i);
         typedef internal::Object O;
         typedef internal::Internals I;
-        Local<Data> vv = i->value.Get(isolate);
+        Local<Data> vv = prop->value.Get(isolate);
         O* obj = * reinterpret_cast<O* const *>(*vv);
         JSValueRef v = V82JSC::ToJSValueRef(vv, context);
         if (obj->IsHeapObject()) {
@@ -352,9 +329,9 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
         }
         JSValueRef args[] = {
             instance,
-            V82JSC::ToJSValueRef(i->name.Get(isolate), context),
+            V82JSC::ToJSValueRef(prop->name.Get(isolate), context),
             v,
-            JSValueMakeNumber(ctx, i->attributes),
+            JSValueMakeNumber(ctx, prop->attributes),
             V82JSC::ToJSValueRef(real_properties, context)
         };
         
@@ -382,38 +359,45 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                          "  value: _3 })", 4, args, &exception);
         }
         if (exception.ShouldThow()) return MaybeLocal<Object>();
+        
+        i = prop->next_.Get(isolate);
     }
     
-    for (auto i=m_property_accessors.begin(); i!=m_property_accessors.end(); ++i) {
-        MaybeLocal<Function> getter = !i->getter.IsEmpty() ? i->getter.Get(isolate)->GetFunction(context) : MaybeLocal<Function>();
-        if (!i->getter.IsEmpty() && getter.IsEmpty()) return MaybeLocal<Object>();
-        MaybeLocal<Function> setter = !i->setter.IsEmpty() ? i->setter.Get(isolate)->GetFunction(context) : MaybeLocal<Function>();
-        if (!i->setter.IsEmpty() && setter.IsEmpty()) return MaybeLocal<Object>();
-        thiz->SetAccessorProperty(i->name.Get(isolate),
+    for (auto i=m_property_accessors.Get(isolate); !i.IsEmpty(); ) {
+        PropAccessorImpl *accessor = V82JSC::ToImpl<PropAccessorImpl>(i);
+        MaybeLocal<Function> getter = !accessor->getter.IsEmpty() ? accessor->getter.Get(isolate)->GetFunction(context) : MaybeLocal<Function>();
+        if (!accessor->getter.IsEmpty() && getter.IsEmpty()) return MaybeLocal<Object>();
+        MaybeLocal<Function> setter = !accessor->setter.IsEmpty() ? accessor->setter.Get(isolate)->GetFunction(context) : MaybeLocal<Function>();
+        if (!accessor->setter.IsEmpty() && setter.IsEmpty()) return MaybeLocal<Object>();
+        thiz->SetAccessorProperty(accessor->name.Get(isolate),
                                   getter.ToLocalChecked(),
                                   setter.ToLocalChecked(),
-                                  i->attribute,
-                                  i->settings);
+                                  accessor->attribute,
+                                  accessor->settings);
+        i = accessor->next_.Get(isolate);
     }
     
-    for (auto i=m_accessors.begin(); i!=m_accessors.end(); ++i) {
-        Local<Value> data = i->data.Get(isolate);
+    for (auto i=m_accessors.Get(isolate); !i.IsEmpty(); ) {
+        ObjAccessorImpl *accessor = V82JSC::ToImpl<ObjAccessorImpl>(i);
+        Local<Value> data = accessor->data.Get(isolate);
         Maybe<bool> set = thiz->SetAccessor(context,
-                                            i->name.Get(isolate),
-                                            i->getter,
-                                            i->setter,
+                                            accessor->name.Get(isolate),
+                                            accessor->getter,
+                                            accessor->setter,
                                             data,
-                                            i->settings,
-                                            i->attribute);
+                                            accessor->settings,
+                                            accessor->attribute);
         if (set.IsNothing()) return MaybeLocal<Object>();
+        i = accessor->next_.Get(isolate);
     }
     
-    for (auto i=m_intrinsics.begin(); i!=m_intrinsics.end(); ++i) {
+    for (auto i=m_intrinsics.Get(isolate); !i.IsEmpty(); ) {
+        IntrinsicPropImpl *intrinsic = V82JSC::ToImpl<IntrinsicPropImpl>(i);
         JSValueRef args[] = {
             instance,
-            V82JSC::ToJSValueRef(i->name.Get(isolate), context)
+            V82JSC::ToJSValueRef(intrinsic->name.Get(isolate), context)
         };
-        switch(i->value) {
+        switch(intrinsic->value) {
             case Intrinsic::kIteratorPrototype: {
                 V82JSC::exec(ctx, "_1[_2] = [][Symbol.iterator]().__proto__.__proto__", 2, args, &exception);
                 break;
@@ -442,6 +426,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                 assert(0);
             }
         }
+        i = intrinsic->next_.Get(isolate);
     }
     
     return thiz;

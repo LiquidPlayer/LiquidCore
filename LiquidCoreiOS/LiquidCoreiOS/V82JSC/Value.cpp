@@ -10,59 +10,74 @@
 
 using namespace v8;
 
-Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value)
+#define H V82JSC_HeapObject
+
+Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_HeapObject::BaseMap *map)
 {
     JSType t = JSValueGetType(ctx->m_ctxRef, value);
-    v8::internal::InstanceType instancet = v8::internal::JS_VALUE_TYPE;
     IsolateImpl* isolateimpl = V82JSC::ToIsolateImpl(ctx);
     v8::Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
+    typedef v8::internal::Heap::RootListIndex R;
+    internal::Object * io;
     
     double num = 0.0;
-    switch (t) {
-        case kJSTypeUndefined: {
-            return isolateimpl->m_undefined.Get(isolate);
-        }
-        case kJSTypeNull: {
-            return isolateimpl->m_null.Get(isolate);
-        }
-        case kJSTypeBoolean: {
-            if (JSValueToBoolean(ctx->m_ctxRef, value))
-                return isolateimpl->m_yup.Get(isolate);
-            else
-                return isolateimpl->m_nope.Get(isolate);
-        }
-        case kJSTypeString: {
-            instancet = v8::internal::STRING_TYPE;
-            break;
-        }
-        case kJSTypeNumber: {
-            num = JSValueToNumber(ctx->m_ctxRef, value, 0);
-            double intpart;
-            if (value != isolateimpl->m_negative_zero && modf(num, &intpart) == 0.0) {
-                if (internal::Smi::IsValid(intpart)) {
-                    return V82JSC::CreateLocalSmi<Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
-                                                         internal::Smi::FromInt(intpart));
-                }
+    if (!map) {
+        switch (t) {
+            case kJSTypeUndefined: {
+                io = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
+                return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
             }
-            instancet = v8::internal::HEAP_NUMBER_TYPE;
-            break;
+            case kJSTypeNull: {
+                io = isolateimpl->ii.heap()->root(R::kNullValueRootIndex);
+                return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
+            }
+            case kJSTypeBoolean: {
+                if (JSValueToBoolean(ctx->m_ctxRef, value))
+                    io = isolateimpl->ii.heap()->root(R::kTrueValueRootIndex);
+                else
+                    io = isolateimpl->ii.heap()->root(R::kFalseValueRootIndex);
+                return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
+            }
+            case kJSTypeString: {
+                map = isolateimpl->m_string_map;
+                break;
+            }
+            case kJSTypeNumber: {
+                num = JSValueToNumber(ctx->m_ctxRef, value, 0);
+                double intpart;
+                if (value != isolateimpl->m_negative_zero && modf(num, &intpart) == 0.0) {
+                    if (internal::Smi::IsValid(intpart)) {
+                        return V82JSC::CreateLocalSmi<v8::Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
+                                                             internal::Smi::FromInt(intpart));
+                    }
+                }
+                map = isolateimpl->m_number_map;
+                break;
+            }
+            case kJSTypeObject: {
+                if (JSValueToBoolean(ctx->m_ctxRef,
+                                     V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &value))) {
+                    map = isolateimpl->m_array_buffer_map;
+                } else {
+                    map = isolateimpl->m_value_map;
+                }
+                break;
+            }
+            default:
+                break;
         }
-        case kJSTypeObject: {
-            break;
-        }
-        default:
-            break;
     }
     
-    ValueImpl * impl = static_cast<ValueImpl *>(HeapAllocator::Alloc(isolateimpl, sizeof(ValueImpl), valueDestructor));
+    assert(map);
+    
+    ValueImpl * impl = static_cast<ValueImpl *>(H::HeapAllocator::Alloc(isolateimpl, map));
     impl->m_value = value;
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     if (t == kJSTypeNumber) {
-        reinterpret_cast<internal::HeapNumber*>(V82JSC::Map(impl))->set_value(num);
+        reinterpret_cast<internal::HeapNumber*>(H::ToHeapPointer(impl))->set_value(num);
     }
-    V82JSC::Map(impl)->set_instance_type(instancet);
 
-    return V82JSC::CreateLocal<Value>(V82JSC::ToIsolate(isolateimpl), impl);
+    return V82JSC::CreateLocal<v8::Value>(V82JSC::ToIsolate(isolateimpl), impl);
 }
 
 #define FROMTHIS(c,v) \
@@ -421,7 +436,7 @@ Local<String> Value::TypeOf(Isolate* isolate)
     FROMTHIS(c,v);
     JSValueRef exception = nullptr;
     JSValueRef to = V82JSC::exec(c->m_ctxRef, "return typeof _1", 1, &v);
-    return ValueImpl::New(isolate, JSValueToStringCopy(c->m_ctxRef, to, &exception));
+    return StringImpl::New(isolate, JSValueToStringCopy(c->m_ctxRef, to, &exception));
 }
 
 Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object)
@@ -431,7 +446,7 @@ Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object)
         v,
         V82JSC::ToJSValueRef(object, context)
     };
-    LocalException exception(V82JSC::ToIsolateImpl(this));
+    LocalException exception(V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context)));
     JSValueRef is = V82JSC::exec(c->m_ctxRef, "return _1 instanceof _2", 2, args, &exception);
     if (exception.ShouldThow()) {
         return Nothing<bool>();
@@ -465,7 +480,7 @@ MaybeLocal<String> Value::ToString(Local<Context> context) const
     if (exception.ShouldThow()) {
         return MaybeLocal<String>();
     }
-    return ValueImpl::New(reinterpret_cast<Isolate*>(iso), s);
+    return StringImpl::New(reinterpret_cast<Isolate*>(iso), s);
 }
 MaybeLocal<String> Value::ToDetailString(Local<Context> context) const { return ToString(context); } // FIXME
 MaybeLocal<Object> Value::ToObject(Local<Context> context) const

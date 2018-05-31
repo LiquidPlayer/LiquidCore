@@ -12,21 +12,37 @@
 
 using namespace v8;
 
-static GenericNamedPropertyGetterCallback NullNamedGetter = [](Local<Name> property, const PropertyCallbackInfo<Value>& info) {};
-static GenericNamedPropertySetterCallback NullNamedSetter = [](Local<Name> property, Local<Value> value, const PropertyCallbackInfo<Value>& info) {};
-static GenericNamedPropertyDescriptorCallback NullNamedDescriptor = [](Local<Name> property, const PropertyCallbackInfo<Value>& info) {};
-static GenericNamedPropertyDeleterCallback NullNamedDeleter = [](Local<Name> property, const PropertyCallbackInfo<v8::Boolean>& info) {};
-static GenericNamedPropertyEnumeratorCallback NullNamedEnumerator = [](const PropertyCallbackInfo<Array>& info) {};
-static GenericNamedPropertyDefinerCallback NullNamedDefiner = [](Local<Name> property, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) {};
-static GenericNamedPropertyQueryCallback NullNamedQuery = [](Local<Name> property, const PropertyCallbackInfo<Integer>& info) {};
+#define H V82JSC_HeapObject
 
-static IndexedPropertyGetterCallback NullIndexedGetter = [](uint32_t index, const PropertyCallbackInfo<Value>& info) {};
-static IndexedPropertySetterCallback NullIndexedSetter = [](uint32_t index, Local<Value> value, const PropertyCallbackInfo<Value>& info) {};
-static IndexedPropertyDescriptorCallback NullIndexedDescriptor = [](uint32_t index, const PropertyCallbackInfo<Value>& info) {};
-static IndexedPropertyDeleterCallback NullIndexedDeleter = [](uint32_t index, const PropertyCallbackInfo<v8::Boolean>& info) {};
-static IndexedPropertyEnumeratorCallback NullIndexedEnumerator = [](const PropertyCallbackInfo<Array>& info) {};
-static IndexedPropertyDefinerCallback NullIndexedDefiner = [](uint32_t index, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) {};
-static IndexedPropertyQueryCallback NullIndexedQuery = [](uint32_t index, const PropertyCallbackInfo<Integer>& info) {};
+static GenericNamedPropertyGetterCallback NullNamedGetter =
+    [](Local<Name> property, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertySetterCallback NullNamedSetter =
+    [](Local<Name> property, Local<Value> value, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertyDescriptorCallback NullNamedDescriptor =
+    [](Local<Name> property, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertyDeleterCallback NullNamedDeleter =
+    [](Local<Name> property, const PropertyCallbackInfo<v8::Boolean>& info) {};
+static GenericNamedPropertyEnumeratorCallback NullNamedEnumerator =
+    [](const PropertyCallbackInfo<Array>& info) {};
+static GenericNamedPropertyDefinerCallback NullNamedDefiner =
+    [](Local<Name> property, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) {};
+static GenericNamedPropertyQueryCallback NullNamedQuery =
+    [](Local<Name> property, const PropertyCallbackInfo<Integer>& info) {};
+
+static IndexedPropertyGetterCallback NullIndexedGetter =
+    [](uint32_t index, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertySetterCallback NullIndexedSetter =
+    [](uint32_t index, Local<Value> value, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertyDescriptorCallback NullIndexedDescriptor =
+    [](uint32_t index, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertyDeleterCallback NullIndexedDeleter =
+    [](uint32_t index, const PropertyCallbackInfo<v8::Boolean>& info) {};
+static IndexedPropertyEnumeratorCallback NullIndexedEnumerator =
+    [](const PropertyCallbackInfo<Array>& info) {};
+static IndexedPropertyDefinerCallback NullIndexedDefiner =
+    [](uint32_t index, const PropertyDescriptor& desc, const PropertyCallbackInfo<Value>& info) {};
+static IndexedPropertyQueryCallback NullIndexedQuery =
+    [](uint32_t index, const PropertyCallbackInfo<Integer>& info) {};
 
 struct DefaultNamedHandlers : public NamedPropertyHandlerConfiguration
 {
@@ -84,22 +100,12 @@ Local<ObjectTemplate> ObjectTemplate::New(
                                  Isolate* isolate,
                                  Local<FunctionTemplate> constructor)
 {
-    auto destructor = [](InternalObjectImpl *o)
-    {
-        ObjectTemplateImpl *otempl = static_cast<ObjectTemplateImpl*>(o);
-        v8::Isolate* i = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(o));
-        JSContextRef ctx = V82JSC::ToContextRef(i);
-        if (otempl->m_indexed_data) JSValueUnprotect(ctx, otempl->m_indexed_data);
-        if (otempl->m_named_data) JSValueUnprotect(ctx, otempl->m_named_data);
-        otempl->m_constructor_template.Reset();
-        templateDestructor(o);
-    };
-    
     if (!constructor.IsEmpty()) {
         return constructor->InstanceTemplate();
     } else {
-        ObjectTemplateImpl *otempl = (ObjectTemplateImpl*) TemplateImpl::New(isolate, sizeof(ObjectTemplateImpl), destructor);
-        V82JSC::Map(otempl)->set_instance_type(v8::internal::OBJECT_TEMPLATE_INFO_TYPE);
+        ObjectTemplateImpl *otempl = static_cast<ObjectTemplateImpl*>
+            (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
+                                     V82JSC::ToIsolateImpl(isolate)->m_object_template_map));
 
         otempl->m_constructor_template = Copyable(v8::FunctionTemplate)();
         otempl->m_named_data = 0;
@@ -149,16 +155,13 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
             def.callAsConstructor = TemplateImpl::callAsConstructorCallback;
         }
         JSClassRef claz = JSClassCreate(&def);
-        TemplateWrap *wrap = new TemplateWrap();
-        wrap->m_template.Reset(isolate, thiz);
-        wrap->m_isolate = iso;
+        void * data = V82JSC::PersistentData<ObjectTemplate>(isolate, thiz);
         def.finalize = [](JSObjectRef obj) {
-            TemplateWrap* wrap = (TemplateWrap*) JSObjectGetPrivate(obj);
-            wrap->m_template.Reset();
-            delete wrap;
+            void *data = JSObjectGetPrivate(obj);
+            V82JSC::ReleasePersistentData<ObjectTemplate>(data);
         };
 
-        instance = JSObjectMake(ctx->m_ctxRef, claz, wrap);
+        instance = JSObjectMake(ctx->m_ctxRef, claz, data);
     } else {
         instance = JSObjectMake(ctx->m_ctxRef, 0, 0);
     }
@@ -186,6 +189,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     //  deleteProperty - target, property                  -> True (deleted), False (not deleted)
     //  has            - target, property                  -> True (has), False (not has)
     //  ownKeys        - target                            -> Array of keys
+    IsolateImpl *isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
     *exception = 0;
     assert(argumentCount > 0);
     JSValueRef excp = 0;
@@ -199,7 +203,11 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         if (!isSymbol) {
             propertyName = JSValueToStringCopy(ctx, arguments[1], &excp);
         } else {
-            if (JSValueToBoolean(ctx, V82JSC::exec(ctx, "return _1 === Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')", 1, &arguments[1]))) {
+            JSValueRef args[] = {
+                arguments[1],
+                isolateimpl->m_private_symbol
+            };
+            if (JSValueToBoolean(ctx, V82JSC::exec(ctx, "return _1 === _2", 2, args))) {
                 return NULL;
             }
         }
@@ -225,12 +233,11 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     } else {
         value = JSValueMakeUndefined(ctx);
     }
-    InstanceWrap* wrap = V82JSC::getPrivateInstance(ctx, target);
-    Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
+    TrackedObjectImpl* wrap = getPrivateInstance(ctx, target);
+    Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
     HandleScope scope(isolate);
     
     const ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
-    IsolateImpl *isolateimpl = wrap->m_isolate;
     Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_proxy_security);
@@ -300,12 +307,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
     } else if (isolateimpl->ii.thread_local_top()->scheduled_exception_ != the_hole) {
         internal::Object * excep = isolateimpl->ii.thread_local_top()->scheduled_exception_;
-        if (excep->IsHeapObject()) {
-            ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
-            *exception = i->m_value;
-        } else {
-            *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
-        }
+        *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
         isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
 
@@ -315,25 +317,6 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     
     Local<Value> retVal = info.GetReturnValue().Get();
     return V82JSC::ToJSValueRef<Value>(retVal, context);
-}
-
-InstanceWrap::~InstanceWrap()
-{
-    Isolate* isolate = reinterpret_cast<Isolate*>(m_isolate);
-    HandleScope scope(isolate);
-    
-    Local<Context> context = V82JSC::OperatingContext(isolate);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
-    if (m_num_internal_fields && m_internal_fields) {
-        for (int i=0; i<m_num_internal_fields; i++) {
-            if (m_internal_fields[i]) JSValueUnprotect(ctx, m_internal_fields[i]);
-        }
-        delete m_internal_fields;
-    }
-    if (m_private_properties) {
-        JSValueUnprotect(ctx, m_private_properties);
-    }
-    m_object_template.Reset();
 }
 
 #define NAMED_PARAMS(R) const ObjectTemplateImpl* impl, Local<Name> property, Local<Value> value, \
@@ -348,17 +331,18 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     Isolate* isolate = V82JSC::ToIsolate(iso);
     
     LocalException exception(iso);
-    Local<ObjectTemplate> thiz = V82JSC::CreateLocal<ObjectTemplate>(isolate, this);
+    Local<v8::ObjectTemplate> thiz = V82JSC::CreateLocal<v8::ObjectTemplate>(isolate, this);
     
     // Structure:
     //
     // proxy -----> root . Symbol.for('org.liquidplayer.javascript.__v82jsc_private__') -->  lifecycle_object(wrap) --> InstanceWrap*
     
     // Create lifecycle object
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(iso, ctx->m_ctxRef, root);
+    TrackedObjectImpl *wrap = makePrivateInstance(iso, ctx->m_ctxRef, root);
     wrap->m_object_template.Reset(isolate, thiz);
     wrap->m_num_internal_fields = m_internal_fields;
-    wrap->m_internal_fields = new JSValueRef[m_internal_fields]();
+    wrap->m_internal_fields_array = JSObjectMakeArray(ctx->m_ctxRef, 0, nullptr, 0);
+    JSValueProtect(ctx->m_ctxRef, wrap->m_internal_fields_array);
     wrap->m_isHiddenPrototype = isHiddenPrototype;
 
     // Create proxy
@@ -399,7 +383,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             }
             if (ret == NULL) {
                 assert(argumentCount>2);
-                InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+                TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
                 assert(wrap);
                 return V82JSC::exec(ctx, "return _1[_2] = _3", 3, arguments, exception);
             }
@@ -444,13 +428,18 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             (PASS, [](NAMED_PARAMS(v8::Array)) { config.enumerator(info); },
              [](INDEXED_PARAMS(v8::Array)) { config.enumerator(info); });
             if (!*exception && ret == NULL) {
+                IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
                 assert(argumentCount>0);
+                JSValueRef args[] = {
+                    arguments[0],
+                    iso->m_private_symbol
+                };
                 return V82JSC::exec(ctx,
                                     "return Array.from(new Set("
                                     "  Object.getOwnPropertyNames(_1)"
                                     "    .concat(Object.getOwnPropertySymbols(_1))"
-                                    ")).filter(p => p!==Symbol.for('" GLOBAL_PRIVATE_SYMBOL "'))",
-                                    1, arguments, exception);
+                                    ")).filter(p => p!==_2)",
+                                    2, args, exception);
             }
             return ret;
         });
@@ -466,19 +455,18 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("getPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>0);
-            InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
-            Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
+            TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+            Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
             HandleScope scope(isolate);
             Local<Context> context = ContextImpl::New(isolate, ctx);
             ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
+            /*
             if (templ->m_access_check && !templ->m_access_check(context,
                                                                 ValueImpl::New(V82JSC::ToContextImpl(context), arguments[0]).As<Object>(),
                                                                 ValueImpl::New(V82JSC::ToContextImpl(context), templ->m_access_check_data)))
+            */
+            if (templ->m_access_check)
             {
-                /*
-                isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "access denied",
-                                                                                 NewStringType::kNormal).ToLocalChecked()));
-                */
                 return JSValueMakeNull(ctx);
             }
             Local<Value> proto = ValueImpl::New(V82JSC::ToContextImpl(context),
@@ -487,8 +475,8 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         });
         handler_func("setPrototypeOf", [](CALLBACK_PARAMS) -> JSValueRef {
             assert(argumentCount>1);
-            InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
-            Isolate *isolate = V82JSC::ToIsolate(wrap->m_isolate);
+            TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+            Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
             HandleScope scope(isolate);
             Local<Context> context = ContextImpl::New(isolate, ctx);
             ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
@@ -570,9 +558,10 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
 
     MaybeLocal<Object> instance;
     if (!m_constructor_template.IsEmpty()) {
-        instance = InitInstance(context, root, exception, m_constructor_template.Get(isolate));
+        instance = reinterpret_cast<TemplateImpl*>(this)->
+        InitInstance(context, root, exception, m_constructor_template.Get(isolate));
     } else {
-        instance = InitInstance(context, root, exception);
+        instance = reinterpret_cast<TemplateImpl*>(this)->InitInstance(context, root, exception);
     }
     if (instance.IsEmpty()) {
         return instance;
@@ -627,10 +616,11 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         
         JSStringRef sname = JSStringCreateWithUTF8CString("propagate_set");
         JSObjectRef propagate_set = JSObjectMakeFunctionWithCallback(ctx->m_ctxRef, sname, [](CALLBACK_PARAMS) -> JSValueRef {
-            InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+            TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
             assert(wrap && wrap->m_hidden_proxy_security);
-            HandleScope scope(V82JSC::ToIsolate(wrap->m_isolate));
-            Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(wrap->m_isolate), ctx);
+            Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+            HandleScope scope(isolate);
+            Local<Context> context = ContextImpl::New(isolate, ctx);
             Local<Name> property = ValueImpl::New(V82JSC::ToContextImpl(context), arguments[1]).As<Name>();
             if (JSValueIsStrictEqual(ctx, arguments[2], JSValueMakeUndefined(ctx)) ||
                 JSValueIsStrictEqual(ctx, arguments[2], wrap->m_hidden_proxy_security)) {
@@ -711,20 +701,24 @@ void ObjectTemplate::SetAccessor(
     ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
     Isolate* isolate = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(this_));
     
-    ObjAccessor accessor;
-    accessor.name = Copyable(Name)(isolate, name);
-    accessor.getter = getter;
-    accessor.setter = setter;
-    accessor.data = Copyable(Value)(isolate, data);
-    accessor.settings = settings;
-    accessor.attribute = attribute;
+    H::ObjAccessor *accessor = static_cast<H::ObjAccessor *>
+    (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(this_), V82JSC::ToIsolateImpl(this_)->m_object_accessor_map));
+    
+    accessor->name.Reset(isolate, name);
+    accessor->getter = getter;
+    accessor->setter = setter;
+    accessor->data.Reset(isolate, data);
+    accessor->settings = settings;
+    accessor->attribute = attribute;
     
     // For now, Signature and AccessorSignature are the same
     Local<Signature> sig = * reinterpret_cast<Local<Signature>*>(&signature);
     
-    accessor.signature = Copyable(Signature)(isolate, sig);
+    accessor->signature.Reset(isolate, sig);
     
-    this_->m_accessors.push_back(accessor);
+    Local<v8::ObjAccessor> local = V82JSC::CreateLocal<v8::ObjAccessor>(isolate, accessor);
+    accessor->next_.Reset(isolate, this_->m_accessors.Get(isolate));
+    this_->m_accessors.Reset(isolate, local);
 }
 
 /**

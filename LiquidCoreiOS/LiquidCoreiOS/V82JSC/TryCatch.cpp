@@ -109,16 +109,12 @@ Local<Value> TryCatch::ReThrow()
  */
 Local<Value> TryCatch::Exception() const
 {
-    Local<Context> context = reinterpret_cast<Isolate*>(this->isolate_)->GetCurrentContext();
+    Local<v8::Context> context = reinterpret_cast<Isolate*>(this->isolate_)->GetCurrentContext();
     
     internal::Object *sched = isolate_->thread_local_top()->scheduled_exception_;
     JSValueRef excep = (JSValueRef) exception_;
     if (sched != THE_HOLE) {
-        if (sched->IsSmi()) {
-            excep = JSValueMakeNumber(V82JSC::ToContextRef(context), internal::Smi::ToInt(sched));
-        } else {
-            excep = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(sched) - internal::kHeapObjectTag)->m_value;
-        }
+        excep = V82JSC::ToJSValueRef_<Value>(sched, context);
     }
 
     if (excep) {

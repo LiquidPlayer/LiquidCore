@@ -9,33 +9,7 @@
 #ifndef V82JSC_h
 #define V82JSC_h
 
-#include <JavaScriptCore/JavaScript.h>
-#include "include/v8-util.h"
-#include "src/arguments.h"
-#include "src/base/platform/platform.h"
-#include "src/code-stubs.h"
-#include "src/compilation-cache.h"
-#include "src/debug/debug.h"
-#include "src/execution.h"
-#include "src/futex-emulation.h"
-#include "src/heap/incremental-marking.h"
-#include "src/api.h"
-#include "src/lookup.h"
-#include "src/objects-inl.h"
-#include "src/parsing/preparse-data.h"
-#include "src/profiler/cpu-profiler.h"
-#include "src/unicode-inl.h"
-#include "src/utils.h"
-#include "src/vm-state.h"
-#include "src/heap/heap.h"
-#include <map>
-#include <string>
-
-#define DEF(T,V,F) \
-v8::internal::Object ** V;
-struct Roots {
-    STRONG_ROOT_LIST(DEF)
-};
+#include "Isolate.h"
 
 template <class T>
 class _maybe {
@@ -52,118 +26,25 @@ v8::Persistent<T, v8::CopyablePersistentTraits<T>>
 
 struct ContextImpl;
 
-namespace v8 {
-namespace internal {
-
-using v8::InterruptCallback;
-using v8::ExtensionCallback;
-using v8::LogEventCallback;
-using v8::AllowCodeGenerationFromStringsCallback;
-using v8::ApiImplementationCallback;
-using v8::PromiseRejectCallback;
-using v8::FatalErrorCallback;
-using v8::OOMErrorCallback;
-using v8::BeforeCallEnteredCallback;
-using v8::CallCompletedCallback;
-using v8::MicrotasksCompletedCallback;
-using v8::internal::Isolate;
-
-#define kJSRegexpStaticOffsetsVectorSize v8::internal::Isolate::kJSRegexpStaticOffsetsVectorSize
-#define kBMMaxShift v8::internal::Isolate::kBMMaxShift
-#define kUC16AlphabetSize v8::internal::Isolate::kUC16AlphabetSize
-
-struct IsolateImpl {
-    v8::internal::Isolate ii;
-    
-    JSContextGroupRef m_group;
-    Copyable(v8::Context) m_nullContext;
-    JSValueRef m_negative_zero;
-
-    Copyable(v8::Primitive) m_undefined;
-    Copyable(v8::Primitive) m_the_hole;
-    Copyable(v8::Primitive) m_null;
-    Copyable(v8::Primitive) m_yup;
-    Copyable(v8::Primitive) m_nope;
-    Copyable(v8::String) m_empty_string;
-
-    void EnterContext(v8::Local<v8::Context> ctx);
-    void ExitContext(v8::Local<v8::Context> ctx);
-    
-    v8::TryCatch *m_handlers;
-    
-    std::map<std::string, JSValueRef> m_global_symbols;
-    std::map<std::string, JSValueRef> m_private_symbols;
-    
-    v8::Isolate::CreateParams m_params;
-    
-    std::stack<Copyable(v8::Context)> m_context_stack;
-    std::stack<v8::HandleScope*> m_scope_stack;
-    
-    std::map<JSGlobalContextRef, Copyable(v8::Context)> m_global_contexts;
-    
-    void GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap);
-};
-}} // namespaces
-
 using v8::internal::IsolateImpl;
 
-struct InternalObjectImpl {
-    union {
-        unsigned char filler_[v8::internal::Map::kSize];
-        v8::internal::Map *pMap;
-        v8::internal::Oddball oddball;
-        v8::internal::Map map;
-    };
-    void Retain();
-    void Release();
-};
-
-typedef void (*InternalObjectDestructor)(InternalObjectImpl* obj);
-
-class HeapAllocator : public v8::internal::MemoryChunk
+struct ContextImpl : V82JSC_HeapObject::Context
 {
-public:
-    static InternalObjectImpl* Alloc(IsolateImpl *isolate, size_t size,
-                                     InternalObjectDestructor destructor=nullptr);
-    static void CollectGarbage(IsolateImpl *isolate);
-};
-
-struct HeapImpl : v8::internal::Heap {
-    v8::internal::MemoryChunk *m_heap_top;
-    size_t m_index;
-};
-
-struct ContextImpl : InternalObjectImpl
-{
-    bool m_isGlobalContext;
-    JSContextRef m_ctxRef;
-    std::map<std::string, bool> m_loaded_extensions;
-    Copyable(v8::Function) ObjectSetPrototypeOf;
-    Copyable(v8::Function) ObjectGetPrototypeOf;
-    Copyable(v8::Function) ObjectPrototypeToString;
-    Copyable(v8::Function) FunctionPrototypeBind;
-    
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
 
-struct ScriptImpl : InternalObjectImpl
+struct ScriptImpl : V82JSC_HeapObject::Script {};
+
+struct ValueImpl : V82JSC_HeapObject::Value
 {
-    JSStringRef m_sourceURL;
-    int m_startingLineNumber;
-    JSStringRef m_script;
+    static v8::Local<v8::Value> New(const ContextImpl *ctx, JSValueRef value, V82JSC_HeapObject::BaseMap *map=nullptr);
 };
 
-struct ValueImpl : InternalObjectImpl {
-    JSValueRef         m_value;
-
-    static v8::Local<v8::Value> New(const ContextImpl *ctx, JSValueRef value);
+struct StringImpl : V82JSC_HeapObject::String
+{
     static v8::Local<v8::String> New(v8::Isolate *isolate, JSStringRef string,
-                                     v8::internal::InstanceType type=v8::internal::FIRST_NONSTRING_TYPE,
+                                     V82JSC_HeapObject::BaseMap *map=nullptr,
                                      void *resource = nullptr);
-    static v8::Local<v8::Primitive> NewUndefined(v8::Isolate *isolate);
-    static v8::Local<v8::Primitive> New(v8::Isolate *isolate, double number);
-    static v8::Local<v8::Primitive> NewBoolean(v8::Isolate *isolate, bool value);
-    static v8::Local<v8::Primitive> NewNull(v8::Isolate *isolate);
 };
 
 struct HiddenObjectImpl : ValueImpl {
@@ -172,16 +53,7 @@ struct HiddenObjectImpl : ValueImpl {
     void PropagateOwnPropertiesToChild(v8::Local<v8::Context> context, JSObjectRef child);
 };
 
-struct EmbedderDataImpl {
-    union {
-        struct {
-            uint8_t buffer[v8::internal::Internals::kFixedArrayHeaderSize];
-            v8::internal::Object* m_embedder_data[0];
-        };
-        int m_size;
-        InternalObjectImpl io;
-    };
-};
+struct EmbedderDataImpl : V82JSC_HeapObject::FixedArray {};
 
 struct FunctionCallbackImpl : public v8::FunctionCallbackInfo<v8::Value>
 {
@@ -201,67 +73,16 @@ struct SignatureImpl;
 struct ObjectTemplateImpl;
 struct FunctionTemplateImpl;
 
-struct PropAccessor {
-    ~PropAccessor()
-    {
-        name.Reset();
-        setter.Reset();
-        getter.Reset();
-    }
-    Copyable(v8::Name) name;
-    Copyable(v8::FunctionTemplate) setter;
-    Copyable(v8::FunctionTemplate) getter;
-    v8::PropertyAttribute attribute;
-    v8::AccessControl settings;
-};
-struct Prop {
-    ~Prop()
-    {
-        name.Reset();
-        value.Reset();
-    }
-    Copyable(v8::Name) name;
-    Copyable(v8::Data) value;
-    v8::PropertyAttribute attributes;
-};
-struct ObjAccessor {
-    ~ObjAccessor()
-    {
-        name.Reset();
-        data.Reset();
-        signature.Reset();
-    }
-    Copyable(v8::Name) name;
-    v8::AccessorNameGetterCallback getter;
-    v8::AccessorNameSetterCallback setter;
-    Copyable(v8::Value) data;
-    v8::AccessControl settings;
-    v8::PropertyAttribute attribute;
-    Copyable(v8::Signature) signature;
-};
-struct IntrinsicProp {
-    ~IntrinsicProp()
-    {
-        name.Reset();
-    }
-    Copyable(v8::Name) name;
-    v8::Intrinsic value;
-};
+struct PropAccessorImpl : V82JSC_HeapObject::PropAccessor {};
+struct PropImpl : V82JSC_HeapObject::Prop {};
+struct ObjAccessorImpl : V82JSC_HeapObject::ObjAccessor {};
+struct IntrinsicPropImpl : V82JSC_HeapObject::IntrinsicProp {};
+struct TrackedObjectImpl : V82JSC_HeapObject::TrackedObject {};
 
 struct LocalException;
 
-struct TemplateImpl : InternalObjectImpl
+struct TemplateImpl : V82JSC_HeapObject::Template
 {
-    std::vector<Prop> m_properties;
-    std::vector<PropAccessor> m_property_accessors;
-    std::vector<ObjAccessor> m_accessors;
-    std::vector<IntrinsicProp> m_intrinsics;
-    v8::FunctionCallback m_callback;
-    JSValueRef m_data;
-    Copyable(v8::Signature) m_signature;
-    Copyable(v8::ObjectTemplate) m_prototype_template;
-    Copyable(v8::FunctionTemplate) m_parent;
-
     static JSValueRef callAsFunctionCallback(JSContextRef ctx,
                                              JSObjectRef function,
                                              JSObjectRef thisObject,
@@ -279,22 +100,11 @@ struct TemplateImpl : InternalObjectImpl
                                                    v8::Local<v8::FunctionTemplate> ftempl);
     v8::MaybeLocal<v8::Object> InitInstance(v8::Local<v8::Context> context,
                                             JSObjectRef instance, LocalException& exception);
-    static TemplateImpl* New(v8::Isolate* isolate, size_t size, InternalObjectDestructor destructor);
+    static TemplateImpl* New(v8::Isolate* isolate, size_t size);
 };
 
-void templateDestructor(InternalObjectImpl* o);
-
-struct FunctionTemplateImpl : TemplateImpl
+struct FunctionTemplateImpl : V82JSC_HeapObject::FunctionTemplate
 {
-    v8::ConstructorBehavior m_behavior;
-    std::string m_name;
-    int m_length;
-    Copyable(v8::ObjectTemplate) m_instance_template;
-    std::map<JSContextRef, JSObjectRef> m_functions;
-    bool m_isHiddenPrototype;
-    bool m_removePrototype;
-    bool m_readOnlyPrototype;
-
     static JSValueRef callAsConstructorCallback(JSContextRef ctx,
                                                 JSObjectRef constructor,
                                                 JSObjectRef thisObject,
@@ -303,55 +113,12 @@ struct FunctionTemplateImpl : TemplateImpl
                                                 JSValueRef* exception);
 };
 
-struct ObjectTemplateImpl : TemplateImpl
+struct ObjectTemplateImpl : V82JSC_HeapObject::ObjectTemplate
 {
-    Copyable(v8::FunctionTemplate) m_constructor_template;
-    v8::NamedPropertyHandlerConfiguration m_named_handler;
-    v8::IndexedPropertyHandlerConfiguration m_indexed_handler;
-    JSValueRef m_named_data;
-    JSValueRef m_indexed_data;
-    bool m_need_proxy;
-    int m_internal_fields;
-    v8::AccessCheckCallback m_access_check;
-    JSValueRef m_access_check_data;
-    v8::NamedPropertyHandlerConfiguration m_named_failed_access_handler;
-    v8::IndexedPropertyHandlerConfiguration m_indexed_failed_access_handler;
-    JSValueRef m_failed_named_data;
-    JSValueRef m_failed_indexed_data;
-
     v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root, bool isHiddenPrototype);
 };
 
-struct TemplateWrap {
-    ~TemplateWrap()
-    {
-        m_template.Reset();
-    }
-    Copyable(v8::Template) m_template;
-    IsolateImpl* m_isolate;
-    int m_count;
-};
-
-struct InstanceWrap {
-    ~InstanceWrap();
-    JSValueRef m_security;
-    JSValueRef m_proxy_security;
-    JSValueRef m_hidden_proxy_security;
-    Copyable(v8::ObjectTemplate) m_object_template;
-    IsolateImpl *m_isolate;
-    int m_num_internal_fields;
-    JSValueRef *m_internal_fields;
-    JSValueRef m_private_properties;
-    int m_hash;
-    bool m_isHiddenPrototype;
-    std::vector<JSObjectRef> m_hidden_children;
-    bool m_isGlobalObject;
-};
-
-struct SignatureImpl : InternalObjectImpl
-{
-    Copyable(v8::FunctionTemplate) m_template;
-};
+struct SignatureImpl : V82JSC_HeapObject::Signature {};
 
 /* IMPORTANT!  This must match v8::TryCatch */
 struct TryCatchCopy {
@@ -377,7 +144,7 @@ struct V82JSC {
     };
 
     template <class T>
-    static inline v8::Local<T> CreateLocal(v8::internal::Isolate *isolate, InternalObjectImpl *o)
+    static inline v8::Local<T> CreateLocal(v8::internal::Isolate *isolate, V82JSC_HeapObject::HeapObject *o)
     {
         v8::internal::Object ** handle =
             v8::internal::HandleScope::CreateHandle(isolate,
@@ -385,7 +152,7 @@ struct V82JSC {
         return __local<T>(handle).toLocal();
     }
     template <class T>
-    static inline v8::Local<T> CreateLocal(v8::Isolate *isolate, InternalObjectImpl *o)
+    static inline v8::Local<T> CreateLocal(v8::Isolate *isolate, V82JSC_HeapObject::HeapObject *o)
     {
         return CreateLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o);
     }
@@ -396,29 +163,42 @@ struct V82JSC {
         return __local<T>(handle).toLocal();
     }
     
+    template<class T>
+    static inline JSValueRef ToJSValueRef_(v8::internal::Object *obj, v8::Local<v8::Context> context)
+    {
+        JSContextRef ctx = ToContextRef(context);
+        if (obj->IsSmi()) {
+            int value = v8::internal::Smi::ToInt(obj);
+            return JSValueMakeNumber(ctx, value);
+        } else {
+            auto *that_ = reinterpret_cast<V82JSC_HeapObject::HeapObject*>
+                (reinterpret_cast<intptr_t>(obj) - v8::internal::kHeapObjectTag);
+            if (that_->m_map == obj) {
+                // We are a map, which means this is an oddball value
+                IsolateImpl *i = ToIsolateImpl(that_);
+                typedef v8::internal::Heap::RootListIndex R;
+                if (that_->m_map == i->ii.heap()->root(R::kUndefinedValueRootIndex)) return JSValueMakeUndefined(ctx);
+                if (that_->m_map == i->ii.heap()->root(R::kNullValueRootIndex)) return JSValueMakeNull(ctx);
+                if (that_->m_map == i->ii.heap()->root(R::kTrueValueRootIndex)) return JSValueMakeBoolean(ctx, true);
+                if (that_->m_map == i->ii.heap()->root(R::kFalseValueRootIndex)) return JSValueMakeBoolean(ctx, false);
+                if (that_->m_map == i->ii.heap()->root(R::kempty_stringRootIndex)) return i->m_empty_string;
+                assert(0);
+            }
+            return reinterpret_cast<ValueImpl*>(that_)->m_value;
+        }
+    }
     template <class T>
     static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Local<v8::Context> context)
     {
         if (v.IsEmpty()) return 0;
         v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(*v);
-        if (obj->IsSmi()) {
-            int value = v8::internal::Smi::ToInt(obj);
-            return JSValueMakeNumber(ToContextRef(context), value);
-        } else {
-            ValueImpl *that_ = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-            return that_->m_value;
-        }
+        return ToJSValueRef_<T>(obj, context);
     }
     template<class T>
     static inline JSValueRef ToJSValueRef(const T* v, v8::Local<v8::Context> context)
     {
         v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<T*>(v));
-        if (obj->IsSmi()) {
-            return JSValueMakeNumber(ToContextRef(context), v8::internal::Smi::ToInt(obj));
-        } else {
-            ValueImpl *o = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
-            return o->m_value;
-        }
+        return ToJSValueRef_<T>(obj, context);
     }
     template <class T>
     static inline JSValueRef ToJSValueRef(v8::Local<T> v, v8::Isolate *isolate)
@@ -478,9 +258,11 @@ struct V82JSC {
     {
         return reinterpret_cast<IsolateImpl*>(isolate);
     }
-    static inline IsolateImpl* ToIsolateImpl(const InternalObjectImpl *io)
+    static inline IsolateImpl* ToIsolateImpl(const V82JSC_HeapObject::HeapObject *io)
     {
-        v8::internal::Isolate* isolate = reinterpret_cast<v8::internal::HeapObject*>(V82JSC::Map(io))->GetIsolate();
+        v8::internal::Isolate* isolate =
+            reinterpret_cast<v8::internal::HeapObject*>
+            (V82JSC_HeapObject::ToHeapPointer(const_cast<V82JSC_HeapObject::HeapObject *>(io)))->GetIsolate();
         return reinterpret_cast<IsolateImpl*>(isolate);
     }
     static inline v8::Isolate* ToIsolate(IsolateImpl *isolate)
@@ -564,64 +346,6 @@ struct V82JSC {
         JSStringRelease(sbody);
         return result;
     }
-#define GLOBAL_PRIVATE_SYMBOL "org.liquidplayer.javascript.__v82jsc_private__"
-    static inline InstanceWrap * makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object)
-    {
-        InstanceWrap *wrap = getPrivateInstance(ctx, object);
-        if (wrap) return wrap;
-        
-        wrap = new InstanceWrap();
-        wrap->m_security = object;
-        // Keep only a weak reference to m_security to avoid cyclical references
-        wrap->m_hash = 1 + rand();
-        wrap->m_isolate = iso;
-        
-        JSClassDefinition def = kJSClassDefinitionEmpty;
-        def.attributes = kJSClassAttributeNoAutomaticPrototype;
-        def.finalize = [](JSObjectRef object) {
-            InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(object);
-            delete wrap;
-        };
-        JSClassRef klass = JSClassCreate(&def);
-        JSObjectRef private_object = JSObjectMake(ctx, klass, (void*)wrap);
-        JSClassRelease(klass);
-        
-        JSValueRef args[] = {
-            object, private_object
-        };
-
-        exec(JSContextGetGlobalContext(ctx),
-             "Object.defineProperty(_1, Symbol.for('" GLOBAL_PRIVATE_SYMBOL "'), {value: _2, enumerable: false, configurable: true, writable: true})",
-             2, args);
-        return wrap;
-    }
-    static inline InstanceWrap * getPrivateInstance(JSContextRef ctx, JSObjectRef object)
-    {
-        JSObjectRef private_object = (JSObjectRef) exec(JSContextGetGlobalContext(ctx), "return _1[Symbol.for('" GLOBAL_PRIVATE_SYMBOL "')]", 1, &object);
-        if (JSValueIsObject(ctx, private_object)) {
-            InstanceWrap *wrap = (InstanceWrap*) JSObjectGetPrivate(private_object);
-            if (wrap && (JSValueIsStrictEqual(ctx, object, wrap->m_security) ||
-                         (wrap->m_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_proxy_security)) ||
-                         (wrap->m_hidden_proxy_security && JSValueIsStrictEqual(ctx, object, wrap->m_hidden_proxy_security)) )) {
-                return wrap;
-            } else if (wrap && wrap->m_isGlobalObject) {
-                JSObjectRef proto = object;
-                while (JSValueIsObject(ctx, proto)) {
-                    if (JSValueIsStrictEqual(ctx, proto, wrap->m_security) || JSValueIsStrictEqual(ctx, proto, wrap->m_proxy_security)) {
-                        return wrap;
-                    }
-                    proto = (JSObjectRef) JSObjectGetPrototype(ctx, proto);
-                }
-            }
-        }
-        return nullptr;
-    }
-
-    static inline v8::internal::Map* Map(const InternalObjectImpl *io)
-    {
-        return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(io) + v8::internal::kHeapObjectTag);
-    }
-    
     static inline v8::Local<v8::Context> FindGlobalContext(v8::Local<v8::Context> context)
     {
         v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
@@ -667,18 +391,35 @@ struct V82JSC {
         v8::TryCatch try_catch(isolate);
         setPrototype->Call(context, Null(isolate), 2, args).IsEmpty();
     }
+    template<typename T>
+    static inline void * PersistentData(v8::Isolate *isolate, v8::Local<T> d)
+    {
+        // This is a bit hacky, but should work.  We only need to store a persistent handle
+        // to the function template.  We can't allocate it on the stack because it will go away
+        // after this function returns.  We can't allocate it on the C++ heap because we want all
+        // heap values on the V82JSC heap.  So, we will initially allocate it on the C++ heap,
+        // copy the contents of the handle (which is just one pointer) to our data parameter
+        // and then delete the C++ handle _without calling the destructor_.  We will reset the
+        // handle, then, in the finalize phase.
+        Copyable(T) * persistent = new Copyable(T)(isolate, d);
+        void * data = * reinterpret_cast<void**>(persistent);
+        operator delete(persistent);
+        return data;
+    }
+    template<typename T>
+    static inline void ReleasePersistentData(void *data)
+    {
+        Copyable(T) * persistent = reinterpret_cast<Copyable(T) *>(&data);
+        persistent->Reset();
+    }
+    template<typename T>
+    static inline v8::Local<T> FromPersistentData(v8::Isolate *isolate, void *data)
+    {
+        Copyable(T) * persistent = reinterpret_cast<Copyable(T) *>(&data);
+        return persistent->Get(isolate);
+    }
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)
-
-inline void valueDestructor(InternalObjectImpl *o)
-{
-    JSValueRef ref = static_cast<ValueImpl*>(o)->m_value;
-    if (ref) {
-        v8::Isolate* i = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(o));
-        JSContextRef ctx = V82JSC::ToContextRef(i);
-        JSValueUnprotect(ctx, ref);
-    }
-}
 
 struct LocalException {
     LocalException(IsolateImpl *i) : exception_(0), isolate_(i) {}
@@ -700,17 +441,12 @@ struct LocalException {
     IsolateImpl *isolate_;
 };
 
-struct ArrayBufferInfo {
-    void *buffer;
-    size_t byte_length;
-    IsolateImpl *isolate;
-    bool isExternal;
-    bool isNeuterable;
-};
-
-ArrayBufferInfo * GetArrayBufferInfo(const v8::ArrayBuffer *ab);
 void proxyArrayBuffer(ContextImpl *ctx);
-bool InstallAutoExtensions(v8::Local<v8::Context> context);
-bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name);
+bool InstallAutoExtensions(v8::Local<v8::Context> context, std::map<std::string, bool>& loaded_extensions);
+bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name, std::map<std::string, bool>& loaded_extensions);
+TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object);
+TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object);
+TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx);
+void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* impl, JSObjectRef object);
 
 #endif /* V82JSC_h */

@@ -9,6 +9,7 @@
 #include "V82JSC.h"
 
 using namespace v8;
+#define H V82JSC_HeapObject
 
 class DefaultAllocator : public ArrayBuffer::Allocator
 {
@@ -163,26 +164,38 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
     
     LocalException exception(isolateimpl);
     
-    ArrayBufferInfo *info = new ArrayBufferInfo();
-    info->buffer = isolateimpl->m_params.array_buffer_allocator->Allocate(byte_length);
-    info->byte_length = byte_length;
-    info->isolate = isolateimpl;
-    info->isExternal = false;
+    TrackedObjectImpl *wrap = makePrivateInstance(isolateimpl, ctx);
+    Local<TrackedObject> local = V82JSC::CreateLocal<TrackedObject>(&isolateimpl->ii, wrap);
+
+    wrap->ArrayBufferInfo.buffer = isolateimpl->m_params.array_buffer_allocator->Allocate(byte_length);
+    wrap->ArrayBufferInfo.byte_length = byte_length;
+    wrap->ArrayBufferInfo.isExternal = false;
+    wrap->ArrayBufferInfo.iso = isolateimpl;
+    wrap->ArrayBufferInfo.m_self.Reset(V82JSC::ToIsolate(isolateimpl), local);
     
-    JSObjectRef array_buffer = JSObjectMakeArrayBufferWithBytesNoCopy(ctx, info->buffer, byte_length, [](void* bytes, void* deallocatorContext) {
-        ArrayBufferInfo *info = (ArrayBufferInfo*)deallocatorContext;
-        if (!info->isExternal) {
-            info->isolate->m_params.array_buffer_allocator->Free(info->buffer, info->byte_length);
+    JSObjectRef array_buffer = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,  wrap->ArrayBufferInfo.buffer,
+                                                                      byte_length, [](void* bytes, void* deallocatorContext)
+    {
+        TrackedObjectImpl *impl = reinterpret_cast<TrackedObjectImpl*>(deallocatorContext);
+        if (!impl->ArrayBufferInfo.isExternal) {
+            impl->ArrayBufferInfo.iso->m_params.array_buffer_allocator->Free(impl->ArrayBufferInfo.buffer,
+                                                                             impl->ArrayBufferInfo.byte_length);
+            impl->ArrayBufferInfo.buffer = nullptr;
         }
-        delete info;
+        impl->ArrayBufferInfo.m_self.Reset();
     }, (void*) byte_length, &exception);
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(isolateimpl, ctx, array_buffer);
+    
+    setPrivateInstance(isolateimpl, ctx, wrap, array_buffer);
+
+    JSValueRef excp = 0;
+    wrap->m_internal_fields_array = JSObjectMakeArray(ctx, 0, nullptr, &excp);
+    assert(excp==0);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
-    wrap->m_internal_fields = new JSValueRef[ArrayBuffer::kInternalFieldCount]();
-    Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
-    buffer->SetAlignedPointerInInternalField(1, info);
+    
+    Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context),
+                                               array_buffer,
+                                               isolateimpl->m_array_buffer_map).As<ArrayBuffer>();
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(buffer);
-    V82JSC::Map(impl)->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(false);
     return buffer;
@@ -207,47 +220,51 @@ Local<ArrayBuffer> ArrayBuffer::New(
     
     LocalException exception(isolateimpl);
     
-    ArrayBufferInfo *info = new ArrayBufferInfo();
-    info->buffer = data;
-    info->byte_length = byte_length;
-    info->isolate = isolateimpl;
-    info->isExternal = mode==ArrayBufferCreationMode::kExternalized;
-    
-    JSObjectRef array_buffer = JSObjectMakeArrayBufferWithBytesNoCopy(ctx, info->buffer, byte_length, [](void* bytes, void* deallocatorContext) {
-        ArrayBufferInfo *info = (ArrayBufferInfo*)deallocatorContext;
-        if (!info->isExternal) {
-            info->isolate->m_params.array_buffer_allocator->Free(info->buffer, info->byte_length);
+    TrackedObjectImpl *wrap = makePrivateInstance(isolateimpl, ctx);
+    Local<v8::TrackedObject> local = V82JSC::CreateLocal<v8::TrackedObject>(&isolateimpl->ii, wrap);
+
+    wrap->ArrayBufferInfo.buffer = data;
+    wrap->ArrayBufferInfo.byte_length = byte_length;
+    wrap->ArrayBufferInfo.isExternal = mode==ArrayBufferCreationMode::kExternalized;
+    wrap->ArrayBufferInfo.iso = isolateimpl;
+    wrap->ArrayBufferInfo.m_self.Reset(V82JSC::ToIsolate(isolateimpl), local);
+
+    JSObjectRef array_buffer = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,  wrap->ArrayBufferInfo.buffer,
+                                                                      byte_length, [](void* bytes, void* deallocatorContext)
+    {
+        TrackedObjectImpl *impl = reinterpret_cast<TrackedObjectImpl*>(deallocatorContext);
+        if (!impl->ArrayBufferInfo.isExternal) {
+            impl->ArrayBufferInfo.iso->m_params.array_buffer_allocator->Free(impl->ArrayBufferInfo.buffer,
+                                                                           impl->ArrayBufferInfo.byte_length);
+            impl->ArrayBufferInfo.buffer = nullptr;
         }
-        delete info;
     }, (void*) byte_length, &exception);
-    InstanceWrap *wrap = V82JSC::makePrivateInstance(isolateimpl, ctx, array_buffer);
+    
+    setPrivateInstance(isolateimpl, ctx, wrap, array_buffer);
+    
+    JSValueRef excp = 0;
+    wrap->m_internal_fields_array = JSObjectMakeArray(ctx, 0, nullptr, &excp);
+    assert(excp==0);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
-    wrap->m_internal_fields = new JSValueRef[ArrayBuffer::kInternalFieldCount]();
-    Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context), array_buffer).As<ArrayBuffer>();
-    buffer->SetAlignedPointerInInternalField(1, info);
+    
+    Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context),
+                                               array_buffer,
+                                               isolateimpl->m_array_buffer_map).As<ArrayBuffer>();
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl>(buffer);
-    V82JSC::Map(impl)->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(false);
     return buffer;
 }
 
-ArrayBufferInfo * GetArrayBufferInfo(const ArrayBuffer *ab)
+TrackedObjectImpl * GetTrackedObject(const ArrayBuffer *ab)
 {
     ValueImpl* impl = V82JSC::ToImpl<ValueImpl,ArrayBuffer>(ab);
     Isolate* isolate = V82JSC::ToIsolate(ab);
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
 
-    Object * thiz = reinterpret_cast<Object*>(const_cast<ArrayBuffer*>(ab));
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
-    ArrayBufferInfo *info;
-    assert(wrap);
-    info = (ArrayBufferInfo*) thiz->GetAlignedPointerFromInternalField(1);
-    V82JSC::Map(impl)->set_instance_type(v8::internal::JS_ARRAY_BUFFER_TYPE);
-    i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
-    buf->set_is_neuterable(info->isNeuterable);
-    return info;
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
+    return wrap;
 }
 
 /**
@@ -256,7 +273,7 @@ ArrayBufferInfo * GetArrayBufferInfo(const ArrayBuffer *ab)
  */
 bool ArrayBuffer::IsExternal() const
 {
-    return GetArrayBufferInfo(this)->isExternal;
+    return GetTrackedObject(this)->ArrayBufferInfo.isExternal;
 }
 
 /**
@@ -291,11 +308,11 @@ void ArrayBuffer::Neuter()
  */
 ArrayBuffer::Contents ArrayBuffer::Externalize()
 {
-    ArrayBufferInfo *info = GetArrayBufferInfo(this);
+    TrackedObjectImpl *wrap = GetTrackedObject(this);
     ArrayBuffer::Contents contents;
-    contents.data_ = info->buffer;
-    contents.byte_length_ = info->byte_length;
-    info->isExternal = true;
+    contents.data_ = wrap->ArrayBufferInfo.buffer;
+    contents.byte_length_ = wrap->ArrayBufferInfo.byte_length;
+    wrap->ArrayBufferInfo.isExternal = true;
     return contents;
 }
 
@@ -311,9 +328,11 @@ ArrayBuffer::Contents ArrayBuffer::Externalize()
  */
 ArrayBuffer::Contents ArrayBuffer::GetContents()
 {
-    assert(0);
-    ArrayBuffer::Contents foo;
-    return foo;
+    TrackedObjectImpl *wrap = GetTrackedObject(this);
+    ArrayBuffer::Contents contents;
+    contents.data_ = wrap->ArrayBufferInfo.buffer;
+    contents.byte_length_ = wrap->ArrayBufferInfo.byte_length;
+    return contents;
 }
 
 /**

@@ -9,6 +9,7 @@
 #include "V82JSC.h"
 
 using namespace v8;
+#define H V82JSC_HeapObject
 
 MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
                                    ScriptOrigin* origin)
@@ -36,16 +37,7 @@ MaybeLocal<Script> Script::Compile(Local<Context> context, Local<String> source,
         if (s) JSStringRelease(s);
         return MaybeLocal<Script>();
     } else {
-        auto destructor = [](InternalObjectImpl *o)
-        {
-            JSStringRef script = static_cast<ScriptImpl*>(o)->m_script;
-            JSStringRef sourceURL = static_cast<ScriptImpl*>(o)->m_sourceURL;
-            if (script) JSStringRelease(script);
-            if (sourceURL) JSStringRelease(sourceURL);
-        };
-
-        ScriptImpl *script = static_cast<ScriptImpl *>(HeapAllocator::Alloc(iso, sizeof(ScriptImpl), destructor));
-        V82JSC::Map(script)->set_instance_type(internal::SCRIPT_TYPE);
+        ScriptImpl *script = static_cast<ScriptImpl *>(H::HeapAllocator::Alloc(iso, iso->m_script_map));
 
         script->m_sourceURL = sourceURL;
         script->m_startingLineNumber = startingLineNumber;

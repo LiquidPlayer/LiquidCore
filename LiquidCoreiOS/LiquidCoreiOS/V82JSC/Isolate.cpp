@@ -6,15 +6,26 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
+#include "Isolate.h"
 #include "V82JSC.h"
 
 using namespace v8;
+using V82JSC_HeapObject::HeapImpl;
+
+#define H V82JSC_HeapObject
 
 v8::Isolate *current = nullptr;
 
+#define DEF(T,V,F) \
+v8::internal::Object ** V;
+struct Roots {
+    STRONG_ROOT_LIST(DEF)
+};
 #define DECLARE_FIELDS(type,name,v) \
 const intptr_t v8::internal::Isolate::name##_debug_offset_ = (reinterpret_cast<intptr_t>(&(reinterpret_cast<v8::internal::Isolate*>(16)->name##_)) - 16);
 ISOLATE_INIT_LIST(DECLARE_FIELDS);
+
+std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map;
 
 /**
  * Creates a new isolate.  Does not change the currently entered
@@ -48,44 +59,75 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_params = params;
     
     impl->m_group = JSContextGroupCreate();
-    Local<Context> nullContext = Context::New(isolate);
-    impl->m_nullContext.Reset(isolate, nullContext);
-    impl->EnterContext(nullContext);
     
     Roots* roots = reinterpret_cast<Roots *>(impl->ii.heap()->roots_array_start());
     
-    roots->block_context_map = * reinterpret_cast<internal::Object***> (*impl->m_nullContext);
-    
-    impl->m_undefined.Reset(isolate, ValueImpl::NewUndefined(isolate));
-    roots->undefined_value = * reinterpret_cast<internal::Object***> (*impl->m_undefined);
+    // Create Map Objects
+    impl->m_context_map = H::Map<H::Context>::New(impl, internal::CONTEXT_EXTENSION_TYPE);
+    auto map_undefined = H::Map<H::Value>::New(impl, internal::ODDBALL_TYPE, internal::Internals::kUndefinedOddballKind);
+    auto map_the_hole = H::Map<H::Value>::New(impl, internal::ODDBALL_TYPE, internal::Internals::kUndefinedOddballKind);
+    auto map_null = H::Map<H::Value>::New(impl, internal::ODDBALL_TYPE, internal::Internals::kNullOddballKind);
+    auto map_true = H::Map<H::Value>::New(impl, internal::JS_VALUE_TYPE);
+    auto map_false = H::Map<H::Value>::New(impl, internal::JS_VALUE_TYPE);
+    auto map_empty_string = H::Map<H::Value>::New(impl, internal::INTERNALIZED_STRING_TYPE);
+    impl->m_tracked_object_map = H::Map<H::TrackedObject>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_array_buffer_map = H::Map<H::Value>::New(impl, internal::JS_ARRAY_BUFFER_TYPE);
+    impl->m_fixed_array_map = H::Map<H::FixedArray>::New(impl, internal::FIXED_ARRAY_TYPE);
+    impl->m_one_byte_string_map = H::Map<H::String>::New(impl, internal::ONE_BYTE_STRING_TYPE);
+    impl->m_string_map = H::Map<H::String>::New(impl, internal::STRING_TYPE);
+    impl->m_external_one_byte_string_map = H::Map<H::String>::New(impl, internal::EXTERNAL_ONE_BYTE_STRING_TYPE);
+    impl->m_external_string_map = H::Map<H::String>::New(impl, internal::EXTERNAL_STRING_TYPE);
+    impl->m_internalized_string_map = H::Map<H::String>::New(impl, internal::INTERNALIZED_STRING_TYPE);
+    impl->m_value_map = H::Map<H::Value>::New(impl, internal::JS_VALUE_TYPE);
+    impl->m_number_map = H::Map<H::Value>::New(impl, internal::HEAP_NUMBER_TYPE);
+    impl->m_signature_map = H::Map<H::Signature>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_function_template_map = H::Map<H::FunctionTemplate>::New(impl, internal::FUNCTION_TEMPLATE_INFO_TYPE);
+    impl->m_object_template_map = H::Map<H::ObjectTemplate>::New(impl, internal::OBJECT_TEMPLATE_INFO_TYPE);
+    impl->m_property_map = H::Map<H::Prop>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_property_accessor_map = H::Map<H::PropAccessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_intrinsic_property_map = H::Map<H::IntrinsicProp>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_accessor_map = H::Map<H::Accessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_object_accessor_map = H::Map<H::ObjAccessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_script_map = H::Map<H::Script>::New(impl, internal::SCRIPT_TYPE);
 
-    impl->m_the_hole.Reset(isolate, ValueImpl::NewUndefined(isolate));
-    roots->the_hole_value = * reinterpret_cast<internal::Object***> (*impl->m_the_hole);
+    roots->block_context_map = reinterpret_cast<internal::Object**>(H::ToV8Map(impl->m_context_map));
+    roots->undefined_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_undefined));
+    roots->the_hole_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_the_hole));
+    roots->null_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_null));
+    roots->true_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_true));
+    roots->false_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_false));
+    roots->empty_string = reinterpret_cast<internal::Object**> (H::ToV8Map(map_empty_string));
 
-    impl->m_null.Reset(isolate, ValueImpl::NewNull(isolate));
-    roots->null_value = * reinterpret_cast<internal::Object***> (*impl->m_null);
+    Local<Context> nullContext = Context::New(isolate);
+    impl->m_nullContext.Reset(isolate, nullContext);
+    impl->EnterContext(nullContext);
 
-    impl->m_yup.Reset(isolate, ValueImpl::NewBoolean(isolate, true));
-    roots->true_value = * reinterpret_cast<internal::Object ***>(*impl->m_yup);
+    JSStringRef empty_string = JSStringCreateWithUTF8CString("");
+    impl->m_empty_string = JSValueMakeString(V82JSC::ToContextRef(nullContext), empty_string);
+    JSValueProtect(V82JSC::ToContextRef(nullContext), impl->m_empty_string);
+    JSStringRelease(empty_string);
 
-    impl->m_nope.Reset(isolate, ValueImpl::NewBoolean(isolate, false));
-    roots->false_value = * reinterpret_cast<internal::Object ***>(*impl->m_nope);
-    
     impl->m_negative_zero = V82JSC::exec(V82JSC::ToContextRef(nullContext), "return -0", 0, 0);
-    
+    JSValueProtect(V82JSC::ToContextRef(nullContext), impl->m_negative_zero);
+
+    impl->m_private_symbol = V82JSC::exec(V82JSC::ToContextRef(nullContext), "return Symbol()", 0, 0);
+    JSValueProtect(V82JSC::ToContextRef(nullContext), impl->m_private_symbol);
+
     impl->ii.thread_local_top_.isolate_ = &impl->ii;
     impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
     impl->ii.thread_local_top_.pending_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
-
-    JSStringRef empty_string = JSStringCreateWithUTF8CString("");
-    Local<String> esv = ValueImpl::New(isolate, empty_string);
-    impl->m_empty_string.Reset(isolate, esv);
-    roots->empty_string = * reinterpret_cast<internal::Object ***>(*impl->m_empty_string);
-    JSStringRelease(empty_string);
     
     impl->ExitContext(nullContext);
     
     return reinterpret_cast<v8::Isolate*>(isolate);
+}
+
+JSGlobalContextRef H::HeapObject::GetNullContext()
+{
+    IsolateImpl* iso = GetIsolate();
+    HandleScope(V82JSC::ToIsolate(iso));
+    Local<v8::Context> ctx = iso->m_nullContext.Get(V82JSC::ToIsolate(iso));
+    return JSContextGetGlobalContext(V82JSC::ToContextRef(ctx));
 }
 
 bool internal::Isolate::Init(v8::internal::Deserializer *des)
