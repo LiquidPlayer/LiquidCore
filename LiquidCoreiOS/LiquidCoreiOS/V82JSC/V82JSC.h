@@ -313,23 +313,18 @@ struct V82JSC {
         bool ret = JSValueToBoolean(ctx, b);
         return ret;
     }
-    static inline JSValueRef exec(JSContextRef ctx, const char *body, int argc, const JSValueRef *argv, JSValueRef *pexcp=nullptr)
-    {
-        JSValueRef exception = 0;
-        JSStringRef argNames[argc];
-        JSStringRef anon = JSStringCreateWithUTF8CString("anon");
-        JSStringRef sbody = JSStringCreateWithUTF8CString(body);
-        for (int i=0; i<argc; i++) {
-            char argname[64];
-            sprintf(argname, "_%d", i+1);
-            argNames[i] = JSStringCreateWithUTF8CString(argname);
-        }
-        JSObjectRef function = JSObjectMakeFunction(ctx, anon, argc, argNames, sbody, 0, 0, &exception);
-        for (int i=0; i<argc; i++) {
-            JSStringRelease(argNames[i]);
-        }
-        assert(exception==0);
+    static JSObjectRef make_exec_function(JSGlobalContextRef ctx, const char *body, int argc);
 
+    static inline JSValueRef exec(JSContextRef ctx, const char *body, int argc,
+                                  const JSValueRef *argv, JSValueRef *pexcp=nullptr)
+    {
+        JSGlobalContextRef gctx = JSContextGetGlobalContext(ctx);
+        IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[gctx];
+        JSObjectRef function = iso->m_exec_maps[gctx].count(body) == 0 ?
+            make_exec_function(gctx, body, argc) :
+            iso->m_exec_maps[gctx][body];
+
+        JSValueRef exception = 0;
         JSValueRef result = JSObjectCallAsFunction(ctx, function, 0, argc, argv, &exception);
         if (!pexcp) {
             if (exception!=0) {
@@ -342,8 +337,6 @@ struct V82JSC {
         } else {
             *pexcp = exception;
         }
-        JSStringRelease(anon);
-        JSStringRelease(sbody);
         return result;
     }
     static inline v8::Local<v8::Context> FindGlobalContext(v8::Local<v8::Context> context)

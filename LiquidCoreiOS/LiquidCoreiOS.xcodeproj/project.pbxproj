@@ -25,6 +25,7 @@
 		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
 		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
+		07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */; };
 		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
 		07E9ADC920BC1281002F2002 /* HeapLookup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC820BC1281002F2002 /* HeapLookup.cpp */; };
 		07E9ADCB20BD359A002F2002 /* TrackedObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADCA20BD359A002F2002 /* TrackedObject.cpp */; };
@@ -122,6 +123,7 @@
 		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
+		07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exec.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
 		07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HeapObjects.cpp; sourceTree = "<group>"; };
@@ -277,6 +279,7 @@
 				07E9ADC420BB3F02002F2002 /* HeapObjects.h */,
 				07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */,
 				07E9ADC820BC1281002F2002 /* HeapLookup.cpp */,
+				07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */,
 				07E9ADCA20BD359A002F2002 /* TrackedObject.cpp */,
 				07E9ADC720BBFEE3002F2002 /* Isolate.h */,
 				076F58D8201E7EF9004780FD /* Isolate.cpp */,
@@ -502,6 +505,7 @@
 				076F58DF201E7EF9004780FD /* Isolate.cpp in Sources */,
 				076F58E2201E7EF9004780FD /* Value.cpp in Sources */,
 				07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */,
+				07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */,
 				07FE85982075F6D40013E1B4 /* trace-object.cc in Sources */,
 				07FE85A82075F7A90013E1B4 /* functional.cc in Sources */,
 				07F804C2202C2EDF00FDFC27 /* Set.cpp in Sources */,

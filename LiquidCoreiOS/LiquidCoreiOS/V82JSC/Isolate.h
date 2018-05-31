@@ -77,6 +77,8 @@ struct IsolateImpl {
     std::map<JSGlobalContextRef, Copyable(v8::Context)> m_global_contexts;
     static std::map<JSGlobalContextRef, IsolateImpl*> s_context_to_isolate_map;
     
+    std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>> m_exec_maps;
+    
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
     void GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap);

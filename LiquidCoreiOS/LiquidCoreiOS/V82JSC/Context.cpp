@@ -144,7 +144,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<ObjectTemplate> global_template,
                           MaybeLocal<Value> global_object)
 {
-    IsolateImpl * i = reinterpret_cast<IsolateImpl*>(isolate);
+    IsolateImpl * i = V82JSC::ToIsolateImpl(isolate);
     ContextImpl * context = static_cast<ContextImpl *>(H::HeapAllocator::Alloc(i, i->m_context_map));
     
     assert(H::ToHeapPointer(context)->IsContext());
@@ -171,6 +171,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSClassRelease(claz);
         JSContextRef ctxRef = context->m_ctxRef;
         IsolateImpl::s_context_to_isolate_map[context->m_ctxRef] = i;
+        i->m_exec_maps[context->m_ctxRef] = std::map<const char*, JSObjectRef>();
 
         JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);

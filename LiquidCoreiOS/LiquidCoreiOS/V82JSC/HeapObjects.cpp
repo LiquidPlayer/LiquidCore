@@ -27,6 +27,7 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
     assert(size <= ReserveSize(size));
     uint32_t slots = (size <= (HEAP_SLOT_SIZE>>1)) ? 1 : 1 << (LogReserveSize(size) - HEAP_SLOT_SIZE_LOG);
     assert(slots > 0);
+    uint32_t actual_used_slots = ((size - 1) / HEAP_SLOT_SIZE) + 1;
 
     while (!alloc) {
         if (chunk) {
@@ -48,7 +49,7 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
                     alloc = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(chunk) +
                                                     slot * HEAP_SLOT_SIZE);
                     assert(alloc > chunk && alloc < (void*)(reinterpret_cast<intptr_t>(chunk) + HEAP_ALIGNMENT));
-                    uint64_t mask = (((uint64_t)1<<slots)-1) << (pos-1);
+                    uint64_t mask = (((uint64_t)1<<actual_used_slots)-1) << (pos-1);
                     assert((chunk->alloc_map[index] & mask) == 0);
                     chunk->alloc_map[index] |= mask;
                     chunk->info.m_small_indicies[log] = index;
@@ -78,7 +79,14 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
                     alloc = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(chunk) +
                                                     (slot * HEAP_SLOT_SIZE));
                     for (int i=0; i<blocks_needed; i++) {
-                        chunk->alloc_map[index-i-1] = ~0;
+                        uint64_t mask = ~0;
+                        if (actual_used_slots < 64) {
+                            mask = (((uint64_t)1<<actual_used_slots)-1) << (pos-1);
+                            actual_used_slots = 0;
+                        } else {
+                            actual_used_slots -= 64;
+                        }
+                        chunk->alloc_map[index-i-1] = mask;
                     }
                     chunk->info.m_large_index = index;
                 }

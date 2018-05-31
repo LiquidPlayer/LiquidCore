@@ -370,6 +370,9 @@ V(FunctionReadOnlyPrototype)
 V(GetHiddenPropertyTableAfterAccessCheck)
 V(GetPrototypeAccessControl)
 V(SecurityTestGCAllowed)
+V(SkipArrayBufferBackingStoreDuringGC)
+V(SkipArrayBufferDuringScavenge)
+V(AccessChecksReenabledCorrectly)
 
 #undef V
 #define V(tst) \
@@ -515,7 +518,6 @@ V(ExceptionCreateMessage)
 
 // ObjectTemplate / FunctionTemplate not implemented
 V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
-V(AccessChecksReenabledCorrectly)
 V(DefineOwnProperty)
 V(GCInFailedAccessCheckCallback)
 V(AccessCheckThrows)
@@ -616,10 +618,6 @@ V(GCCallbacksOld)
 V(GCCallbacksWithData)
 V(GCCallbacks)
 V(IncreaseHeapLimitForDebugging)
-
-// ArrayBuffer not implemented
-V(SkipArrayBufferBackingStoreDuringGC)
-V(SkipArrayBufferDuringScavenge)
 
 // Shared typed arrays
 V(SharedUint8Array)

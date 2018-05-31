@@ -53,6 +53,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_context_stack = std::stack<Copyable(v8::Context)>();
     impl->m_scope_stack = std::stack<HandleScope*>();
     impl->m_global_contexts = std::map<JSGlobalContextRef, Copyable(Context)>();
+    impl->m_exec_maps = std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>>();
     
     HandleScope scope(isolate);
     
