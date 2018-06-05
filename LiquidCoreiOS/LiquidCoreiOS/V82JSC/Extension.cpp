@@ -153,8 +153,8 @@ bool InstallExtension(Local<Context> context, const char *extension_name, std::m
     
     Isolate *isolate = V82JSC::ToIsolate(iso);
     {
-        context->Enter();
         HandleScope handle_scope(isolate);
+        Context::Scope context_scope(context);
         for (auto i=native_function_names.begin(); i!=native_function_names.end(); ++i) {
             Local<String> name = String::NewFromUtf8(isolate, i->c_str(), NewStringType::kNormal).ToLocalChecked();
             Local<FunctionTemplate> native_function_template = extension.GetNativeFunctionTemplate(isolate, name);
@@ -170,7 +170,6 @@ bool InstallExtension(Local<Context> context, const char *extension_name, std::m
         if (script.IsEmpty()) return false;
         MaybeLocal<Value> result = script->Run(context);
         if(result.IsEmpty()) return false;
-        context->Exit();
     }
     return true;
 }

@@ -207,30 +207,6 @@ bool V8::RegisterDefaultSignalHandler()
     return false;
 }
 
-void V8::MakeWeak(internal::Object** location, void* data,
-                     WeakCallbackInfo<void>::Callback weak_callback,
-                     WeakCallbackType type)
-{
-    assert(0);
-}
-void V8::MakeWeak(internal::Object** location, void* data,
-                     // Must be 0 or -1.
-                     int internal_field_index1,
-                     // Must be 1 or -1.
-                     int internal_field_index2,
-                     WeakCallbackInfo<void>::Callback weak_callback)
-{
-    assert(0);
-}
-void V8::MakeWeak(internal::Object*** location_addr)
-{
-    assert(0);
-}
-void* V8::ClearWeak(internal::Object** location)
-{
-    assert(0);
-    return nullptr;
-}
 Value* V8::Eternalize(Isolate* isolate, Value* handle)
 {
     assert(0);

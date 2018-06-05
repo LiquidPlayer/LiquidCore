@@ -510,6 +510,8 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         return 0;
     }
 
+    isolateimpl->m_callback_depth ++;
+
     Local<Value> data = ValueImpl::New(V82JSC::ToContextImpl(context), ftempl->m_data);
     typedef v8::internal::Heap::RootListIndex R;
     internal::Object *the_hole = isolateimpl->ii.heap()->root(R::kTheHoleValueRootIndex);
@@ -549,10 +551,18 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     }
 
     if (implicit[3] == the_hole) {
+        if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
+            isolateimpl->CollectGarbage();
+        }
         return V82JSC::ToJSValueRef<Object>(thiz, context);
     }
 
     Local<Value> ret = info.GetReturnValue().Get();
+
+    if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
+        isolateimpl->CollectGarbage();
+    }
+
     return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
 }
 

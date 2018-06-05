@@ -268,6 +268,8 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         }
     }
 
+    ++ isolateimpl->m_callback_depth;
+
     int receiver_loc = std::is_same<I,InterceptorGetter>::value ? 2 : std::is_same<I,InterceptorSetter>::value ? 3 : 0;
     Local<Value> thiz = ValueImpl::New(ctximpl, arguments[receiver_loc]);
     typedef v8::internal::Heap::RootListIndex R;
@@ -312,10 +314,16 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     }
 
     if (implicit[4] == the_hole) {
+        if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
+            isolateimpl->CollectGarbage();
+        }
         return NULL;
     }
     
     Local<Value> retVal = info.GetReturnValue().Get();
+    if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
+        isolateimpl->CollectGarbage();
+    }
     return V82JSC::ToJSValueRef<Value>(retVal, context);
 }
 

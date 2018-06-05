@@ -78,6 +78,7 @@ struct PropImpl : V82JSC_HeapObject::Prop {};
 struct ObjAccessorImpl : V82JSC_HeapObject::ObjAccessor {};
 struct IntrinsicPropImpl : V82JSC_HeapObject::IntrinsicProp {};
 struct TrackedObjectImpl : V82JSC_HeapObject::TrackedObject {};
+struct AccessorImpl : V82JSC_HeapObject::Accessor {};
 
 struct LocalException;
 

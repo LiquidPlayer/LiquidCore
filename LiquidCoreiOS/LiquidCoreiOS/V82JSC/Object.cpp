@@ -373,58 +373,45 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
-    struct AccessorInfo {
-        AccessorNameGetterCallback getter;
-        AccessorNameSetterCallback setter;
-        IsolateImpl *m_isolate;
-        JSValueRef m_property;
-        JSValueRef m_data;
-        JSValueRef m_holder;
-        ~AccessorInfo()
-        {
-            Isolate* isolate = reinterpret_cast<Isolate*>(m_isolate);
-            HandleScope scope(isolate);
-            
-            Local<Context> context = V82JSC::OperatingContext(isolate);
-            JSContextRef ctx = V82JSC::ToContextRef(context);
-            if (m_property) JSValueUnprotect(ctx, m_property);
-            if (m_data) JSValueUnprotect(ctx, m_data);
-            // m_holder is weak
-        }
-    };
-    
     const auto callback = [](JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
                              size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) -> JSValueRef
     {
-        AccessorInfo* wrap = reinterpret_cast<AccessorInfo*>(JSObjectGetPrivate(function));
-        Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(wrap->m_isolate), ctx);
+        IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+        HandleScope scope (V82JSC::ToIsolate(iso));
+        void * persistent = JSObjectGetPrivate(function);
+        Local<v8::AccessorInfo> acc_info = V82JSC::FromPersistentData<v8::AccessorInfo>(V82JSC::ToIsolate(iso), persistent);
+        AccessorImpl *wrap = V82JSC::ToImpl<AccessorImpl>(acc_info);
+        
+        Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(iso), ctx);
         ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
         
         Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
         Local<Value> data = ValueImpl::New(ctximpl, wrap->m_data);
         Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_holder);
         typedef v8::internal::Heap::RootListIndex R;
-        internal::Object *the_hole = wrap->m_isolate->ii.heap()->root(R::kTheHoleValueRootIndex);
+        internal::Object *the_hole = iso->ii.heap()->root(R::kTheHoleValueRootIndex);
 
         // FIXME: This doesn't work
         JSStringRef s = JSStringCreateWithUTF8CString("(function() {return !this;})()");
         bool isStrict = JSValueToBoolean(ctx, JSEvaluateScript(ctx, s, 0, 0, 0, 0));
         internal::Object *shouldThrow = internal::Smi::FromInt(isStrict?1:0);
         
+        iso->m_callback_depth ++;
+        
         v8::internal::Object * implicit[] = {
             shouldThrow,                                             // kShouldThrowOnErrorIndex = 0;
             * reinterpret_cast<v8::internal::Object**>(*holder),     // kHolderIndex = 1;
-            O(wrap->m_isolate),                                      // kIsolateIndex = 2;
+            O(iso),                                                  // kIsolateIndex = 2;
             the_hole,                                                // kReturnValueDefaultValueIndex = 3;
             the_hole,                                                // kReturnValueIndex = 4;
             * reinterpret_cast<v8::internal::Object**>(*data),       // kDataIndex = 5;
             * reinterpret_cast<v8::internal::Object**>(*thiz),       // kThisIndex = 6;
         };
         
-        wrap->m_isolate->ii.thread_local_top()->scheduled_exception_ = the_hole;
-        TryCatch try_catch(V82JSC::ToIsolate(wrap->m_isolate));
+        iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        TryCatch try_catch(V82JSC::ToIsolate(iso));
 
-        Local<Value> ret = Undefined(V82JSC::ToIsolate(wrap->m_isolate));
+        Local<Value> ret = Undefined(V82JSC::ToIsolate(iso));
         if (argumentCount == 0) {
             PropertyCallbackImpl<Value> info(implicit);
             wrap->getter(ValueImpl::New(ctximpl, wrap->m_property).As<Name>(), info);
@@ -438,22 +425,21 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
         
         if (try_catch.HasCaught()) {
             *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-        } else if (wrap->m_isolate->ii.thread_local_top()->scheduled_exception_ != the_hole) {
-            internal::Object * excep = wrap->m_isolate->ii.thread_local_top()->scheduled_exception_;
-            if (excep->IsHeapObject()) {
-                ValueImpl* i = reinterpret_cast<ValueImpl*>(reinterpret_cast<intptr_t>(excep) - internal::kHeapObjectTag);
-                *exception = i->m_value;
-            } else {
-                *exception = JSValueMakeNumber(ctx, internal::Smi::ToInt(excep));
-            }
-            wrap->m_isolate->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        } else if (iso->ii.thread_local_top()->scheduled_exception_ != the_hole) {
+            internal::Object * excep = iso->ii.thread_local_top()->scheduled_exception_;
+            *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
+            iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        }
+
+        if (-- iso->m_callback_depth == 0 && iso->m_pending_garbage_collection) {
+            iso->CollectGarbage();
         }
 
         return V82JSC::ToJSValueRef<Value>(ret, context);
     };
     
-    AccessorInfo *wrap = new AccessorInfo();
-    wrap->m_isolate = iso;
+    AccessorImpl *wrap = static_cast<AccessorImpl*>(V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_accessor_map));
+    
     wrap->m_property = V82JSC::ToJSValueRef(name, context);
     JSValueProtect(ctximpl->m_ctxRef, wrap->m_property);
     wrap->getter = getter;
@@ -462,17 +448,19 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
     wrap->m_data = V82JSC::ToJSValueRef(data.ToLocalChecked(), context);
     JSValueProtect(ctximpl->m_ctxRef, wrap->m_data);
     wrap->m_holder = V82JSC::ToJSValueRef(this, context);
-
+    
+    void *persistent = V82JSC::PersistentData(V82JSC::ToIsolate(iso), V82JSC::CreateLocal<v8::AccessorInfo>(&iso->ii, wrap));
+    
     JSClassDefinition def = kJSClassDefinitionEmpty;
     def.attributes = kJSClassAttributeNoAutomaticPrototype;
     def.callAsFunction = callback;
     def.finalize = [](JSObjectRef obj)
     {
-        AccessorInfo *info = (AccessorInfo*) JSObjectGetPrivate(obj);
-        delete info;
+        void * data = JSObjectGetPrivate(obj);
+        V82JSC::ReleasePersistentData<v8::AccessorInfo>(data);
     };
     JSClassRef claz = JSClassCreate(&def);
-    JSObjectRef accessor_function = JSObjectMake(ctximpl->m_ctxRef, claz, wrap);
+    JSObjectRef accessor_function = JSObjectMake(ctximpl->m_ctxRef, claz, persistent);
     JSClassRelease(claz);
     Local<Function> accessor = ValueImpl::New(ctximpl, accessor_function).As<Function>();
     
@@ -574,6 +562,7 @@ Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
     if (!wrap) wrap = makePrivateInstance(iso, ctx, (JSObjectRef)obj);
     if (!wrap->m_private_properties) {
         wrap->m_private_properties = JSObjectMake(ctx, 0, 0);
+        JSValueProtect(ctx, wrap->m_private_properties);
     }
     JSValueRef args[] = {
         wrap->m_private_properties,
@@ -1022,7 +1011,17 @@ void Object::SetInternalField(int index, Local<Value> value)
 void Object::SetAlignedPointerInInternalField(int index, void* value)
 {
     Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
+    
     SetInternalField(index, External::New(context->GetIsolate(), value));
+    
+    if (index < 2) {
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, obj);
+        if (wrap) {
+            wrap->m_embedder_data[index] = value;
+        }
+    }
 }
 void Object::SetAlignedPointerInInternalFields(int argc, int indices[],
                                        void* values[])

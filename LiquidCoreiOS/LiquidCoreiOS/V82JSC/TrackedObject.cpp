@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSObjectRefPrivate.h"
 
 using namespace v8;
 #define H V82JSC_HeapObject
@@ -30,8 +31,20 @@ void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* i
     JSClassDefinition def = kJSClassDefinitionEmpty;
     def.attributes = kJSClassAttributeNoAutomaticPrototype;
     def.finalize = [](JSObjectRef object) {
-        void * data = JSObjectGetPrivate(object);
-        V82JSC::ReleasePersistentData<V82JSC_HeapObject::TrackedObject>(data);
+        void * persistent = JSObjectGetPrivate(object);
+        assert(persistent);
+        JSGlobalContextRef ctx = JSObjectGetGlobalContext(object);
+        assert(ctx);
+        IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[ctx];
+        assert(iso);
+
+        HandleScope scope(V82JSC::ToIsolate(iso));
+        Local<TrackedObject> local = V82JSC::FromPersistentData<TrackedObject>(V82JSC::ToIsolate(iso), persistent);
+        assert(!local.IsEmpty());
+        TrackedObjectImpl *impl = V82JSC::ToImpl<TrackedObjectImpl>(local);
+        iso->weakGoneInactive(ctx, (JSObjectRef) impl->m_security, impl->m_embedder_data);
+        
+        V82JSC::ReleasePersistentData<V82JSC_HeapObject::TrackedObject>(persistent);
     };
     JSClassRef klass = JSClassCreate(&def);
     JSObjectRef private_object = JSObjectMake(ctx, klass, data);

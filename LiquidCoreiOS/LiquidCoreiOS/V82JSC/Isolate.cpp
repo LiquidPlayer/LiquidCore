@@ -90,6 +90,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_accessor_map = H::Map<H::Accessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_object_accessor_map = H::Map<H::ObjAccessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_script_map = H::Map<H::Script>::New(impl, internal::SCRIPT_TYPE);
+    impl->m_weak_value_map = H::Map<H::WeakValue>::New(impl, internal::WEAK_CELL_TYPE);
 
     roots->block_context_map = reinterpret_cast<internal::Object**>(H::ToV8Map(impl->m_context_map));
     roots->undefined_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_undefined));
@@ -101,7 +102,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
 
     Local<Context> nullContext = Context::New(isolate);
     impl->m_nullContext.Reset(isolate, nullContext);
-    impl->EnterContext(nullContext);
+    
+    Context::Scope context_scope(nullContext);
 
     JSStringRef empty_string = JSStringCreateWithUTF8CString("");
     impl->m_empty_string = JSValueMakeString(V82JSC::ToContextRef(nullContext), empty_string);
@@ -117,8 +119,6 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->ii.thread_local_top_.isolate_ = &impl->ii;
     impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
     impl->ii.thread_local_top_.pending_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
-    
-    impl->ExitContext(nullContext);
     
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
@@ -217,12 +217,19 @@ void Isolate::Exit()
 
 void IsolateImpl::EnterContext(Local<v8::Context> ctx)
 {
-    m_context_stack.push(Persistent<v8::Context>(V82JSC::ToIsolate(this), ctx));
+    Copyable(v8::Context) persist(V82JSC::ToIsolate(this), ctx);
+    m_context_stack.push(persist);
+    persist.Reset();
 }
 
 void IsolateImpl::ExitContext(Local<v8::Context> ctx)
 {
     assert(m_context_stack.size());
+    JSContextRef top = V82JSC::ToContextRef(m_context_stack.top().Get(V82JSC::ToIsolate(this)));
+    JSContextRef newctx = V82JSC::ToContextRef(ctx);
+    assert(top == newctx);
+
+    m_context_stack.top().Reset();
     m_context_stack.pop();
 }
 
@@ -233,9 +240,48 @@ void IsolateImpl::ExitContext(Local<v8::Context> ctx)
 void Isolate::Dispose()
 {
     IsolateImpl *isolate = (IsolateImpl *)this;
-    JSContextGroupRelease(isolate->m_group);
+    if (current == this) {
+        if (isolate->m_fatal_error_callback) {
+            isolate->m_fatal_error_callback("Isolate::Dispose()", "Attempting to dispose an entered isolate.");
+        } else {
+            FATAL("Attempting to dispose an entered isolate.");
+        }
+        return;
+    }
     
+    JSContextGroupRelease(isolate->m_group);
+    for (auto i=isolate->m_global_contexts.begin(); i != isolate->m_global_contexts.end(); i++) {
+        IsolateImpl::s_context_to_isolate_map.erase(i->first);
+    }
+    isolate->m_global_contexts.clear();
+    isolate->m_exec_maps.clear();
+    while (!isolate->m_context_stack.empty()) isolate->m_context_stack.pop();
+    isolate->m_nullContext.Reset();
+    
+    while (isolate->m_handlers) {
+        TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(isolate->m_handlers);
+        isolate->m_handlers = tcc->next_;
+        delete(tcc);
+    }
+    
+    isolate->m_global_symbols.clear();
+    isolate->m_private_symbols.clear();
+
+    // Finally, blitz the global handles and the heap
+    isolate->ii.global_handles()->TearDown();
+    V82JSC_HeapObject::HeapAllocator::TearDown(isolate);
+
+    // And now we the isolate is done
     free(isolate);
+}
+
+void IsolateImpl::CollectGarbage()
+{
+    if (m_callback_depth != 0) {
+        m_pending_garbage_collection = true;
+    } else {
+        H::HeapAllocator::CollectGarbage(this);
+    }
 }
 
 /**
@@ -925,7 +971,8 @@ void Isolate::GetCodeRange(void** start, size_t* length_in_bytes)
 /** Set the callback to invoke in case of fatal errors. */
 void Isolate::SetFatalErrorHandler(FatalErrorCallback that)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_fatal_error_callback = that;
 }
 
 /** Set the callback to invoke in case of OOM errors. */

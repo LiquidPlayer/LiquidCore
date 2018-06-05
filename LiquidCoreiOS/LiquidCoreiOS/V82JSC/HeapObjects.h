@@ -54,7 +54,7 @@
 #define HEAP_BLOCK_SIZE (HEAP_SLOTS_PER_BLOCK * HEAP_SLOT_SIZE) // (2k bytes)
 #define HEAP_BLOCKS (HEAP_ALIGNMENT / HEAP_BLOCK_SIZE) // 256
 
-namespace v8 { namespace internal { class IsolateImpl; } }
+namespace v8 { namespace internal { class IsolateImpl; class SecondPassCallback; } }
 
 #define Copyable(T) \
 v8::Persistent<T, v8::CopyablePersistentTraits<T>>
@@ -68,6 +68,7 @@ namespace v8 {
     struct IntrinsicProp : v8::Value {};
     struct EmbeddedFixedArray : v8::Value {};
     struct TrackedObject : v8::Value {};
+    struct AccessorInfo : v8::Value {};
 };
 
 namespace V82JSC_HeapObject {
@@ -77,8 +78,11 @@ namespace V82JSC_HeapObject {
     struct BaseMap;
     struct FixedArray;
     
+    typedef std::map<v8::internal::Object *, int> CanonicalHandles;
+    typedef std::map<v8::internal::Object *, std::vector<v8::internal::Object**>> WeakHandles;
     typedef void (*Constructor)(HeapObject *);
-    typedef void (*Destructor)(HeapObject *);
+    typedef int (*Destructor)(HeapObject *, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>&);
     typedef void (*Mover)(HeapObject *from, HeapObject *to);
     
     typedef uint8_t (*Transform)(uint64_t);
@@ -104,7 +108,10 @@ namespace V82JSC_HeapObject {
         uint64_t alloc_map[HEAP_ALLOC_MAP_SIZE / 8];
     public:
         static HeapObject* Alloc(IsolateImpl *isolate, const BaseMap* map, uint32_t size=0);
-        static void CollectGarbage(IsolateImpl *isolate);
+        static bool CollectGarbage(IsolateImpl *isolate);
+        static int Deallocate(HeapObject*, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks);
+        static void TearDown(IsolateImpl *isolate);
     };
     
     struct HeapImpl : v8::internal::Heap {
@@ -119,19 +126,45 @@ namespace V82JSC_HeapObject {
         IsolateImpl * GetIsolate()
         {
             intptr_t addr = reinterpret_cast<intptr_t>(this);
-            addr &= (HEAP_ALIGNMENT - 1);
+            addr &= ~(HEAP_ALIGNMENT - 1);
             HeapAllocator *chunk = reinterpret_cast<HeapAllocator*>(addr);
             return reinterpret_cast<IsolateImpl*>(chunk->heap()->isolate());
         }
         JSGlobalContextRef GetNullContext();
+        static int DecrementCount(v8::internal::Object *obj, CanonicalHandles& handles, WeakHandles& weak,
+                                  std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            assert(handles.count(obj));
+            int count = handles[obj];
+            if (-- count == 0) {
+                handles.erase(obj);
+                HeapObject *o = reinterpret_cast<HeapObject*>(reinterpret_cast<intptr_t>(obj) - v8::internal::kHeapObjectTag);
+                return HeapAllocator::Deallocate(o, handles, weak, callbacks);
+            } else {
+                handles[obj] = count;
+            }
+            return 0;
+        }
+        template <typename T>
+        static int SmartReset(Copyable(T)& handle, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            if (!handle.IsEmpty()) {
+                v8::internal::Object ** persistent = * reinterpret_cast<v8::internal::Object***>(&handle);
+                v8::internal::Object *obj = * persistent;
+                handle.Reset();
+                if (obj->IsHeapObject()) {
+                    return DecrementCount(obj, handles, weak, callbacks);
+                }
+            }
+            return 0;
+        }
     };
     
     struct BaseMap /* : HeapObject -- This is implicit */ {
         union {
             HeapObject object;
             unsigned char filler_[v8::internal::Map::kSize];
-            v8::internal::Oddball oddball;
-            v8::internal::Map map;
         };
         uint32_t size;
         Constructor ctor;
@@ -154,15 +187,24 @@ namespace V82JSC_HeapObject {
         Copyable(v8::Function) FunctionPrototypeBind;
 
         static void Constructor(Context *obj) {}
-        static void Destructor(Context *obj)
+        static int Destructor(Context *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
+            IsolateImpl *iso = obj->GetIsolate();
+            
             if (obj->m_ctxRef) JSGlobalContextRelease(obj->m_ctxRef);
-            obj->ObjectSetPrototypeOf.Reset();
-            obj->ObjectGetPrototypeOf.Reset();
-            obj->ObjectPrototypeToString.Reset();
-            obj->FunctionPrototypeBind.Reset();
-            obj->m_embedder_data.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::Function>(obj->ObjectSetPrototypeOf, handles, weak, callbacks);
+            freed +=SmartReset<v8::Function>(obj->ObjectGetPrototypeOf, handles, weak, callbacks);
+            freed +=SmartReset<v8::Function>(obj->ObjectPrototypeToString, handles, weak, callbacks);
+            freed +=SmartReset<v8::Function>(obj->FunctionPrototypeBind, handles, weak, callbacks);
+            freed +=SmartReset<v8::EmbeddedFixedArray>(obj->m_embedder_data, handles, weak, callbacks);
+            
+            RemoveContextFromIsolate(iso, obj->m_ctxRef);
+            
+            return freed;
         }
+        static void RemoveContextFromIsolate(IsolateImpl* iso, JSGlobalContextRef ctx);
     };
     
     struct Script : HeapObject {
@@ -171,35 +213,51 @@ namespace V82JSC_HeapObject {
         int m_startingLineNumber;
 
         static void Constructor(Script *obj) {}
-        static void Destructor(Script *obj)
+        static int Destructor(Script *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             if (obj->m_sourceURL) JSStringRelease(obj->m_sourceURL);
             if (obj->m_script) JSStringRelease(obj->m_script);
+            return 0;
         }
     };
     
     struct Value : HeapObject {
         uint64_t reserved_; // For number, value is stored here
         JSValueRef m_value;
+        uint64_t reserved2_; // For string, resource is stored here
 
         static void Constructor(Value *obj) {}
-        static void Destructor(Value *obj)
+        static int Destructor(Value *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             if (obj->m_value) JSValueUnprotect(obj->GetNullContext(), obj->m_value);
+            return 0;
         }
     };
-    
+
+    struct WeakValue : Value {
+        static void Constructor(WeakValue *obj)
+        {
+            Value::Constructor(obj);
+        }
+        static int Destructor(WeakValue *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            // Don't call value destructor
+            return 0;
+        }
+    };
+
     struct String : Value {
-        uint8_t reserved_[v8::internal::Internals::kStringResourceOffset +
-                          v8::internal::kApiPointerSize - sizeof(Value)];
-        
         static void Constructor(String *obj)
         {
             Value::Constructor(obj);
         }
-        static void Destructor(String *obj)
+        static int Destructor(String *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            Value::Destructor(obj);
+            return Value::Destructor(obj, handles, weak, callbacks);
         }
     };
     
@@ -211,8 +269,16 @@ namespace V82JSC_HeapObject {
         v8::internal::Object* m_elements[0];
 
         static void Constructor(FixedArray *obj) {}
-        static void Destructor(FixedArray *obj)
+        static int Destructor(FixedArray *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
+            int freed=0;
+            for (int i=0; i<obj->m_size; i++) {
+                if (obj->m_elements[i]->IsHeapObject()) {
+                    freed += DecrementCount(obj->m_elements[i], handles, weak, callbacks);
+                }
+            }
+            return freed;
         }
     };
     
@@ -225,12 +291,15 @@ namespace V82JSC_HeapObject {
         Copyable(v8::PropAccessor) next_;
 
         static void Constructor(PropAccessor *obj) {}
-        static void Destructor(PropAccessor *obj)
+        static int Destructor(PropAccessor *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->name.Reset();
-            obj->setter.Reset();
-            obj->getter.Reset();
-            obj->next_.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::Name>(obj->name, handles, weak, callbacks);
+            freed +=SmartReset<v8::FunctionTemplate>(obj->setter, handles, weak, callbacks);
+            freed +=SmartReset<v8::FunctionTemplate>(obj->getter, handles, weak, callbacks);
+            freed +=SmartReset<v8::PropAccessor>(obj->next_, handles, weak, callbacks);
+            return freed;
         }
     };
     
@@ -241,11 +310,14 @@ namespace V82JSC_HeapObject {
         Copyable(v8::Prop) next_;
 
         static void Constructor(Prop *obj) {}
-        static void Destructor(Prop *obj)
+        static int Destructor(Prop *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->name.Reset();
-            obj->value.Reset();
-            obj->next_.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::Name>(obj->name, handles, weak, callbacks);
+            freed +=SmartReset<v8::Data>(obj->value, handles, weak, callbacks);
+            freed +=SmartReset<v8::Prop>(obj->next_, handles, weak, callbacks);
+            return freed;
         }
     };
     
@@ -260,12 +332,15 @@ namespace V82JSC_HeapObject {
         Copyable(v8::ObjAccessor) next_;
 
         static void Constructor(ObjAccessor *obj) {}
-        static void Destructor(ObjAccessor *obj)
+        static int Destructor(ObjAccessor *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->name.Reset();
-            obj->data.Reset();
-            obj->signature.Reset();
-            obj->next_.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::Name>(obj->name, handles, weak, callbacks);
+            freed +=SmartReset<v8::Value>(obj->data, handles, weak, callbacks);
+            freed +=SmartReset<v8::Signature>(obj->signature, handles, weak, callbacks);
+            freed +=SmartReset<v8::ObjAccessor>(obj->next_, handles, weak, callbacks);
+            return freed;
         }
     };
     
@@ -275,10 +350,13 @@ namespace V82JSC_HeapObject {
         Copyable(v8::IntrinsicProp) next_;
 
         static void Constructor(IntrinsicProp *obj) {}
-        static void Destructor(IntrinsicProp *obj)
+        static int Destructor(IntrinsicProp *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->name.Reset();
-            obj->next_.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::Name>(obj->name, handles, weak, callbacks);
+            freed +=SmartReset<v8::IntrinsicProp>(obj->next_, handles, weak, callbacks);
+            return freed;
         }
     };
     
@@ -294,15 +372,18 @@ namespace V82JSC_HeapObject {
         v8::FunctionCallback m_callback;
 
         static void Constructor(Template *obj) {}
-        static void Destructor(Template *obj)
+        static int Destructor(Template *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->m_properties.Reset();
-            obj->m_property_accessors.Reset();
-            obj->m_accessors.Reset();
-            obj->m_intrinsics.Reset();
-            obj->m_signature.Reset();
-            obj->m_prototype_template.Reset();
-            obj->m_parent.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::Prop>(obj->m_properties, handles, weak, callbacks);
+            freed +=SmartReset<v8::PropAccessor>(obj->m_property_accessors, handles, weak, callbacks);
+            freed +=SmartReset<v8::ObjAccessor>(obj->m_accessors, handles, weak, callbacks);
+            freed +=SmartReset<v8::IntrinsicProp>(obj->m_intrinsics, handles, weak, callbacks);
+            freed +=SmartReset<v8::Signature>(obj->m_signature, handles, weak, callbacks);
+            freed +=SmartReset<v8::ObjectTemplate>(obj->m_prototype_template, handles, weak, callbacks);
+            freed +=SmartReset<v8::FunctionTemplate>(obj->m_parent, handles, weak, callbacks);
+            return freed;
         }
     };
     
@@ -317,11 +398,14 @@ namespace V82JSC_HeapObject {
         bool m_readOnlyPrototype;
 
         static void Constructor(FunctionTemplate *obj) { Template::Constructor(obj); }
-        static void Destructor(FunctionTemplate *obj)
+        static int Destructor(FunctionTemplate *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->m_instance_template.Reset();
+            int freed=0;
+            freed +=SmartReset<v8::ObjectTemplate>(obj->m_instance_template, handles, weak, callbacks);
+            freed +=SmartReset<v8::String>(obj->m_name, handles, weak, callbacks);
             if (obj->m_functions_array) JSValueUnprotect(obj->GetNullContext(), obj->m_functions_array);
-            Template::Destructor(obj);
+            return freed + Template::Destructor(obj, handles, weak, callbacks);
         }
     };
     
@@ -341,15 +425,17 @@ namespace V82JSC_HeapObject {
         int m_internal_fields;
 
         static void Constructor(ObjectTemplate *obj) { Template::Constructor(obj); }
-        static void Destructor(ObjectTemplate *obj)
+        static int Destructor(ObjectTemplate *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->m_constructor_template.Reset();
+            int freed=0;
+            freed += SmartReset<v8::FunctionTemplate>(obj->m_constructor_template, handles, weak, callbacks);
             if (obj->m_named_data) JSValueUnprotect(obj->GetNullContext(), obj->m_named_data);
             if (obj->m_indexed_data) JSValueUnprotect(obj->GetNullContext(), obj->m_indexed_data);
             if (obj->m_access_check_data) JSValueUnprotect(obj->GetNullContext(), obj->m_access_check_data);
             if (obj->m_failed_named_data) JSValueUnprotect(obj->GetNullContext(), obj->m_failed_named_data);
             if (obj->m_failed_indexed_data) JSValueUnprotect(obj->GetNullContext(), obj->m_failed_indexed_data);
-            Template::Destructor(obj);
+            return freed + Template::Destructor(obj, handles, weak, callbacks);
         }
     };
 
@@ -365,6 +451,7 @@ namespace V82JSC_HeapObject {
         int m_hash;
         bool m_isHiddenPrototype;
         bool m_isGlobalObject;
+        void *m_embedder_data[2];
 
         struct {
             void *buffer;
@@ -376,15 +463,18 @@ namespace V82JSC_HeapObject {
         } ArrayBufferInfo;
 
         static void Constructor(TrackedObject *obj) {}
-        static void Destructor(TrackedObject *obj)
+        static int Destructor(TrackedObject *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->m_object_template.Reset();
+            int freed=0;
+            freed += SmartReset<v8::ObjectTemplate>(obj->m_object_template, handles, weak, callbacks);
             // obj->m_security is a weak reference to avoid circular referencing
             if (obj->m_proxy_security) JSValueUnprotect(obj->GetNullContext(), obj->m_proxy_security);
             if (obj->m_hidden_proxy_security) JSValueUnprotect(obj->GetNullContext(), obj->m_hidden_proxy_security);
             if (obj->m_private_properties) JSValueUnprotect(obj->GetNullContext(), obj->m_private_properties);
             if (obj->m_hidden_children_array) JSValueUnprotect(obj->GetNullContext(), obj->m_hidden_children_array);
             if (obj->m_internal_fields_array) JSValueUnprotect(obj->GetNullContext(), obj->m_internal_fields_array);
+            return freed;
         }
     };
     
@@ -392,9 +482,10 @@ namespace V82JSC_HeapObject {
         Copyable(v8::FunctionTemplate) m_template;
 
         static void Constructor(Signature *obj) {}
-        static void Destructor(Signature *obj)
+        static int Destructor(Signature *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            obj->m_template.Reset();
+            return SmartReset<v8::FunctionTemplate>(obj->m_template, handles, weak, callbacks);
         }
     };
     
@@ -406,14 +497,16 @@ namespace V82JSC_HeapObject {
         v8::AccessorNameSetterCallback setter;
 
         static void Constructor(Accessor *obj) {}
-        static void Destructor(Accessor *obj)
+        static int Destructor(Accessor *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             if (obj->m_property) JSValueUnprotect(obj->GetNullContext(), obj->m_property);
             if (obj->m_data) JSValueUnprotect(obj->GetNullContext(), obj->m_data);
             if (obj->m_holder) JSValueUnprotect(obj->GetNullContext(), obj->m_holder);
+            return 0;
         }
     };
-    
+        
     inline v8::internal::Map * ToV8Map(BaseMap *map)
     {
         return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(map) + v8::internal::kHeapObjectTag);
@@ -434,7 +527,12 @@ namespace V82JSC_HeapObject {
         auto map = reinterpret_cast<Map<T> *>(HeapAllocator::Alloc(iso, nullptr, sizeof(BaseMap)));
         ToV8Map(map)->set_instance_type(t);
         map->ctor = [](HeapObject* o) { T::Constructor(static_cast<T*>(o)); };
-        map->dtor = [](HeapObject* o) { T::Destructor(static_cast<T*>(o)); };
+        map->dtor = [](HeapObject* o, CanonicalHandles& handles, WeakHandles& weak,
+                       std::vector<v8::internal::SecondPassCallback>& callbacks) -> int
+        {
+            return T::Destructor(static_cast<T*>(o), handles, weak, callbacks);
+            
+        };
         map->size = sizeof(T);
         if (kind != 0xff) {
             v8::internal::Oddball* oddball_handle = reinterpret_cast<v8::internal::Oddball*>(map->object.m_map);

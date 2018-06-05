@@ -373,6 +373,16 @@ V(SecurityTestGCAllowed)
 V(SkipArrayBufferBackingStoreDuringGC)
 V(SkipArrayBufferDuringScavenge)
 V(AccessChecksReenabledCorrectly)
+V(NewStringRangeError)
+V(TwoPassPhantomCallbacks)
+V(TwoPassPhantomCallbacksNestedGc)
+V(ResetWeakHandle)
+V(WeakCallbackApi)
+V(NewPersistentHandleFromWeakCallback)
+V(DoNotUseDeletedNodesInSecondLevelGc)
+V(NativeWeakMap)
+V(IsolateNewDispose)
+V(DisposeIsolateWhenInUse)
 
 #undef V
 #define V(tst) \
@@ -392,15 +402,6 @@ V(InternalFieldCallback)
 V(QuietSignalingNaNs)
 V(Regress1516)
 V(CheckCOWArraysCreatedRuntimeCounter)
-
-// MakeWeak
-V(TwoPassPhantomCallbacks)
-V(TwoPassPhantomCallbacksNestedGc)
-V(ResetWeakHandle)
-V(WeakCallbackApi)
-V(NewPersistentHandleFromWeakCallback)
-V(DoNotUseDeletedNodesInSecondLevelGc)
-V(NativeWeakMap)
 
 // Handle issues
 V(GlobalValueMap)
@@ -511,7 +512,6 @@ V(VisitExternalStrings)
 V(TwoByteStringInOneByteCons)
 V(ContainsOnlyOneByte)
 V(StringConcatOverflow)
-V(NewStringRangeError)
 
 // Exception
 V(ExceptionCreateMessage)
@@ -657,10 +657,6 @@ V(FunctionGetBoundFunction)
 V(FunctionNew)
 V(FunctionCallOptimizationMultipleArgs)
 V(ApiCallbackCanReturnSymbols)
-
-// Isolate disposal
-V(IsolateNewDispose)
-V(DisposeIsolateWhenInUse)
 
 // Random isolate function
 V(VerifyArrayPrototypeGuarantees)

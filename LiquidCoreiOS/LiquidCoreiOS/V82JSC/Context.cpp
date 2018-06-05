@@ -156,7 +156,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
     }
 
-    ctx->Enter();
+    Context::Scope context_scope(ctx);
 
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
@@ -206,7 +206,6 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSObjectSetPrototype(context->m_ctxRef, global, V82JSC::ToJSValueRef(thiz.ToLocalChecked(), ctx));
 
         if (exception.ShouldThow()) {
-            ctx->Exit();
             return Local<Context>();
         }
     } else {
@@ -222,9 +221,11 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
     assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
     
-    Copyable(Context) persistent = Copyable(Context)(isolate, ctx);
-    //persistent.SetWeak();
-    i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
+    {
+        Copyable(Context) persistent(isolate, ctx);
+        //persistent.SetWeak();
+        i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
+    }
 
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
@@ -343,14 +344,11 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         if (extensions) {
             for (const char **extension = extensions->begin(); extension != extensions->end(); extension++) {
                 if (!InstallExtension(ctx, *extension, loaded_extensions)) {
-                    ctx->Exit();
                     return Local<Context>();
                 }
             }
         }
     }
-    
-    ctx->Exit();
     
     return ctx;
 }

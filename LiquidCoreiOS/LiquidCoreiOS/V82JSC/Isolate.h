@@ -32,6 +32,20 @@ using v8::internal::Isolate;
 #define kUC16AlphabetSize v8::internal::Isolate::kUC16AlphabetSize
 
 #define H V82JSC_HeapObject
+
+struct SecondPassCallback {
+    v8::WeakCallbackInfo<void>::Callback callback_;
+    void *param_;
+    void *embedder_fields_[2];
+};
+    
+// This is a hack to avoid having to edit the V8 header files.  We do garbage collection
+// differently and GlobalHandle struct is locked down as private.  This allows us to call
+// back into GlobalHandle with a custom function.
+typedef std::function<void(std::map<v8::internal::Object*, int>&, std::map<v8::internal::Object*,
+                           std::vector<v8::internal::Object**>>&)> GetGlobalHandles;
+typedef std::function<void(v8::internal::Object**, std::vector<SecondPassCallback>&)> WeakObjectCleared;
+typedef std::function<void(JSGlobalContextRef, JSObjectRef, void **)> WeakGoneInactive;
     
 struct IsolateImpl {
     v8::internal::Isolate ii;
@@ -63,6 +77,7 @@ struct IsolateImpl {
     H::Map<H::Accessor> *m_accessor_map;
     H::Map<H::ObjAccessor> *m_object_accessor_map;
     H::Map<H::Script> *m_script_map;
+    H::Map<H::WeakValue> *m_weak_value_map;
 
     v8::TryCatch *m_handlers;
     
@@ -78,10 +93,20 @@ struct IsolateImpl {
     static std::map<JSGlobalContextRef, IsolateImpl*> s_context_to_isolate_map;
     
     std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>> m_exec_maps;
-    
+
+    int m_callback_depth;
+    bool m_pending_garbage_collection;
+
+    v8::FatalErrorCallback m_fatal_error_callback;
+
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
-    void GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap);
+    void GetActiveLocalHandles(std::map<v8::internal::Object*, int>& dontDeleteMap);
+    void CollectGarbage();
+    
+    v8::internal::GetGlobalHandles getGlobalHandles;
+    v8::internal::WeakObjectCleared weakObjectCleared;
+    v8::internal::WeakGoneInactive weakGoneInactive;
 };
 }} // namespaces
 

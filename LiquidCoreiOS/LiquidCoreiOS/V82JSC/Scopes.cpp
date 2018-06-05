@@ -107,7 +107,7 @@ internal::Object** internal::HandleScope::Extend(Isolate* isolate)
     return handles;
 }
 
-void IsolateImpl::GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& dontDeleteMap)
+void IsolateImpl::GetActiveLocalHandles(std::map<v8::internal::Object*, int>& dontDeleteMap)
 {
     HandleScopeData *data = ii.handle_scope_data();
     if (data->limit) {
@@ -118,7 +118,8 @@ void IsolateImpl::GetActiveLocalHandles(std::map<v8::internal::Object*, bool>& d
         while (block) {
             for (internal::Object ** handle = &block->handles_[0]; handle < limit; handle++ ) {
                 if ((*handle)->IsHeapObject()) {
-                    dontDeleteMap[*handle] = true;
+                    int count = dontDeleteMap.count(*handle) ? dontDeleteMap[*handle] : 0;
+                    dontDeleteMap[*handle] = count + 1;
                 }
             }
             block = block->next_;
@@ -211,44 +212,99 @@ bool MicrotasksScope::IsRunningMicrotasks(Isolate* isolate)
 
 class internal::GlobalHandles::Node {
 public:
-    union {
-        internal::Object* handle_;
-        uint8_t reserved_[internal::kApiPointerSize * 2];
-    };
-    int index_;
+    internal::Object *handle_;
+    uint16_t classId_; // internal::Internals::kNodeClassIdOffset (1 *kApiPointerSize)
+    uint8_t  index_;
+    uint8_t  flags_;   // internal::Internals::kNodeFlagsOffset (1 * kApiPointerSize + 3)
+    uint8_t  reserved_[internal::kApiPointerSize - sizeof(uint32_t)]; // align
+    WeakCallbackInfo<void>::Callback weak_callback_;
+    void *param_;
+    void *embedder_fields_[2];
+    v8::WeakCallbackType type_;
 };
+
 
 class internal::GlobalHandles::NodeBlock {
 public:
+    void remove_used() {
+        assert(next_block_ == nullptr);
+        assert(prev_block_ == nullptr);
+        assert(global_handles_->first_block_ != this);
+        
+        if (global_handles_->first_used_block_ == this) {
+            assert(prev_used_block_ == nullptr);
+            global_handles_->first_used_block_ = next_used_block_;
+        }
+        if (next_used_block_) {
+            next_used_block_->prev_used_block_ = prev_used_block_;
+        }
+        if (prev_used_block_) {
+            prev_used_block_->next_used_block_ = next_used_block_;
+        }
+        next_used_block_ = nullptr;
+        prev_used_block_ = nullptr;
+    }
+    void push_used() {
+        assert(next_block_ == nullptr);
+        assert(prev_block_ == nullptr);
+        assert(global_handles_->first_block_ != this);
+
+        next_used_block_ = global_handles_->first_used_block_;
+        prev_used_block_ = nullptr;
+        if (next_used_block_) {
+            next_used_block_->prev_used_block_ = this;
+        }
+        global_handles_->first_used_block_ = this;
+    }
+    void remove() {
+        assert(next_used_block_ == nullptr);
+        assert(prev_used_block_ == nullptr);
+        assert(global_handles_->first_used_block_ != this);
+        
+        if (global_handles_->first_block_ == this) {
+            assert(prev_block_ == nullptr);
+            global_handles_->first_block_ = next_block_;
+        }
+        if (next_block_) {
+            next_block_->prev_block_ = prev_block_;
+        }
+        if (prev_block_) {
+            prev_block_->next_block_ = next_block_;
+        }
+        next_block_ = nullptr;
+        prev_block_ = nullptr;
+    }
+    void push() {
+        assert(next_used_block_ == nullptr);
+        assert(prev_used_block_ == nullptr);
+        assert(global_handles_->first_used_block_ != this);
+
+        next_block_ = global_handles_->first_block_;
+        prev_block_ = nullptr;
+        if (next_block_) {
+            next_block_->prev_block_ = this;
+        }
+        global_handles_->first_block_ = this;
+    }
     NodeBlock(GlobalHandles *global_handles) {
         global_handles_ = global_handles;
         next_used_block_ = nullptr;
         prev_used_block_ = nullptr;
-        bitmap_ = 0xffffffffffffffff;
-        next_block_ = global_handles->first_block_;
-        if (next_block_) next_block_->prev_block_ = this;
+        next_block_ = nullptr;
         prev_block_ = nullptr;
-        global_handles->first_block_ = this;
+        bitmap_ = 0xffffffffffffffff;
+        push();
     }
     internal::Object ** New(internal::Object *value)
     {
-        if (bitmap_ == 0) return nullptr;
+        assert (bitmap_ != 0);
         int rightmost_set_bit_index = ffsll(bitmap_) - 1;
-        uint64_t mask = pow(2,rightmost_set_bit_index);
+        uint64_t mask = (uint64_t)1 << rightmost_set_bit_index;
         bitmap_ &= ~mask;
         if (bitmap_ == 0) {
             // Remove from available pool and add to used list
-            if (prev_block_) {
-                prev_block_->next_block_ = next_block_;
-            } else {
-                global_handles_->first_block_ = next_block_;
-            }
-            next_block_ = nullptr;
-            prev_block_ = nullptr;
-            next_used_block_ = global_handles_->first_used_block_;
-            if (next_used_block_) next_used_block_->prev_used_block_ = this;
-            prev_used_block_ = nullptr;
-            global_handles_->first_used_block_ = this;
+            remove();
+            push_used();
         }
         global_handles_->number_of_global_handles_ ++;
         memset(&handles_[rightmost_set_bit_index], 0, sizeof(Node));
@@ -261,30 +317,18 @@ public:
         int64_t index = (reinterpret_cast<intptr_t>(handle) - reinterpret_cast<intptr_t>(&handles_[0])) / sizeof(Node);
         assert(index >= 0 && index < 64);
         bool wasFull = bitmap_ == 0;
-        uint64_t mask = pow(2,index);
+        uint64_t mask = (uint64_t)1 << index;
         assert((bitmap_ & mask) == 0);
         bitmap_ |= mask;
         global_handles_->number_of_global_handles_ --;
         if (bitmap_ == 0xffffffffffffffff) {
             // NodeBlock is empty, remove from available list and delete
-            if (prev_block_) {
-                prev_block_->next_block_ = next_block_;
-            } else {
-                global_handles_->first_block_ = next_block_;
-            }
+            remove();
             delete this;
         } else if (wasFull) {
             // Remove from used list and add to avaialable pool
-            if (prev_used_block_) {
-                prev_used_block_->next_used_block_ = next_used_block_;
-            } else {
-                global_handles_->first_used_block_ = next_used_block_;
-            }
-            prev_used_block_ = nullptr;
-            next_used_block_ = nullptr;
-            next_block_ = global_handles_->first_block_;
-            global_handles_->first_block_ = this;
-            prev_block_ = nullptr;
+            remove_used();
+            push();
         }
     }
     
@@ -297,6 +341,7 @@ private:
     uint64_t bitmap_;
     Node handles_[64];
     friend class internal::GlobalHandles;
+    friend class IsolateImpl;
 };
 
 internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
@@ -306,6 +351,105 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
     first_block_ = nullptr;
     first_used_block_ = nullptr;
     first_free_ = nullptr;
+    
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate);
+    iso->getGlobalHandles = [&](std::map<internal::Object*, int>& canon,
+                                std::map<internal::Object*, std::vector<internal::Object**>>& weak)
+    {
+        const uint8_t kActiveWeak = (1 << internal::Internals::kNodeStateIsWeakValue) +
+            (1 << internal::Internals::kNodeIsActiveShift);
+        auto ProcessNodeBlock = [&](NodeBlock *block)
+        {
+            for (int i=0; i<64; i++) {
+                uint64_t mask = (uint64_t)1 << i;
+                if (~(block->bitmap_) & mask) {
+                    Node& node = block->handles_[i];
+                    internal::Object *h = node.handle_;
+                    if (h->IsHeapObject()) {
+                        if ((node.flags_ & kActiveWeak) == (1 << internal::Internals::kNodeStateIsWeakValue)) {
+                            if (weak.count(h)) weak[h].push_back(&node.handle_);
+                            else {
+                                auto vector = std::vector<internal::Object**>();
+                                vector.push_back(&node.handle_);
+                                weak[h] = vector;
+                            }
+                        } else {
+                            int count = canon.count(h) ? canon[h] : 0;
+                            canon[h] = count + 1;
+                        }
+                    }
+                }
+            }
+        };
+        for (NodeBlock *block = first_used_block_; block; block = block->next_used_block_) {
+            ProcessNodeBlock(block);
+        }
+        for (NodeBlock *block = first_block_; block; block = block->next_block_) {
+            ProcessNodeBlock(block);
+        }
+    };
+    
+    iso->weakObjectCleared = [&](internal::Object ** location, std::vector<SecondPassCallback>& second_pass_callbacks)
+    {
+        Node * node = reinterpret_cast<Node*>(location);
+        int index = node->index_;
+        intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
+        intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+        NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+
+        assert(node->flags_ & (1 << internal::Internals::kNodeStateIsWeakValue));
+        if (node->weak_callback_) {
+            SecondPassCallback second_pass;
+            second_pass.param_ = node->param_;
+            second_pass.embedder_fields_[0] = node->embedder_fields_[0];
+            second_pass.embedder_fields_[1] = node->embedder_fields_[1];
+            second_pass.callback_ = nullptr;
+
+            WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate()),
+                                        node->param_,
+                                        node->embedder_fields_,
+                                        &second_pass.callback_);
+            node->weak_callback_(info);
+            if (second_pass.callback_) {
+                second_pass_callbacks.push_back(second_pass);
+            }
+        }
+        *location = 0;
+        node->flags_ &= ~(1 << internal::Internals::kNodeIsActiveShift);
+        node->flags_ &= ~(1 << internal::Internals::kNodeStateIsWeakValue);
+    };
+    
+    iso->weakGoneInactive = [&](JSGlobalContextRef ctx, JSObjectRef obj, void ** embedder_fields)
+    {
+        // This is pretty inefficient, maybe fix it some day
+        const uint8_t kActiveWeak = (1 << internal::Internals::kNodeStateIsWeakValue) +
+            (1 << internal::Internals::kNodeIsActiveShift);
+
+        auto ProcessNodeBlock = [&](NodeBlock *block)
+        {
+            for (int i=0; i<64; i++) {
+                uint64_t mask = (uint64_t)1 << i;
+                if (~(block->bitmap_) & mask) {
+                    Node& node = block->handles_[i];
+                    internal::Object *h = node.handle_;
+                    if (h->IsHeapObject() && (node.flags_ & kActiveWeak) == kActiveWeak) {
+                        ValueImpl* value = static_cast<ValueImpl*>(V82JSC_HeapObject::FromHeapPointer(h));
+                        if ((JSObjectRef)value->m_value == obj) {
+                            node.flags_ &= ~(1 << internal::Internals::kNodeIsActiveShift);
+                            node.embedder_fields_[0] = embedder_fields[0];
+                            node.embedder_fields_[1] = embedder_fields[1];
+                        }
+                    }
+                }
+            }
+        };
+        for (NodeBlock *block = first_used_block_; block; block = block->next_used_block_) {
+            ProcessNodeBlock(block);
+        }
+        for (NodeBlock *block = first_block_; block; block = block->next_block_) {
+            ProcessNodeBlock(block);
+        }
+    };
 }
 
 internal::Handle<internal::Object> internal::GlobalHandles::Create(Object* value)
@@ -345,6 +489,122 @@ internal::Handle<internal::Object> internal::GlobalHandles::CopyGlobal(v8::inter
     return new_handle;
 }
 
+void internal::GlobalHandles::MakeWeak(internal::Object **location, void *parameter,
+                                       WeakCallbackInfo<void>::Callback weak_callback, v8::WeakCallbackType type)
+{
+    Node * handle_loc = reinterpret_cast<Node*>(location);
+    int index = handle_loc->index_;
+    intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
+    intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+    NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+    v8::Isolate *isolate = reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate());
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
+    
+    v8::HandleScope scope(isolate);
+    Local<v8::Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    if ((*location)->IsHeapObject()) {
+        V82JSC_HeapObject::HeapObject *obj = V82JSC_HeapObject::FromHeapPointer(*location);
+        if ((V82JSC_HeapObject::BaseMap*)V82JSC_HeapObject::FromHeapPointer(obj->m_map) == iso->m_value_map) {
+            ValueImpl *value = static_cast<ValueImpl*>(obj);
+            if (JSValueIsObject(ctx, value->m_value)) {
+                makePrivateInstance(iso, ctx, (JSObjectRef)value->m_value);
+                handle_loc->flags_ |= (1 << internal::Internals::kNodeIsActiveShift);
+                V82JSC_HeapObject::WeakValue* weak =
+                    static_cast<V82JSC_HeapObject::WeakValue*>
+                    (V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_weak_value_map));
+                weak->m_value = value->m_value;
+                handle_loc->handle_ = V82JSC_HeapObject::ToHeapPointer(weak);
+            }
+        }
+    }
+
+    handle_loc->flags_ |= (1 << internal::Internals::kNodeStateIsWeakValue);
+    handle_loc->param_ = parameter;
+    handle_loc->type_ = type;
+    handle_loc->weak_callback_ = weak_callback;
+}
+void internal::GlobalHandles::MakeWeak(v8::internal::Object ***location_addr)
+{
+    MakeWeak(*location_addr, nullptr, nullptr, WeakCallbackType::kParameter);
+}
+
+void * internal::GlobalHandles::ClearWeakness(v8::internal::Object **location)
+{
+    const uint8_t kActiveWeak = (1 << internal::Internals::kNodeStateIsWeakValue) +
+        (1 << internal::Internals::kNodeIsActiveShift);
+
+    Node * handle_loc = reinterpret_cast<Node*>(location);
+    if ((handle_loc->flags_ & kActiveWeak) != kActiveWeak) return nullptr;
+
+    int index = handle_loc->index_;
+    intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
+    intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+    NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+    v8::Isolate *isolate = reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate());
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
+
+    v8::HandleScope scope(isolate);
+    Local<v8::Context> context = V82JSC::OperatingContext(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    if ((*location)->IsHeapObject()) {
+        V82JSC_HeapObject::HeapObject *obj = V82JSC_HeapObject::FromHeapPointer(*location);
+        if ((V82JSC_HeapObject::BaseMap*)V82JSC_HeapObject::FromHeapPointer(obj->m_map) == iso->m_weak_value_map) {
+            V82JSC_HeapObject::WeakValue *value = static_cast<V82JSC_HeapObject::WeakValue*>(obj);
+            ValueImpl* strong = static_cast<ValueImpl*>
+                (V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_value_map));
+            strong->m_value = value->m_value;
+            JSValueProtect(ctx, strong->m_value);
+            handle_loc->handle_ = V82JSC_HeapObject::ToHeapPointer(strong);
+        }
+    }
+
+    handle_loc->flags_ &= ~kActiveWeak;
+    void *param = handle_loc->param_;
+    handle_loc->param_ = nullptr;
+    handle_loc->weak_callback_ = nullptr;
+    
+    return param;
+}
+
+void internal::GlobalHandles::TearDown()
+{
+    for (NodeBlock *block = first_block_; block; ) {
+        NodeBlock *next = block->next_block_;
+        delete block;
+        block = next;
+    }
+    for (NodeBlock *block = first_used_block_; block; ) {
+        NodeBlock *next = block->next_used_block_;
+        delete block;
+        block = next;
+    }
+}
+
+void V8::MakeWeak(internal::Object** location, void* data,
+                  WeakCallbackInfo<void>::Callback weak_callback,
+                  WeakCallbackType type)
+{
+    internal::GlobalHandles::MakeWeak(location, data, weak_callback, type);
+}
+void V8::MakeWeak(internal::Object** location, void* data,
+                  // Must be 0 or -1.
+                  int internal_field_index1,
+                  // Must be 1 or -1.
+                  int internal_field_index2,
+                  WeakCallbackInfo<void>::Callback weak_callback)
+{
+    // FIXME:  Is this even being used?  If not, get rid of it.
+    assert(0);
+}
+void V8::MakeWeak(internal::Object*** location_addr)
+{
+    internal::GlobalHandles::MakeWeak(location_addr);
+}
+void* V8::ClearWeak(internal::Object** location)
+{
+    return internal::GlobalHandles::ClearWeakness(location);
+}
 
 internal::Object** V8::GlobalizeReference(internal::Isolate* isolate,
                                           internal::Object** handle)

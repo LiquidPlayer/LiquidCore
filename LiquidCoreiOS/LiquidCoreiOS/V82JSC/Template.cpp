@@ -200,6 +200,9 @@ static T callAsCallback(JSContextRef ctx,
         JSStringRelease(message);
         return 0;
     }
+    
+    ++ iso->m_callback_depth;
+
     Local<Value> data = ValueImpl::New(ctximpl, templ->m_data);
     typedef v8::internal::Heap::RootListIndex R;
     internal::Object *the_hole = iso->ii.heap()->root(R::kTheHoleValueRootIndex);
@@ -247,9 +250,15 @@ static T callAsCallback(JSContextRef ctx,
 
     if (!*exception) {
         Local<Value> ret = info.GetReturnValue().Get();
-        
+        if (-- iso->m_callback_depth == 0 && iso->m_pending_garbage_collection) {
+            iso->CollectGarbage();
+        }
+
         return (T) V82JSC::ToJSValueRef<Value>(ret, context);
     } else {
+        if (-- iso->m_callback_depth == 0 && iso->m_pending_garbage_collection) {
+            iso->CollectGarbage();
+        }
         return NULL;
     }
 }

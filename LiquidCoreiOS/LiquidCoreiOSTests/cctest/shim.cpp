@@ -15,6 +15,14 @@
 #include "test/cctest/print-extension.h"
 #include "test/cctest/trace-extension.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    void JSSynchronousGarbageCollectForDebugging(JSContextRef);
+#ifdef __cplusplus
+}
+#endif
+
 using namespace v8;
 
 void CpuProfiler::Dispose() {}
@@ -111,7 +119,18 @@ size_t Heap::SizeOfObjects()
 bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reason,
                           const GCCallbackFlags gc_callback_flags)
 {
-    printf ("FIXME! Heap::CollectGarbage\n");
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate());
+    // First pass, clear anything on the V82JSC side that is not in use
+    iso->CollectGarbage();
+    
+    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
+    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
+        JSSynchronousGarbageCollectForDebugging(i->first);
+        JSSynchronousGarbageCollectForDebugging(i->first);
+    }
+
+    // Second pass, clear V82JSC garbage again in case any weak references were cleared
+    iso->CollectGarbage();
     return false;
 }
 
@@ -121,13 +140,24 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
 void Heap::CollectAllGarbage(int flags, GarbageCollectionReason gc_reason,
                              const GCCallbackFlags gc_callback_flags)
 {
-    printf ("FIXME! Heap::CollectAllGarbage\n");
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate());
+    // First pass, clear anything on the V82JSC side that is not in use
+    iso->CollectGarbage();
+    
+    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
+    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
+        JSSynchronousGarbageCollectForDebugging(i->first);
+        JSSynchronousGarbageCollectForDebugging(i->first);
+    }
+    
+    // Second pass, clear V82JSC garbage again in case any weak references were cleared
+    iso->CollectGarbage();
 }
 
 // Last hope GC, should try to squeeze as much as possible.
 void Heap::CollectAllAvailableGarbage(GarbageCollectionReason gc_reason)
 {
-    printf ("FIXME! Heap::CollectAllAvailableGarbage\n");
+    reinterpret_cast<IsolateImpl*>(isolate())->CollectGarbage();
 }
 
 bool Heap::ShouldOptimizeForMemoryUsage()
