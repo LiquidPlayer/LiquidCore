@@ -54,6 +54,8 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
                                  Local<Value> argv[])
 {
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    Context::Scope context_scope(context);
+    
     JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
     JSValueRef thiz = V82JSC::ToJSValueRef<Value>(recv, context);
     JSValueRef args[argc];

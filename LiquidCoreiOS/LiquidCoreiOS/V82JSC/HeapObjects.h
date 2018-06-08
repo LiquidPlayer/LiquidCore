@@ -179,30 +179,45 @@ namespace V82JSC_HeapObject {
     };
     
     struct Context : HeapObject {
-        JSGlobalContextRef m_ctxRef;
+        uint8_t reserved_[v8::internal::Internals::kContextHeaderSize +
+                          ((v8::internal::kApiPointerSize + 1) * v8::internal::Internals::kContextEmbedderDataIndex)
+                          - sizeof(HeapObject)];
+        JSContextRef m_ctxRef;
+        
+        static void Constructor(Context *obj) {}
+        static int Destructor(Context *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            return 0;
+        }
+    };
+    
+    struct GlobalContext : Context {
         Copyable(v8::EmbeddedFixedArray) m_embedder_data;
         Copyable(v8::Function) ObjectSetPrototypeOf;
         Copyable(v8::Function) ObjectGetPrototypeOf;
         Copyable(v8::Function) ObjectPrototypeToString;
         Copyable(v8::Function) FunctionPrototypeBind;
+        Copyable(v8::Function) Eval;
 
-        static void Constructor(Context *obj) {}
-        static int Destructor(Context *obj, CanonicalHandles& handles, WeakHandles& weak,
+        static void Constructor(GlobalContext *obj) {}
+        static int Destructor(GlobalContext *obj, CanonicalHandles& handles, WeakHandles& weak,
                               std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             IsolateImpl *iso = obj->GetIsolate();
             
-            if (obj->m_ctxRef) JSGlobalContextRelease(obj->m_ctxRef);
+            if (obj->m_ctxRef) JSGlobalContextRelease((JSGlobalContextRef)obj->m_ctxRef);
             int freed=0;
             freed +=SmartReset<v8::Function>(obj->ObjectSetPrototypeOf, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->ObjectGetPrototypeOf, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->ObjectPrototypeToString, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->FunctionPrototypeBind, handles, weak, callbacks);
+            freed +=SmartReset<v8::Function>(obj->Eval, handles, weak, callbacks);
             freed +=SmartReset<v8::EmbeddedFixedArray>(obj->m_embedder_data, handles, weak, callbacks);
+
+            RemoveContextFromIsolate(iso, (JSGlobalContextRef)obj->m_ctxRef);
             
-            RemoveContextFromIsolate(iso, obj->m_ctxRef);
-            
-            return freed;
+            return freed + Context::Destructor(obj, handles, weak, callbacks);
         }
         static void RemoveContextFromIsolate(IsolateImpl* iso, JSGlobalContextRef ctx);
     };
@@ -211,6 +226,15 @@ namespace V82JSC_HeapObject {
         JSStringRef m_sourceURL;
         JSStringRef m_script;
         int m_startingLineNumber;
+        Copyable(v8::Value) resource_name;
+        Copyable(v8::Integer) resource_line_offset;
+        Copyable(v8::Integer) resource_column_offset;
+        bool resource_is_shared_cross_origin;
+        Copyable(v8::Integer) script_id;
+        Copyable(v8::Value) source_map_url;
+        bool resource_is_opaque;
+        bool is_wasm;
+        bool is_module;
 
         static void Constructor(Script *obj) {}
         static int Destructor(Script *obj, CanonicalHandles& handles, WeakHandles& weak,
@@ -218,7 +242,14 @@ namespace V82JSC_HeapObject {
         {
             if (obj->m_sourceURL) JSStringRelease(obj->m_sourceURL);
             if (obj->m_script) JSStringRelease(obj->m_script);
-            return 0;
+
+            int freed=0;
+            freed +=SmartReset<v8::Value>(obj->resource_name, handles, weak, callbacks);
+            freed +=SmartReset<v8::Integer>(obj->resource_line_offset, handles, weak, callbacks);
+            freed +=SmartReset<v8::Integer>(obj->resource_column_offset, handles, weak, callbacks);
+            freed +=SmartReset<v8::Integer>(obj->script_id, handles, weak, callbacks);
+            freed +=SmartReset<v8::Value>(obj->source_map_url, handles, weak, callbacks);
+            return freed;
         }
     };
     
@@ -506,7 +537,59 @@ namespace V82JSC_HeapObject {
             return 0;
         }
     };
+    
+    struct Message : Value {
+        Copyable(v8::Script) m_script;
+        JSStringRef m_back_trace;
+
+        static void Constructor(Message *obj) {}
+        static int Destructor(Message *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            if (obj->m_back_trace) JSStringRelease(obj->m_back_trace);
+            int freed=0;
+            freed += SmartReset<v8::Script>(obj->m_script, handles, weak, callbacks);
+            return freed + Value::Destructor(obj, handles, weak, callbacks);
+        }
+    };
+    
+    struct StackTrace : HeapObject {
+        Copyable(v8::Script) m_script;
+        JSObjectRef m_error;
+        JSObjectRef m_stack_frame_array;
         
+        static void Constructor(StackTrace *obj) {}
+        static int Destructor(StackTrace *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            if (obj->m_error) JSValueUnprotect(obj->GetNullContext(), obj->m_error);
+            if (obj->m_stack_frame_array) JSValueUnprotect(obj->GetNullContext(), obj->m_stack_frame_array);
+            int freed=0;
+            freed += SmartReset<v8::Script>(obj->m_script, handles, weak, callbacks);
+            return freed;
+        }
+    };
+    
+    struct StackFrame : HeapObject {
+        Copyable(v8::String) m_function_name;
+        Copyable(v8::String) m_script_name;
+        Copyable(v8::StackTrace) m_stack_trace;
+        int m_line_number;
+        int m_column_number;
+        bool m_is_eval;
+        
+        static void Constructor(StackFrame *obj) {}
+        static int Destructor(StackFrame *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            int freed=0;
+            freed += SmartReset<v8::String>(obj->m_function_name, handles, weak, callbacks);
+            freed += SmartReset<v8::String>(obj->m_script_name, handles, weak, callbacks);
+            freed += SmartReset<v8::StackTrace>(obj->m_stack_trace, handles, weak, callbacks);
+            return freed;
+        }
+    };
+    
     inline v8::internal::Map * ToV8Map(BaseMap *map)
     {
         return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(map) + v8::internal::kHeapObjectTag);

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		075AEA1620C6A608002B1098 /* Message.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 075AEA1520C6A608002B1098 /* Message.cpp */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
 		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -102,6 +103,7 @@
 
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
+		075AEA1520C6A608002B1098 /* Message.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Message.cpp; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -130,6 +132,8 @@
 		07E9ADC720BBFEE3002F2002 /* Isolate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Isolate.h; sourceTree = "<group>"; };
 		07E9ADC820BC1281002F2002 /* HeapLookup.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HeapLookup.cpp; sourceTree = "<group>"; };
 		07E9ADCA20BD359A002F2002 /* TrackedObject.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TrackedObject.cpp; sourceTree = "<group>"; };
+		07EE4ACC20C7E59200088E7D /* JSContextRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSContextRefPrivate.h; sourceTree = "<group>"; };
+		07EE4ACD20C95CDC00088E7D /* JSScriptRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSScriptRefPrivate.h; sourceTree = "<group>"; };
 		07F8049720260E3F00FDFC27 /* test-api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "test-api.cc"; sourceTree = "<group>"; };
 		07F804992027147F00FDFC27 /* Object.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Object.cpp; sourceTree = "<group>"; };
 		07F804A120277DC700FDFC27 /* TypedArray.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TypedArray.cpp; sourceTree = "<group>"; };
@@ -294,6 +298,7 @@
 				07F804E4202D9F3100FDFC27 /* Template.cpp */,
 				07F804A120277DC700FDFC27 /* TypedArray.cpp */,
 				07F804A52027AD6D00FDFC27 /* Function.cpp */,
+				075AEA1520C6A608002B1098 /* Message.cpp */,
 				07F804A92028380800FDFC27 /* PropertyDescriptor.cpp */,
 				07F804AD2029863600FDFC27 /* Primitives.cpp */,
 				07F804B120298A7F00FDFC27 /* PrimitiveObjects.cpp */,
@@ -316,6 +321,8 @@
 				07F8054320395FA700FDFC27 /* internals.cpp */,
 				07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */,
 				07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */,
+				07EE4ACC20C7E59200088E7D /* JSContextRefPrivate.h */,
+				07EE4ACD20C95CDC00088E7D /* JSScriptRefPrivate.h */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -516,6 +523,7 @@
 				07FE85AD2075F7A90013E1B4 /* once.cc in Sources */,
 				07FE859C2075F6D40013E1B4 /* tracing-controller.cc in Sources */,
 				07F804DE202D8DF800FDFC27 /* Date.cpp in Sources */,
+				075AEA1620C6A608002B1098 /* Message.cpp in Sources */,
 				07F804D6202D8B8E00FDFC27 /* Promise.cpp in Sources */,
 				07FE85AE2075F7A90013E1B4 /* sys-info.cc in Sources */,
 				07FE85972075F6D40013E1B4 /* default-platform.cc in Sources */,

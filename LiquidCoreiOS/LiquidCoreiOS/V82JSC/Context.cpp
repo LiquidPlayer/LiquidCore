@@ -7,10 +7,17 @@
 //
 
 #include "V82JSC.h"
+#include "JSContextRefPrivate.h"
 
 using namespace v8;
 
 #define H V82JSC_HeapObject
+template<typename T>
+static void WriteField(internal::Object* ptr, int offset, T value) {
+    uint8_t* addr =
+    reinterpret_cast<uint8_t*>(ptr) + offset - internal::kHeapObjectTag;
+    *reinterpret_cast<T*>(addr) = value;
+}
 
 /**
  * Returns the global proxy object.
@@ -56,9 +63,23 @@ EmbedderDataImpl * get_embedder_data(const Context* cx)
     return nullptr;
 }
 
-Local<Context> ContextImpl::New(Isolate *isolate, JSContextRef ctx)
+Local<Context> LocalContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
-    return V82JSC::ToIsolateImpl(isolate)->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(isolate);
+    IsolateImpl * i = V82JSC::ToIsolateImpl(isolate);
+    ContextImpl * context = static_cast<ContextImpl *>(H::HeapAllocator::Alloc(i, i->m_context_map));
+    context->m_ctxRef = ctx;
+
+    // Copy the embedder data pointer from the global context.  This has a vulnerability if the embedder data
+    // is moved (expanded) on the global context.  Unlikely scenario, though.
+    Local<v8::Context> global_context = i->m_global_contexts[JSContextGetGlobalContext(context->m_ctxRef)].Get(isolate);
+    EmbedderDataImpl *ed = get_embedder_data(*global_context);
+    int embedder_data_offset = internal::Internals::kContextHeaderSize +
+        (internal::kApiPointerSize * internal::Internals::kContextEmbedderDataIndex);
+        internal::Object * ctxi = V82JSC_HeapObject::ToHeapPointer(context);
+    internal::Object *embedder_data = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(ed) + internal::kHeapObjectTag);
+    WriteField<internal::Object*>(ctxi, embedder_data_offset, embedder_data);
+
+    return V82JSC::CreateLocal<v8::Context>(&i->ii, context);
 }
 
 static Local<Value> GetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz)
@@ -145,7 +166,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<Value> global_object)
 {
     IsolateImpl * i = V82JSC::ToIsolateImpl(isolate);
-    ContextImpl * context = static_cast<ContextImpl *>(H::HeapAllocator::Alloc(i, i->m_context_map));
+    GlobalContextImpl * context = static_cast<GlobalContextImpl *>(H::HeapAllocator::Alloc(i, i->m_global_context_map));
     
     assert(H::ToHeapPointer(context)->IsContext());
 
@@ -163,15 +184,12 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
         
         JSClassDefinition def = kJSClassDefinitionEmpty;
-        def.initialize = [](JSContextRef ctx, JSObjectRef global)
-        {
-        };
         JSClassRef claz = JSClassCreate(&def);
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
         JSClassRelease(claz);
         JSContextRef ctxRef = context->m_ctxRef;
-        IsolateImpl::s_context_to_isolate_map[context->m_ctxRef] = i;
-        i->m_exec_maps[context->m_ctxRef] = std::map<const char*, JSObjectRef>();
+        IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
+        i->m_exec_maps[(JSGlobalContextRef)context->m_ctxRef] = std::map<const char*, JSObjectRef>();
 
         JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
@@ -212,7 +230,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSClassDefinition def = kJSClassDefinitionEmpty;
         JSClassRef claz = JSClassCreate(&def);
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
-        IsolateImpl::s_context_to_isolate_map[context->m_ctxRef] = i;
+        IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
         JSClassRelease(claz);
     }
     
@@ -226,7 +244,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         //persistent.SetWeak();
         i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
     }
-
+    
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
         proxyArrayBuffer(context);
@@ -313,23 +331,24 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                      "    (o) => old(o).filter( (s)=> s!= _1 )",
                      1, &i->m_private_symbol);
         
+        ContextImpl *ctximpl = reinterpret_cast<ContextImpl*>(context);
         // Save a reference to original Object.prototype.toString()
         JSValueRef toString = V82JSC::exec(context->m_ctxRef, "return Object.prototype.toString", 0, nullptr);
-        context->ObjectPrototypeToString.Reset(isolate, ValueImpl::New(context, toString).As<Function>());
+        context->ObjectPrototypeToString.Reset(isolate, ValueImpl::New(ctximpl, toString).As<Function>());
         
         // Override Function.prototype.bind()
         // All we are doing intercepting calls to bind and then calling the original bind and returning the
         // value.  But we need to ensure that the creation context of the bound object is the same as the
         // creation context of the function.
         JSValueRef bind = V82JSC::exec(context->m_ctxRef, "return Function.prototype.bind", 0, nullptr);
-        context->FunctionPrototypeBind.Reset(isolate, ValueImpl::New(context, bind).As<Function>());
+        context->FunctionPrototypeBind.Reset(isolate, ValueImpl::New(ctximpl, bind).As<Function>());
         Local<FunctionTemplate> bind_template = FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
             Local<Context> context = info.This()->CreationContext();
             Local<Value> args[info.Length()];
             for (int i=0; i<info.Length(); i++) {
                 args[i] = info[i];
             }
-            MaybeLocal<Value> bound = V82JSC::ToContextImpl(context)->FunctionPrototypeBind.Get(info.GetIsolate())
+            MaybeLocal<Value> bound = V82JSC::ToGlobalContextImpl(context)->FunctionPrototypeBind.Get(info.GetIsolate())
                 ->Call(context, info.This(), info.Length(), args);
             if (!bound.IsEmpty()) {
                 info.GetReturnValue().Set(bound.ToLocalChecked());
@@ -337,6 +356,38 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         });
         JSValueRef new_bind = V82JSC::ToJSValueRef(bind_template->GetFunction(ctx).ToLocalChecked(), ctx);
         V82JSC::exec(context->m_ctxRef, "Function.prototype.bind = _1", 1, &new_bind);
+        
+        /* Overriding eval will not work reliably
+        // Override eval to handle //# sourceURL= and //@ sourceURL=
+        JSStringRef e = JSStringCreateWithUTF8CString("eval");
+        auto evalcb = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
+                         size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) -> JSValueRef
+        {
+            JSStringRef sourceURL = JSStringCreateWithUTF8CString("[eval]");
+            if (argumentCount > 0) {
+                JSValueRef code = arguments[0];
+                JSStringRef s = JSValueToStringCopy(ctx, code, 0);
+                
+                JSValueRef surl = V82JSC::exec(ctx,
+                        "return (/\\/\\/[#@] *sourceURL[\\s]*=([A-Za-z0-9_]*)\\s*$/gm.exec(_1)||['',null])[1]",
+                        1, &code);
+                if (!JSValueIsNull(ctx, surl)) {
+                    JSStringRelease(sourceURL);
+                    sourceURL = JSValueToStringCopy(ctx, surl, 0);
+                    JSStringRetain(sourceURL);
+                }
+                JSValueRef ret = JSEvaluateScript(ctx, s, thisObject, sourceURL, 1, exception);
+                return ret;
+            }
+            return JSValueMakeUndefined(ctx);
+        };
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        def.attributes |= kJSClassAttributeNoAutomaticPrototype;
+        def.callAsFunction = evalcb;
+        JSClassRef klass = JSClassCreate(&def);
+        JSObjectRef evalf = JSObjectMake(context->m_ctxRef, klass, 0);
+        JSObjectSetProperty(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef), e, evalf, 0, 0);
+        */
         
         std::map<std::string, bool> loaded_extensions;
 
@@ -475,13 +526,6 @@ Local<Object> Context::GetExtrasBindingObject()
     return Local<Object>();
 }
 
-template<typename T>
-static void WriteField(internal::Object* ptr, int offset, T value) {
-    uint8_t* addr =
-        reinterpret_cast<uint8_t*>(ptr) + offset - internal::kHeapObjectTag;
-    *reinterpret_cast<T*>(addr) = value;
-}
-
 /**
  * Sets the embedder data with the given index, growing the data as
  * needed. Note that index 0 currently has a special meaning for Chrome's
@@ -491,6 +535,13 @@ void Context::SetEmbedderData(int index, Local<Value> value)
 {
     Isolate *isolate = V82JSC::ToIsolate(this);
     IsolateImpl *i = V82JSC::ToIsolateImpl(isolate);
+    ContextImpl *ctximpl = V82JSC::ToContextImpl(this);
+
+    if ((JSContextRef)JSContextGetGlobalContext(ctximpl->m_ctxRef) != ctximpl->m_ctxRef) {
+        i->m_global_contexts[JSContextGetGlobalContext(ctximpl->m_ctxRef)].Get(isolate)->SetEmbedderData(index,value);
+        return;
+    }
+    
     EmbedderDataImpl *ed = get_embedder_data(this);
     
     if (!ed || ed->m_size <= index) {
@@ -511,7 +562,7 @@ void Context::SetEmbedderData(int index, Local<Value> value)
     ed->m_elements[index] = val;
     
     Local<v8::EmbeddedFixedArray> fa = V82JSC::CreateLocal<v8::EmbeddedFixedArray>(isolate, ed);
-    ContextImpl *context = V82JSC::ToContextImpl(this);
+    GlobalContextImpl *context = V82JSC::ToGlobalContextImpl(this);
     context->m_embedder_data.Reset(isolate, fa);
     
     int embedder_data_offset = internal::Internals::kContextHeaderSize +

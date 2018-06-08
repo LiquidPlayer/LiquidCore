@@ -39,6 +39,12 @@ struct SecondPassCallback {
     void *embedder_fields_[2];
 };
     
+struct MessageListener {
+    v8::MessageCallback callback_;
+    JSValueRef data_;
+    int message_levels_;
+};
+    
 // This is a hack to avoid having to edit the V8 header files.  We do garbage collection
 // differently and GlobalHandle struct is locked down as private.  This allows us to call
 // back into GlobalHandle with a custom function.
@@ -60,6 +66,7 @@ struct IsolateImpl {
     H::Map<H::TrackedObject> *m_tracked_object_map;
     H::Map<H::Value> *m_array_buffer_map;
     H::Map<H::Context> *m_context_map;
+    H::Map<H::GlobalContext> *m_global_context_map;
     H::Map<H::FixedArray> *m_fixed_array_map;
     H::Map<H::String> *m_one_byte_string_map;
     H::Map<H::String> *m_string_map;
@@ -78,6 +85,9 @@ struct IsolateImpl {
     H::Map<H::ObjAccessor> *m_object_accessor_map;
     H::Map<H::Script> *m_script_map;
     H::Map<H::WeakValue> *m_weak_value_map;
+    H::Map<H::StackFrame> *m_stack_frame_map;
+    H::Map<H::StackTrace> *m_stack_trace_map;
+    H::Map<H::Message> *m_message_map;
 
     v8::TryCatch *m_handlers;
     
@@ -98,6 +108,10 @@ struct IsolateImpl {
     bool m_pending_garbage_collection;
 
     v8::FatalErrorCallback m_fatal_error_callback;
+    std::vector<MessageListener> m_message_listeners;
+    std::stack<v8::Local<v8::Script>> m_running_scripts;
+    bool m_capture_stack_trace_for_uncaught_exceptions;
+    JSValueRef m_verbose_exception;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);

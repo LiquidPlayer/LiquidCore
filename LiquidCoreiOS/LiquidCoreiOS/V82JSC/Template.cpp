@@ -161,7 +161,8 @@ static T callAsCallback(JSContextRef ctx,
     HandleScope scope(isolate);
     Local<v8::Template> local = V82JSC::FromPersistentData<v8::Template>(isolate, JSObjectGetPrivate(proxy_function));
     
-    Local<Context> context = ContextImpl::New(isolate, ctx);
+    Local<Context> context = LocalContextImpl::New(isolate, ctx);
+    Context::Scope context_scope(context);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl>(local);
     

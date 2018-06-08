@@ -106,7 +106,7 @@ size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception
  * from the API, even if called from JS.  So we proxy the global ArrayBuffer object and capture the
  * constructor.
  */
-void proxyArrayBuffer(ContextImpl *ctx)
+void proxyArrayBuffer(GlobalContextImpl *ctx)
 {
     JSObjectRef handler = JSObjectMake(ctx->m_ctxRef, nullptr, nullptr);
     auto handler_func = [ctx, handler](const char *name, JSObjectCallAsFunctionCallback callback) -> void {

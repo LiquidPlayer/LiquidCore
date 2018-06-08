@@ -12,7 +12,7 @@
 using namespace V82JSC_HeapObject;
 using namespace v8;
 
-void V82JSC_HeapObject::Context::RemoveContextFromIsolate(IsolateImpl *iso, JSGlobalContextRef ctx)
+void V82JSC_HeapObject::GlobalContext::RemoveContextFromIsolate(IsolateImpl *iso, JSGlobalContextRef ctx)
 {
     iso->m_global_contexts.erase(ctx);
     iso->m_exec_maps.erase(ctx);

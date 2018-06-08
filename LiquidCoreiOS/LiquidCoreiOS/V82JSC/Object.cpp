@@ -37,17 +37,12 @@ Maybe<bool> Object::Set(Local<Context> context, Local<Value> key, Local<Value> v
 Maybe<bool> Object::Set(Local<Context> context, uint32_t index,
                                       Local<Value> value)
 {
-    char ndx[50];
-    sprintf(ndx, "%d", index);
-    JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
-
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     JSValueRef value_ = V82JSC::ToJSValueRef(value, context);
 
     JSValueRef exception = nullptr;
-    JSObjectSetProperty(ctx, (JSObjectRef)obj, index_, value_, kJSPropertyAttributeNone, &exception);
-    JSStringRelease(index_);
+    JSObjectSetPropertyAtIndex(ctx, (JSObjectRef)obj, index, value_, &exception);
     
     _maybe<bool> out;
     out.has_value_ = true;
@@ -170,17 +165,12 @@ MaybeLocal<Value> Object::Get(Local<Context> context, Local<Value> key)
 
 MaybeLocal<Value> Object::Get(Local<Context> context, uint32_t index)
 {
-    char ndx[50];
-    sprintf(ndx, "%d", index);
-    JSStringRef index_ = JSStringCreateWithUTF8CString(ndx);
-
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
     LocalException exception(iso);
-    JSValueRef prop = JSObjectGetProperty(ctx, (JSObjectRef)obj, index_, &exception);
-    JSStringRelease(index_);
+    JSValueRef prop = JSObjectGetPropertyAtIndex(ctx, (JSObjectRef)obj, index, &exception);
     if (!exception.ShouldThow()) {
         return MaybeLocal<Value>(ValueImpl::New(V82JSC::ToContextImpl(context), prop));
     }
@@ -382,7 +372,8 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
         Local<v8::AccessorInfo> acc_info = V82JSC::FromPersistentData<v8::AccessorInfo>(V82JSC::ToIsolate(iso), persistent);
         AccessorImpl *wrap = V82JSC::ToImpl<AccessorImpl>(acc_info);
         
-        Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(iso), ctx);
+        Local<Context> context = LocalContextImpl::New(V82JSC::ToIsolate(iso), ctx);
+        Context::Scope context_scope(context);
         ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
         
         Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
@@ -901,9 +892,13 @@ Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
  */
 MaybeLocal<String> Object::ObjectProtoToString(Local<Context> context)
 {
-    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSGlobalContextRef ctx = JSContextGetGlobalContext(V82JSC::ToContextRef(context));
+    Local<Context> global_context = V82JSC::ToIsolateImpl(this)->m_global_contexts[ctx].Get(V82JSC::ToIsolate(this));
+    Context::Scope context_scope(context);
+    
     JSObjectRef toString = (JSObjectRef)
-        V82JSC::ToJSValueRef(V82JSC::ToContextImpl(context)->ObjectPrototypeToString.Get(V82JSC::ToIsolate(this)), context);
+        V82JSC::ToJSValueRef(V82JSC::ToGlobalContextImpl(global_context)
+                             ->ObjectPrototypeToString.Get(V82JSC::ToIsolate(this)), context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
     LocalException exception(V82JSC::ToIsolateImpl(this));

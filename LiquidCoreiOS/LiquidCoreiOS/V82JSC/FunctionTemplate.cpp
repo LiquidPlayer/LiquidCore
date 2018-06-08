@@ -453,7 +453,7 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
 {
     IsolateImpl *isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
     Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
-    Local<Context> context = ContextImpl::New(isolate, ctx);
+    Local<Context> context = LocalContextImpl::New(isolate, ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     
     assert(argumentCount>0);
@@ -462,6 +462,7 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     arguments++;
 
     HandleScope scope(isolate);
+    Context::Scope context_scope(context);
     
     void * private_data = JSObjectGetPrivate(constructor_function);
     Local<Template> templt = V82JSC::FromPersistentData<Template>(isolate, private_data);

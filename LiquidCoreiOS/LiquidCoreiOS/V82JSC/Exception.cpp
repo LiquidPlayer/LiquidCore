@@ -68,8 +68,18 @@ Local<Value> Exception::Error(Local<String> message)
  */
 Local<Message> Exception::CreateMessage(Isolate* isolate, Local<Value> exception)
 {
-    assert(0);
-    return Local<Message>();
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+ 
+    Local<Script> script;
+    if (!iso->m_running_scripts.empty()) {
+        script = iso->m_running_scripts.top();
+    }
+
+    MessageImpl * msgi = MessageImpl::New(iso, V82JSC::ToJSValueRef(exception, context), script, 0);
+    Local<v8::Message> msg = V82JSC::CreateLocal<v8::Message>(&iso->ii, msgi);
+
+    return msg;
 }
 
 /**
@@ -78,6 +88,7 @@ Local<Message> Exception::CreateMessage(Isolate* isolate, Local<Value> exception
  */
 Local<StackTrace> Exception::GetStackTrace(Local<Value> exception)
 {
-    assert(0);
-    return Local<StackTrace>();
+    Isolate* isolate = Isolate::GetCurrent();
+    
+    return CreateMessage(isolate, exception)->GetStackTrace();
 }

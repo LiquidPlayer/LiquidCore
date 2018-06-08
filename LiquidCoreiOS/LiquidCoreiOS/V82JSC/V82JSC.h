@@ -10,6 +10,7 @@
 #define V82JSC_h
 
 #include "Isolate.h"
+#include "JSContextRefPrivate.h"
 
 template <class T>
 class _maybe {
@@ -28,12 +29,20 @@ struct ContextImpl;
 
 using v8::internal::IsolateImpl;
 
-struct ContextImpl : V82JSC_HeapObject::Context
+struct ContextImpl : V82JSC_HeapObject::Context {};
+struct GlobalContextImpl : V82JSC_HeapObject::GlobalContext {};
+struct LocalContextImpl : ContextImpl
 {
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
 
 struct ScriptImpl : V82JSC_HeapObject::Script {};
+struct StackFrameImpl : V82JSC_HeapObject::StackFrame {};
+struct StackTraceImpl : V82JSC_HeapObject::StackTrace
+{
+    static v8::Local<v8::StackTrace> New(IsolateImpl* iso, v8::Local<v8::Value> error, v8::Local<v8::Script> script,
+                                         JSStringRef back_trace);
+};
 
 struct ValueImpl : V82JSC_HeapObject::Value
 {
@@ -60,6 +69,12 @@ struct FunctionCallbackImpl : public v8::FunctionCallbackInfo<v8::Value>
     inline FunctionCallbackImpl(v8::internal::Object** implicit_args,
                                 v8::internal::Object** values, int length) :
     FunctionCallbackInfo<v8::Value>(implicit_args, values, length) {}
+};
+
+struct MessageImpl : V82JSC_HeapObject::Message
+{
+    static MessageImpl* New(IsolateImpl* iso, JSValueRef exception, v8::Local<v8::Script> script, JSStringRef back_trace);
+    void CallHandlers();
 };
 
 template <class T>
@@ -246,6 +261,18 @@ struct V82JSC {
         return ctx;
     }
 
+    static inline GlobalContextImpl* ToGlobalContextImpl(v8::Local<v8::Context> context)
+    {
+        return ToImpl<GlobalContextImpl, v8::Context>(context);
+    }
+    static inline GlobalContextImpl* ToGlobalContextImpl(const v8::Context* thiz)
+    {
+        v8::internal::Object *obj = * reinterpret_cast<v8::internal::Object**>(const_cast<v8::Context*>(thiz));
+        assert(!obj->IsSmi());
+        GlobalContextImpl *ctx = reinterpret_cast<GlobalContextImpl*>(reinterpret_cast<intptr_t>(obj) & ~3);
+        return ctx;
+    }
+
     static inline JSContextRef ToContextRef(v8::Local<v8::Context> context)
     {
         return ToContextImpl(context)->m_ctxRef;
@@ -358,7 +385,7 @@ struct V82JSC {
             // No worries, it just means this hasn't been set up yet; use the native API
             return JSObjectGetPrototype(ToContextRef(context), obj);
         }
-        v8::Local<v8::Function> getPrototype = ToContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
+        v8::Local<v8::Function> getPrototype = ToGlobalContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
         CHECK(!getPrototype.IsEmpty());
         v8::Local<v8::Value> args[] = {
             v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj))
@@ -376,7 +403,7 @@ struct V82JSC {
             JSObjectSetPrototype(ToContextRef(context), obj, proto);
             return;
         }
-        v8::Local<v8::Function> setPrototype = ToContextImpl(global_context)->ObjectSetPrototypeOf.Get(isolate);
+        v8::Local<v8::Function> setPrototype = ToGlobalContextImpl(global_context)->ObjectSetPrototypeOf.Get(isolate);
         CHECK(!setPrototype.IsEmpty());
         v8::Local<v8::Value> args[] = {
             v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj)),
@@ -419,10 +446,35 @@ struct LocalException {
     LocalException(IsolateImpl *i) : exception_(0), isolate_(i) {}
     ~LocalException()
     {
-        if (isolate_->m_handlers && exception_) {
-            reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers)->exception_ = (void*)exception_;
-            isolate_->ii.thread_local_top()->scheduled_exception_ =
-                isolate_->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
+        v8::HandleScope scope(V82JSC::ToIsolate(isolate_));
+        v8::Local<v8::Script> script;
+        if (!isolate_->m_running_scripts.empty()) {
+            script = isolate_->m_running_scripts.top();
+        }
+
+        v8::Local<v8::Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(isolate_));
+        JSContextRef ctx = V82JSC::ToContextRef(context);
+        if (exception_) {
+            MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
+                                                  JSContextCreateBacktrace(ctx, 32));
+            if (isolate_->m_handlers) {
+                TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers);
+                tcc->exception_ = (void*)exception_;
+                tcc->message_obj_ = (void*)msgi;
+                
+                isolate_->ii.thread_local_top()->scheduled_exception_ =
+                    isolate_->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
+                if (tcc->is_verbose_ && !tcc->next_) {
+                    msgi->CallHandlers();
+                }
+            } else {
+                msgi->CallHandlers();
+            }
+        } else if (isolate_->m_verbose_exception && !isolate_->m_handlers) {
+            MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
+                                                  JSContextCreateBacktrace(ctx, 32));
+            msgi->CallHandlers();
+            isolate_->m_verbose_exception = 0;
         }
     }
     inline JSValueRef* operator&()
@@ -435,7 +487,7 @@ struct LocalException {
     IsolateImpl *isolate_;
 };
 
-void proxyArrayBuffer(ContextImpl *ctx);
+void proxyArrayBuffer(GlobalContextImpl *ctx);
 bool InstallAutoExtensions(v8::Local<v8::Context> context, std::map<std::string, bool>& loaded_extensions);
 bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name, std::map<std::string, bool>& loaded_extensions);
 TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object);

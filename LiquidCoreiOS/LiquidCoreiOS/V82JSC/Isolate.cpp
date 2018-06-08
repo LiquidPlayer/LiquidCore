@@ -54,7 +54,9 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_scope_stack = std::stack<HandleScope*>();
     impl->m_global_contexts = std::map<JSGlobalContextRef, Copyable(Context)>();
     impl->m_exec_maps = std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>>();
-    
+    impl->m_message_listeners = std::vector<internal::MessageListener>();
+    impl->m_running_scripts = std::stack<Local<v8::Script>>();
+        
     HandleScope scope(isolate);
     
     impl->m_params = params;
@@ -65,6 +67,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     // Create Map Objects
     impl->m_context_map = H::Map<H::Context>::New(impl, internal::CONTEXT_EXTENSION_TYPE);
+    impl->m_global_context_map = H::Map<H::GlobalContext>::New(impl, internal::CONTEXT_EXTENSION_TYPE);
     auto map_undefined = H::Map<H::Value>::New(impl, internal::ODDBALL_TYPE, internal::Internals::kUndefinedOddballKind);
     auto map_the_hole = H::Map<H::Value>::New(impl, internal::ODDBALL_TYPE, internal::Internals::kUndefinedOddballKind);
     auto map_null = H::Map<H::Value>::New(impl, internal::ODDBALL_TYPE, internal::Internals::kNullOddballKind);
@@ -91,8 +94,12 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_object_accessor_map = H::Map<H::ObjAccessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_script_map = H::Map<H::Script>::New(impl, internal::SCRIPT_TYPE);
     impl->m_weak_value_map = H::Map<H::WeakValue>::New(impl, internal::WEAK_CELL_TYPE);
+    impl->m_stack_frame_map = H::Map<H::StackFrame>::New(impl, internal::STACK_FRAME_INFO_TYPE);
+    impl->m_stack_trace_map = H::Map<H::StackTrace>::New(impl, internal::STACK_FRAME_INFO_TYPE);
+    impl->m_message_map = H::Map<H::Message>::New(impl, internal::JS_MESSAGE_OBJECT_TYPE);
 
     roots->block_context_map = reinterpret_cast<internal::Object**>(H::ToV8Map(impl->m_context_map));
+    roots->native_context_map = reinterpret_cast<internal::Object**>(H::ToV8Map(impl->m_global_context_map));
     roots->undefined_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_undefined));
     roots->the_hole_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_the_hole));
     roots->null_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_null));
@@ -266,6 +273,8 @@ void Isolate::Dispose()
     
     isolate->m_global_symbols.clear();
     isolate->m_private_symbols.clear();
+    isolate->m_message_listeners.clear();
+    while (!isolate->m_running_scripts.empty()) isolate->m_running_scripts.pop();
 
     // Finally, blitz the global handles and the heap
     isolate->ii.global_handles()->TearDown();
@@ -947,7 +956,7 @@ void Isolate::SetJitCodeEventHandler(JitCodeEventOptions options,
  */
 void Isolate::SetStackLimit(uintptr_t stack_limit)
 {
-    assert(0);
+    printf ("FIXME: Isolate::SetStackLimit\n");
 }
 
 /**
@@ -1031,8 +1040,7 @@ bool Isolate::IsDead()
 bool Isolate::AddMessageListener(MessageCallback that,
                         Local<Value> data)
 {
-    assert(0);
-    return false;
+    return AddMessageListenerWithErrorLevel(that, kMessageError, data);
 }
 
 /**
@@ -1050,8 +1058,24 @@ bool Isolate::AddMessageListenerWithErrorLevel(MessageCallback that,
                                       int message_levels,
                                       Local<Value> data)
 {
-    assert(0);
-    return false;
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    HandleScope scope(this);
+    Local<Context> context = V82JSC::OperatingContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    
+    internal::MessageListener listener;
+    listener.callback_ = that;
+    listener.message_levels_ = message_levels;
+    if (data.IsEmpty()) {
+        listener.data_ = 0;
+    } else {
+        listener.data_ = V82JSC::ToJSValueRef(data, context);
+        JSValueProtect(ctx, listener.data_);
+    }
+    
+    iso->m_message_listeners.push_back(listener);
+    
+    return true;
 }
 
 /**
@@ -1059,7 +1083,19 @@ bool Isolate::AddMessageListenerWithErrorLevel(MessageCallback that,
  */
 void Isolate::RemoveMessageListeners(MessageCallback that)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    HandleScope scope(this);
+    Local<Context> context = V82JSC::OperatingContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+
+    for (auto i=iso->m_message_listeners.begin(); i!=iso->m_message_listeners.end(); ) {
+        if (i->callback_ == that) {
+            if (i->data_) JSValueUnprotect(ctx, i->data_);
+            iso->m_message_listeners.erase(i);
+        } else {
+            ++i;
+        }
+    }
 }
 
 /** Callback function for reporting failed access checks.*/
@@ -1076,7 +1112,8 @@ void Isolate::SetCaptureStackTraceForUncaughtExceptions(
                                                bool capture, int frame_limit,
                                                StackTrace::StackTraceOptions options)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_capture_stack_trace_for_uncaught_exceptions = capture;
 }
 
 /**

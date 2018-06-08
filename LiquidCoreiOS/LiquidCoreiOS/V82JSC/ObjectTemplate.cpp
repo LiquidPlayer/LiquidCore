@@ -238,7 +238,8 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     HandleScope scope(isolate);
     
     const ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
-    Local<Context> context = ContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+    Local<Context> context = LocalContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
+    Context::Scope context_scope(context);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_proxy_security);
 
@@ -466,7 +467,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
             Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
             HandleScope scope(isolate);
-            Local<Context> context = ContextImpl::New(isolate, ctx);
+            Local<Context> context = LocalContextImpl::New(isolate, ctx);
             ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
             /*
             if (templ->m_access_check && !templ->m_access_check(context,
@@ -486,7 +487,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
             Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
             HandleScope scope(isolate);
-            Local<Context> context = ContextImpl::New(isolate, ctx);
+            Local<Context> context = LocalContextImpl::New(isolate, ctx);
             ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
             if (templ->m_access_check && !templ->m_access_check(context,
                                                                 ValueImpl::New(V82JSC::ToContextImpl(context), arguments[0]).As<Object>(),
@@ -628,7 +629,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             assert(wrap && wrap->m_hidden_proxy_security);
             Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
             HandleScope scope(isolate);
-            Local<Context> context = ContextImpl::New(isolate, ctx);
+            Local<Context> context = LocalContextImpl::New(isolate, ctx);
             Local<Name> property = ValueImpl::New(V82JSC::ToContextImpl(context), arguments[1]).As<Name>();
             if (JSValueIsStrictEqual(ctx, arguments[2], JSValueMakeUndefined(ctx)) ||
                 JSValueIsStrictEqual(ctx, arguments[2], wrap->m_hidden_proxy_security)) {

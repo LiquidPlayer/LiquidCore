@@ -37,8 +37,8 @@ TryCatch::~TryCatch()
 {
     reinterpret_cast<IsolateImpl*>(isolate_)->m_handlers = next_;
     
-    if (next_ && is_verbose_) {
-        next_->exception_ = exception_;
+    if (is_verbose_) {
+        reinterpret_cast<IsolateImpl*>(isolate_)->m_verbose_exception = (JSValueRef) exception_;
     }
 
     if (rethrow_ && !Exception().IsEmpty()) {
@@ -85,7 +85,6 @@ bool TryCatch::CanContinue() const
 bool TryCatch::HasTerminated() const
 {
     assert(0);
-    return false;
 }
 
 /**
@@ -129,7 +128,15 @@ Local<Value> TryCatch::Exception() const
  */
 MaybeLocal<Value> TryCatch::StackTrace(Local<Context> context) const
 {
-    assert(0);
+    Local<Value> exception = Exception();
+    if (!exception.IsEmpty() && exception->IsObject()) {
+        MaybeLocal<Value> stack = exception.As<Object>()->
+            Get(context,
+                String::NewFromUtf8(reinterpret_cast<v8::Isolate*>(isolate_), "stack", NewStringType::kNormal).ToLocalChecked());
+        if (!stack.IsEmpty() && !stack.ToLocalChecked()->IsUndefined()) {
+            return stack.ToLocalChecked();
+        }
+    }
     return MaybeLocal<Value>();
 }
 
@@ -142,7 +149,10 @@ MaybeLocal<Value> TryCatch::StackTrace(Local<Context> context) const
  */
 Local<v8::Message> TryCatch::Message() const
 {
-    assert(0);
+    if (message_obj_) {
+        MessageImpl *impl = reinterpret_cast<MessageImpl*>(message_obj_);
+        return V82JSC::CreateLocal<v8::Message>(isolate_, impl);
+    }
     return Local<v8::Message>();
 }
 

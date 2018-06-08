@@ -30,8 +30,8 @@ extern int cctest_main(int argc, char* argv[]);
 #undef V
 #define V(tst) \
 - (void)testCcPassing##tst { \
-char *argv[] = { "cctest", "test-api/" #tst }; \
-cctest_main(2, argv); \
+char *argv[] = { "cctest", "--suppress_asm_messages", "test-api/" #tst }; \
+cctest_main(3, argv); \
 }
 
 
@@ -383,12 +383,44 @@ V(DoNotUseDeletedNodesInSecondLevelGc)
 V(NativeWeakMap)
 V(IsolateNewDispose)
 V(DisposeIsolateWhenInUse)
+V(MessageHandler0)
+V(MessageHandler1)
+V(MessageHandler2)
+V(MessageHandler3)
+V(MessageHandler4)
+V(MessageHandler5)
+V(CustomErrorToString)
+V(CustomErrorMessage)
+V(CustomErrorRethrowsOnToString)
+V(APIThrowMessage)
+V(APIThrowMessageAndVerboseTryCatch)
+V(APIStackOverflowAndVerboseTryCatch)
+V(ErrorWithMissingScriptInfo)
+V(ExceptionCreateMessageLength)
+V(ApiUncaughtException)
+V(ExceptionsDoNotPropagatePastTryCatch)
+V(TryCatchSourceInfoForEOSError)
+V(CaptureStackTraceForUncaughtException)
+V(AsmJsWarning)
+V(RethrowStackTrace)
+V(RethrowPrimitiveStackTrace)
+V(RethrowExistingStackTrace)
+V(RethrowBogusErrorStackTrace)
+V(EvalWithSourceURLInMessageScriptResourceNameOrSourceURL)
+V(RecursionWithSourceURLInMessageScriptResourceNameOrSourceURL)
+V(TryFinallyMessage)
+V(CaptureStackTraceForUncaughtExceptionAndSetters)
+V(SourceURLInStackTrace)
+V(InlineScriptWithSourceURLInStackTrace)
+V(SetStackLimit)
+V(CaptureStackTraceForStackOverflow)
+V(ExceptionCreateMessage)
 
 #undef V
 #define V(tst) \
 - (void)testCc##tst { \
-char *argv[] = { "cctest", "test-api/" #tst }; \
-cctest_main(2, argv); \
+char *argv[] = { "cctest", "--suppress_asm_messages", "test-api/" #tst }; \
+cctest_main(3, argv); \
 }
 
 // Extensions
@@ -412,38 +444,10 @@ V(EscapeableHandleScope)
 V(EmptyApiCallback)
 V(GlobalAccessorInfo)
 
-// Message handling
-V(MessageHandler0)
-V(MessageHandler1)
-V(MessageHandler2)
-V(MessageHandler3)
-V(MessageHandler4)
-V(MessageHandler5)
-V(CustomErrorToString)
-V(CustomErrorMessage)
-V(CustomErrorRethrowsOnToString)
-V(APIThrowMessage)
-V(APIThrowMessageAndVerboseTryCatch)
-V(APIStackOverflowAndVerboseTryCatch)
-V(ErrorWithMissingScriptInfo)
-V(ExceptionCreateMessageLength)
-V(ApiUncaughtException)
-V(ExceptionInNativeScript)
-V(SetPrototype)
-V(ExceptionsDoNotPropagatePastTryCatch)
-V(TryCatchSourceInfoForEOSError)
-V(CaptureStackTraceForUncaughtException)
-V(AsmJsWarning)
-V(RethrowStackTrace)
-V(RethrowPrimitiveStackTrace)
-V(RethrowExistingStackTrace)
-V(RethrowBogusErrorStackTrace)
-V(EvalWithSourceURLInMessageScriptResourceNameOrSourceURL)
-V(RecursionWithSourceURLInMessageScriptResourceNameOrSourceURL)
-V(TryFinallyMessage)
-
 // ScriptCompiler
+V(ExceptionInNativeScript)
 V(TryCatchMixedNesting)
+V(ScriptIdInStackTrace)
 V(DontLeakGlobalObjects)
 V(TryCatchSourceInfo)
 V(CompilationCache)
@@ -513,9 +517,6 @@ V(TwoByteStringInOneByteCons)
 V(ContainsOnlyOneByte)
 V(StringConcatOverflow)
 
-// Exception
-V(ExceptionCreateMessage)
-
 // ObjectTemplate / FunctionTemplate not implemented
 V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
 V(DefineOwnProperty)
@@ -549,6 +550,7 @@ V(AccessControlGetOwnPropertyNames)
 
 // Object bugs
 V(ObjectGetConstructorName)
+V(SetPrototype)
 
 // Cannot use proxies on global object prototype chain :(
 V(GlobalObjectInstanceProperties)
@@ -599,6 +601,7 @@ V(InitializeDefaultIsolateOnSecondaryThread3)
 V(InitializeDefaultIsolateOnSecondaryThread4)
 V(InitializeDefaultIsolateOnSecondaryThread5)
 V(MemoryPressure)
+V(FutexInterruption)
 
 // Function entry hooks
 V(SetFunctionEntryHook)
@@ -630,14 +633,6 @@ V(SharedFloat32Array)
 V(SharedFloat64Array)
 V(SharedUint8ClampedArray)
 V(SharedDataView)
-
-// Stack trace
-V(CaptureStackTraceForUncaughtExceptionAndSetters)
-V(SourceURLInStackTrace)
-V(ScriptIdInStackTrace)
-V(InlineScriptWithSourceURLInStackTrace)
-V(SetStackLimit)
-V(CaptureStackTraceForStackOverflow)
 
 // Promise / reject / hook callback
 V(PromiseRejectCallback)
@@ -700,9 +695,6 @@ V(ExtrasFunctionSource)
 V(ExtrasBindingObject)
 V(ExperimentalExtras)
 V(ExtrasUtilsObject)
-
-// TryCatch
-V(FutexInterruption)
 
 // Proxy
 V(Proxy)
