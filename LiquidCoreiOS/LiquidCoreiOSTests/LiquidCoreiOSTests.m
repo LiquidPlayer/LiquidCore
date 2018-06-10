@@ -415,52 +415,19 @@ V(InlineScriptWithSourceURLInStackTrace)
 V(SetStackLimit)
 V(CaptureStackTraceForStackOverflow)
 V(ExceptionCreateMessage)
-
-#undef V
-#define V(tst) \
-- (void)testCc##tst { \
-char *argv[] = { "cctest", "--suppress_asm_messages", "test-api/" #tst }; \
-cctest_main(3, argv); \
-}
-
-// Extensions
-V(StackTraceInExtension)
-V(NativeFunctionConstructCall)
-
-// FixedArray / internal objects
-V(AccessorIsPreservedOnAttributeChange)
-V(IndependentWeakHandle)
-V(InternalFieldCallback)
-V(QuietSignalingNaNs)
-V(Regress1516)
-V(CheckCOWArraysCreatedRuntimeCounter)
-
-// Handle issues
-V(GlobalValueMap)
-V(HandleIteration)
-V(ExternalizeOldSpaceTwoByteCons)
-V(ExternalizeOldSpaceOneByteCons)
-V(EscapeableHandleScope)
-V(EmptyApiCallback)
-V(GlobalAccessorInfo)
-
-// ScriptCompiler
 V(ExceptionInNativeScript)
 V(TryCatchMixedNesting)
 V(ScriptIdInStackTrace)
-V(DontLeakGlobalObjects)
 V(TryCatchSourceInfo)
 V(CompilationCache)
 V(PreCompileSerialization)
 V(ScriptContextDependence)
 V(StackTrace)
 V(CaptureStackTrace)
-V(ErrorLevelWarning)
 V(GetStackTraceContainsFunctionsWithFunctionName)
 V(DynamicWithSourceURLInStackTrace)
 V(DynamicWithSourceURLInStackTraceString)
 V(ScriptNameAndLineNumber)
-V(ScriptPositionInfo)
 V(ScriptSourceURLAndSourceMappingURL)
 V(StreamingSimpleScript)
 V(StreamingScriptConstantArray)
@@ -485,6 +452,36 @@ V(ParserCacheRejectedGracefully)
 V(SimpleStreamingScriptWithSourceURL)
 V(StreamingScriptWithSplitSourceURL)
 V(StreamingScriptWithSourceMappingURLInTheMiddle)
+
+#undef V
+#define V(tst) \
+- (void)testCc##tst { \
+char *argv[] = { "cctest", "--suppress_asm_messages", "test-api/" #tst }; \
+cctest_main(3, argv); \
+}
+
+// Extensions
+V(StackTraceInExtension)
+V(NativeFunctionConstructCall)
+
+// internal implementation / not related to API
+V(AccessorIsPreservedOnAttributeChange)
+V(IndependentWeakHandle)
+V(InternalFieldCallback)
+V(QuietSignalingNaNs)
+V(Regress1516)
+V(CheckCOWArraysCreatedRuntimeCounter)
+V(ScriptPositionInfo)
+V(ErrorLevelWarning)
+
+// Handle issues
+V(GlobalValueMap)
+V(HandleIteration)
+V(ExternalizeOldSpaceTwoByteCons)
+V(ExternalizeOldSpaceOneByteCons)
+V(EscapeableHandleScope)
+V(EmptyApiCallback)
+V(GlobalAccessorInfo)
 
 // Property attributes
 V(Overriding)
@@ -621,6 +618,7 @@ V(GCCallbacksOld)
 V(GCCallbacksWithData)
 V(GCCallbacks)
 V(IncreaseHeapLimitForDebugging)
+V(DontLeakGlobalObjects)
 
 // Shared typed arrays
 V(SharedUint8Array)

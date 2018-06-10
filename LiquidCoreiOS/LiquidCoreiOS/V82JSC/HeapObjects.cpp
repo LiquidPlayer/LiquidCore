@@ -173,16 +173,27 @@ int HeapAllocator::Deallocate(HeapObject *obj, CanonicalHandles& handles, WeakHa
     } else {
         size = map->size;
     }
+    assert((void*)map != (void*)obj);
     uint32_t actual_used_slots = ((size - 1) / HEAP_SLOT_SIZE) + 1;
-    for (uint32_t i = 0; i < actual_used_slots; i++) {
-        uint64_t mask = (uint64_t)1 << pos;
-        chunk->alloc_map[index] &= ~mask;
-        if (++pos > 63) {
-            pos = 0;
-            index++;
-        }
-    }
+
     freed += actual_used_slots * HEAP_SLOT_SIZE;
+    memset(obj,0xee,actual_used_slots*HEAP_SLOT_SIZE);
+
+    while(actual_used_slots >= 64) {
+        assert(pos == 0);
+        chunk->alloc_map[index++] = 0;
+        actual_used_slots -= 64;
+    }
+    uint64_t mask = (((uint64_t)1 << actual_used_slots) - 1) << pos;
+    assert((chunk->alloc_map[index] & mask) == mask);
+    chunk->alloc_map[index] &= ~mask;
+    
+    // FIXME: This is a hack.  Create a GCContext struct to pass all the necessary info
+    // Ideally we should remove this address from the vector of allocated objects so
+    // it doesn't get deallocated twice.  But for now, just add the object to the
+    // canonical handles list.  It has the same effect.
+    handles[ToHeapPointer(obj)] = 1;
+    
     return freed;
 }
 

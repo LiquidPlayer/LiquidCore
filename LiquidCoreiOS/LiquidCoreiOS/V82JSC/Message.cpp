@@ -58,7 +58,7 @@ Local<String> Message::Get() const
 
 MaybeLocal<String> Message::GetSourceLine(Local<Context> context) const
 {
-    // This isn't really supported.
+    // Not supported
     return MaybeLocal<String>();
 }
 
@@ -70,28 +70,36 @@ ScriptOrigin Message::GetScriptOrigin() const
 {
     Isolate *isolate = V82JSC::ToIsolate(this);
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
+    HandleScope scope(isolate);
+    Local<Context> context = V82JSC::OperatingContext(isolate);
     
+    if (impl->m_script.IsEmpty()) {
+        return ScriptOrigin(GetScriptResourceName(),
+                            Integer::New(isolate, GetLineNumber(context).ToChecked()),
+                            Integer::New(isolate, GetStartColumn(context).ToChecked()));
+    }
+
     Local<Script> script = impl->m_script.Get(isolate);
     assert(!script.IsEmpty());
     ScriptImpl *scr = V82JSC::ToImpl<ScriptImpl>(script);
-
+     
     Local<Value> resource_name = GetScriptResourceName();
     if (resource_name.IsEmpty()) resource_name = Undefined(isolate);
-
-    Local<Value> source_map = scr->source_map_url.Get(isolate);
+     
+    UnboundScriptImpl *unbound = V82JSC::ToImpl<UnboundScriptImpl>(scr->m_unbound_script.Get(isolate));
+     
+    Local<Value> source_map = unbound->m_sourceMappingURL.Get(isolate);
     if (source_map.IsEmpty()) source_map = Undefined(isolate);
-
-    ScriptOrigin origin(resource_name,
-                        scr->resource_line_offset.Get(isolate),
-                        scr->resource_column_offset.Get(isolate),
-                        v8::Boolean::New(isolate, scr->resource_is_shared_cross_origin),
-                        scr->script_id.Get(isolate),
+    
+    return ScriptOrigin(resource_name,
+                        Integer::New(isolate, GetLineNumber(context).ToChecked()),
+                        Integer::New(isolate, GetStartColumn(context).ToChecked()),
+                        Boolean::New(isolate, unbound->m_resource_is_shared_cross_origin),
+                        unbound->m_id.Get(isolate),
                         source_map,
-                        v8::Boolean::New(isolate, scr->resource_is_opaque),
-                        v8::Boolean::New(isolate, scr->is_wasm),
-                        v8::Boolean::New(isolate, scr->is_module));
-
-    return origin;
+                        Boolean::New(isolate, unbound->m_resource_is_opaque),
+                        Boolean::New(isolate, unbound->m_is_wasm),
+                        Boolean::New(isolate, unbound->m_is_module));
 }
 
 /**
@@ -102,11 +110,17 @@ Local<Value> Message::GetScriptResourceName() const
 {
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
     IsolateImpl *iso = impl->GetIsolate();
+    Isolate* isolate = V82JSC::ToIsolate(iso);
 
     Local<StackTrace> trace = StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, impl),
                                                   impl->m_script.Get(V82JSC::ToIsolate(iso)), impl->m_back_trace);
     if (trace->GetFrameCount()) {
         Local<String> name = trace->GetFrame(0)->GetScriptName();
+        if (!name.IsEmpty() && name->Equals(V82JSC::OperatingContext(isolate),
+                         String::NewFromUtf8(isolate, "undefined", NewStringType::kNormal).ToLocalChecked()).ToChecked()) {
+            return Undefined(isolate);
+        }
+
         if (!name.IsEmpty()) return name;
     }
 
@@ -115,8 +129,8 @@ Local<Value> Message::GetScriptResourceName() const
         script = iso->m_running_scripts.top();
     }
     if (!script.IsEmpty()) {
-        ScriptImpl* scr = V82JSC::ToImpl<ScriptImpl>(script);
-        return scr->resource_name.Get(V82JSC::ToIsolate(iso));
+        UnboundScriptImpl* scr = V82JSC::ToImpl<UnboundScriptImpl>(script->GetUnboundScript());
+        return scr->m_resource_name.Get(V82JSC::ToIsolate(iso));
     }
 
     return Local<Value>();
@@ -284,8 +298,8 @@ int StackFrame::GetScriptId() const
     Isolate *isolate = V82JSC::ToIsolate(impl->GetIsolate());
     HandleScope scope(isolate);
     StackTraceImpl *trace = V82JSC::ToImpl<StackTraceImpl>(impl->m_stack_trace.Get(isolate));
-    ScriptImpl* scr = V82JSC::ToImpl<ScriptImpl>(trace->m_script.Get(isolate));
-    Local<Integer> id = scr->script_id.Get(isolate);
+    UnboundScriptImpl* scr = V82JSC::ToImpl<UnboundScriptImpl>(trace->m_script.Get(isolate)->GetUnboundScript());
+    Local<Integer> id = scr->m_id.Get(isolate);
     if (id.IsEmpty()) {
         return Message::kNoScriptIdInfo;
     }
@@ -299,21 +313,9 @@ int StackFrame::GetScriptId() const
 Local<String> StackFrame::GetScriptName() const
 {
     StackFrameImpl *impl = V82JSC::ToImpl<StackFrameImpl>(this);
-    Local<String> name = impl->m_script_name.Get(V82JSC::ToIsolate(impl->GetIsolate()));
-    if (!name.IsEmpty()) return name;
-    
     Isolate *isolate = V82JSC::ToIsolate(impl->GetIsolate());
-    HandleScope scope(isolate);
-    Local<Context> context = V82JSC::OperatingContext(isolate);
-    StackTraceImpl *trace = V82JSC::ToImpl<StackTraceImpl>(impl->m_stack_trace.Get(isolate));
-    ScriptImpl* scr = V82JSC::ToImpl<ScriptImpl>(trace->m_script.Get(isolate));
-    if (scr) {
-        Local<Value> name = scr->resource_name.Get(isolate);
-        if (!name.IsEmpty() && !name->IsUndefined()) {
-            return name->ToString(context).ToLocalChecked();
-        }
-    }
-    return Local<String>();
+    Local<String> name = impl->m_script_name.Get(isolate);
+    return name;
 }
 
 /**
@@ -352,7 +354,7 @@ bool StackFrame::IsEval() const
  */
 bool StackFrame::IsConstructor() const
 {
-    printf ("FIXME! StackFrame::IsConstructor()\n");
+    // Not supported
     return false;
 }
 
@@ -361,7 +363,7 @@ bool StackFrame::IsConstructor() const
  */
 bool StackFrame::IsWasm() const
 {
-    printf ("FIXME! StackFrame::IsWasm()\n");
+    // Not supported
     return false;
 }
 
@@ -446,7 +448,8 @@ v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> val
     JSValueRef args[] = { stack, back_stack_trace };
     stack_trace->m_stack_frame_array = (JSObjectRef) V82JSC::exec(ctx, parse_error_frames, 2, args);
     JSValueProtect(ctx, stack_trace->m_stack_frame_array);
-/*
+
+    /*
     JSValueRef s = V82JSC::exec(ctx, "return JSON.stringify(_1)", 1, &stack_trace->m_stack_frame_array);
     JSStringRef ss = JSValueToStringCopy(ctx, s, 0);
     char foo[JSStringGetMaximumUTF8CStringSize(ss)];
@@ -463,7 +466,8 @@ v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> val
         JSStringGetUTF8CString(back_trace, mutt, JSStringGetMaximumUTF8CStringSize(back_trace));
         printf ("back_trace = %s\n", mutt);
     }
-*/
+    */
+
     return local;
 }
 

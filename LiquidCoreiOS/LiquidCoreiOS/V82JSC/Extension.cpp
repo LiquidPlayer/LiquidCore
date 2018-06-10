@@ -166,10 +166,12 @@ bool InstallExtension(Local<Context> context, const char *extension_name, std::m
         }
         Local<String> source = String::NewFromUtf8(isolate, output.c_str(), NewStringType::kNormal).ToLocalChecked();
         if (source.IsEmpty()) return false;
-        Local<Script> script = Script::Compile(context, source).ToLocalChecked();
-        if (script.IsEmpty()) return false;
-        MaybeLocal<Value> result = script->Run(context);
-        if(result.IsEmpty()) return false;
+        if (source->Length() > 0) {
+            Local<Script> script = Script::Compile(context, source).ToLocalChecked();
+            if (script.IsEmpty()) return false;
+            MaybeLocal<Value> result = script->Run(context);
+            if(result.IsEmpty()) return false;
+        }
     }
     return true;
 }

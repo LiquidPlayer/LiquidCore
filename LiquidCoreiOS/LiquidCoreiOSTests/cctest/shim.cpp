@@ -476,7 +476,11 @@ bool internal::Script::GetPositionInfo(int position, PositionInfo* info,
 //
 // internal::ScriptData
 //
-ScriptData::ScriptData(const byte* data, int length) { assert(0); }
+ScriptData::ScriptData(const byte* data, int length)
+{
+    this->data_ = data;
+    this->length_ = length;
+}
 
 //
 // internal::FixedArrayBase

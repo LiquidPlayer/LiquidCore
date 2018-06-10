@@ -41,7 +41,6 @@
 		07F804BB202B81FC00FDFC27 /* HeapStatistics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804BA202B81FC00FDFC27 /* HeapStatistics.cpp */; };
 		07F804BE202C2D7500FDFC27 /* Map.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804BC202C2D7500FDFC27 /* Map.cpp */; };
 		07F804C2202C2EDF00FDFC27 /* Set.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804C0202C2EDF00FDFC27 /* Set.cpp */; };
-		07F804C6202CCC3800FDFC27 /* ScriptCompiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804C4202CCC3800FDFC27 /* ScriptCompiler.cpp */; };
 		07F804CA202D852500FDFC27 /* JSON.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804C8202D852500FDFC27 /* JSON.cpp */; };
 		07F804CE202D85DC00FDFC27 /* ValueSerializer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804CC202D85DC00FDFC27 /* ValueSerializer.cpp */; };
 		07F804D2202D8A8B00FDFC27 /* Array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07F804D0202D8A8B00FDFC27 /* Array.cpp */; };
@@ -145,7 +144,6 @@
 		07F804BA202B81FC00FDFC27 /* HeapStatistics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = HeapStatistics.cpp; sourceTree = "<group>"; };
 		07F804BC202C2D7500FDFC27 /* Map.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Map.cpp; sourceTree = "<group>"; };
 		07F804C0202C2EDF00FDFC27 /* Set.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Set.cpp; sourceTree = "<group>"; };
-		07F804C4202CCC3800FDFC27 /* ScriptCompiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ScriptCompiler.cpp; sourceTree = "<group>"; };
 		07F804C8202D852500FDFC27 /* JSON.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = JSON.cpp; sourceTree = "<group>"; };
 		07F804CC202D85DC00FDFC27 /* ValueSerializer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ValueSerializer.cpp; sourceTree = "<group>"; };
 		07F804D0202D8A8B00FDFC27 /* Array.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Array.cpp; sourceTree = "<group>"; };
@@ -306,7 +304,6 @@
 				07F804BA202B81FC00FDFC27 /* HeapStatistics.cpp */,
 				07F804BC202C2D7500FDFC27 /* Map.cpp */,
 				07F804C0202C2EDF00FDFC27 /* Set.cpp */,
-				07F804C4202CCC3800FDFC27 /* ScriptCompiler.cpp */,
 				07F804C8202D852500FDFC27 /* JSON.cpp */,
 				07F804CC202D85DC00FDFC27 /* ValueSerializer.cpp */,
 				07F804D0202D8A8B00FDFC27 /* Array.cpp */,
@@ -536,7 +533,6 @@
 				07E9ADC920BC1281002F2002 /* HeapLookup.cpp in Sources */,
 				07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */,
 				07E9ADCB20BD359A002F2002 /* TrackedObject.cpp in Sources */,
-				07F804C6202CCC3800FDFC27 /* ScriptCompiler.cpp in Sources */,
 				076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
 				07F804FE202DDA4400FDFC27 /* Locker.cpp in Sources */,

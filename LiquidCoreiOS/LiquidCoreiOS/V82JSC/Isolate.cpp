@@ -92,6 +92,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_intrinsic_property_map = H::Map<H::IntrinsicProp>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_accessor_map = H::Map<H::Accessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_object_accessor_map = H::Map<H::ObjAccessor>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
+    impl->m_unbound_script_map = H::Map<H::UnboundScript>::New(impl, internal::SHARED_FUNCTION_INFO_TYPE);
     impl->m_script_map = H::Map<H::Script>::New(impl, internal::SCRIPT_TYPE);
     impl->m_weak_value_map = H::Map<H::WeakValue>::New(impl, internal::WEAK_CELL_TYPE);
     impl->m_stack_frame_map = H::Map<H::StackFrame>::New(impl, internal::STACK_FRAME_INFO_TYPE);
@@ -106,6 +107,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     roots->true_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_true));
     roots->false_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_false));
     roots->empty_string = reinterpret_cast<internal::Object**> (H::ToV8Map(map_empty_string));
+    roots->script_context_table_map = reinterpret_cast<internal::Object**> (H::ToV8Map(impl->m_unbound_script_map));
 
     Local<Context> nullContext = Context::New(isolate);
     impl->m_nullContext.Reset(isolate, nullContext);
@@ -856,7 +858,7 @@ void Isolate::LowMemoryNotification()
  */
 int Isolate::ContextDisposedNotification(bool dependant_context)
 {
-    assert(0);
+    //assert(0);
     return 0;
 }
 

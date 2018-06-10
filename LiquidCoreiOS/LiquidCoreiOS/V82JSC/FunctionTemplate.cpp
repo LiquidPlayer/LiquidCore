@@ -475,8 +475,10 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes = kJSClassAttributeNoAutomaticPrototype;
         String::Utf8Value str(ftempl->m_name.Get(isolate));
-        const std::string& name = *str;
-        def.className = name.length() ? name.c_str() : nullptr;
+        if (*str) {
+            const std::string& name = *str;
+            def.className = name.length() ? name.c_str() : nullptr;
+        }
         if (otempl->m_callback) {
             def.callAsFunction = TemplateImpl::callAsFunctionCallback;
             def.callAsConstructor = TemplateImpl::callAsConstructorCallback;

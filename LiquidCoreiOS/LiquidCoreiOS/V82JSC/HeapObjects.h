@@ -30,6 +30,7 @@
 #include "src/heap/heap.h"
 #include <map>
 #include <string>
+#include "JSScriptRefPrivate.h"
 
 /* V82JSC Heap Objects are designed to mirror V8 heap objects as much as possible.  Some rules:
  * --> All heap objects have a reference to their v8::internal::Map at offset 0 to identify their type
@@ -139,7 +140,12 @@ namespace V82JSC_HeapObject {
             if (-- count == 0) {
                 handles.erase(obj);
                 HeapObject *o = reinterpret_cast<HeapObject*>(reinterpret_cast<intptr_t>(obj) - v8::internal::kHeapObjectTag);
-                return HeapAllocator::Deallocate(o, handles, weak, callbacks);
+                if (o->m_map != obj) {
+                    return HeapAllocator::Deallocate(o, handles, weak, callbacks);
+                } else {
+                    // Don't deallocate maps!
+                    return 0;
+                }
             } else {
                 handles[obj] = count;
             }
@@ -198,7 +204,6 @@ namespace V82JSC_HeapObject {
         Copyable(v8::Function) ObjectGetPrototypeOf;
         Copyable(v8::Function) ObjectPrototypeToString;
         Copyable(v8::Function) FunctionPrototypeBind;
-        Copyable(v8::Function) Eval;
 
         static void Constructor(GlobalContext *obj) {}
         static int Destructor(GlobalContext *obj, CanonicalHandles& handles, WeakHandles& weak,
@@ -212,7 +217,6 @@ namespace V82JSC_HeapObject {
             freed +=SmartReset<v8::Function>(obj->ObjectGetPrototypeOf, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->ObjectPrototypeToString, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->FunctionPrototypeBind, handles, weak, callbacks);
-            freed +=SmartReset<v8::Function>(obj->Eval, handles, weak, callbacks);
             freed +=SmartReset<v8::EmbeddedFixedArray>(obj->m_embedder_data, handles, weak, callbacks);
 
             RemoveContextFromIsolate(iso, (JSGlobalContextRef)obj->m_ctxRef);
@@ -222,33 +226,49 @@ namespace V82JSC_HeapObject {
         static void RemoveContextFromIsolate(IsolateImpl* iso, JSGlobalContextRef ctx);
     };
     
+    struct UnboundScript : HeapObject {
+        JSScriptRef m_script;
+        JSStringRef m_script_string;
+        Copyable(v8::Integer) m_id;
+        Copyable(v8::Value) m_resource_name;
+        Copyable(v8::Value) m_sourceURL;
+        Copyable(v8::Value) m_sourceMappingURL;
+        Copyable(v8::Integer) m_resource_line_offset;
+        Copyable(v8::Integer) m_resource_column_offset;
+        bool m_resource_is_shared_cross_origin;
+        bool m_resource_is_opaque;
+        bool m_is_wasm;
+        bool m_is_module;
+
+        static void Constructor(UnboundScript *obj) {}
+        static int Destructor(UnboundScript *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            if (obj->m_script) JSScriptRelease(obj->m_script);
+            if (obj->m_script_string) JSStringRelease(obj->m_script_string);
+            
+            int freed=0;
+            freed +=SmartReset<v8::Value>(obj->m_resource_name, handles, weak, callbacks);
+            freed +=SmartReset<v8::Value>(obj->m_sourceURL, handles, weak, callbacks);
+            freed +=SmartReset<v8::Value>(obj->m_sourceMappingURL, handles, weak, callbacks);
+            freed +=SmartReset<v8::Integer>(obj->m_resource_line_offset, handles, weak, callbacks);
+            freed +=SmartReset<v8::Integer>(obj->m_resource_column_offset, handles, weak, callbacks);
+            freed +=SmartReset<v8::Integer>(obj->m_id, handles, weak, callbacks);
+            return freed;
+        }
+    };
+    
     struct Script : HeapObject {
-        JSStringRef m_sourceURL;
-        JSStringRef m_script;
-        int m_startingLineNumber;
-        Copyable(v8::Value) resource_name;
-        Copyable(v8::Integer) resource_line_offset;
-        Copyable(v8::Integer) resource_column_offset;
-        bool resource_is_shared_cross_origin;
-        Copyable(v8::Integer) script_id;
-        Copyable(v8::Value) source_map_url;
-        bool resource_is_opaque;
-        bool is_wasm;
-        bool is_module;
+        Copyable(v8::UnboundScript) m_unbound_script;
+        Copyable(v8::Context) m_context;
 
         static void Constructor(Script *obj) {}
         static int Destructor(Script *obj, CanonicalHandles& handles, WeakHandles& weak,
                               std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
-            if (obj->m_sourceURL) JSStringRelease(obj->m_sourceURL);
-            if (obj->m_script) JSStringRelease(obj->m_script);
-
             int freed=0;
-            freed +=SmartReset<v8::Value>(obj->resource_name, handles, weak, callbacks);
-            freed +=SmartReset<v8::Integer>(obj->resource_line_offset, handles, weak, callbacks);
-            freed +=SmartReset<v8::Integer>(obj->resource_column_offset, handles, weak, callbacks);
-            freed +=SmartReset<v8::Integer>(obj->script_id, handles, weak, callbacks);
-            freed +=SmartReset<v8::Value>(obj->source_map_url, handles, weak, callbacks);
+            freed +=SmartReset<v8::UnboundScript>(obj->m_unbound_script, handles, weak, callbacks);
+            freed +=SmartReset<v8::Context>(obj->m_context, handles, weak, callbacks);
             return freed;
         }
     };

@@ -36,6 +36,7 @@ struct LocalContextImpl : ContextImpl
     static v8::Local<v8::Context> New(v8::Isolate *isolate, JSContextRef ctx);
 };
 
+struct UnboundScriptImpl : V82JSC_HeapObject::UnboundScript {};
 struct ScriptImpl : V82JSC_HeapObject::Script {};
 struct StackFrameImpl : V82JSC_HeapObject::StackFrame {};
 struct StackTraceImpl : V82JSC_HeapObject::StackTrace

@@ -69,9 +69,10 @@ String::Utf8Value::~Utf8Value()
 String::Utf8Value::Utf8Value(Local<v8::Value> obj)
 {
     if (obj.IsEmpty()) {
-        str_ = (char*) malloc(1);
+        //str_ = (char*) malloc(1);
+        str_ = nullptr;
         length_ = 0;
-        *str_ = 0;
+        //*str_ = 0;
     } else {
         Local<Context> context = V82JSC::ToCurrentContext(*obj);
         JSValueRef value = V82JSC::ToJSValueRef(obj, context);

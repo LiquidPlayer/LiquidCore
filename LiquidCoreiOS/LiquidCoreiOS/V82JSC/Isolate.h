@@ -83,6 +83,7 @@ struct IsolateImpl {
     H::Map<H::IntrinsicProp> *m_intrinsic_property_map;
     H::Map<H::Accessor> *m_accessor_map;
     H::Map<H::ObjAccessor> *m_object_accessor_map;
+    H::Map<H::UnboundScript> *m_unbound_script_map;
     H::Map<H::Script> *m_script_map;
     H::Map<H::WeakValue> *m_weak_value_map;
     H::Map<H::StackFrame> *m_stack_frame_map;
