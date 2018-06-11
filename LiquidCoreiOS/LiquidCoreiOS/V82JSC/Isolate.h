@@ -10,6 +10,7 @@
 #define Isolate_h
 
 #include "HeapObjects.h"
+#include "JSMarkingConstraintPrivate.h"
 
 namespace v8 {
 namespace internal {
@@ -34,6 +35,7 @@ using v8::internal::Isolate;
 #define H V82JSC_HeapObject
 
 struct SecondPassCallback {
+    JSObjectRef object_;
     v8::WeakCallbackInfo<void>::Callback callback_;
     void *param_;
     void *embedder_fields_[2];
@@ -50,8 +52,11 @@ struct MessageListener {
 // back into GlobalHandle with a custom function.
 typedef std::function<void(std::map<v8::internal::Object*, int>&, std::map<v8::internal::Object*,
                            std::vector<v8::internal::Object**>>&)> GetGlobalHandles;
-typedef std::function<void(v8::internal::Object**, std::vector<SecondPassCallback>&)> WeakObjectCleared;
-typedef std::function<void(JSGlobalContextRef, JSObjectRef, void **)> WeakGoneInactive;
+typedef std::function<void(v8::internal::Object**, std::vector<v8::internal::SecondPassCallback>&,
+                           JSObjectRef)> WeakObjectNearDeath;
+typedef std::function<void(v8::Isolate*, v8::internal::SecondPassCallback&)> WeakHeapObjectFinalized;
+typedef std::function<void(JSGlobalContextRef, JSObjectRef)> WeakJSObjectFinalized;
+typedef std::function<void(JSMarkerRef, std::map<void*, JSObjectRef>&)> PerformIncrementalMarking;
     
 struct IsolateImpl {
     v8::internal::Isolate ii;
@@ -75,6 +80,7 @@ struct IsolateImpl {
     H::Map<H::String> *m_internalized_string_map;
     H::Map<H::Value> *m_value_map;
     H::Map<H::Value> *m_number_map;
+    H::Map<H::Value> *m_symbol_map;
     H::Map<H::Signature> *m_signature_map;
     H::Map<H::FunctionTemplate> *m_function_template_map;
     H::Map<H::ObjectTemplate> *m_object_template_map;
@@ -113,15 +119,36 @@ struct IsolateImpl {
     std::stack<v8::Local<v8::Script>> m_running_scripts;
     bool m_capture_stack_trace_for_uncaught_exceptions;
     JSValueRef m_verbose_exception;
+    
+    struct GCCallbackStruct
+    {
+        v8::Isolate::GCCallback m_callback;
+        v8::Isolate::GCCallbackWithData m_callback_with_data;
+        v8::GCType m_gc_type_filter;
+        void *m_data;
+    };
+    
+    std::vector<GCCallbackStruct> m_gc_prologue_callbacks;
+    std::vector<GCCallbackStruct> m_gc_epilogue_callbacks;
+    std::map<void*, JSObjectRef> m_near_death;
+    bool m_pending_prologue;
+    bool m_pending_epilogue;
+    int m_in_gc;
+    std::vector<SecondPassCallback> m_second_pass_callbacks;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
     void GetActiveLocalHandles(std::map<v8::internal::Object*, int>& dontDeleteMap);
     void CollectGarbage();
+    void TriggerGCPrologue();
+    void TriggerGCFirstPassPhantomCallbacks();
+    void TriggerGCEpilogue();
     
     v8::internal::GetGlobalHandles getGlobalHandles;
-    v8::internal::WeakObjectCleared weakObjectCleared;
-    v8::internal::WeakGoneInactive weakGoneInactive;
+    v8::internal::WeakObjectNearDeath weakObjectNearDeath;
+    v8::internal::WeakHeapObjectFinalized weakHeapObjectFinalized;
+    v8::internal::WeakJSObjectFinalized weakJSObjectFinalized;
+    v8::internal::PerformIncrementalMarking performIncrementalMarking;
 };
 }} // namespaces
 

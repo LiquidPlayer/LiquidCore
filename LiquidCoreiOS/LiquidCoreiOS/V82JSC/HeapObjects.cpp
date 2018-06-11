@@ -141,6 +141,7 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
         map = reinterpret_cast<BaseMap*>(o);
     }
     o->m_map = reinterpret_cast<internal::Map*>(reinterpret_cast<intptr_t>(map) + internal::kHeapObjectTag);
+    heapimpl->m_allocated += actual_used_slots * HEAP_SLOT_SIZE;
 
     return o;
 }
@@ -152,12 +153,14 @@ int HeapAllocator::Deallocate(HeapObject *obj, CanonicalHandles& handles, WeakHa
     intptr_t chunk_addr = addr & ~(HEAP_ALIGNMENT - 1);
     HeapAllocator *chunk = reinterpret_cast<HeapAllocator*>(chunk_addr);
     IsolateImpl* iso = obj->GetIsolate();
+    internal::Heap *heap = reinterpret_cast<internal::Isolate*>(iso)->heap();
+    HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(heap);
 
-    // If there are any weak handles, perform callbacks now before we blow it away
+    // If there are any primitive weak handles, perform callbacks now before we blow them away
     internal::Object *h = ToHeapPointer(obj);
     if (weak.count(h)) {
         for (auto i=weak[h].begin(); i != weak[h].end(); ++i) {
-            iso->weakObjectCleared(*i, callbacks);
+            iso->weakObjectNearDeath(*i, callbacks, 0);
         }
     }
     
@@ -193,6 +196,8 @@ int HeapAllocator::Deallocate(HeapObject *obj, CanonicalHandles& handles, WeakHa
     // it doesn't get deallocated twice.  But for now, just add the object to the
     // canonical handles list.  It has the same effect.
     handles[ToHeapPointer(obj)] = 1;
+    
+    heapimpl->m_allocated -= freed;
     
     return freed;
 }
@@ -317,14 +322,13 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     }
     heapimpl->m_heap_top = in_use;
     
-    // Finally finally, make any second pass phantom callbacks
-    for (auto i=second_pass_callbacks.begin(); i != second_pass_callbacks.end(); ++i) {
-        WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(iso),
-                                    (*i).param_,
-                                    (*i).embedder_fields_,
-                                    nullptr);
-        (*i).callback_(info);
+    // Finally finally, make any second pass phantom callbacks for primtive values (Object value finalizers
+    // will get called in the TrackedObject finalizer)
+    for (auto i=second_pass_callbacks.begin(); i!= second_pass_callbacks.end(); ) {
+        iso->weakHeapObjectFinalized(reinterpret_cast<v8::Isolate*>(iso), *i);
+        second_pass_callbacks.erase(i);
     }
+    assert(second_pass_callbacks.empty());
     
     printf ("V82JSC Garbage Collector: Freed %d bytes; Deallocated %d / %d kB chunks; %d kB in use\n",
             freed, freed_chunks * 512, (freed_chunks+used_chunks) * 512, used_chunks * 512);

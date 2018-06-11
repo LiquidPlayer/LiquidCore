@@ -109,8 +109,9 @@ internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, i
 // Returns of size of all objects residing in the heap.
 size_t Heap::SizeOfObjects()
 {
-    assert(0);
-    return 0;
+    V82JSC_HeapObject::HeapImpl *heapimpl = reinterpret_cast<V82JSC_HeapObject::HeapImpl*>(this);
+
+    return heapimpl->m_allocated;
 }
 
 // Performs garbage collection operation.
@@ -120,6 +121,8 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
                           const GCCallbackFlags gc_callback_flags)
 {
     IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate());
+    if (iso->m_in_gc++) return true;
+
     // First pass, clear anything on the V82JSC side that is not in use
     iso->CollectGarbage();
     
@@ -129,8 +132,23 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
         JSSynchronousGarbageCollectForDebugging(i->first);
     }
 
+    iso->TriggerGCPrologue();
+    iso->TriggerGCFirstPassPhantomCallbacks();
+
+    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
+    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
+        JSSynchronousGarbageCollectForDebugging(i->first);
+        JSSynchronousGarbageCollectForDebugging(i->first);
+    }
+
+    iso->TriggerGCFirstPassPhantomCallbacks();
+
     // Second pass, clear V82JSC garbage again in case any weak references were cleared
     iso->CollectGarbage();
+    iso->TriggerGCEpilogue();
+
+    iso->m_in_gc = 0;
+
     return false;
 }
 
@@ -140,18 +158,7 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
 void Heap::CollectAllGarbage(int flags, GarbageCollectionReason gc_reason,
                              const GCCallbackFlags gc_callback_flags)
 {
-    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate());
-    // First pass, clear anything on the V82JSC side that is not in use
-    iso->CollectGarbage();
-    
-    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
-    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
-        JSSynchronousGarbageCollectForDebugging(i->first);
-    }
-    
-    // Second pass, clear V82JSC garbage again in case any weak references were cleared
-    iso->CollectGarbage();
+    CollectGarbage((v8::internal::AllocationSpace)0, gc_reason, gc_callback_flags);
 }
 
 // Last hope GC, should try to squeeze as much as possible.
@@ -197,7 +204,7 @@ HeapObject* HeapIterator::next()
 void heap::SimulateFullSpace(v8::internal::NewSpace* space,
                        std::vector<Handle<FixedArray>>* out_handles)
 {
-    assert(0);
+    //FIXME: assert(0);
 }
 
 // Helper function that simulates a full old-space in the heap.

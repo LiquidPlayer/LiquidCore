@@ -42,7 +42,7 @@ void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* i
         Local<TrackedObject> local = V82JSC::FromPersistentData<TrackedObject>(V82JSC::ToIsolate(iso), persistent);
         assert(!local.IsEmpty());
         TrackedObjectImpl *impl = V82JSC::ToImpl<TrackedObjectImpl>(local);
-        iso->weakGoneInactive(ctx, (JSObjectRef) impl->m_security, impl->m_embedder_data);
+        iso->weakJSObjectFinalized(ctx, (JSObjectRef) impl->m_security);
         
         V82JSC::ReleasePersistentData<V82JSC_HeapObject::TrackedObject>(persistent);
     };
@@ -73,6 +73,7 @@ TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObj
 TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object)
 {
     IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    HandleScope scope(V82JSC::ToIsolate(iso));
     JSValueRef args[] = {
         object,
         iso->m_private_symbol

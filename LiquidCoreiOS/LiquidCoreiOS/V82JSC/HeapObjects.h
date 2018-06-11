@@ -117,7 +117,7 @@ namespace V82JSC_HeapObject {
     
     struct HeapImpl : v8::internal::Heap {
         v8::internal::MemoryChunk *m_heap_top;
-        size_t m_index;
+        size_t m_allocated;
     };
 
     // All objects on the heap are dervied from HeapObject

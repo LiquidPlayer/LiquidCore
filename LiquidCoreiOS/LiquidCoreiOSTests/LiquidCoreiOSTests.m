@@ -452,6 +452,11 @@ V(ParserCacheRejectedGracefully)
 V(SimpleStreamingScriptWithSourceURL)
 V(StreamingScriptWithSplitSourceURL)
 V(StreamingScriptWithSourceMappingURLInTheMiddle)
+V(InternalFieldCallback)
+V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
+V(GCCallbacksOld)
+V(GCCallbacksWithData)
+V(GCCallbacks)
 
 #undef V
 #define V(tst) \
@@ -467,7 +472,6 @@ V(NativeFunctionConstructCall)
 // internal implementation / not related to API
 V(AccessorIsPreservedOnAttributeChange)
 V(IndependentWeakHandle)
-V(InternalFieldCallback)
 V(QuietSignalingNaNs)
 V(Regress1516)
 V(CheckCOWArraysCreatedRuntimeCounter)
@@ -515,7 +519,6 @@ V(ContainsOnlyOneByte)
 V(StringConcatOverflow)
 
 // ObjectTemplate / FunctionTemplate not implemented
-V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
 V(DefineOwnProperty)
 V(GCInFailedAccessCheckCallback)
 V(AccessCheckThrows)
@@ -614,9 +617,6 @@ V(ExternalStringCollectedAtTearDown)
 V(ExternalInternalizedStringCollectedAtTearDown)
 V(ExternalInternalizedStringCollectedAtGC)
 V(Regress528)
-V(GCCallbacksOld)
-V(GCCallbacksWithData)
-V(GCCallbacks)
 V(IncreaseHeapLimitForDebugging)
 V(DontLeakGlobalObjects)
 

@@ -58,6 +58,9 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
                 if (JSValueToBoolean(ctx->m_ctxRef,
                                      V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &value))) {
                     map = isolateimpl->m_array_buffer_map;
+                } else if (JSValueToBoolean(ctx->m_ctxRef,
+                                            V82JSC::exec(ctx->m_ctxRef, "return typeof _1 === 'symbol'", 1, &value))) {
+                    map = isolateimpl->m_symbol_map;
                 } else {
                     map = isolateimpl->m_value_map;
                 }

@@ -8,6 +8,8 @@
 
 #include "Isolate.h"
 #include "V82JSC.h"
+#include "JSHeapFinalizerPrivate.h"
+#include "JSMarkingConstraintPrivate.h"
 
 using namespace v8;
 using V82JSC_HeapObject::HeapImpl;
@@ -46,7 +48,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
 
     HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
     heap->m_heap_top = nullptr;
-    heap->m_index = 0;
+    heap->m_allocated = 0;
     
     impl->m_global_symbols = std::map<std::string, JSValueRef>();
     impl->m_private_symbols = std::map<std::string, JSValueRef>();
@@ -56,12 +58,27 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_exec_maps = std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>>();
     impl->m_message_listeners = std::vector<internal::MessageListener>();
     impl->m_running_scripts = std::stack<Local<v8::Script>>();
-        
+    impl->m_gc_prologue_callbacks = std::vector<IsolateImpl::GCCallbackStruct>();
+    impl->m_gc_epilogue_callbacks = std::vector<IsolateImpl::GCCallbackStruct>();
+    impl->m_near_death = std::map<void*, JSObjectRef>();
+    impl->m_second_pass_callbacks = std::vector<internal::SecondPassCallback>();
+
     HandleScope scope(isolate);
     
     impl->m_params = params;
     
     impl->m_group = JSContextGroupCreate();
+    
+    JSContextGroupAddMarkingConstraint(impl->m_group, [](JSMarkerRef marker, void *userData) {
+        IsolateImpl *impl = (IsolateImpl*)userData;
+        impl->performIncrementalMarking(marker, impl->m_near_death);
+        impl->m_pending_prologue = true;
+    }, impl);
+    
+    JSContextGroupAddHeapFinalizer(impl->m_group, [](JSContextGroupRef grp, void *userData) {
+        IsolateImpl *impl = (IsolateImpl*)userData;
+        impl->m_pending_epilogue = true;
+    }, impl);
     
     Roots* roots = reinterpret_cast<Roots *>(impl->ii.heap()->roots_array_start());
     
@@ -84,6 +101,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_internalized_string_map = H::Map<H::String>::New(impl, internal::INTERNALIZED_STRING_TYPE);
     impl->m_value_map = H::Map<H::Value>::New(impl, internal::JS_VALUE_TYPE);
     impl->m_number_map = H::Map<H::Value>::New(impl, internal::HEAP_NUMBER_TYPE);
+    impl->m_symbol_map = H::Map<H::Value>::New(impl, internal::SYMBOL_TYPE);
     impl->m_signature_map = H::Map<H::Signature>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_function_template_map = H::Map<H::FunctionTemplate>::New(impl, internal::FUNCTION_TEMPLATE_INFO_TYPE);
     impl->m_object_template_map = H::Map<H::ObjectTemplate>::New(impl, internal::OBJECT_TEMPLATE_INFO_TYPE);
@@ -107,7 +125,6 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     roots->true_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_true));
     roots->false_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_false));
     roots->empty_string = reinterpret_cast<internal::Object**> (H::ToV8Map(map_empty_string));
-    roots->script_context_table_map = reinterpret_cast<internal::Object**> (H::ToV8Map(impl->m_unbound_script_map));
 
     Local<Context> nullContext = Context::New(isolate);
     impl->m_nullContext.Reset(isolate, nullContext);
@@ -131,6 +148,44 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
+
+void IsolateImpl::TriggerGCPrologue()
+{
+    if (!m_pending_prologue) return;
+    m_pending_prologue = false;
+    
+    for (auto i=m_gc_prologue_callbacks.begin(); i != m_gc_prologue_callbacks.end(); ++i) {
+        if ((*i).m_callback)
+            (*i).m_callback(V82JSC::ToIsolate(this), kGCTypeIncrementalMarking, kNoGCCallbackFlags);
+        else
+            (*i).m_callback_with_data(V82JSC::ToIsolate(this), kGCTypeIncrementalMarking, kNoGCCallbackFlags, (*i).m_data);
+    }
+}
+
+void IsolateImpl::TriggerGCFirstPassPhantomCallbacks()
+{
+    // Call weak first-pass callbacks
+    for (auto i=m_near_death.begin(); i!=m_near_death.end(); ++i) {
+        weakObjectNearDeath(reinterpret_cast<internal::Object**>(i->first),
+                            m_second_pass_callbacks,
+                            i->second);
+    }
+    m_near_death.clear();
+}
+
+void IsolateImpl::TriggerGCEpilogue()
+{
+    if (!m_pending_epilogue) return;
+    m_pending_epilogue = false;
+
+    for (auto i=m_gc_epilogue_callbacks.begin(); i != m_gc_epilogue_callbacks.end(); ++i) {
+        if ((*i).m_callback)
+            (*i).m_callback(V82JSC::ToIsolate(this), kGCTypeScavenge, kNoGCCallbackFlags);
+        else
+            (*i).m_callback_with_data(V82JSC::ToIsolate(this), kGCTypeScavenge, kNoGCCallbackFlags, (*i).m_data);
+    }
+}
+
 
 JSGlobalContextRef H::HeapObject::GetNullContext()
 {
@@ -277,6 +332,9 @@ void Isolate::Dispose()
     isolate->m_private_symbols.clear();
     isolate->m_message_listeners.clear();
     while (!isolate->m_running_scripts.empty()) isolate->m_running_scripts.pop();
+    isolate->m_gc_prologue_callbacks.clear();
+    isolate->m_gc_epilogue_callbacks.clear();
+    isolate->m_second_pass_callbacks.clear();
 
     // Finally, blitz the global handles and the heap
     isolate->ii.global_handles()->TearDown();
@@ -505,25 +563,50 @@ Local<Value> Isolate::ThrowException(Local<Value> exception)
 void Isolate::AddGCPrologueCallback(GCCallbackWithData callback, void* data,
                            GCType gc_type_filter)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    struct IsolateImpl::GCCallbackStruct cb;
+    cb.m_callback = nullptr;
+    cb.m_callback_with_data = callback;
+    cb.m_data = data;
+    cb.m_gc_type_filter = gc_type_filter;
+    
+    impl->m_gc_prologue_callbacks.push_back(cb);
 }
-void Isolate::AddGCPrologueCallback(GCCallback callback,
-                           GCType gc_type_filter)
+void Isolate::AddGCPrologueCallback(GCCallback callback, GCType gc_type_filter)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    struct IsolateImpl::GCCallbackStruct cb;
+    cb.m_callback = callback;
+    cb.m_callback_with_data = nullptr;
+    cb.m_data = nullptr;
+    cb.m_gc_type_filter = gc_type_filter;
+    
+    impl->m_gc_prologue_callbacks.push_back(cb);
 }
 
 /**
  * This function removes callback which was installed by
  * AddGCPrologueCallback function.
  */
-void Isolate::RemoveGCPrologueCallback(GCCallbackWithData, void* data)
+void Isolate::RemoveGCPrologueCallback(GCCallbackWithData callback, void* data)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    for (auto i=impl->m_gc_prologue_callbacks.begin(); i!=impl->m_gc_prologue_callbacks.end(); ) {
+        if ((*i).m_callback_with_data == callback && (*i).m_data == data)
+            impl->m_gc_prologue_callbacks.erase(i);
+        else
+            ++i;
+    }
 }
 void Isolate::RemoveGCPrologueCallback(GCCallback callback)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    for (auto i=impl->m_gc_prologue_callbacks.begin(); i!=impl->m_gc_prologue_callbacks.end(); ) {
+        if ((*i).m_callback == callback)
+            impl->m_gc_prologue_callbacks.erase(i);
+        else
+            ++i;
+    }
 }
 
 /**
@@ -543,29 +626,52 @@ void Isolate::SetEmbedderHeapTracer(EmbedderHeapTracer* tracer)
  * not possible to register the same callback function two times with
  * different GCType filters.
  */
-void Isolate::AddGCEpilogueCallback(GCCallbackWithData callback, void* data,
-                           GCType gc_type_filter)
+void Isolate::AddGCEpilogueCallback(GCCallbackWithData callback, void* data, GCType gc_type_filter)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    struct IsolateImpl::GCCallbackStruct cb;
+    cb.m_callback = nullptr;
+    cb.m_callback_with_data = callback;
+    cb.m_data = data;
+    cb.m_gc_type_filter = gc_type_filter;
+    
+    impl->m_gc_epilogue_callbacks.push_back(cb);
 }
-void Isolate::AddGCEpilogueCallback(GCCallback callback,
-                           GCType gc_type_filter)
+void Isolate::AddGCEpilogueCallback(GCCallback callback, GCType gc_type_filter)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    struct IsolateImpl::GCCallbackStruct cb;
+    cb.m_callback = callback;
+    cb.m_callback_with_data = nullptr;
+    cb.m_data = nullptr;
+    cb.m_gc_type_filter = gc_type_filter;
+    
+    impl->m_gc_epilogue_callbacks.push_back(cb);
 }
 
 /**
  * This function removes callback which was installed by
  * AddGCEpilogueCallback function.
  */
-void Isolate::RemoveGCEpilogueCallback(GCCallbackWithData callback,
-                              void* data)
+void Isolate::RemoveGCEpilogueCallback(GCCallbackWithData callback, void* data)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    for (auto i=impl->m_gc_epilogue_callbacks.begin(); i!=impl->m_gc_epilogue_callbacks.end(); ) {
+        if ((*i).m_callback_with_data == callback && (*i).m_data == data)
+            impl->m_gc_epilogue_callbacks.erase(i);
+        else
+            ++i;
+    }
 }
 void Isolate::RemoveGCEpilogueCallback(GCCallback callback)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    for (auto i=impl->m_gc_epilogue_callbacks.begin(); i!=impl->m_gc_epilogue_callbacks.end(); ) {
+        if ((*i).m_callback == callback)
+            impl->m_gc_epilogue_callbacks.erase(i);
+        else
+            ++i;
+    }
 }
 
 /**

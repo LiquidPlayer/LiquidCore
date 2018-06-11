@@ -124,6 +124,8 @@
 		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
+		07AA615F20CD68DF00EA6B43 /* JSHeapFinalizerPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSHeapFinalizerPrivate.h; sourceTree = "<group>"; };
+		07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSMarkingConstraintPrivate.h; sourceTree = "<group>"; };
 		07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exec.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
@@ -320,6 +322,8 @@
 				07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */,
 				07EE4ACC20C7E59200088E7D /* JSContextRefPrivate.h */,
 				07EE4ACD20C95CDC00088E7D /* JSScriptRefPrivate.h */,
+				07AA615F20CD68DF00EA6B43 /* JSHeapFinalizerPrivate.h */,
+				07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";

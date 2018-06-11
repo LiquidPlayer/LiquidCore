@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSObjectRefPrivate.h"
 
 using namespace v8;
 
@@ -18,6 +19,12 @@ struct HandleBlock {
     internal::Object * handles_[NUM_HANDLES];
 };
 
+static const uint8_t kActiveWeak = internal::Internals::kNodeStateIsWeakValue +
+    (1 << internal::Internals::kNodeIsActiveShift);
+static const uint8_t kActiveWeakMask = internal::Internals::kNodeStateMask +
+    (1 << internal::Internals::kNodeIsActiveShift);
+static const uint8_t kActiveNearDeath = internal::Internals::kNodeStateIsNearDeathValue +
+    (1 << internal::Internals::kNodeIsActiveShift);
 
 HandleScope::HandleScope(Isolate* isolate)
 {
@@ -218,6 +225,7 @@ public:
     uint8_t  flags_;   // internal::Internals::kNodeFlagsOffset (1 * kApiPointerSize + 3)
     uint8_t  reserved_[internal::kApiPointerSize - sizeof(uint32_t)]; // align
     WeakCallbackInfo<void>::Callback weak_callback_;
+    WeakCallbackInfo<void>::Callback second_pass_callback_;
     void *param_;
     void *embedder_fields_[2];
     v8::WeakCallbackType type_;
@@ -356,8 +364,6 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
     iso->getGlobalHandles = [&](std::map<internal::Object*, int>& canon,
                                 std::map<internal::Object*, std::vector<internal::Object**>>& weak)
     {
-        const uint8_t kActiveWeak = (1 << internal::Internals::kNodeStateIsWeakValue) +
-            (1 << internal::Internals::kNodeIsActiveShift);
         auto ProcessNodeBlock = [&](NodeBlock *block)
         {
             for (int i=0; i<64; i++) {
@@ -366,12 +372,15 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
                     Node& node = block->handles_[i];
                     internal::Object *h = node.handle_;
                     if (h->IsHeapObject()) {
-                        if ((node.flags_ & kActiveWeak) == (1 << internal::Internals::kNodeStateIsWeakValue)) {
-                            if (weak.count(h)) weak[h].push_back(&node.handle_);
-                            else {
-                                auto vector = std::vector<internal::Object**>();
-                                vector.push_back(&node.handle_);
-                                weak[h] = vector;
+                        if ((node.flags_ & kActiveWeakMask) == internal::Internals::kNodeStateIsNearDeathValue ||
+                            (node.flags_ & kActiveWeakMask) == internal::Internals::kNodeStateIsWeakValue) {
+                            if (h->IsPrimitive()) {
+                                if (weak.count(h)) weak[h].push_back(&node.handle_);
+                                else {
+                                    auto vector = std::vector<internal::Object**>();
+                                    vector.push_back(&node.handle_);
+                                    weak[h] = vector;
+                                }
                             }
                         } else {
                             int count = canon.count(h) ? canon[h] : 0;
@@ -389,42 +398,11 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
         }
     };
     
-    iso->weakObjectCleared = [&](internal::Object ** location, std::vector<SecondPassCallback>& second_pass_callbacks)
+    // For all active, weak values that have not previously been marked for death but are currently
+    // ready to die, save them from collection one last time so that the client has a chance to resurrect
+    // them in callbacks before we make this final
+    iso->performIncrementalMarking = [&](JSMarkerRef marker, std::map<void*, JSObjectRef>& ready_to_die)
     {
-        Node * node = reinterpret_cast<Node*>(location);
-        int index = node->index_;
-        intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
-        intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
-        NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
-
-        assert(node->flags_ & (1 << internal::Internals::kNodeStateIsWeakValue));
-        if (node->weak_callback_) {
-            SecondPassCallback second_pass;
-            second_pass.param_ = node->param_;
-            second_pass.embedder_fields_[0] = node->embedder_fields_[0];
-            second_pass.embedder_fields_[1] = node->embedder_fields_[1];
-            second_pass.callback_ = nullptr;
-
-            WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate()),
-                                        node->param_,
-                                        node->embedder_fields_,
-                                        &second_pass.callback_);
-            node->weak_callback_(info);
-            if (second_pass.callback_) {
-                second_pass_callbacks.push_back(second_pass);
-            }
-        }
-        *location = 0;
-        node->flags_ &= ~(1 << internal::Internals::kNodeIsActiveShift);
-        node->flags_ &= ~(1 << internal::Internals::kNodeStateIsWeakValue);
-    };
-    
-    iso->weakGoneInactive = [&](JSGlobalContextRef ctx, JSObjectRef obj, void ** embedder_fields)
-    {
-        // This is pretty inefficient, maybe fix it some day
-        const uint8_t kActiveWeak = (1 << internal::Internals::kNodeStateIsWeakValue) +
-            (1 << internal::Internals::kNodeIsActiveShift);
-
         auto ProcessNodeBlock = [&](NodeBlock *block)
         {
             for (int i=0; i<64; i++) {
@@ -432,12 +410,13 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
                 if (~(block->bitmap_) & mask) {
                     Node& node = block->handles_[i];
                     internal::Object *h = node.handle_;
-                    if (h->IsHeapObject() && (node.flags_ & kActiveWeak) == kActiveWeak) {
-                        ValueImpl* value = static_cast<ValueImpl*>(V82JSC_HeapObject::FromHeapPointer(h));
-                        if ((JSObjectRef)value->m_value == obj) {
-                            node.flags_ &= ~(1 << internal::Internals::kNodeIsActiveShift);
-                            node.embedder_fields_[0] = embedder_fields[0];
-                            node.embedder_fields_[1] = embedder_fields[1];
+                    if (h->IsHeapObject()) {
+                        if ((node.flags_ & kActiveWeakMask) == kActiveWeak) {
+                            ValueImpl *vi = V82JSC::ToImpl<ValueImpl>(&node.handle_);
+                            if (!marker->IsMarked(marker, (JSObjectRef)vi->m_value)) {
+                                node.flags_ = (node.flags_ & ~kActiveWeakMask) | kActiveNearDeath;
+                                ready_to_die[&node] = (JSObjectRef) vi->m_value;
+                            }
                         }
                     }
                 }
@@ -448,6 +427,66 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
         }
         for (NodeBlock *block = first_block_; block; block = block->next_block_) {
             ProcessNodeBlock(block);
+        }
+        
+        for (auto i=ready_to_die.begin(); i!=ready_to_die.end(); ++i) {
+            ValueImpl *vi = V82JSC::ToImpl<ValueImpl>(&((Node*)i->first)->handle_);
+            marker->Mark(marker, (JSObjectRef)vi->m_value);
+        }
+    };
+    
+    iso->weakObjectNearDeath = [&](internal::Object ** location,
+                                   std::vector<v8::internal::SecondPassCallback>& callbacks,
+                                   JSObjectRef object)
+    {
+        Node * node = reinterpret_cast<Node*>(location);
+        int index = node->index_;
+        intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
+        intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+        NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+
+        assert((node->flags_ & kActiveWeakMask) == kActiveNearDeath ||
+               (node->flags_ & kActiveWeakMask) == internal::Internals::kNodeStateIsWeakValue);
+        SecondPassCallback second_pass;
+        second_pass.callback_ = nullptr;
+        second_pass.param_ = node->param_;
+        second_pass.object_ = object;
+        if (object != 0) {
+            TrackedObjectImpl *wrap = getPrivateInstance(JSObjectGetGlobalContext(object), object);
+            assert(wrap);
+            second_pass.embedder_fields_[0] = wrap->m_embedder_data[0];
+            second_pass.embedder_fields_[1] = wrap->m_embedder_data[1];
+        }
+        WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate()),
+                                    node->param_,
+                                    second_pass.embedder_fields_,
+                                    &second_pass.callback_);
+        node->weak_callback_(info);
+        if (second_pass.callback_) {
+            callbacks.push_back(second_pass);
+        }
+    };
+
+    iso->weakHeapObjectFinalized = [&](v8::Isolate *isolate, v8::internal::SecondPassCallback& callback)
+    {
+        assert(callback.callback_);
+        WeakCallbackInfo<void> info(isolate,
+                                    callback.param_,
+                                    callback.embedder_fields_,
+                                    nullptr);
+        callback.callback_(info);
+    };
+    
+    iso->weakJSObjectFinalized = [&](JSGlobalContextRef ctx, JSObjectRef obj)
+    {
+        IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[ctx];
+        for (auto i=iso->m_second_pass_callbacks.begin(); i!=iso->m_second_pass_callbacks.end(); ) {
+            if ((*i).object_ == obj) {
+                iso->weakHeapObjectFinalized(V82JSC::ToIsolate(iso), (*i));
+                iso->m_second_pass_callbacks.erase(i);
+            } else {
+                ++i;
+            }
         }
     };
 }
@@ -505,24 +544,24 @@ void internal::GlobalHandles::MakeWeak(internal::Object **location, void *parame
     JSContextRef ctx = V82JSC::ToContextRef(context);
     if ((*location)->IsHeapObject()) {
         V82JSC_HeapObject::HeapObject *obj = V82JSC_HeapObject::FromHeapPointer(*location);
-        if ((V82JSC_HeapObject::BaseMap*)V82JSC_HeapObject::FromHeapPointer(obj->m_map) == iso->m_value_map) {
+        if (!(*location)->IsPrimitive()) {
             ValueImpl *value = static_cast<ValueImpl*>(obj);
-            if (JSValueIsObject(ctx, value->m_value)) {
-                makePrivateInstance(iso, ctx, (JSObjectRef)value->m_value);
-                handle_loc->flags_ |= (1 << internal::Internals::kNodeIsActiveShift);
-                V82JSC_HeapObject::WeakValue* weak =
-                    static_cast<V82JSC_HeapObject::WeakValue*>
-                    (V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_weak_value_map));
-                weak->m_value = value->m_value;
-                handle_loc->handle_ = V82JSC_HeapObject::ToHeapPointer(weak);
-            }
+            makePrivateInstance(iso, ctx, (JSObjectRef)value->m_value);
+            handle_loc->flags_ |= (1 << internal::Internals::kNodeIsActiveShift);
+            V82JSC_HeapObject::WeakValue* weak =
+                static_cast<V82JSC_HeapObject::WeakValue*>
+                (V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_weak_value_map));
+            weak->m_value = value->m_value;
+            handle_loc->handle_ = V82JSC_HeapObject::ToHeapPointer(weak);
         }
     }
 
-    handle_loc->flags_ |= (1 << internal::Internals::kNodeStateIsWeakValue);
+    handle_loc->flags_ = (handle_loc->flags_ & ~internal::Internals::kNodeStateMask) |
+        internal::Internals::kNodeStateIsWeakValue;
     handle_loc->param_ = parameter;
     handle_loc->type_ = type;
     handle_loc->weak_callback_ = weak_callback;
+    handle_loc->second_pass_callback_ = nullptr;
 }
 void internal::GlobalHandles::MakeWeak(v8::internal::Object ***location_addr)
 {
@@ -531,11 +570,8 @@ void internal::GlobalHandles::MakeWeak(v8::internal::Object ***location_addr)
 
 void * internal::GlobalHandles::ClearWeakness(v8::internal::Object **location)
 {
-    const uint8_t kActiveWeak = (1 << internal::Internals::kNodeStateIsWeakValue) +
-        (1 << internal::Internals::kNodeIsActiveShift);
-
     Node * handle_loc = reinterpret_cast<Node*>(location);
-    if ((handle_loc->flags_ & kActiveWeak) != kActiveWeak) return nullptr;
+    if ((handle_loc->flags_ & kActiveWeakMask) != kActiveWeak) return nullptr;
 
     int index = handle_loc->index_;
     intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<NodeBlock*>(16)->handles_) - 16;
@@ -559,10 +595,11 @@ void * internal::GlobalHandles::ClearWeakness(v8::internal::Object **location)
         }
     }
 
-    handle_loc->flags_ &= ~kActiveWeak;
+    handle_loc->flags_ &= ~kActiveWeakMask;
     void *param = handle_loc->param_;
     handle_loc->param_ = nullptr;
     handle_loc->weak_callback_ = nullptr;
+    handle_loc->second_pass_callback_ = nullptr;
     
     return param;
 }
