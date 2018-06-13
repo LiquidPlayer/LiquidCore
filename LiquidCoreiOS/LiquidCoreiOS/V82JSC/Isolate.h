@@ -66,6 +66,7 @@ struct IsolateImpl {
     JSValueRef m_negative_zero;
     JSValueRef m_empty_string;
     JSValueRef m_private_symbol;
+    JSObjectRef m_proxy_revocables;
     
     // Maps
     H::Map<H::TrackedObject> *m_tracked_object_map;

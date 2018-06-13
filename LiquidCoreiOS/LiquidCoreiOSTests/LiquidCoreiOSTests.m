@@ -473,6 +473,13 @@ V(PropertyDescriptor)
 V(InstanceCheckOnInstanceAccessor)
 V(InstanceCheckOnInstanceAccessorWithInterceptor)
 V(InstanceCheckOnPrototypeAccessor)
+V(FunctionGetInferredName)
+V(FunctionGetDebugName)
+V(FunctionGetDisplayName)
+V(FunctionNew)
+V(FunctionCallOptimizationMultipleArgs)
+V(ApiCallbackCanReturnSymbols)
+V(Proxy)
 
 #undef V
 #define V(tst) \
@@ -636,16 +643,10 @@ V(PromiseStateAndValue)
 
 // Uninmplemented function
 V(ScriptOrigin)
-V(FunctionGetInferredName)
-V(FunctionGetDebugName)
-V(FunctionGetDisplayName)
 V(ScriptLineNumber)
 V(ScriptColumnNumber)
 V(FunctionGetScriptId)
 V(FunctionGetBoundFunction)
-V(FunctionNew)
-V(FunctionCallOptimizationMultipleArgs)
-V(ApiCallbackCanReturnSymbols)
 
 // Random isolate function
 V(VerifyArrayPrototypeGuarantees)
@@ -689,9 +690,6 @@ V(ExtrasFunctionSource)
 V(ExtrasBindingObject)
 V(ExperimentalExtras)
 V(ExtrasUtilsObject)
-
-// Proxy
-V(Proxy)
 
 // Iternal fields on typed arrays (bug)
 V(InternalFieldsOnTypedArray)

@@ -19,8 +19,9 @@ MaybeLocal<Function> Function::New(Local<Context> context, FunctionCallback call
                                 Local<Value> data, int length,
                                 ConstructorBehavior behavior)
 {
-    assert(0);
-    return MaybeLocal<Function>();
+    Isolate* isolate = V82JSC::ToIsolate(V82JSC::ToContextImpl(context));
+    Local<FunctionTemplate> templ = FunctionTemplate::New(isolate, callback, data, Local<Signature>(), length, behavior);
+    return templ->GetFunction(context);
 }
 
 
@@ -80,13 +81,30 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
 
 void Function::SetName(Local<String> name)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    Isolate* isolate = V82JSC::ToIsolate(iso);
+    
+    JSContextRef ctx = V82JSC::ToContextRef(isolate->GetCurrentContext());
+    JSValueRef args [] = {
+        V82JSC::ToJSValueRef(this, isolate->GetCurrentContext()),
+        V82JSC::ToJSValueRef(name, isolate->GetCurrentContext()),
+    };
+    V82JSC::exec(ctx, "delete _1['name']; Object.defineProperty(_1, 'name', {value : _2})", 2, args);
 }
 
 Local<Value> Function::GetName() const
 {
-    assert(0);
-    return Local<Value>();
+    v8::Object* thiz = reinterpret_cast<v8::Object *>(const_cast<Function*>(this));
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(thiz);
+    Isolate* isolate = V82JSC::ToIsolate(iso);
+    TryCatch try_catch(Isolate::GetCurrent());
+    MaybeLocal<Value> name = thiz->Get(isolate->GetCurrentContext(),
+                                       String::NewFromUtf8(isolate, "name",
+                                                           NewStringType::kNormal).ToLocalChecked());
+    if (name.IsEmpty()) {
+        return Undefined(isolate);
+    }
+    return name.ToLocalChecked();
 }
 
 /**
@@ -97,8 +115,8 @@ Local<Value> Function::GetName() const
  */
 Local<Value> Function::GetInferredName() const
 {
-    assert(0);
-    return Local<Value>();
+    // JSC doesn't support inferred names
+    return GetName();
 }
 
 /**
@@ -107,8 +125,10 @@ Local<Value> Function::GetInferredName() const
  */
 Local<Value> Function::GetDebugName() const
 {
-    assert(0);
-    return Local<Value>();
+    Local<Value> name = GetDisplayName();
+    if (name->IsUndefined()) name = GetName();
+    if (name->IsUndefined()) name = GetInferredName();
+    return name;
 }
 
 /**
@@ -117,8 +137,23 @@ Local<Value> Function::GetDebugName() const
  */
 Local<Value> Function::GetDisplayName() const
 {
-    assert(0);
-    return Local<Value>();
+    v8::Object* thiz = reinterpret_cast<v8::Object *>(const_cast<Function*>(this));
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(thiz);
+    Isolate* isolate = V82JSC::ToIsolate(iso);
+    TryCatch try_catch(Isolate::GetCurrent());
+    MaybeLocal<Value> name = thiz->GetRealNamedProperty(isolate->GetCurrentContext(),
+                                       String::NewFromUtf8(isolate, "displayName",
+                                                           NewStringType::kNormal).ToLocalChecked());
+    if (!name.IsEmpty()) {
+        if (!name.ToLocalChecked()->IsString()) {
+            name = Local<Value>();
+        }
+    }
+    
+    if (name.IsEmpty()) {
+        return Undefined(isolate);
+    }
+    return name.ToLocalChecked();
 }
 
 /**

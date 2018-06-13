@@ -150,6 +150,9 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
 
     impl->m_private_symbol = V82JSC::exec(V82JSC::ToContextRef(nullContext), "return Symbol()", 0, 0);
     JSValueProtect(V82JSC::ToContextRef(nullContext), impl->m_private_symbol);
+    
+    impl->m_proxy_revocables = (JSObjectRef) V82JSC::exec(V82JSC::ToContextRef(nullContext), "return new WeakMap()", 0, 0);
+    JSValueProtect(V82JSC::ToContextRef(nullContext), impl->m_proxy_revocables);
 
     impl->ii.thread_local_top_.isolate_ = &impl->ii;
     impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);

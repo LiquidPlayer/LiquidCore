@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSObjectRefPrivate.h"
 
 using namespace v8;
 
@@ -63,14 +64,18 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
                 break;
             }
             case kJSTypeObject: {
-                if (JSValueToBoolean(ctx->m_ctxRef,
-                                     V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &value))) {
+                JSValueRef exception = 0;
+                JSValueRef isArrayBuffer = V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &value, &exception);
+                if (!exception && JSValueToBoolean(ctx->m_ctxRef, isArrayBuffer)) {
                     map = isolateimpl->m_array_buffer_map;
-                } else if (JSValueToBoolean(ctx->m_ctxRef,
-                                            V82JSC::exec(ctx->m_ctxRef, "return typeof _1 === 'symbol'", 1, &value))) {
-                    map = isolateimpl->m_symbol_map;
                 } else {
-                    map = isolateimpl->m_value_map;
+                    exception = 0;
+                    JSValueRef isSymbol = V82JSC::exec(ctx->m_ctxRef, "return typeof _1 === 'symbol'", 1, &value, &exception);
+                    if (!exception && JSValueToBoolean(ctx->m_ctxRef, isSymbol)) {
+                        map = isolateimpl->m_symbol_map;
+                    } else {
+                        map = isolateimpl->m_value_map;
+                    }
                 }
                 break;
             }
@@ -363,12 +368,17 @@ bool Value::IsProxy() const
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef maybe_proxy = V82JSC::ToJSValueRef(this, context);
+    
+    return (JSValueIsObject(ctx, maybe_proxy) && JSObjectGetProxyTarget((JSObjectRef)maybe_proxy) != 0);
+
+    /*
     if (JSValueIsObject(ctx, maybe_proxy)) {
         JSValueRef maybe_proxy_proto = JSObjectGetPrototype(ctx, (JSObjectRef)maybe_proxy);
         JSValueRef real_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)maybe_proxy);
         return !JSValueIsStrictEqual(ctx, maybe_proxy_proto, real_proto);
     }
     return false;
+    */
 }
 
 bool Value::IsWebAssemblyCompiledModule() const { return false; } // FIXME
