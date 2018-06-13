@@ -31,6 +31,7 @@
 #include <map>
 #include <string>
 #include "JSScriptRefPrivate.h"
+#include "JSWeakRefPrivate.h"
 
 /* V82JSC Heap Objects are designed to mirror V8 heap objects as much as possible.  Some rules:
  * --> All heap objects have a reference to their v8::internal::Map at offset 0 to identify their type
@@ -70,6 +71,7 @@ namespace v8 {
     struct EmbeddedFixedArray : v8::Value {};
     struct TrackedObject : v8::Value {};
     struct AccessorInfo : v8::Value {};
+    struct WeakExternalString : v8::Value {};
 };
 
 namespace V82JSC_HeapObject {
@@ -132,6 +134,7 @@ namespace V82JSC_HeapObject {
             return reinterpret_cast<IsolateImpl*>(chunk->heap()->isolate());
         }
         JSGlobalContextRef GetNullContext();
+        JSContextGroupRef GetContextGroup();
         static int DecrementCount(v8::internal::Object *obj, CanonicalHandles& handles, WeakHandles& weak,
                                   std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
@@ -183,6 +186,21 @@ namespace V82JSC_HeapObject {
     {
         static Map<T> * New(IsolateImpl *iso, v8::internal::InstanceType t, uint8_t kind=0xff);
     };
+    
+    inline v8::internal::Map * ToV8Map(BaseMap *map)
+    {
+        return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(map) + v8::internal::kHeapObjectTag);
+    }
+    
+    inline v8::internal::Object * ToHeapPointer(HeapObject *obj)
+    {
+        return reinterpret_cast<v8::internal::Object*>(reinterpret_cast<intptr_t>(obj) + v8::internal::kHeapObjectTag);
+    }
+    
+    inline HeapObject * FromHeapPointer(v8::internal::Object *obj)
+    {
+        return reinterpret_cast<HeapObject*>(reinterpret_cast<intptr_t>(obj) - v8::internal::kHeapObjectTag);
+    }
     
     struct Context : HeapObject {
         uint8_t reserved_[v8::internal::Internals::kContextHeaderSize +
@@ -311,7 +329,31 @@ namespace V82JSC_HeapObject {
             return Value::Destructor(obj, handles, weak, callbacks);
         }
     };
-    
+
+    struct WeakExternalString : WeakValue {
+        uint8_t reserved_[v8::internal::ExternalString::kResourceOffset + v8::internal::kApiPointerSize - sizeof(WeakValue)];
+        JSWeakRef m_weakRef;
+        v8::String::ExternalStringResourceBase *m_resource;
+        
+        static void Constructor(WeakExternalString *obj)
+        {
+            Value::Constructor(obj);
+        }
+        static int Destructor(WeakExternalString *obj, CanonicalHandles& handles, WeakHandles& weak,
+                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+        {
+            if (obj->m_weakRef) JSWeakRelease(obj->GetContextGroup(), obj->m_weakRef);
+            
+            v8::internal::Isolate *ii = reinterpret_cast<v8::internal::Isolate*>(obj->GetIsolate());
+            if (obj->m_resource) {
+                intptr_t addr = reinterpret_cast<intptr_t>(obj) + v8::internal::ExternalString::kResourceOffset;
+                * reinterpret_cast<v8::String::ExternalStringResourceBase**>(addr) = obj->m_resource;
+                ii->heap()->FinalizeExternalString(reinterpret_cast<v8::internal::String*>(ToHeapPointer(obj)));
+            }
+            return WeakValue::Destructor(obj, handles, weak, callbacks);
+        }
+    };
+
     struct FixedArray : HeapObject {
         union {
             uint8_t __buffer[v8::internal::Internals::kFixedArrayHeaderSize - sizeof(HeapObject)];
@@ -440,6 +482,7 @@ namespace V82JSC_HeapObject {
     
     struct FunctionTemplate : Template {
         Copyable(v8::ObjectTemplate) m_instance_template;
+        Copyable(v8::FunctionTemplate) m_prototype_provider;
         v8::ConstructorBehavior m_behavior;
         Copyable(v8::String) m_name;
         JSObjectRef m_functions_array;
@@ -453,6 +496,7 @@ namespace V82JSC_HeapObject {
                               std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             int freed=0;
+            freed +=SmartReset<v8::FunctionTemplate>(obj->m_prototype_provider, handles, weak, callbacks);
             freed +=SmartReset<v8::ObjectTemplate>(obj->m_instance_template, handles, weak, callbacks);
             freed +=SmartReset<v8::String>(obj->m_name, handles, weak, callbacks);
             if (obj->m_functions_array) JSValueUnprotect(obj->GetNullContext(), obj->m_functions_array);
@@ -474,6 +518,7 @@ namespace V82JSC_HeapObject {
         v8::IndexedPropertyHandlerConfiguration m_indexed_failed_access_handler;
         bool m_need_proxy;
         int m_internal_fields;
+        bool m_is_immutable_proto;
 
         static void Constructor(ObjectTemplate *obj) { Template::Constructor(obj); }
         static int Destructor(ObjectTemplate *obj, CanonicalHandles& handles, WeakHandles& weak,
@@ -544,6 +589,7 @@ namespace V82JSC_HeapObject {
         JSValueRef m_property;
         JSValueRef m_data;
         JSValueRef m_holder;
+        Copyable(v8::Signature) signature;
         v8::AccessorNameGetterCallback getter;
         v8::AccessorNameSetterCallback setter;
 
@@ -554,7 +600,7 @@ namespace V82JSC_HeapObject {
             if (obj->m_property) JSValueUnprotect(obj->GetNullContext(), obj->m_property);
             if (obj->m_data) JSValueUnprotect(obj->GetNullContext(), obj->m_data);
             if (obj->m_holder) JSValueUnprotect(obj->GetNullContext(), obj->m_holder);
-            return 0;
+            return SmartReset<v8::Signature>(obj->signature, handles, weak, callbacks);
         }
     };
     
@@ -610,21 +656,6 @@ namespace V82JSC_HeapObject {
         }
     };
     
-    inline v8::internal::Map * ToV8Map(BaseMap *map)
-    {
-        return reinterpret_cast<v8::internal::Map*>(reinterpret_cast<intptr_t>(map) + v8::internal::kHeapObjectTag);
-    }
-
-    inline v8::internal::Object * ToHeapPointer(HeapObject *obj)
-    {
-        return reinterpret_cast<v8::internal::Object*>(reinterpret_cast<intptr_t>(obj) + v8::internal::kHeapObjectTag);
-    }
-
-    inline HeapObject * FromHeapPointer(v8::internal::Object *obj)
-    {
-        return reinterpret_cast<HeapObject*>(reinterpret_cast<intptr_t>(obj) - v8::internal::kHeapObjectTag);
-    }
-
     template<typename T> Map<T> * Map<T>::New(IsolateImpl *iso, v8::internal::InstanceType t, uint8_t kind)
     {
         auto map = reinterpret_cast<Map<T> *>(HeapAllocator::Alloc(iso, nullptr, sizeof(BaseMap)));

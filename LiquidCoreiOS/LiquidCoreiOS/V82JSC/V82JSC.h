@@ -57,6 +57,12 @@ struct StringImpl : V82JSC_HeapObject::String
                                      void *resource = nullptr);
 };
 
+struct WeakExternalStringImpl : V82JSC_HeapObject::WeakExternalString
+{
+    static void Init(IsolateImpl* iso, JSValueRef value, v8::String::ExternalStringResourceBase *resource,
+                     V82JSC_HeapObject::BaseMap* map);
+};
+
 struct HiddenObjectImpl : ValueImpl {
     void PropagateOwnPropertyToChild(v8::Local<v8::Context> context, v8::Local<v8::Name> property, JSObjectRef child);
     void PropagateOwnPropertyToChildren(v8::Local<v8::Context> context, v8::Local<v8::Name> property);
@@ -70,6 +76,17 @@ struct FunctionCallbackImpl : public v8::FunctionCallbackInfo<v8::Value>
     inline FunctionCallbackImpl(v8::internal::Object** implicit_args,
                                 v8::internal::Object** values, int length) :
     FunctionCallbackInfo<v8::Value>(implicit_args, values, length) {}
+};
+
+struct ObjectImpl : v8::Object {
+    v8::Maybe<bool> SetAccessor(v8::Local<v8::Context> context,
+                                v8::Local<v8::Name> name,
+                                v8::AccessorNameGetterCallback getter,
+                                v8::AccessorNameSetterCallback setter,
+                                v8::MaybeLocal<v8::Value> data,
+                                v8::AccessControl settings,
+                                v8::PropertyAttribute attribute,
+                                v8::Local<v8::Signature> signature);
 };
 
 struct MessageImpl : V82JSC_HeapObject::Message
@@ -150,6 +167,10 @@ struct TryCatchCopy {
     bool rethrow_ : 1;
     bool has_terminated_ : 1;
 };
+
+TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object);
+TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object);
+TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx);
 
 struct V82JSC {
     template <class T>
@@ -387,7 +408,10 @@ struct V82JSC {
             return JSObjectGetPrototype(ToContextRef(context), obj);
         }
         v8::Local<v8::Function> getPrototype = ToGlobalContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
-        CHECK(!getPrototype.IsEmpty());
+        if (getPrototype.IsEmpty()) {
+            // No worries, it just means this hasn't been set up yet; use the native API
+            return JSObjectGetPrototype(ToContextRef(context), obj);
+        }
         v8::Local<v8::Value> args[] = {
             v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj))
         };
@@ -399,6 +423,17 @@ struct V82JSC {
     {
         v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
         v8::Local<v8::Context> global_context = FindGlobalContext(context);
+
+        TrackedObjectImpl *impl = getPrivateInstance(V82JSC::ToContextRef(context), obj);
+        if (impl && !impl->m_object_template.IsEmpty() &&
+            V82JSC::ToImpl<ObjectTemplateImpl>(impl->m_object_template.Get(isolate))->m_is_immutable_proto) {
+            
+            isolate->ThrowException
+            (v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "prototype is immutable",
+                                                              v8::NewStringType::kNormal).ToLocalChecked()));
+            return;
+        }
+
         if (global_context.IsEmpty()) {
             // No worries, it just means this hasn't been set up yet; use the native API
             JSObjectSetPrototype(ToContextRef(context), obj, proto);
@@ -491,9 +526,6 @@ struct LocalException {
 void proxyArrayBuffer(GlobalContextImpl *ctx);
 bool InstallAutoExtensions(v8::Local<v8::Context> context, std::map<std::string, bool>& loaded_extensions);
 bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name, std::map<std::string, bool>& loaded_extensions);
-TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object);
-TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object);
-TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx);
 void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* impl, JSObjectRef object);
 
 #endif /* V82JSC_h */

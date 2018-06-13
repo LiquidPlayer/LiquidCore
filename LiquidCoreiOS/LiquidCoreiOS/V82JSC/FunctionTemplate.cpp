@@ -243,8 +243,20 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     }
     if (!impl->m_removePrototype) {
         JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
-        Local<ObjectTemplate> prototype_template = thiz->PrototypeTemplate();
-        MaybeLocal<Object> prototype = prototype_template->NewInstance(context);
+        MaybeLocal<Value> prototype;
+        if (impl->m_prototype_provider.IsEmpty()) {
+            Local<ObjectTemplate> prototype_template = thiz->PrototypeTemplate();
+            MaybeLocal<Object> pro = prototype_template->NewInstance(context);
+            if (!pro.IsEmpty()) {
+                prototype = pro.ToLocalChecked();
+            }
+        } else {
+            MaybeLocal<Function> provider_function = impl->m_prototype_provider.Get(isolate)->GetFunction(context);
+            if (!provider_function.IsEmpty()) {
+                prototype = provider_function.ToLocalChecked()->
+                    Get(context, String::NewFromUtf8(isolate, "prototype", NewStringType::kNormal).ToLocalChecked());
+            }
+        }
         if (prototype.IsEmpty()) {
             return MaybeLocal<Function>();
         }
@@ -370,7 +382,9 @@ Local<ObjectTemplate> FunctionTemplate::PrototypeTemplate()
  **/
 void FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> prototype_provider)
 {
-    assert(0);
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    Isolate* isolate = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(impl));
+    impl->m_prototype_provider.Reset(isolate, prototype_provider);
 }
 
 /**
@@ -437,7 +451,22 @@ void FunctionTemplate::RemovePrototype()
  */
 bool FunctionTemplate::HasInstance(Local<Value> object)
 {
-    assert(0);
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    Isolate* isolate = V82JSC::ToIsolate(impl->GetIsolate());
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    if (!object->IsObject()) return false;
+    
+    JSValueRef o = V82JSC::ToJSValueRef(object, context);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)o);
+    if (!wrap) return false;
+    
+    if (!wrap->m_object_template.IsEmpty()) {
+        ObjectTemplateImpl *ot = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
+        if (!ot->m_constructor_template.IsEmpty()) {
+            return (V82JSC::ToImpl<FunctionTemplateImpl>(ot->m_constructor_template.Get(isolate)) == impl);
+        }
+    }
     return false;
 }
 

@@ -78,6 +78,8 @@ struct IsolateImpl {
     H::Map<H::String> *m_external_string_map;
     H::Map<H::String> *m_external_one_byte_string_map;
     H::Map<H::String> *m_internalized_string_map;
+    H::Map<H::WeakExternalString> *m_weak_external_string_map;
+    H::Map<H::WeakExternalString> *m_weak_external_one_byte_string_map;
     H::Map<H::Value> *m_value_map;
     H::Map<H::Value> *m_number_map;
     H::Map<H::Value> *m_symbol_map;
@@ -135,6 +137,7 @@ struct IsolateImpl {
     bool m_pending_epilogue;
     int m_in_gc;
     std::vector<SecondPassCallback> m_second_pass_callbacks;
+    std::map<JSValueRef, Copyable(v8::WeakExternalString)> m_external_strings;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
@@ -143,6 +146,7 @@ struct IsolateImpl {
     void TriggerGCPrologue();
     void TriggerGCFirstPassPhantomCallbacks();
     void TriggerGCEpilogue();
+    void CollectExternalStrings();
     
     v8::internal::GetGlobalHandles getGlobalHandles;
     v8::internal::WeakObjectNearDeath weakObjectNearDeath;

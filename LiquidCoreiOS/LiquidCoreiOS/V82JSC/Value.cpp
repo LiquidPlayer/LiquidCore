@@ -19,6 +19,7 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
     v8::Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
     typedef v8::internal::Heap::RootListIndex R;
     internal::Object * io;
+    void* resource = nullptr;
     
     double num = 0.0;
     if (!map) {
@@ -39,7 +40,14 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
                 return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
             }
             case kJSTypeString: {
-                map = isolateimpl->m_string_map;
+                if (isolateimpl->m_external_strings.count(value) == 1) {
+                    Local<WeakExternalString> wes = isolateimpl->m_external_strings[value].Get(isolate);
+                    WeakExternalStringImpl* ext = V82JSC::ToImpl<WeakExternalStringImpl>(wes);
+                    map = reinterpret_cast<H::BaseMap*>(H::FromHeapPointer(ext->m_map));
+                    resource = ext->m_resource;
+                } else {
+                    map = isolateimpl->m_string_map;
+                }
                 break;
             }
             case kJSTypeNumber: {
@@ -75,6 +83,10 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
     
     ValueImpl * impl = static_cast<ValueImpl *>(H::HeapAllocator::Alloc(isolateimpl, map));
     impl->m_value = value;
+    if (t == kJSTypeString) {
+        * reinterpret_cast<void**>(reinterpret_cast<intptr_t>(impl) +
+                                   internal::Internals::kStringResourceOffset) = resource;
+    }
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     if (t == kJSTypeNumber) {
         reinterpret_cast<internal::HeapNumber*>(H::ToHeapPointer(impl))->set_value(num);

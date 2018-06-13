@@ -7,6 +7,8 @@
 //
 
 #include "V82JSC.h"
+#include "JSWeakRefPrivate.h"
+#include "JSStringRefPrivate.h"
 
 using namespace v8;
 
@@ -30,6 +32,14 @@ Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap*
             type = i->m_string_map;
         }
         string->m_map = H::ToV8Map(type);
+    }
+    
+    if ((type == i->m_external_string_map || type == i->m_external_one_byte_string_map) &&
+        resource != nullptr) {
+        
+        type = i->m_external_string_map ? i->m_weak_external_string_map : i->m_weak_external_one_byte_string_map;
+        
+        WeakExternalStringImpl::Init(i, string->m_value, (v8::String::ExternalStringResourceBase*) resource, type);
     }
     
     * reinterpret_cast<void**>(reinterpret_cast<intptr_t>(string) +
@@ -69,10 +79,8 @@ String::Utf8Value::~Utf8Value()
 String::Utf8Value::Utf8Value(Local<v8::Value> obj)
 {
     if (obj.IsEmpty()) {
-        //str_ = (char*) malloc(1);
         str_ = nullptr;
         length_ = 0;
-        //*str_ = 0;
     } else {
         Local<Context> context = V82JSC::ToCurrentContext(*obj);
         JSValueRef value = V82JSC::ToJSValueRef(obj, context);
@@ -374,7 +382,7 @@ MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::External
     if (resource->length() > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
-    return StringImpl::New(isolate, JSStringCreateWithCharacters(resource->data(), resource->length()),
+    return StringImpl::New(isolate, JSStringCreateWithCharactersNoCopy(resource->data(), resource->length()),
                            V82JSC::ToIsolateImpl(isolate)->m_external_string_map, resource);
 }
 
@@ -389,18 +397,17 @@ MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::External
  */
 bool String::MakeExternal(String::ExternalStringResource* resource)
 {
+    // NOTE: Making existing internalized strings external doesn't really do anything
+    // other than report back when the string is collected.  The externalized resource
+    // is not actually used by JSC.
     if (resource->length() > v8::String::kMaxLength) {
         return false;
     }
     ValueImpl *impl = V82JSC::ToImpl<ValueImpl,String>(this);
     IsolateImpl *iso = V82JSC::ToIsolateImpl(impl);
-    JSContextRef ctx = V82JSC::ToContextRef(V82JSC::ToIsolate(iso));
-
     impl->m_map = H::ToV8Map(iso->m_external_string_map);
-    JSStringRef s = JSStringCreateWithCharacters(resource->data(), resource->length());
-    if (impl->m_value) JSValueUnprotect(ctx, impl->m_value);
-    impl->m_value = JSValueMakeString(ctx, s);
-    JSStringRelease(s);
+
+    WeakExternalStringImpl::Init(iso, impl->m_value, resource, iso->m_weak_external_string_map);
 
     * reinterpret_cast<ExternalStringResource**>(reinterpret_cast<intptr_t>(impl) +
                                internal::Internals::kStringResourceOffset) = resource;
@@ -423,7 +430,7 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
     }
     uint16_t str[resource->length()];
     for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
-    
+
     return StringImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
                            V82JSC::ToIsolateImpl(isolate)->m_external_one_byte_string_map, resource);
 }
@@ -439,20 +446,17 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
  */
 bool String::MakeExternal(ExternalOneByteStringResource* resource)
 {
+    // NOTE: Making existing internalized strings external doesn't really do anything
+    // other than report back when the string is collected.  The externalized resource
+    // is not actually used by JSC.
     if (resource->length() > v8::String::kMaxLength) {
         return false;
     }
     StringImpl *impl = V82JSC::ToImpl<StringImpl,String>(this);
     IsolateImpl *iso = V82JSC::ToIsolateImpl(impl);
-    JSContextRef ctx = V82JSC::ToContextRef(V82JSC::ToIsolate(iso));
-
-    uint16_t str[resource->length()];
-    for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
     impl->m_map = H::ToV8Map(iso->m_external_one_byte_string_map);
-    JSStringRef s = JSStringCreateWithCharacters(str, resource->length());
-    if (impl->m_value) JSValueUnprotect(ctx, impl->m_value);
-    impl->m_value = JSValueMakeString(ctx, s);
-    JSStringRelease(s);
+
+    WeakExternalStringImpl::Init(iso, impl->m_value, resource, iso->m_weak_external_one_byte_string_map);
     
     * reinterpret_cast<ExternalOneByteStringResource**>(reinterpret_cast<intptr_t>(impl) +
                                                  internal::Internals::kStringResourceOffset) = resource;
@@ -466,5 +470,18 @@ bool String::MakeExternal(ExternalOneByteStringResource* resource)
 bool String::CanMakeExternal()
 {
     return true;
+}
+
+void WeakExternalStringImpl::Init(IsolateImpl* iso, JSValueRef value, String::ExternalStringResourceBase *resource,
+                                  V82JSC_HeapObject::BaseMap *map)
+{
+    HandleScope scope(V82JSC::ToIsolate(iso));
+    WeakExternalStringImpl *ext = static_cast<WeakExternalStringImpl*>(H::HeapAllocator::Alloc(iso, map));
+    ext->m_value = value;
+    ext->m_weakRef = JSWeakCreate(iso->m_group, (JSObjectRef)value);
+    ext->m_resource = resource;
+    assert(JSWeakGetObject(ext->m_weakRef) == (JSObjectRef)value);
+    Local<v8::WeakExternalString> wes = V82JSC::CreateLocal<v8::WeakExternalString>(&iso->ii, ext);
+    iso->m_external_strings[ext->m_value] = Copyable(v8::WeakExternalString)(V82JSC::ToIsolate(iso), wes);
 }
 

@@ -35,6 +35,7 @@
 #include "test/cctest/print-extension.h"
 #include "test/cctest/profiler-extension.h"
 #include "test/cctest/trace-extension.h"
+#include "src/extensions/gc-extension.h"
 
 #if V8_OS_WIN
 #include <windows.h>  // NOLINT
@@ -272,6 +273,8 @@ extern "C" int cctest_main(int argc, char* argv[]) {
     v8::RegisterExtension(&profiler_extension);
     i::TraceExtension trace_extension;
     v8::RegisterExtension(&trace_extension);
+    i::GCExtension gc_extension("gc");
+    v8::RegisterExtension(&gc_extension);
     
     int tests_run = 0;
     bool print_run_count = true;

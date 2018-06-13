@@ -126,9 +126,8 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
     // First pass, clear anything on the V82JSC side that is not in use
     iso->CollectGarbage();
     
-    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
+    // Next, trigger garbage collection in JSC
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
         JSSynchronousGarbageCollectForDebugging(i->first);
     }
 
@@ -138,10 +137,10 @@ bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reas
     // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
         JSSynchronousGarbageCollectForDebugging(i->first);
-        JSSynchronousGarbageCollectForDebugging(i->first);
     }
 
     iso->TriggerGCFirstPassPhantomCallbacks();
+    iso->CollectExternalStrings();
 
     // Second pass, clear V82JSC garbage again in case any weak references were cleared
     iso->CollectGarbage();
@@ -164,7 +163,7 @@ void Heap::CollectAllGarbage(int flags, GarbageCollectionReason gc_reason,
 // Last hope GC, should try to squeeze as much as possible.
 void Heap::CollectAllAvailableGarbage(GarbageCollectionReason gc_reason)
 {
-    reinterpret_cast<IsolateImpl*>(isolate())->CollectGarbage();
+    CollectAllGarbage(0, GarbageCollectionReason::kDebugger);
 }
 
 bool Heap::ShouldOptimizeForMemoryUsage()
@@ -184,18 +183,41 @@ void Heap::StartIdleIncrementalMarking(GarbageCollectionReason gc_reason,
 //
 // internal::HeapIterator
 //
+/* This is hack-a-palooza.  This only used by the tests to iterate searching for global
+ * objects in the heap.  So we've hacked it to return non-null for each global context (global
+ * objects in JSC can't live if their global context has been destroyed).  Do not use this
+ * for anything else.  Also, note this assumes there is only one isolate.  Seriously, don't use
+ * for anything other than this one purpose.
+ */
 HeapIterator::HeapIterator(Heap* heap, HeapObjectsFiltering filtering)
 {
-    assert(0);
+    filter_ = nullptr; // We are reusing this pointer to hold our iterator (ick)
+    heap_ = heap;
 }
 HeapIterator::~HeapIterator()
 {
-    assert(0);
+    auto it = reinterpret_cast<std::map<JSGlobalContextRef, IsolateImpl*>::iterator*>(filter_);
+    if (it) {
+        delete it;
+    }
 }
 HeapObject* HeapIterator::next()
 {
-    assert(0);
-    return nullptr;
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(heap_->isolate());
+    auto it = reinterpret_cast<std::map<JSGlobalContextRef, Copyable(v8::Context)>::iterator*>(filter_);
+
+    if (it == nullptr) {
+        it = new std::map<JSGlobalContextRef, Copyable(v8::Context)>::iterator();
+        *it = iso->m_global_contexts.begin();
+        filter_ = reinterpret_cast<HeapObjectsFilter*>(it);
+    } else {
+        ++(*it);
+    }
+    if (*it == iso->m_global_contexts.end()) {
+        return nullptr;
+    } else {
+        return reinterpret_cast<HeapObject*>(filter_);
+    }
 }
 
 //

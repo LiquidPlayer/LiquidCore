@@ -10,6 +10,7 @@
 #include "V82JSC.h"
 #include "JSHeapFinalizerPrivate.h"
 #include "JSMarkingConstraintPrivate.h"
+#include "JSWeakRefPrivate.h"
 
 using namespace v8;
 using V82JSC_HeapObject::HeapImpl;
@@ -29,6 +30,19 @@ ISOLATE_INIT_LIST(DECLARE_FIELDS);
 
 std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map;
 
+static void MarkingConstraintCallback(JSMarkerRef marker, void *userData)
+{
+    IsolateImpl *impl = (IsolateImpl*)userData;
+    impl->performIncrementalMarking(marker, impl->m_near_death);
+    impl->m_pending_prologue = true;
+}
+
+static void HeapFinalizerCallback(JSContextGroupRef grp, void *userData)
+{
+    IsolateImpl *impl = (IsolateImpl*)userData;
+    impl->m_pending_epilogue = true;
+}
+
 /**
  * Creates a new isolate.  Does not change the currently entered
  * isolate.
@@ -44,7 +58,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     memset(impl, 0, sizeof(IsolateImpl));
     Isolate * isolate = V82JSC::ToIsolate(impl);
 
-    reinterpret_cast<internal::Isolate*>(isolate)->Init(nullptr);
+    reinterpret_cast<internal::Isolate*>(isolate)->Init((v8::internal::Deserializer *)&params);
 
     HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
     heap->m_heap_top = nullptr;
@@ -62,23 +76,16 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_gc_epilogue_callbacks = std::vector<IsolateImpl::GCCallbackStruct>();
     impl->m_near_death = std::map<void*, JSObjectRef>();
     impl->m_second_pass_callbacks = std::vector<internal::SecondPassCallback>();
-
+    impl->m_external_strings = std::map<JSValueRef, Copyable(v8::WeakExternalString)>();
+    
     HandleScope scope(isolate);
     
     impl->m_params = params;
     
     impl->m_group = JSContextGroupCreate();
     
-    JSContextGroupAddMarkingConstraint(impl->m_group, [](JSMarkerRef marker, void *userData) {
-        IsolateImpl *impl = (IsolateImpl*)userData;
-        impl->performIncrementalMarking(marker, impl->m_near_death);
-        impl->m_pending_prologue = true;
-    }, impl);
-    
-    JSContextGroupAddHeapFinalizer(impl->m_group, [](JSContextGroupRef grp, void *userData) {
-        IsolateImpl *impl = (IsolateImpl*)userData;
-        impl->m_pending_epilogue = true;
-    }, impl);
+    JSContextGroupAddMarkingConstraint(impl->m_group, MarkingConstraintCallback, impl);
+    JSContextGroupAddHeapFinalizer(impl->m_group, HeapFinalizerCallback, impl);
     
     Roots* roots = reinterpret_cast<Roots *>(impl->ii.heap()->roots_array_start());
     
@@ -94,10 +101,12 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_tracked_object_map = H::Map<H::TrackedObject>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_array_buffer_map = H::Map<H::Value>::New(impl, internal::JS_ARRAY_BUFFER_TYPE);
     impl->m_fixed_array_map = H::Map<H::FixedArray>::New(impl, internal::FIXED_ARRAY_TYPE);
-    impl->m_one_byte_string_map = H::Map<H::String>::New(impl, internal::ONE_BYTE_STRING_TYPE);
-    impl->m_string_map = H::Map<H::String>::New(impl, internal::STRING_TYPE);
+    impl->m_one_byte_string_map = H::Map<H::String>::New(impl, internal::ONE_BYTE_INTERNALIZED_STRING_TYPE);
+    impl->m_string_map = H::Map<H::String>::New(impl, internal::INTERNALIZED_STRING_TYPE);
     impl->m_external_one_byte_string_map = H::Map<H::String>::New(impl, internal::EXTERNAL_ONE_BYTE_STRING_TYPE);
     impl->m_external_string_map = H::Map<H::String>::New(impl, internal::EXTERNAL_STRING_TYPE);
+    impl->m_weak_external_one_byte_string_map = H::Map<H::WeakExternalString>::New(impl, internal::EXTERNAL_ONE_BYTE_STRING_TYPE);
+    impl->m_weak_external_string_map = H::Map<H::WeakExternalString>::New(impl, internal::EXTERNAL_STRING_TYPE);
     impl->m_internalized_string_map = H::Map<H::String>::New(impl, internal::INTERNALIZED_STRING_TYPE);
     impl->m_value_map = H::Map<H::Value>::New(impl, internal::JS_VALUE_TYPE);
     impl->m_number_map = H::Map<H::Value>::New(impl, internal::HEAP_NUMBER_TYPE);
@@ -186,6 +195,18 @@ void IsolateImpl::TriggerGCEpilogue()
     }
 }
 
+void IsolateImpl::CollectExternalStrings()
+{
+    v8::HandleScope scope(V82JSC::ToIsolate(this));
+    for (auto i=m_external_strings.begin(); i!=m_external_strings.end(); ) {
+        WeakExternalStringImpl *ext = V82JSC::ToImpl<WeakExternalStringImpl>(i->second.Get(V82JSC::ToIsolate(this)));
+        if (JSWeakGetObject(ext->m_weakRef) == 0) {
+            i = m_external_strings.erase(i);
+        } else {
+            ++i;
+        }
+    }
+}
 
 JSGlobalContextRef H::HeapObject::GetNullContext()
 {
@@ -195,10 +216,19 @@ JSGlobalContextRef H::HeapObject::GetNullContext()
     return JSContextGetGlobalContext(V82JSC::ToContextRef(ctx));
 }
 
+JSContextGroupRef H::HeapObject::GetContextGroup()
+{
+    IsolateImpl* iso = GetIsolate();
+    return iso->m_group;
+}
+
 bool internal::Isolate::Init(v8::internal::Deserializer *des)
 {
+    v8::Isolate::CreateParams& create = *(v8::Isolate::CreateParams*)des;
     internal::Heap* h = heap();
     h->isolate_ = this;
+    h->max_old_generation_size_ = create.constraints.max_old_space_size() * 1024 * 1024;
+    h->initial_max_old_generation_size_ = h->max_old_generation_size_;
     
     global_handles_ = new internal::GlobalHandles(this);
     return true;
@@ -301,6 +331,9 @@ void IsolateImpl::ExitContext(Local<v8::Context> ctx)
  * Disposes the isolate.  The isolate must not be entered by any
  * thread to be disposable.
  */
+
+JS_EXPORT void JSContextGroupRemoveMarkingConstraint(JSContextGroupRef, JSMarkingConstraint, void *userData);
+
 void Isolate::Dispose()
 {
     IsolateImpl *isolate = (IsolateImpl *)this;
@@ -312,7 +345,24 @@ void Isolate::Dispose()
         }
         return;
     }
+
+    // Hmm.  There is no JSContextGroupRemoveMarkingConstraint() equivalent
+    JSContextGroupRemoveHeapFinalizer(isolate->m_group, HeapFinalizerCallback, isolate);
     
+    {
+        HandleScope scope(V82JSC::ToIsolate(isolate));
+        while (!isolate->m_external_strings.empty()) {
+            Local<WeakExternalString> wes = isolate->m_external_strings.begin()->second.Get(V82JSC::ToIsolate(isolate));
+            WeakExternalStringImpl *impl = V82JSC::ToImpl<WeakExternalStringImpl>(wes);
+            if (impl->m_resource) {
+                intptr_t addr = reinterpret_cast<intptr_t>(impl) + v8::internal::ExternalString::kResourceOffset;
+                * reinterpret_cast<v8::String::ExternalStringResourceBase**>(addr) = impl->m_resource;
+                isolate->ii.heap()->FinalizeExternalString(reinterpret_cast<v8::internal::String*>(ToHeapPointer(impl)));
+            }
+            isolate->m_external_strings.erase(isolate->m_external_strings.begin());
+        }
+    }
+
     JSContextGroupRelease(isolate->m_group);
     for (auto i=isolate->m_global_contexts.begin(); i != isolate->m_global_contexts.end(); i++) {
         IsolateImpl::s_context_to_isolate_map.erase(i->first);
@@ -335,7 +385,7 @@ void Isolate::Dispose()
     isolate->m_gc_prologue_callbacks.clear();
     isolate->m_gc_epilogue_callbacks.clear();
     isolate->m_second_pass_callbacks.clear();
-
+    
     // Finally, blitz the global handles and the heap
     isolate->ii.global_handles()->TearDown();
     V82JSC_HeapObject::HeapAllocator::TearDown(isolate);
@@ -379,7 +429,22 @@ void Isolate::DiscardThreadSpecificMetadata()
  */
 void Isolate::GetHeapStatistics(HeapStatistics* heap_statistics)
 {
-    assert(0);
+    internal::Heap *heap = reinterpret_cast<internal::Isolate*>(this)->heap();
+    HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(heap);
+    H::HeapAllocator *chunk = static_cast<H::HeapAllocator*>(heapimpl->m_heap_top);
+
+    heap_statistics->total_heap_size_ = 0;
+    for ( ; chunk != nullptr; chunk=static_cast<H::HeapAllocator*>(chunk->next_chunk())) {
+        heap_statistics->total_heap_size_ += HEAP_ALIGNMENT;
+    }
+    
+    heap_statistics->used_heap_size_ = heapimpl->m_allocated;
+}
+
+size_t internal::Heap::SizeOfObjects()
+{
+    HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(this);
+    return heapimpl->m_allocated;
 }
 
 /**
@@ -744,6 +809,14 @@ void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
     assert(0);
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    void JSSynchronousGarbageCollectForDebugging(JSContextRef);
+#ifdef __cplusplus
+}
+#endif
+
 /**
  * Request garbage collection in this Isolate. It is only valid to call this
  * function if --expose_gc was specified.
@@ -756,7 +829,33 @@ void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
  */
 void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
 {
-    assert(0);
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(this);
+    if (iso->m_in_gc++) return;
+    
+    // First pass, clear anything on the V82JSC side that is not in use
+    iso->CollectGarbage();
+    
+    // Next, trigger garbage collection in JSC
+    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
+        JSSynchronousGarbageCollectForDebugging(i->first);
+    }
+    
+    iso->TriggerGCPrologue();
+    iso->TriggerGCFirstPassPhantomCallbacks();
+    
+    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
+    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
+        JSSynchronousGarbageCollectForDebugging(i->first);
+    }
+    
+    iso->TriggerGCFirstPassPhantomCallbacks();
+    iso->CollectExternalStrings();
+    
+    // Second pass, clear V82JSC garbage again in case any weak references were cleared
+    iso->CollectGarbage();
+    iso->TriggerGCEpilogue();
+    
+    iso->m_in_gc = 0;
 }
 
 /**
@@ -964,7 +1063,6 @@ void Isolate::LowMemoryNotification()
  */
 int Isolate::ContextDisposedNotification(bool dependant_context)
 {
-    //assert(0);
     return 0;
 }
 
@@ -1004,7 +1102,9 @@ void Isolate::SetRAILMode(RAILMode rail_mode)
  */
 void Isolate::IncreaseHeapLimitForDebugging()
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
+    heap->IncreaseHeapLimitForDebugging();
 }
 
 /**
@@ -1012,7 +1112,9 @@ void Isolate::IncreaseHeapLimitForDebugging()
  */
 void Isolate::RestoreOriginalHeapLimit()
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
+    heap->RestoreOriginalHeapLimit();
 }
 
 /**
@@ -1021,8 +1123,9 @@ void Isolate::RestoreOriginalHeapLimit()
  */
 bool Isolate::IsHeapLimitIncreasedForDebugging()
 {
-    assert(0);
-    return false;
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
+    return heap->IsHeapLimitIncreasedForDebugging();
 }
 
 /**

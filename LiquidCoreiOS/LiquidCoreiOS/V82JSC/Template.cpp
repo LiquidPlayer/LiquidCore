@@ -390,13 +390,15 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     for (auto i=m_accessors.Get(isolate); !i.IsEmpty(); ) {
         ObjAccessorImpl *accessor = V82JSC::ToImpl<ObjAccessorImpl>(i);
         Local<Value> data = accessor->data.Get(isolate);
-        Maybe<bool> set = thiz->SetAccessor(context,
-                                            accessor->name.Get(isolate),
-                                            accessor->getter,
-                                            accessor->setter,
-                                            data,
-                                            accessor->settings,
-                                            accessor->attribute);
+        Local<ObjectImpl> thiz_ = * reinterpret_cast<Local<ObjectImpl>*>(&thiz);
+        Maybe<bool> set = thiz_->SetAccessor(context,
+                                             accessor->name.Get(isolate),
+                                             accessor->getter,
+                                             accessor->setter,
+                                             data,
+                                             accessor->settings,
+                                             accessor->attribute,
+                                             accessor->signature.Get(isolate));
         if (set.IsNothing()) return MaybeLocal<Object>();
         i = accessor->next_.Get(isolate);
     }

@@ -25,6 +25,7 @@
 		07A7CF09209220C000352ABF /* print-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF08209220BF00352ABF /* print-extension.cc */; };
 		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
 		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
+		07AA616420CFDBD700EA6B43 /* gc-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07AA616320CFDBD600EA6B43 /* gc-extension.cc */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */; };
 		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
@@ -126,6 +127,9 @@
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
 		07AA615F20CD68DF00EA6B43 /* JSHeapFinalizerPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSHeapFinalizerPrivate.h; sourceTree = "<group>"; };
 		07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSMarkingConstraintPrivate.h; sourceTree = "<group>"; };
+		07AA616120CEE7F600EA6B43 /* JSWeakRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSWeakRefPrivate.h; sourceTree = "<group>"; };
+		07AA616220CFA5ED00EA6B43 /* JSStringRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSStringRefPrivate.h; sourceTree = "<group>"; };
+		07AA616320CFDBD600EA6B43 /* gc-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gc-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/extensions/gc-extension.cc"; sourceTree = "<group>"; };
 		07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exec.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
@@ -219,6 +223,7 @@
 		0718F6892025FF0900C588AA /* cctest */ = {
 			isa = PBXGroup;
 			children = (
+				07AA616320CFDBD600EA6B43 /* gc-extension.cc */,
 				07A7CF0A2092215F00352ABF /* profiler-extension.cc */,
 				07A7CF08209220BF00352ABF /* print-extension.cc */,
 				07F8053D203055B900FDFC27 /* flags.cc */,
@@ -324,6 +329,8 @@
 				07EE4ACD20C95CDC00088E7D /* JSScriptRefPrivate.h */,
 				07AA615F20CD68DF00EA6B43 /* JSHeapFinalizerPrivate.h */,
 				07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */,
+				07AA616120CEE7F600EA6B43 /* JSWeakRefPrivate.h */,
+				07AA616220CFA5ED00EA6B43 /* JSStringRefPrivate.h */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -571,6 +578,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				07AA616420CFDBD700EA6B43 /* gc-extension.cc in Sources */,
 				07F8053C20304B6F00FDFC27 /* cctest.cc in Sources */,
 				07F8053E203055BA00FDFC27 /* flags.cc in Sources */,
 				076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */,

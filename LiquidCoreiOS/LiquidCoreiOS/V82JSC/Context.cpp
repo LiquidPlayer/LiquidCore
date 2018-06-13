@@ -72,12 +72,14 @@ Local<Context> LocalContextImpl::New(Isolate *isolate, JSContextRef ctx)
     // Copy the embedder data pointer from the global context.  This has a vulnerability if the embedder data
     // is moved (expanded) on the global context.  Unlikely scenario, though.
     Local<v8::Context> global_context = i->m_global_contexts[JSContextGetGlobalContext(context->m_ctxRef)].Get(isolate);
-    EmbedderDataImpl *ed = get_embedder_data(*global_context);
-    int embedder_data_offset = internal::Internals::kContextHeaderSize +
-        (internal::kApiPointerSize * internal::Internals::kContextEmbedderDataIndex);
-        internal::Object * ctxi = V82JSC_HeapObject::ToHeapPointer(context);
-    internal::Object *embedder_data = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(ed) + internal::kHeapObjectTag);
-    WriteField<internal::Object*>(ctxi, embedder_data_offset, embedder_data);
+    if (!global_context.IsEmpty()) {
+        EmbedderDataImpl *ed = get_embedder_data(*global_context);
+        int embedder_data_offset = internal::Internals::kContextHeaderSize +
+            (internal::kApiPointerSize * internal::Internals::kContextEmbedderDataIndex);
+            internal::Object * ctxi = V82JSC_HeapObject::ToHeapPointer(context);
+        internal::Object *embedder_data = reinterpret_cast<internal::Object*>(reinterpret_cast<intptr_t>(ed) + internal::kHeapObjectTag);
+        WriteField<internal::Object*>(ctxi, embedder_data_offset, embedder_data);
+    }
 
     return V82JSC::CreateLocal<v8::Context>(&i->ii, context);
 }
@@ -241,7 +243,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     
     {
         Copyable(Context) persistent(isolate, ctx);
-        //persistent.SetWeak();
+        persistent.SetWeak();
         i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
     }
     

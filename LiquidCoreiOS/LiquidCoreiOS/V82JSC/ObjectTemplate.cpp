@@ -344,7 +344,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     
     // Structure:
     //
-    // proxy -----> root . Symbol.for('org.liquidplayer.javascript.__v82jsc_private__') -->  lifecycle_object(wrap) --> InstanceWrap*
+    // proxy -----> root . [[PrivateSymbol]] -->  lifecycle_object(wrap) --> TrackedObjectImpl*
     
     // Create lifecycle object
     TrackedObjectImpl *wrap = makePrivateInstance(iso, ctx->m_ctxRef, root);
@@ -377,6 +377,19 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
             if (ret == NULL && !*exception) {
                 // Not handled.  Pass thru.
                 assert(argumentCount>1);
+                // If the receiver is not the proxy, do the 'get' via the prototype so that any
+                // signature checks can be maintained properly
+                TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
+                if (!JSValueIsStrictEqual(ctx, wrap->m_proxy_security, arguments[2])) {
+                    JSObjectRef temp1 = JSObjectMake(ctx, 0, 0);
+                    JSObjectSetPrototype(ctx, temp1, arguments[0]);
+                    JSValueRef args[] = {
+                        temp1,
+                        arguments[1]
+                    };
+                    return V82JSC::exec(ctx, "return _1[_2]", 2, args, exception);
+                }
+                
                 return V82JSC::exec(ctx, "return _1[_2]", 2, arguments, exception);
             }
             return ret;
@@ -394,6 +407,19 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
                 assert(argumentCount>2);
                 TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
                 assert(wrap);
+                // If the receiver is not the proxy, do the 'set' via the prototype so that any
+                // signature checks can be maintained properly
+                if (!JSValueIsStrictEqual(ctx, wrap->m_proxy_security, arguments[3])) {
+                    JSObjectRef temp1 = JSObjectMake(ctx, 0, 0);
+                    JSObjectSetPrototype(ctx, temp1, arguments[0]);
+                    JSValueRef args[] = {
+                        arguments[0],
+                        arguments[1],
+                        arguments[2],
+                        temp1
+                    };
+                    return V82JSC::exec(ctx, "_4[_2] = _3; return _1[_2] = _3", 4, args, exception);
+                }
                 return V82JSC::exec(ctx, "return _1[_2] = _3", 3, arguments, exception);
             }
             return JSValueMakeBoolean(ctx, true);
@@ -760,7 +786,15 @@ void ObjectTemplate::SetNamedPropertyHandler(NamedPropertyGetterCallback getter,
                              NamedPropertyEnumeratorCallback enumerator,
                              Local<Value> data)
 {
-    assert(0);
+    // FIXME: This is a nasty hack.
+    NamedPropertyHandlerConfiguration config;
+    config.getter = reinterpret_cast<GenericNamedPropertyGetterCallback>(getter);
+    config.setter = reinterpret_cast<GenericNamedPropertySetterCallback>(setter);
+    config.query = reinterpret_cast<GenericNamedPropertyQueryCallback>(query);
+    config.deleter = reinterpret_cast<GenericNamedPropertyDeleterCallback>(deleter);
+    config.enumerator = reinterpret_cast<GenericNamedPropertyEnumeratorCallback>(enumerator);
+    config.data = data;
+    SetHandler(config);
 }
 
 /**
@@ -962,8 +996,8 @@ void ObjectTemplate::SetInternalFieldCount(int value)
  */
 bool ObjectTemplate::IsImmutableProto()
 {
-    assert(0);
-    return false;
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    return templ->m_is_immutable_proto;
 }
 
 /**
@@ -972,6 +1006,7 @@ bool ObjectTemplate::IsImmutableProto()
  */
 void ObjectTemplate::SetImmutableProto()
 {
-    assert(0);
+    ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    templ->m_is_immutable_proto = true;
 }
 

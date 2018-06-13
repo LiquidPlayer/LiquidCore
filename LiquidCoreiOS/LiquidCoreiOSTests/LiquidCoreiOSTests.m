@@ -58,6 +58,9 @@ V(NewExternalForVeryLongString)
 V(ScavengeExternalString)
 V(ScavengeExternalOneByteString)
 V(ExternalStringWithDisposeHandling)
+V(ExternalStringCollectedAtTearDown)
+V(ExternalInternalizedStringCollectedAtTearDown)
+V(ExternalInternalizedStringCollectedAtGC)
 V(StringConcat)
 V(GlobalProperties)
 V(ExternalWrap)
@@ -457,6 +460,19 @@ V(TryCatchFinallyStoresMessageUsingTryCatchHandler)
 V(GCCallbacksOld)
 V(GCCallbacksWithData)
 V(GCCallbacks)
+V(GetHeapStatistics)
+V(Regress528)
+V(IncreaseHeapLimitForDebugging)
+V(DontLeakGlobalObjects)
+V(Regress411793)
+V(ImmutableProto)
+V(ImmutableProtoWithParent)
+V(ImmutableProtoGlobal)
+V(SetPrototypeTemplate)
+V(PropertyDescriptor)
+V(InstanceCheckOnInstanceAccessor)
+V(InstanceCheckOnInstanceAccessorWithInterceptor)
+V(InstanceCheckOnPrototypeAccessor)
 
 #undef V
 #define V(tst) \
@@ -477,6 +493,7 @@ V(Regress1516)
 V(CheckCOWArraysCreatedRuntimeCounter)
 V(ScriptPositionInfo)
 V(ErrorLevelWarning)
+V(TestIdleNotification)
 
 // Handle issues
 V(GlobalValueMap)
@@ -503,6 +520,7 @@ V(DefinePropertyPostDetach)
 V(UndetectableObject)
 V(VoidLiteral)
 V(ExtensibleOnUndetectable)
+V(Regress567998)
 
 // Fatal error handler
 V(ErrorReporting)
@@ -518,24 +536,6 @@ V(TwoByteStringInOneByteCons)
 V(ContainsOnlyOneByte)
 V(StringConcatOverflow)
 
-// ObjectTemplate / FunctionTemplate not implemented
-V(DefineOwnProperty)
-V(GCInFailedAccessCheckCallback)
-V(AccessCheckThrows)
-V(Regress354123)
-V(Regress411793)
-V(AccessCheckedIsConcatSpreadable)
-V(AccessCheckedToStringTag)
-V(ImmutableProto)
-V(EvalInAccessCheckedContext)
-V(ImmutableProtoWithParent)
-V(ImmutableProtoGlobal)
-V(SetPrototypeTemplate)
-V(CreateDataProperty)
-V(InstanceCheckOnInstanceAccessor)
-V(InstanceCheckOnInstanceAccessorWithInterceptor)
-V(InstanceCheckOnPrototypeAccessor)
-
 // Security
 V(SecurityHandler)
 V(SecurityChecks)
@@ -547,6 +547,13 @@ V(CrossDomainForInOnPrototype)
 V(AccessControl)
 V(AccessControlES5)
 V(AccessControlGetOwnPropertyNames)
+V(DefineOwnProperty)
+V(GCInFailedAccessCheckCallback)
+V(Regress354123)
+V(AccessCheckedIsConcatSpreadable)
+V(AccessCheckedToStringTag)
+V(EvalInAccessCheckedContext)
+V(CreateDataProperty)
 
 // Object bugs
 V(ObjectGetConstructorName)
@@ -557,6 +564,7 @@ V(GlobalObjectInstanceProperties)
 V(ShadowObject)
 V(JSONStringifyAccessCheck)
 V(CrossDomainAccessors)
+V(AccessCheckThrows)
 
 // Hidden prototypes
 V(FunctionCallOptimization)
@@ -568,9 +576,7 @@ V(CallbackFunctionName)
 V(InterceptorOnConstructorPrototype)
 
 // PropertyDescriptor
-V(Regress567998)
 V(DefineProperty)
-V(PropertyDescriptor)
 
 // PropertyHandler bug
 V(InterceptorShouldThrowOnError)
@@ -602,23 +608,13 @@ V(InitializeDefaultIsolateOnSecondaryThread4)
 V(InitializeDefaultIsolateOnSecondaryThread5)
 V(MemoryPressure)
 V(FutexInterruption)
+V(RegExpInterruption)
 
 // Function entry hooks
 V(SetFunctionEntryHook)
 
 // Property enumeration bugs
 V(PropertyEnumeration)
-
-// Garbage collection / callbacks
-V(RegExpInterruption)
-V(TestIdleNotification)
-V(GetHeapStatistics)
-V(ExternalStringCollectedAtTearDown)
-V(ExternalInternalizedStringCollectedAtTearDown)
-V(ExternalInternalizedStringCollectedAtGC)
-V(Regress528)
-V(IncreaseHeapLimitForDebugging)
-V(DontLeakGlobalObjects)
 
 // Shared typed arrays
 V(SharedUint8Array)

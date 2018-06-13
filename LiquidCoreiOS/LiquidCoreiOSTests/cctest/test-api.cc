@@ -498,7 +498,7 @@ THREADED_TEST(ScriptUsingStringResource) {
   }
   CcTest::i_isolate()->compilation_cache()->Clear();
   CcTest::CollectAllAvailableGarbage();
-  //CHECK_EQ(1, dispose_count);
+  CHECK_EQ(1, dispose_count);
 }
 
 
@@ -529,7 +529,7 @@ THREADED_TEST(ScriptUsingOneByteStringResource) {
   }
   CcTest::i_isolate()->compilation_cache()->Clear();
   CcTest::CollectAllAvailableGarbage();
-  //CHECK_EQ(1, dispose_count);
+  CHECK_EQ(1, dispose_count);
 }
 
 
@@ -563,7 +563,7 @@ THREADED_TEST(ScriptMakingExternalString) {
   }
   CcTest::i_isolate()->compilation_cache()->Clear();
   CcTest::CollectAllGarbage();
-  //CHECK_EQ(1, dispose_count);
+  CHECK_EQ(1, dispose_count);
 }
 
 
@@ -589,7 +589,7 @@ THREADED_TEST(ScriptMakingExternalOneByteString) {
   }
   CcTest::i_isolate()->compilation_cache()->Clear();
   CcTest::CollectAllGarbage();
-  //CHECK_EQ(1, dispose_count);
+  CHECK_EQ(1, dispose_count);
 }
 
 
@@ -785,7 +785,7 @@ THREADED_TEST(ScavengeExternalString) {
     CHECK_EQ(0, dispose_count);
   }
   CcTest::CollectGarbage(in_new_space ? i::NEW_SPACE : i::OLD_SPACE);
-  //CHECK_EQ(1, dispose_count);
+  CHECK_EQ(1, dispose_count);
 }
 
 
@@ -809,7 +809,7 @@ THREADED_TEST(ScavengeExternalOneByteString) {
     CHECK_EQ(0, dispose_count);
   }
   CcTest::CollectGarbage(in_new_space ? i::NEW_SPACE : i::OLD_SPACE);
-  //CHECK_EQ(1, dispose_count);
+  CHECK_EQ(1, dispose_count);
 }
 
 
@@ -857,8 +857,8 @@ TEST(ExternalStringWithDisposeHandling) {
   }
   CcTest::i_isolate()->compilation_cache()->Clear();
   CcTest::CollectAllAvailableGarbage();
-  //CHECK_EQ(1, TestOneByteResourceWithDisposeControl::dispose_calls);
-  //CHECK_EQ(0, TestOneByteResourceWithDisposeControl::dispose_count);
+  CHECK_EQ(1, TestOneByteResourceWithDisposeControl::dispose_calls);
+  CHECK_EQ(0, TestOneByteResourceWithDisposeControl::dispose_count);
 
   // Use a heap allocated external string resource allocated object.
   TestOneByteResourceWithDisposeControl::dispose_count = 0;
@@ -880,8 +880,8 @@ TEST(ExternalStringWithDisposeHandling) {
   }
   CcTest::i_isolate()->compilation_cache()->Clear();
   CcTest::CollectAllAvailableGarbage();
-  //CHECK_EQ(1, TestOneByteResourceWithDisposeControl::dispose_calls);
-  //CHECK_EQ(1, TestOneByteResourceWithDisposeControl::dispose_count);
+  CHECK_EQ(1, TestOneByteResourceWithDisposeControl::dispose_calls);
+  CHECK_EQ(1, TestOneByteResourceWithDisposeControl::dispose_count);
 }
 
 
@@ -13859,6 +13859,11 @@ static int GetGlobalObjectsCount() {
   int count = 0;
   i::HeapIterator it(CcTest::heap());
   for (i::HeapObject* object = it.next(); object != NULL; object = it.next())
+/*
+ * V82JSC: We have hacked the internal::HeapIterator class to only iterate through
+ * global contexts.  The rest of it does nothing.
+ /
+/*
     if (object->IsJSGlobalObject()) {
       i::JSGlobalObject* g = i::JSGlobalObject::cast(object);
       // Skip dummy global object.
@@ -13866,7 +13871,10 @@ static int GetGlobalObjectsCount() {
         count++;
       }
     }
-  return count;
+*/
+      count++;
+//  return count;
+    return count-1;
 }
 
 
@@ -22400,19 +22408,23 @@ static void CheckInstanceCheckedAccessors(bool expects_callbacks) {
   CheckInstanceCheckedResult(4, 4, expects_callbacks, &try_catch);
 
   // Test path through optimized code.
-  CompileRun("%OptimizeFunctionOnNextCall(test_get);"
+//  CompileRun("%OptimizeFunctionOnNextCall(test_get);"
+  CompileRun(
              "test_get(obj);");
   CheckInstanceCheckedResult(5, 4, expects_callbacks, &try_catch);
-  CompileRun("%OptimizeFunctionOnNextCall(test_set);"
+//  CompileRun("%OptimizeFunctionOnNextCall(test_set);"
+  CompileRun(
              "test_set(obj);");
   CheckInstanceCheckedResult(5, 5, expects_callbacks, &try_catch);
 
   // Cleanup so that closures start out fresh in next check.
+  /*
   CompileRun(
       "%DeoptimizeFunction(test_get);"
       "%ClearFunctionFeedback(test_get);"
       "%DeoptimizeFunction(test_set);"
       "%ClearFunctionFeedback(test_set);");
+  */
 }
 
 

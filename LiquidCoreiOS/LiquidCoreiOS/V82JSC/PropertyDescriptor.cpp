@@ -10,105 +10,114 @@
 
 using namespace v8;
 
+struct PropertyDescriptor::PrivateData
+{
+    Local<Value> value;
+    Local<Value> get;
+    Local<Value> set;
+    bool enumerable;
+    bool has_enumerable;
+    bool writable;
+    bool has_writable;
+    bool configurable;
+    bool has_configurable;
+};
+
 // GenericDescriptor
 PropertyDescriptor::PropertyDescriptor()
 {
-    assert(0);
+    private_ = new PrivateData();
 }
 
 // DataDescriptor
 PropertyDescriptor::PropertyDescriptor(Local<Value> value)
 {
-    assert(0);
+    private_ = new PrivateData();
+    private_->value = value;
 }
 
 // DataDescriptor with writable property
 PropertyDescriptor::PropertyDescriptor(Local<Value> value, bool writable)
 {
-    assert(0);
+    private_ = new PrivateData();
+    private_->value = value;
+    private_->has_writable = true;
+    private_->writable = writable;
 }
 
 // AccessorDescriptor
 PropertyDescriptor::PropertyDescriptor(Local<Value> get, Local<Value> set)
 {
-    assert(0);
+    private_ = new PrivateData();
+    private_->get = get;
+    private_->set = set;
 }
 
 PropertyDescriptor::~PropertyDescriptor()
 {
-    assert(0);
+    delete private_;
 }
 
 Local<Value> PropertyDescriptor::value() const
 {
-    assert(0);
-    return Local<Value>();
+    return private_->value;
 }
 bool PropertyDescriptor::has_value() const
 {
-    assert(0);
-    return false;
+    return !private_->value.IsEmpty();
 }
 
 Local<Value> PropertyDescriptor::get() const
 {
-    assert(0);
-    return Local<Value>();
+    return private_->get;
 }
 bool PropertyDescriptor::has_get() const
 {
-    assert(0);
-    return false;
+    return !private_->get.IsEmpty();
 }
 Local<Value> PropertyDescriptor::set() const
 {
-    assert(0);
-    return Local<Value>();
+    return private_->set;
 }
 bool PropertyDescriptor::has_set() const
 {
-    assert(0);
-    return false;
+    return !private_->set.IsEmpty();
 }
 
 void PropertyDescriptor::set_enumerable(bool enumerable)
 {
-    assert(0);
+    private_->has_enumerable = true;
+    private_->enumerable = enumerable;
 }
 bool PropertyDescriptor::enumerable() const
 {
-    assert(0);
-    return false;
+    return private_->enumerable;
 }
 bool PropertyDescriptor::has_enumerable() const
 {
-    assert(0);
-    return false;
+    return private_->has_enumerable;
 }
 
 void PropertyDescriptor::set_configurable(bool configurable)
 {
-    assert(0);
+    private_->has_configurable = true;
+    private_->configurable = configurable;
 }
 bool PropertyDescriptor::configurable() const
 {
-    assert(0);
-    return false;
+    return private_->configurable;
 }
 bool PropertyDescriptor::has_configurable() const
 {
-    assert(0);
-    return false;
+    return private_->has_configurable;
 }
 
 bool PropertyDescriptor::writable() const
 {
-    assert(0);
-    return false;
+    return private_->writable;
 }
 bool PropertyDescriptor::has_writable() const
 {
-    assert(0);
-    return false;
+    return private_->has_writable;
 }
 

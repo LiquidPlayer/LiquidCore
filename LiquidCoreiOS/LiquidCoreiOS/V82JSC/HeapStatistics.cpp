@@ -12,7 +12,15 @@ using namespace v8;
 
 HeapStatistics::HeapStatistics()
 {
-    assert(0);
+    total_heap_size_ = 0;
+    total_heap_size_executable_ = 0;
+    total_physical_size_ = 0;
+    total_available_size_ = 0;
+    used_heap_size_ = 0;
+    heap_size_limit_ = 0;
+    malloced_memory_ = 0;
+    peak_malloced_memory_ = 0;
+    does_zap_garbage_ = false;
 }
 
 HeapSpaceStatistics::HeapSpaceStatistics()

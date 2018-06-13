@@ -132,8 +132,66 @@ Maybe<bool> Object::DefineOwnProperty(
 Maybe<bool> Object::DefineProperty(Local<Context> context, Local<Name> key,
                            PropertyDescriptor& descriptor)
 {
-    assert(0);
-    return Nothing<bool>();
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSValueRef obj = V82JSC::ToJSValueRef(this, context);
+    JSValueRef key_ = V82JSC::ToJSValueRef(key, context);
+    
+    JSValueRef args[] = {
+        obj,
+        key_,
+        JSValueMakeUndefined(ctx),
+        JSValueMakeUndefined(ctx),
+        JSValueMakeUndefined(ctx)
+    };
+
+    char desc[256];
+    char temp[32];
+    sprintf(desc, "delete _1[_2]; Object.defineProperty(_1, _2, { ");
+    if (descriptor.has_get()) {
+        strcat(desc, " get: _4,");
+        args[3] = V82JSC::ToJSValueRef(descriptor.get(), context);
+    }
+    if (descriptor.has_set()) {
+        strcat(desc, " set: _5,");
+        args[4] = V82JSC::ToJSValueRef(descriptor.set(), context);
+    }
+    if (descriptor.has_writable()) {
+        sprintf(temp, " writable: %s", descriptor.writable()?"true,":"false,");
+        strcat(desc, temp);
+    }
+    if (descriptor.has_enumerable()) {
+        sprintf(temp, " enumerable: %s", descriptor.enumerable()?"true,":"false,");
+        strcat(desc, temp);
+    }
+    if (descriptor.has_configurable()) {
+        sprintf(temp, " configurable: %s", descriptor.configurable()?"true,":"false,");
+        strcat(desc, temp);
+    }
+    if (descriptor.has_value()) {
+        strcat(desc, " value: _3,");
+        args[2] = V82JSC::ToJSValueRef(descriptor.value(), context);
+    }
+    desc[strlen(desc) - 1] = 0;
+    strcat(desc, " });");
+    printf( "set: %s\n", desc);
+
+    TryCatch try_catch(V82JSC::ToIsolate(this));
+    {
+        LocalException exception(V82JSC::ToIsolateImpl(this));
+        V82JSC::exec(ctx, desc, 5, args, &exception);
+    }
+    if (try_catch.HasCaught()) return _maybe<bool>(false).toMaybe();
+    
+    JSValueRef foo = V82JSC::exec(ctx,
+                                  "return JSON.stringify(Object.getOwnPropertyDescriptor(_1, _2)); "
+                                  , 2, args);
+    JSStringRef s = JSValueToStringCopy(ctx, foo, 0);
+    char bar[200];
+    JSStringGetUTF8CString(s, bar, 200);
+    printf("get: %s\n", bar);
+
+    
+    return _maybe<bool>(true).toMaybe();
 }
 
 // Sets an own property on this object bypassing interceptors and
@@ -193,14 +251,22 @@ Maybe<PropertyAttribute> Object::GetPropertyAttributes(Local<Context> context, L
         V82JSC::ToJSValueRef<Object>(this, context),
         V82JSC::ToJSValueRef(key, context),
     };
+    JSValueRef foo = V82JSC::exec(ctx,
+                                  "return JSON.stringify(Object.getOwnPropertyDescriptor(_1, _2)); "
+                                  , 2, args, &exception);
+    JSStringRef s = JSValueToStringCopy(ctx, foo, 0);
+    char bar[200];
+    JSStringGetUTF8CString(s, bar, 200);
+    printf("%s\n", bar);
+
     
     JSValueRef ret = V82JSC::exec(ctx,
                                   "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
                                   "var d = Object.getOwnPropertyDescriptor(_1, _2); "
                                   "var attr = None; if (!d) return attr; "
-                                  "attr |= (!d.writable) ? ReadOnly : 0; "
-                                  "attr |= (!d.enumerable) ? DontEnum : 0; "
-                                  "attr |= (!d.configurable) ? DontDelete : 0; "
+                                  "attr += (d.writable===true) ? 0 : ReadOnly; "
+                                  "attr += (d.enumerable===true) ? 0 : DontEnum; "
+                                  "attr += (d.configurable===true) ? 0 : DontDelete; "
                                   "return attr"
                                   , 2, args, &exception);
 
@@ -360,6 +426,20 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
                                 AccessControl settings,
                                 PropertyAttribute attribute)
 {
+    ObjectImpl* thiz = static_cast<ObjectImpl*>(this);
+    return thiz->SetAccessor(context, name, getter, setter, data,
+                             settings, attribute, Local<Signature>());
+}
+
+Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
+                                    Local<Name> name,
+                                    AccessorNameGetterCallback getter,
+                                    AccessorNameSetterCallback setter,
+                                    MaybeLocal<Value> data,
+                                    AccessControl settings,
+                                    PropertyAttribute attribute,
+                                    Local<Signature> signature)
+{
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
@@ -367,18 +447,50 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
                              size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) -> JSValueRef
     {
         IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
-        HandleScope scope (V82JSC::ToIsolate(iso));
+        Isolate* isolate = V82JSC::ToIsolate(iso);
+        HandleScope scope (isolate);
         void * persistent = JSObjectGetPrivate(function);
         Local<v8::AccessorInfo> acc_info = V82JSC::FromPersistentData<v8::AccessorInfo>(V82JSC::ToIsolate(iso), persistent);
         AccessorImpl *wrap = V82JSC::ToImpl<AccessorImpl>(acc_info);
         
-        Local<Context> context = LocalContextImpl::New(V82JSC::ToIsolate(iso), ctx);
+        Local<Context> context = LocalContextImpl::New(isolate, ctx);
         Context::Scope context_scope(context);
         ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
         
         Local<Value> thiz = ValueImpl::New(ctximpl, thisObject);
         Local<Value> data = ValueImpl::New(ctximpl, wrap->m_data);
         Local<Value> holder = ValueImpl::New(ctximpl, wrap->m_holder);
+
+        // Check signature
+        bool signature_match = wrap->signature.IsEmpty();
+        if (!signature_match) {
+            SignatureImpl *sig = V82JSC::ToImpl<SignatureImpl>(wrap->signature.Get(isolate));
+            const TemplateImpl *sig_templ = V82JSC::ToImpl<TemplateImpl>(sig->m_template.Get(isolate));
+            JSValueRef proto = thisObject;
+            TrackedObjectImpl* thisWrap = getPrivateInstance(ctx, (JSObjectRef)proto);
+            while(!signature_match && JSValueIsObject(ctx, proto)) {
+                if (thisWrap && !thisWrap->m_object_template.IsEmpty() && (proto == thisObject || thisWrap->m_isHiddenPrototype)) {
+                    holder = proto == thisObject? thiz : ValueImpl::New(ctximpl, proto);
+                    ObjectTemplateImpl* ot = V82JSC::ToImpl<ObjectTemplateImpl>(thisWrap->m_object_template.Get(isolate));
+                    Local<FunctionTemplate> ctort = ot->m_constructor_template.Get(isolate);
+                    const TemplateImpl *templ = ctort.IsEmpty() ? nullptr : V82JSC::ToImpl<TemplateImpl>(ctort);
+                    while (!signature_match && templ) {
+                        signature_match = sig_templ == templ;
+                        templ = templ->m_parent.IsEmpty() ? nullptr : V82JSC::ToImpl<TemplateImpl>(templ->m_parent.Get(isolate));
+                    }
+                }
+                proto = V82JSC::GetRealPrototype(context, (JSObjectRef)proto);
+                thisWrap = getPrivateInstance(ctx, (JSObjectRef)proto);
+                if (!thisWrap || !thisWrap->m_isHiddenPrototype) break;
+            }
+        }
+        if (!signature_match) {
+            JSStringRef message = JSStringCreateWithUTF8CString("new TypeError('Illegal invocation')");
+            *exception = JSEvaluateScript(ctx, message, 0, 0, 0, 0);
+            JSStringRelease(message);
+            return 0;
+        }
+
         typedef v8::internal::Heap::RootListIndex R;
         internal::Object *the_hole = iso->ii.heap()->root(R::kTheHoleValueRootIndex);
 
@@ -439,6 +551,7 @@ Maybe<bool> Object::SetAccessor(Local<Context> context,
     wrap->m_data = V82JSC::ToJSValueRef(data.ToLocalChecked(), context);
     JSValueProtect(ctximpl->m_ctxRef, wrap->m_data);
     wrap->m_holder = V82JSC::ToJSValueRef(this, context);
+    wrap->signature.Reset(V82JSC::ToIsolate(iso), signature);
     
     void *persistent = V82JSC::PersistentData(V82JSC::ToIsolate(iso), V82JSC::CreateLocal<v8::AccessorInfo>(&iso->ii, wrap));
     

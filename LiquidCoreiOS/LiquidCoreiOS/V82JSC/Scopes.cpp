@@ -371,10 +371,15 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
                 if (~(block->bitmap_) & mask) {
                     Node& node = block->handles_[i];
                     internal::Object *h = node.handle_;
+                    IsolateImpl* iso = reinterpret_cast<IsolateImpl*>(block->global_handles_->isolate());
                     if (h->IsHeapObject()) {
                         if ((node.flags_ & kActiveWeakMask) == internal::Internals::kNodeStateIsNearDeathValue ||
                             (node.flags_ & kActiveWeakMask) == internal::Internals::kNodeStateIsWeakValue) {
-                            if (h->IsPrimitive()) {
+
+                            V82JSC_HeapObject::HeapObject *obj = V82JSC_HeapObject::FromHeapPointer(h);
+                            V82JSC_HeapObject::BaseMap *map =
+                                reinterpret_cast<V82JSC_HeapObject::BaseMap*>(V82JSC_HeapObject::FromHeapPointer(obj->m_map));
+                            if (h->IsPrimitive() || (map != iso->m_value_map && map != iso->m_array_buffer_map)) {
                                 if (weak.count(h)) weak[h].push_back(&node.handle_);
                                 else {
                                     auto vector = std::vector<internal::Object**>();
@@ -457,11 +462,13 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
             second_pass.embedder_fields_[0] = wrap->m_embedder_data[0];
             second_pass.embedder_fields_[1] = wrap->m_embedder_data[1];
         }
-        WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate()),
-                                    node->param_,
-                                    second_pass.embedder_fields_,
-                                    &second_pass.callback_);
-        node->weak_callback_(info);
+        if (node->weak_callback_) {
+            WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate()),
+                                        node->param_,
+                                        second_pass.embedder_fields_,
+                                        &second_pass.callback_);
+            node->weak_callback_(info);
+        }
         if (second_pass.callback_) {
             callbacks.push_back(second_pass);
         }
@@ -544,15 +551,19 @@ void internal::GlobalHandles::MakeWeak(internal::Object **location, void *parame
     JSContextRef ctx = V82JSC::ToContextRef(context);
     if ((*location)->IsHeapObject()) {
         V82JSC_HeapObject::HeapObject *obj = V82JSC_HeapObject::FromHeapPointer(*location);
-        if (!(*location)->IsPrimitive()) {
+        V82JSC_HeapObject::BaseMap *map =
+            reinterpret_cast<V82JSC_HeapObject::BaseMap*>(V82JSC_HeapObject::FromHeapPointer(obj->m_map));
+        if (!(*location)->IsPrimitive() && (map == iso->m_value_map || map == iso->m_array_buffer_map)) {
             ValueImpl *value = static_cast<ValueImpl*>(obj);
-            makePrivateInstance(iso, ctx, (JSObjectRef)value->m_value);
-            handle_loc->flags_ |= (1 << internal::Internals::kNodeIsActiveShift);
-            V82JSC_HeapObject::WeakValue* weak =
-                static_cast<V82JSC_HeapObject::WeakValue*>
-                (V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_weak_value_map));
-            weak->m_value = value->m_value;
-            handle_loc->handle_ = V82JSC_HeapObject::ToHeapPointer(weak);
+            if (JSValueIsObject(ctx, value->m_value)) {
+                makePrivateInstance(iso, ctx, (JSObjectRef)value->m_value);
+                handle_loc->flags_ |= (1 << internal::Internals::kNodeIsActiveShift);
+                V82JSC_HeapObject::WeakValue* weak =
+                    static_cast<V82JSC_HeapObject::WeakValue*>
+                    (V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_weak_value_map));
+                weak->m_value = value->m_value;
+                handle_loc->handle_ = V82JSC_HeapObject::ToHeapPointer(weak);
+            }
         }
     }
 
