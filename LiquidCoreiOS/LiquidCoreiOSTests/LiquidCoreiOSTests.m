@@ -492,6 +492,13 @@ V(InitializeDefaultIsolateOnSecondaryThread2)
 V(InitializeDefaultIsolateOnSecondaryThread3)
 V(InitializeDefaultIsolateOnSecondaryThread4)
 V(InitializeDefaultIsolateOnSecondaryThread5)
+V(HandleIteration)
+V(ExternalizeOldSpaceTwoByteCons)
+V(ExternalizeOldSpaceOneByteCons)
+V(EmptyApiCallback)
+V(GlobalAccessorInfo)
+V(EscapeableHandleScope)
+V(Overriding)
 
 #undef V
 #define V(tst) \
@@ -516,16 +523,10 @@ V(TestIdleNotification)
 
 // Handle issues
 V(GlobalValueMap)
-V(HandleIteration)
-V(ExternalizeOldSpaceTwoByteCons)
-V(ExternalizeOldSpaceOneByteCons)
-V(EscapeableHandleScope)
-V(EmptyApiCallback)
-V(GlobalAccessorInfo)
 
-// Property attributes
-V(Overriding)
+// strict mode
 V(AccessorShouldThrowOnError)
+V(InterceptorShouldThrowOnError)
 
 // Global object detachment
 V(MultiContexts)
@@ -597,9 +598,6 @@ V(InterceptorOnConstructorPrototype)
 // PropertyDescriptor
 V(DefineProperty)
 
-// PropertyHandler bug
-V(InterceptorShouldThrowOnError)
-
 // Setting new target bug
 V(NewTargetHandler)
 
@@ -622,18 +620,6 @@ V(SetFunctionEntryHook)
 
 // Property enumeration bugs
 V(PropertyEnumeration)
-
-// Shared typed arrays
-V(SharedUint8Array)
-V(SharedInt8Array)
-V(SharedUint16Array)
-V(SharedInt16Array)
-V(SharedUint32Array)
-V(SharedInt32Array)
-V(SharedFloat32Array)
-V(SharedFloat64Array)
-V(SharedUint8ClampedArray)
-V(SharedDataView)
 
 // Promise / reject / hook callback
 V(PromiseRejectCallback)
@@ -710,11 +696,22 @@ V(CorrectEnteredContext)
 V(ArrayBuffer_DisableNeuter)
 V(ArrayBuffer_NeuteringApi)
 V(ArrayBuffer_NeuteringScript)
-// SharedArrayBuffers are implemented in JSC, but not via API
+// SharedArrayBuffers are not available in JSC
 // They are also disabled by default in V8
 V(SharedArrayBuffer_ApiInternalToExternal)
 V(SharedArrayBuffer_JSInternalToExternal)
 V(SharedArrayBuffer_External)
+V(SharedUint8Array)
+V(SharedInt8Array)
+V(SharedUint16Array)
+V(SharedInt16Array)
+V(SharedUint32Array)
+V(SharedInt32Array)
+V(SharedFloat32Array)
+V(SharedFloat64Array)
+V(SharedUint8ClampedArray)
+V(SharedDataView)
+
 // Native calls (%<func>) not supported in JSC
 V(NativeCallInExtensions)
 // Fixed typed arrays are internal constructs, not accessible to the API

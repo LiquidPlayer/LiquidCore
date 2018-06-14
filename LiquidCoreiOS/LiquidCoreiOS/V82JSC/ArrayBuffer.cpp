@@ -368,7 +368,7 @@ Local<SharedArrayBuffer> SharedArrayBuffer::New(
                                     Isolate* isolate, void* data, size_t byte_length,
                                     ArrayBufferCreationMode mode)
 {
-    // SharedArrayBuffer is implemented but not compatible
+    // Not supported in JSC
     assert(0);
     return Local<SharedArrayBuffer>();
 }
@@ -379,8 +379,7 @@ Local<SharedArrayBuffer> SharedArrayBuffer::New(
  */
 bool SharedArrayBuffer::IsExternal() const
 {
-    // SharedArrayBuffer is implemented but not compatible
-    assert(0);
+    // Not supported in JSC
     return false;
 }
 
@@ -398,8 +397,7 @@ bool SharedArrayBuffer::IsExternal() const
  */
 SharedArrayBuffer::Contents SharedArrayBuffer::Externalize()
 {
-    // SharedArrayBuffer is implemented but not compatible
-    assert(0);
+    // Not supported in JSC
     return SharedArrayBuffer::Contents();
 }
 
@@ -417,8 +415,7 @@ SharedArrayBuffer::Contents SharedArrayBuffer::Externalize()
  */
 SharedArrayBuffer::Contents SharedArrayBuffer::GetContents()
 {
-    // SharedArrayBuffer is implemented but not compatible
-    assert(0);
+    // Not supported in JSC
     return SharedArrayBuffer::Contents();
 }
 

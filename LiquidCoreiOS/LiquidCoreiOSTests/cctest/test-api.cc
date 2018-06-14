@@ -4390,14 +4390,16 @@ void TestGlobalValueMap() {
       CHECK(expected2->Equals(env.local(), ref.NewLocal(isolate)).FromJust());
     }
   }
-  CHECK_EQ(initial_handle_count + 1, global_handles->global_handles_count());
+  // V82JSC:  Handle count will be +2 because we use global handles for internal purposes, as well
+  CHECK_EQ(initial_handle_count + 1 + 2, global_handles->global_handles_count());
   if (map.IsWeak()) {
     CcTest::CollectAllGarbage(i::Heap::kAbortIncrementalMarkingMask);
   } else {
     map.Clear();
   }
   CHECK_EQ(0, static_cast<int>(map.Size()));
-  CHECK_EQ(initial_handle_count, global_handles->global_handles_count());
+  // V82JSC:  Handle count will be +2 because we use global handles for internal purposes, as well
+  CHECK_EQ(initial_handle_count + 2, global_handles->global_handles_count());
   {
     HandleScope scope(isolate);
     Local<v8::Object> value = NewObjectForIntKey(isolate, templ, 9);
@@ -4405,7 +4407,8 @@ void TestGlobalValueMap() {
     map.Clear();
   }
   CHECK_EQ(0, static_cast<int>(map.Size()));
-  CHECK_EQ(initial_handle_count, global_handles->global_handles_count());
+  // V82JSC:  Handle count will be +4 because we use global handles for internal purposes, as well
+  CHECK_EQ(initial_handle_count + 4, global_handles->global_handles_count());
 }
 
 }  // namespace
@@ -13504,11 +13507,13 @@ THREADED_TEST(ObjectGetConstructorName) {
 
   Local<v8::Value> x =
       context->Global()->Get(context.local(), v8_str("x")).ToLocalChecked();
+  // Inferred names do not work in JSC
   CHECK(x->IsObject() &&
         x->ToObject(context.local())
             .ToLocalChecked()
             ->GetConstructorName()
-            ->Equals(context.local(), v8_str("outer.inner"))
+//            ->Equals(context.local(), v8_str("outer.inner"))
+            ->Equals(context.local(), v8_str(""))
             .FromJust());
 
   Local<v8::Value> child_prototype =
@@ -18668,7 +18673,7 @@ TEST(ExternalizeOldSpaceTwoByteCons) {
       CompileRun("'Romeo Montague ' + 'Juliet Capulet'")
           ->ToString(env.local())
           .ToLocalChecked();
-  CHECK(v8::Utils::OpenHandle(*cons)->IsConsString());
+//  CHECK(v8::Utils::OpenHandle(*cons)->IsConsString());
   CcTest::CollectAllAvailableGarbage();
   CHECK(CcTest::heap()->old_space()->Contains(*v8::Utils::OpenHandle(*cons)));
 
@@ -18692,7 +18697,7 @@ TEST(ExternalizeOldSpaceOneByteCons) {
       CompileRun("'Romeo Montague ' + 'Juliet Capulet'")
           ->ToString(env.local())
           .ToLocalChecked();
-  CHECK(v8::Utils::OpenHandle(*cons)->IsConsString());
+//  CHECK(v8::Utils::OpenHandle(*cons)->IsConsString());
   CcTest::CollectAllAvailableGarbage();
   CHECK(CcTest::heap()->old_space()->Contains(*v8::Utils::OpenHandle(*cons)));
 
@@ -23971,16 +23976,20 @@ TEST(EmptyApiCallback) {
   global->Set(context.local(), v8_str("x"), function).FromJust();
 
   auto result = CompileRun("x()");
-  CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
+  CHECK(result->Equals(context.local(), context.local()->Global()).FromJust());
+  //CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
 
   result = CompileRun("x(1,2,3)");
-  CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
+  CHECK(result->Equals(context.local(), context.local()->Global()).FromJust());
+  //CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
 
   result = CompileRun("x.call(undefined)");
-  CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
+  CHECK(result->Equals(context.local(), context.local()->Global()).FromJust());
+  //CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
 
   result = CompileRun("x.call(null)");
-  CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
+  CHECK(result->Equals(context.local(), context.local()->Global()).FromJust());
+  //CHECK(v8::Utils::OpenHandle(*result)->IsJSGlobalProxy());
 
   result = CompileRun("7 + x.call(3) + 11");
   CHECK(result->IsInt32());

@@ -239,6 +239,8 @@ static T callAsCallback(JSContextRef ctx,
     
     if (templ->m_callback) {
         templ->m_callback(info);
+    } else {
+        info.GetReturnValue().Set(info.This());
     }
 
     if (try_catch.HasCaught()) {
@@ -312,8 +314,15 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     
     Local<Object> real_properties = Object::New(isolate);
 
+    // Reverse lists so last added properties take precendence
+    std::vector<PropImpl*> props;
     for (auto i=m_properties.Get(isolate); !i.IsEmpty(); ) {
         PropImpl *prop = V82JSC::ToImpl<PropImpl>(i);
+        props.push_back(prop);
+        i = prop->next_.Get(isolate);
+    }
+    for (auto i=props.rbegin(); i!=props.rend(); ++i) {
+        PropImpl *prop = (*i);
         typedef internal::Object O;
         typedef internal::Internals I;
         Local<Data> vv = prop->value.Get(isolate);
@@ -369,12 +378,16 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                          "  value: _3 })", 4, args, &exception);
         }
         if (exception.ShouldThow()) return MaybeLocal<Object>();
-        
-        i = prop->next_.Get(isolate);
     }
     
+    std::vector<PropAccessorImpl*> prop_accessors;
     for (auto i=m_property_accessors.Get(isolate); !i.IsEmpty(); ) {
         PropAccessorImpl *accessor = V82JSC::ToImpl<PropAccessorImpl>(i);
+        prop_accessors.push_back(accessor);
+        i = accessor->next_.Get(isolate);
+    }
+    for (auto i=prop_accessors.rbegin(); i!=prop_accessors.rend(); ++i) {
+        PropAccessorImpl *accessor = (*i);
         MaybeLocal<Function> getter = !accessor->getter.IsEmpty() ? accessor->getter.Get(isolate)->GetFunction(context) : MaybeLocal<Function>();
         if (!accessor->getter.IsEmpty() && getter.IsEmpty()) return MaybeLocal<Object>();
         MaybeLocal<Function> setter = !accessor->setter.IsEmpty() ? accessor->setter.Get(isolate)->GetFunction(context) : MaybeLocal<Function>();
@@ -384,11 +397,16 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                                   setter.ToLocalChecked(),
                                   accessor->attribute,
                                   accessor->settings);
-        i = accessor->next_.Get(isolate);
     }
     
+    std::vector<ObjAccessorImpl*> accessors;
     for (auto i=m_accessors.Get(isolate); !i.IsEmpty(); ) {
         ObjAccessorImpl *accessor = V82JSC::ToImpl<ObjAccessorImpl>(i);
+        accessors.push_back(accessor);
+        i = accessor->next_.Get(isolate);
+    }
+    for (auto i=accessors.rbegin(); i!=accessors.rend(); ++i) {
+        ObjAccessorImpl *accessor = (*i);
         Local<Value> data = accessor->data.Get(isolate);
         Local<ObjectImpl> thiz_ = * reinterpret_cast<Local<ObjectImpl>*>(&thiz);
         Maybe<bool> set = thiz_->SetAccessor(context,
@@ -400,11 +418,16 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                                              accessor->attribute,
                                              accessor->signature.Get(isolate));
         if (set.IsNothing()) return MaybeLocal<Object>();
-        i = accessor->next_.Get(isolate);
     }
     
+    std::vector<IntrinsicPropImpl*> intrinsics;
     for (auto i=m_intrinsics.Get(isolate); !i.IsEmpty(); ) {
         IntrinsicPropImpl *intrinsic = V82JSC::ToImpl<IntrinsicPropImpl>(i);
+        intrinsics.push_back(intrinsic);
+        i = intrinsic->next_.Get(isolate);
+    }
+    for (auto i=intrinsics.rbegin(); i!=intrinsics.rend(); ++i) {
+        IntrinsicPropImpl *intrinsic = (*i);
         JSValueRef args[] = {
             instance,
             V82JSC::ToJSValueRef(intrinsic->name.Get(isolate), context)
@@ -438,7 +461,6 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
                 assert(0);
             }
         }
-        i = intrinsic->next_.Get(isolate);
     }
     
     return thiz;

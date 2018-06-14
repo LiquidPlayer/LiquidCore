@@ -611,8 +611,8 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
                  "{ "
                  "  enumerable : !(_5&(1<<1)), "
                  "  configurable : !(_5&(1<<2))}; "
-                 "if (!_4) { desc.get = _3; desc.set = function(v) { delete this[_2]; this[_2] = v; }; }"
-                 "else if (!_3) { desc.set = _4; }"
+                 "if (_4===null) { desc.get = _3; desc.set = function(v) { delete this[_2]; this[_2] = v; }; }"
+                 "else if (_3===null) { desc.set = _4; }"
                  "else { desc.get = _3; desc.set = _4; }"
                  "Object.defineProperty(_1, _2, desc);",
                  5, args, &exception);

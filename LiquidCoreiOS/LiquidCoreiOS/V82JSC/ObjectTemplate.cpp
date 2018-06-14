@@ -741,7 +741,10 @@ void ObjectTemplate::SetAccessor(
     
     accessor->name.Reset(isolate, name);
     accessor->getter = getter;
-    accessor->setter = setter;
+    accessor->setter = setter ? setter :
+    [](Local<Name> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
+        info.GetReturnValue().Set(Undefined(info.GetIsolate()));
+    };
     accessor->data.Reset(isolate, data);
     accessor->settings = settings;
     accessor->attribute = attribute;

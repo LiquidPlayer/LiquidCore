@@ -28,12 +28,17 @@ static const uint8_t kActiveNearDeath = internal::Internals::kNodeStateIsNearDea
 
 HandleScope::HandleScope(Isolate* isolate)
 {
+    Initialize(isolate);
+}
+
+void HandleScope::Initialize(Isolate* isolate)
+{
     IsolateImpl* impl = V82JSC::ToIsolateImpl(isolate);
     
     isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
     prev_next_ = impl->ii.handle_scope_data()->next;
     prev_limit_ = impl->ii.handle_scope_data()->limit;
-
+    
     impl->m_scope_stack.push(this);
 }
 
@@ -80,10 +85,24 @@ void internal::HandleScope::DeleteExtensions(Isolate* isolate)
 }
 
 // Counts the number of allocated handles.
-int internal::HandleScope::NumberOfHandles(Isolate* isolate)
+int internal::HandleScope::NumberOfHandles(Isolate* ii)
 {
-    assert(0);
-    return 0;
+    HandleScopeData *data = ii->handle_scope_data();
+    size_t handles = 0;
+    if (data->limit) {
+        intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
+        addr &= ~(HANDLEBLOCK_SIZE -1);
+        HandleBlock *block = reinterpret_cast<HandleBlock*>(addr);
+        if (block) {
+            handles = data->next - &block->handles_[0];
+            block = block->previous_;
+        }
+        while (block) {
+            handles += NUM_HANDLES;
+            block = block->previous_;
+        }
+    }
+    return (int)handles;
 }
 
 // Extend the handle scope making room for more handles.
@@ -143,10 +162,7 @@ internal::Object** internal::CanonicalHandleScope::Lookup(Object* object)
 
 int HandleScope::NumberOfHandles(Isolate* isolate)
 {
-    //IsolateImpl* impl = V82JSC::ToIsolateImpl(reinterpret_cast<Isolate*>(isolate));
-    
-    printf("FIXME! HandleScope::NumberOfHandles\n");
-    return 1;
+    return internal::HandleScope::NumberOfHandles(reinterpret_cast<internal::Isolate*>(isolate));
 }
 
 internal::Object** HandleScope::CreateHandle(internal::Isolate* isolate,
@@ -162,16 +178,21 @@ internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,
     return CreateHandle(heap_object->GetIsolate(), value);
 }
 
-EscapableHandleScope::EscapableHandleScope(Isolate* isolate) : HandleScope(isolate)
+EscapableHandleScope::EscapableHandleScope(Isolate* isolate) : HandleScope()
 {
-    // Super HACK!
-    this->escape_slot_ = reinterpret_cast<internal::Object**>(isolate);
+    // Creates a slot which we will transfer to the previous scope upon Escape()
+    escape_slot_ = HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(isolate), 0);
+    Initialize(isolate);
 }
 
 internal::Object** EscapableHandleScope::Escape(internal::Object** escape_value)
 {
-    // Super HACK!
-    return HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(escape_slot_), *escape_value);
+    if (escape_value) {
+        *escape_slot_ = *escape_value;
+        return escape_slot_;
+    } else {
+        return nullptr;
+    }
 }
 
 SealHandleScope::~SealHandleScope()
