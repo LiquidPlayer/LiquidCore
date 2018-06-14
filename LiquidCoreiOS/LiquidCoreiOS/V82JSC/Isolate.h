@@ -11,6 +11,7 @@
 
 #include "HeapObjects.h"
 #include "JSMarkingConstraintPrivate.h"
+#include <thread>
 
 namespace v8 {
 namespace internal {
@@ -118,11 +119,17 @@ struct IsolateImpl {
     bool m_pending_garbage_collection;
 
     v8::FatalErrorCallback m_fatal_error_callback;
+    v8::CounterLookupCallback m_counter_lookup_callback;
+    v8::CreateHistogramCallback m_create_histogram_callback;
+    v8::AddHistogramSampleCallback m_add_histogram_sample_callback;
+    v8::Isolate::UseCounterCallback m_use_counter_callback;
+    
     std::vector<MessageListener> m_message_listeners;
     std::stack<v8::Local<v8::Script>> m_running_scripts;
     bool m_capture_stack_trace_for_uncaught_exceptions;
     JSValueRef m_verbose_exception;
     
+    std::atomic<int> m_entered_count;
     struct GCCallbackStruct
     {
         v8::Isolate::GCCallback m_callback;
@@ -139,6 +146,20 @@ struct IsolateImpl {
     int m_in_gc;
     std::vector<SecondPassCallback> m_second_pass_callbacks;
     std::map<JSValueRef, Copyable(v8::WeakExternalString)> m_external_strings;
+    
+    std::recursive_mutex *m_locker;
+    std::atomic<bool> m_isLocked;
+    static std::atomic<bool> s_isLockerActive;
+    
+    struct PerThreadData
+    {
+        PerThreadData() {}
+        std::vector<v8::Isolate*> m_entered_isolates;
+
+        static PerThreadData* Get();
+    };
+    static std::mutex s_thread_data_mutex;
+    static std::map<size_t, PerThreadData*> s_thread_data;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);

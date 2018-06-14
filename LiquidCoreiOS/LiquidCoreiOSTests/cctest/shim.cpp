@@ -527,11 +527,6 @@ internal::Handle<internal::Context> JSReceiver::GetCreationContext()
     v8::HandleScope scope(V82JSC::ToIsolate(i));
     Local<v8::Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(i));
     JSGlobalContextRef ctx = JSContextGetGlobalContext(V82JSC::ToContextRef(context));
-    /*
-    InstanceWrap *wrap = V82JSC::getPrivateInstance(ctx, (JSObjectRef)impl->m_value);
-    if (wrap) ctx = wrap->m_creation_context;
-    else ctx = JSObjectGetGlobalContext((JSObjectRef)impl->m_value);
-    */
     assert(i->m_global_contexts.count(ctx) == 1);
     context = i->m_global_contexts[ctx].Get(V82JSC::ToIsolate(i));
     Handle<Context> c = * reinterpret_cast<Handle<Context>*>(&context);

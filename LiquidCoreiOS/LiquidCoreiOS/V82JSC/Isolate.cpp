@@ -17,8 +17,6 @@ using V82JSC_HeapObject::HeapImpl;
 
 #define H V82JSC_HeapObject
 
-v8::Isolate *current = nullptr;
-
 #define DEF(T,V,F) \
 v8::internal::Object ** V;
 struct Roots {
@@ -42,6 +40,8 @@ static void HeapFinalizerCallback(JSContextGroupRef grp, void *userData)
     IsolateImpl *impl = (IsolateImpl*)userData;
     impl->m_pending_epilogue = true;
 }
+
+std::atomic<bool> IsolateImpl::s_isLockerActive(false);
 
 /**
  * Creates a new isolate.  Does not change the currently entered
@@ -77,6 +77,10 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_near_death = std::map<void*, JSObjectRef>();
     impl->m_second_pass_callbacks = std::vector<internal::SecondPassCallback>();
     impl->m_external_strings = std::map<JSValueRef, Copyable(v8::WeakExternalString)>();
+    
+    impl->m_locker = nullptr;
+    impl->m_isLocked = false;
+    impl->m_entered_count = 0;
     
     HandleScope scope(isolate);
     
@@ -237,6 +241,22 @@ bool internal::Isolate::Init(v8::internal::Deserializer *des)
     return true;
 }
 
+std::mutex IsolateImpl::s_thread_data_mutex;
+std::map<size_t, IsolateImpl::PerThreadData*> IsolateImpl::s_thread_data;
+IsolateImpl::PerThreadData* IsolateImpl::PerThreadData::Get()
+{
+    s_thread_data_mutex.lock();
+    size_t hash = std::hash<std::thread::id>()(std::this_thread::get_id());
+    bool has = s_thread_data.count(hash);
+    if (!has) {
+        PerThreadData *data = new PerThreadData();
+        s_thread_data[hash] = data;
+    }
+    PerThreadData* data = s_thread_data[hash];
+    s_thread_data_mutex.unlock();
+    return data;
+}
+
 /**
  * Returns the entered isolate for the current thread or NULL in
  * case there is no current isolate.
@@ -245,7 +265,9 @@ bool internal::Isolate::Init(v8::internal::Deserializer *des)
  */
 Isolate* Isolate::GetCurrent()
 {
-    return current;
+    auto thread = IsolateImpl::PerThreadData::Get();
+    if (thread->m_entered_isolates.empty()) return nullptr;
+    return thread->m_entered_isolates.back();
 }
 
 /**
@@ -282,7 +304,7 @@ void Isolate::SetHostImportModuleDynamicallyCallback(HostImportModuleDynamically
  */
 void Isolate::MemoryPressureNotification(MemoryPressureLevel level)
 {
-    assert(0);
+    //assert(0);
 }
 
 /**
@@ -297,7 +319,9 @@ void Isolate::MemoryPressureNotification(MemoryPressureLevel level)
  */
 void Isolate::Enter()
 {
-    current = this;
+    auto thread = IsolateImpl::PerThreadData::Get();
+    thread->m_entered_isolates.push_back(this);
+    V82JSC::ToIsolateImpl(this)->m_entered_count ++;
 }
 
 /**
@@ -309,7 +333,10 @@ void Isolate::Enter()
  */
 void Isolate::Exit()
 {
-    current = nullptr;
+    CHECK_EQ(this, Isolate::GetCurrent());
+    auto thread = IsolateImpl::PerThreadData::Get();
+    thread->m_entered_isolates.pop_back();
+    V82JSC::ToIsolateImpl(this)->m_entered_count --;
 }
 
 void IsolateImpl::EnterContext(Local<v8::Context> ctx)
@@ -340,7 +367,7 @@ JS_EXPORT void JSContextGroupRemoveMarkingConstraint(JSContextGroupRef, JSMarkin
 void Isolate::Dispose()
 {
     IsolateImpl *isolate = (IsolateImpl *)this;
-    if (current == this) {
+    if (isolate->m_entered_count) {
         if (isolate->m_fatal_error_callback) {
             isolate->m_fatal_error_callback("Isolate::Dispose()", "Attempting to dispose an entered isolate.");
         } else {
@@ -392,6 +419,8 @@ void Isolate::Dispose()
     // Finally, blitz the global handles and the heap
     isolate->ii.global_handles()->TearDown();
     V82JSC_HeapObject::HeapAllocator::TearDown(isolate);
+    
+    if (isolate->m_locker) delete isolate->m_locker;
 
     // And now we the isolate is done
     free(isolate);
@@ -997,18 +1026,20 @@ void Isolate::RemoveMicrotasksCompletedCallback(MicrotasksCompletedCallback call
 /**
  * Sets a callback for counting the number of times a feature of V8 is used.
  */
-void Isolate::SetUseCounterCallback(UseCounterCallback callback)
+void Isolate::SetUseCounterCallback(UseCounterCallback that)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_use_counter_callback = that;
 }
 
 /**
  * Enables the host application to provide a mechanism for recording
  * statistics counters.
  */
-void Isolate::SetCounterFunction(CounterLookupCallback)
+void Isolate::SetCounterFunction(CounterLookupCallback that)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_counter_lookup_callback = that;
 }
 
 /**
@@ -1017,13 +1048,15 @@ void Isolate::SetCounterFunction(CounterLookupCallback)
  * histogram which will later be passed to the AddHistogramSample
  * function.
  */
-void Isolate::SetCreateHistogramFunction(CreateHistogramCallback)
+void Isolate::SetCreateHistogramFunction(CreateHistogramCallback that)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_create_histogram_callback = that;
 }
-void Isolate::SetAddHistogramSampleFunction(AddHistogramSampleCallback)
+void Isolate::SetAddHistogramSampleFunction(AddHistogramSampleCallback that)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_add_histogram_sample_callback = that;
 }
 
 /**

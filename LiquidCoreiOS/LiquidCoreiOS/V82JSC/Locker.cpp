@@ -12,17 +12,19 @@ using namespace v8;
 
 Unlocker::~Unlocker()
 {
-    assert(0);
-}
-
-Locker::~Locker()
-{
-    assert(0);
+    IsolateImpl* iso = reinterpret_cast<IsolateImpl*>(isolate_);
+    if (iso->m_locker) {
+        iso->m_locker->lock();
+    }
 }
 
 void Unlocker::Initialize(Isolate* isolate)
 {
-    assert(0);
+    isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    if (iso->m_locker) {
+        iso->m_locker->unlock();
+    }
 }
 
 
@@ -32,8 +34,14 @@ void Unlocker::Initialize(Isolate* isolate)
  */
 bool Locker::IsLocked(Isolate* isolate)
 {
-    assert(0);
-    return false;
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    if (iso->m_locker==nullptr) return false;
+    bool unlocked = iso->m_locker->try_lock();
+    if (unlocked) {
+        unlocked = !iso->m_isLocked;
+        iso->m_locker->unlock();
+    }
+    return !unlocked;
 }
 
 /**
@@ -41,11 +49,30 @@ bool Locker::IsLocked(Isolate* isolate)
  */
 bool Locker::IsActive()
 {
-    printf("FIXME! Locker::IsActive()\n");
-    return false;
+    return IsolateImpl::s_isLockerActive;
 }
 
 void Locker::Initialize(Isolate* isolate)
 {
-    assert(0);
+    isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
+    has_lock_ = false;
+    top_level_ = false;
+    
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
+    if (!iso->m_locker) {
+        iso->m_locker = new std::recursive_mutex();
+    }
+    iso->m_locker->lock();
+    has_lock_ = iso->m_isLocked;
+    iso->m_isLocked = true;
+    IsolateImpl::s_isLockerActive = true;
+}
+
+Locker::~Locker()
+{
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate_);
+    if (iso->m_locker) {
+        iso->m_isLocked = has_lock_;
+        iso->m_locker->unlock();
+    }
 }
