@@ -205,38 +205,6 @@ SealHandleScope::SealHandleScope(Isolate* isolate) : isolate_(nullptr)
     
 }
 
-MicrotasksScope::MicrotasksScope(Isolate* isolate, Type type) : isolate_(nullptr)
-{
-    
-}
-MicrotasksScope::~MicrotasksScope()
-{
-    
-}
-
-/**
- * Runs microtasks if no kRunMicrotasks scope is currently active.
- */
-void MicrotasksScope::PerformCheckpoint(Isolate* isolate)
-{
-    
-}
-
-/**
- * Returns current depth of nested kRunMicrotasks scopes.
- */
-int MicrotasksScope::GetCurrentDepth(Isolate* isolate)
-{
-    return 0;
-}
-
-/**
- * Returns true while microtasks are being executed.
- */
-bool MicrotasksScope::IsRunningMicrotasks(Isolate* isolate)
-{
-    return false;
-}
 
 class internal::GlobalHandles::Node {
 public:

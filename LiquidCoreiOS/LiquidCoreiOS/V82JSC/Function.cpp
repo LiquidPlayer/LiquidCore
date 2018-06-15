@@ -56,7 +56,14 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
 {
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     Context::Scope context_scope(context);
-    
+
+    if (iso->m_callback_depth == 0 && V82JSC::ToIsolate(iso)->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
+        iso->m_callback_depth++;
+        V82JSC::ToIsolate(iso)->RunMicrotasks();
+    } else {
+        iso->m_callback_depth++;
+    }
+
     JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
     JSValueRef thiz = V82JSC::ToJSValueRef<Value>(recv, context);
     JSValueRef args[argc];
@@ -71,6 +78,8 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     } else if (excp) {
         exception.exception_ = excp;
     }
+    
+    iso->m_callback_depth--;
     
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), result);

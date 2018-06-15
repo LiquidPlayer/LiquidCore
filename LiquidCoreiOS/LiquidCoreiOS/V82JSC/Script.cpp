@@ -34,6 +34,12 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
 
     UnboundScriptImpl *unbound = V82JSC::ToImpl<UnboundScriptImpl>(impl->m_unbound_script.Get(isolate));
     
+    if (iso->m_callback_depth == 0 && isolate->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
+        iso->m_callback_depth++;
+        isolate->RunMicrotasks();
+    } else {
+        iso->m_callback_depth ++;
+    }
     iso->m_running_scripts.push(local);
     MaybeLocal<Value> ret;
     {
@@ -70,6 +76,7 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
         }
     }
     iso->m_running_scripts.pop();
+    iso->m_callback_depth --;
 
     return ret;
 }

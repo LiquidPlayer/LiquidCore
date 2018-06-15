@@ -510,6 +510,11 @@ V(RequestInterruptTestWithMethodCallAndInterceptor)
 V(RequestInterruptTestWithMathAbs)
 V(RequestMultipleInterrupts)
 V(RequestInterruptSmallScripts)
+V(EnqueueMicrotask)
+V(RunMicrotasksIgnoresThrownExceptions)
+V(SetAutorunMicrotasks)
+V(RunMicrotasksWithoutEnteringContext)
+V(ScopedMicrotasks)
 
 #undef V
 #define V(tst) \
@@ -664,13 +669,6 @@ V(DynamicImport)
 V(AllowCodeGenFromStrings)
 V(SetErrorMessageForCodeGenFromStrings)
 V(CaptureSourceForCodeGenFromStrings)
-
-// Microtasks
-V(EnqueueMicrotask)
-V(RunMicrotasksIgnoresThrownExceptions)
-V(SetAutorunMicrotasks)
-V(RunMicrotasksWithoutEnteringContext)
-V(ScopedMicrotasks)
 
 // Extras
 V(ExtrasFunctionSource)

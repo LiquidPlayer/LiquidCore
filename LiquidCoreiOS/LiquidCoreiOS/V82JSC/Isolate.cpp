@@ -77,7 +77,10 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_near_death = std::map<void*, JSObjectRef>();
     impl->m_second_pass_callbacks = std::vector<internal::SecondPassCallback>();
     impl->m_external_strings = std::map<JSValueRef, Copyable(v8::WeakExternalString)>();
-    
+    impl->m_microtask_queue = std::vector<IsolateImpl::EnqueuedMicrotask>();
+    impl->m_microtasks_completed_callback = std::vector<v8::MicrotasksCompletedCallback>();
+    impl->m_microtasks_policy = v8::MicrotasksPolicy::kAuto;
+
     impl->m_locker = nullptr;
     impl->m_isLocked = false;
     impl->m_entered_count = 0;
@@ -442,6 +445,8 @@ void Isolate::Dispose()
     for (auto i=isolate->m_context_stacks.begin(); i!=isolate->m_context_stacks.end(); ++i) {
         delete i->second;
     }
+    isolate->m_microtask_queue.clear();
+    isolate->m_microtasks_completed_callback.clear();
     isolate->m_context_stacks.clear();
     isolate->m_pending_interrupts.clear();
     isolate->m_global_symbols.clear();
@@ -464,11 +469,7 @@ void Isolate::Dispose()
 
 void IsolateImpl::CollectGarbage()
 {
-    if (m_callback_depth != 0) {
-        m_pending_garbage_collection = true;
-    } else {
-        H::HeapAllocator::CollectGarbage(this);
-    }
+    H::HeapAllocator::CollectGarbage(this);
 }
 
 /**
@@ -1005,7 +1006,34 @@ void Isolate::SetPromiseRejectCallback(PromiseRejectCallback callback)
  */
 void Isolate::RunMicrotasks()
 {
-    assert(0);
+    if (v8::MicrotasksScope::IsRunningMicrotasks(this)) return;
+    
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    if (iso->m_suppress_microtasks) return;
+    
+    if (!iso->m_microtask_queue.empty()) {
+        HandleScope scope(this);
+        TryCatch try_catch(this);
+        bool running = iso->m_running_microtasks;
+        iso->m_running_microtasks = true;
+        for (auto i=iso->m_microtask_queue.begin(); i!=iso->m_microtask_queue.end(); ) {
+            IsolateImpl::EnqueuedMicrotask& microtask = *i;
+            if (!microtask.m_callback.IsEmpty()) {
+                Local<Function> task = microtask.m_callback.Get(this);
+                task->Call(V82JSC::OperatingContext(this), Local<Value>(), 0, nullptr).FromMaybe(Local<Value>());
+            } else {
+                microtask.m_native_callback(microtask.m_data);
+            }
+            iso->m_microtask_queue.erase(i);
+        }
+        iso->m_running_microtasks = running;
+        if (!running) {
+            for (auto i=iso->m_microtasks_completed_callback.begin();
+                 i!=iso->m_microtasks_completed_callback.end(); ++i) {
+                (*i)(this);
+            }
+        }
+    }
 }
 
 /**
@@ -1013,7 +1041,8 @@ void Isolate::RunMicrotasks()
  */
 void Isolate::EnqueueMicrotask(Local<Function> microtask)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    iso->m_microtask_queue.push_back(IsolateImpl::EnqueuedMicrotask(this, microtask));
 }
 
 /**
@@ -1021,7 +1050,8 @@ void Isolate::EnqueueMicrotask(Local<Function> microtask)
  */
 void Isolate::EnqueueMicrotask(MicrotaskCallback microtask, void* data)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    iso->m_microtask_queue.push_back(IsolateImpl::EnqueuedMicrotask(microtask, data));
 }
 
 /**
@@ -1030,7 +1060,8 @@ void Isolate::EnqueueMicrotask(MicrotaskCallback microtask, void* data)
  */
 void Isolate::SetMicrotasksPolicy(MicrotasksPolicy policy)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    iso->m_microtasks_policy = policy;
 }
 
 /**
@@ -1038,8 +1069,8 @@ void Isolate::SetMicrotasksPolicy(MicrotasksPolicy policy)
  */
 MicrotasksPolicy Isolate::GetMicrotasksPolicy() const
 {
-    assert(0);
-    return MicrotasksPolicy();
+    const IsolateImpl* iso = reinterpret_cast<const IsolateImpl*>(this);
+    return iso->m_microtasks_policy;
 }
 
 /**
@@ -1056,7 +1087,8 @@ MicrotasksPolicy Isolate::GetMicrotasksPolicy() const
  */
 void Isolate::AddMicrotasksCompletedCallback(MicrotasksCompletedCallback callback)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    iso->m_microtasks_completed_callback.push_back(callback);
 }
 
 /**
@@ -1064,7 +1096,52 @@ void Isolate::AddMicrotasksCompletedCallback(MicrotasksCompletedCallback callbac
  */
 void Isolate::RemoveMicrotasksCompletedCallback(MicrotasksCompletedCallback callback)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    for (auto i=iso->m_microtasks_completed_callback.begin(); i!=iso->m_microtasks_completed_callback.end(); ) {
+        if (*i == callback) iso->m_microtasks_completed_callback.erase(i);
+        else ++i;
+    }
+}
+
+MicrotasksScope::MicrotasksScope(Isolate* isolate, Type type) :
+    isolate_(reinterpret_cast<internal::Isolate*>(isolate)),
+    run_(type==MicrotasksScope::Type::kRunMicrotasks)
+{
+    if (run_) V82JSC::ToIsolateImpl(isolate)->m_run_microtasks_depth ++;
+}
+MicrotasksScope::~MicrotasksScope()
+{
+    if (run_ && --reinterpret_cast<IsolateImpl*>(isolate_)->m_run_microtasks_depth == 0) {
+        reinterpret_cast<Isolate*>(isolate_)->RunMicrotasks();
+    }
+}
+
+/**
+ * Runs microtasks if no kRunMicrotasks scope is currently active.
+ */
+void MicrotasksScope::PerformCheckpoint(Isolate* isolate)
+{
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    if (iso->m_run_microtasks_depth == 0) {
+        isolate->RunMicrotasks();
+    }
+}
+
+/**
+ * Returns current depth of nested kRunMicrotasks scopes.
+ */
+int MicrotasksScope::GetCurrentDepth(Isolate* isolate)
+{
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    return iso->m_run_microtasks_depth;
+}
+
+/**
+ * Returns true while microtasks are being executed.
+ */
+bool MicrotasksScope::IsRunningMicrotasks(Isolate* isolate)
+{
+    return V82JSC::ToIsolateImpl(isolate)->m_running_microtasks;
 }
 
 /**
@@ -1491,11 +1568,14 @@ Isolate::AllowJavascriptExecutionScope::~AllowJavascriptExecutionScope()
     assert(0);
 }
 
-Isolate::SuppressMicrotaskExecutionScope::SuppressMicrotaskExecutionScope(Isolate* isolate) : isolate_(nullptr)
+Isolate::SuppressMicrotaskExecutionScope::SuppressMicrotaskExecutionScope(Isolate* isolate) :
+isolate_(reinterpret_cast<IsolateImpl*>(isolate)->m_suppress_microtasks ? nullptr : reinterpret_cast<internal::Isolate*>(isolate))
 {
-    assert(0);
+    V82JSC::ToIsolateImpl(isolate)->m_suppress_microtasks = true;
 }
 Isolate::SuppressMicrotaskExecutionScope::~SuppressMicrotaskExecutionScope()
 {
-    assert(0);
+    if (isolate_) {
+        reinterpret_cast<IsolateImpl*>(isolate_)->m_suppress_microtasks = false;
+    }
 }

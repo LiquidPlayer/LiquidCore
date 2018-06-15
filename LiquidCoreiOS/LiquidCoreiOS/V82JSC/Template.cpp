@@ -251,17 +251,13 @@ static T callAsCallback(JSContextRef ctx,
         iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
 
+    -- iso->m_callback_depth;
+    
     if (!*exception) {
         Local<Value> ret = info.GetReturnValue().Get();
-        if (-- iso->m_callback_depth == 0 && iso->m_pending_garbage_collection) {
-            iso->CollectGarbage();
-        }
 
         return (T) V82JSC::ToJSValueRef<Value>(ret, context);
     } else {
-        if (-- iso->m_callback_depth == 0 && iso->m_pending_garbage_collection) {
-            iso->CollectGarbage();
-        }
         return NULL;
     }
 }

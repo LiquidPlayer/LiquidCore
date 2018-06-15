@@ -534,9 +534,7 @@ Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
             iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
         }
 
-        if (-- iso->m_callback_depth == 0 && iso->m_pending_garbage_collection) {
-            iso->CollectGarbage();
-        }
+        -- iso->m_callback_depth;
 
         return V82JSC::ToJSValueRef<Value>(ret, context);
     };

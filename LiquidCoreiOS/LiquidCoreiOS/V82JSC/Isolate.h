@@ -179,6 +179,25 @@ struct IsolateImpl {
     };
     std::mutex m_pending_interrupt_mutex;
     std::vector<PendingInterrupt> m_pending_interrupts;
+    
+    struct EnqueuedMicrotask {
+        EnqueuedMicrotask(v8::Isolate* isolate, Local<Function> callback) {
+            m_callback.Reset(isolate, callback);
+        }
+        EnqueuedMicrotask(MicrotaskCallback callback, void* data) {
+            m_native_callback = callback;
+            m_data = data;
+        }
+        v8::MicrotaskCallback m_native_callback;
+        void *m_data;
+        Copyable(v8::Function) m_callback;
+    };
+    std::vector<EnqueuedMicrotask> m_microtask_queue;
+    bool m_running_microtasks;
+    bool m_suppress_microtasks;
+    v8::MicrotasksPolicy m_microtasks_policy;
+    std::vector<v8::MicrotasksCompletedCallback> m_microtasks_completed_callback;
+    int m_run_microtasks_depth;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);

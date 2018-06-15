@@ -582,18 +582,13 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
 
+    -- isolateimpl->m_callback_depth;
+    
     if (implicit[3] == the_hole) {
-        if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
-            isolateimpl->CollectGarbage();
-        }
         return V82JSC::ToJSValueRef<Object>(thiz, context);
     }
 
     Local<Value> ret = info.GetReturnValue().Get();
-
-    if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
-        isolateimpl->CollectGarbage();
-    }
 
     return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
 }

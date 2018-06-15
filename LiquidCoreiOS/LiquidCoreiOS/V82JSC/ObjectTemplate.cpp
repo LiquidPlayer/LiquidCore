@@ -314,17 +314,14 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
     }
 
+    -- isolateimpl->m_callback_depth;
+    
     if (implicit[4] == the_hole) {
-        if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
-            isolateimpl->CollectGarbage();
-        }
         return NULL;
     }
     
     Local<Value> retVal = info.GetReturnValue().Get();
-    if (-- isolateimpl->m_callback_depth == 0 && isolateimpl->m_pending_garbage_collection) {
-        isolateimpl->CollectGarbage();
-    }
+    
     return V82JSC::ToJSValueRef<Value>(retVal, context);
 }
 
