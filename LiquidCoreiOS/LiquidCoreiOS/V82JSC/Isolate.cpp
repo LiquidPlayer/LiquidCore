@@ -66,7 +66,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     impl->m_global_symbols = std::map<std::string, JSValueRef>();
     impl->m_private_symbols = std::map<std::string, JSValueRef>();
-    impl->m_context_stack = std::stack<Copyable(v8::Context)>();
+    impl->m_context_stacks = std::map<size_t, std::stack<Copyable(v8::Context)> *>();
     impl->m_scope_stack = std::stack<HandleScope*>();
     impl->m_global_contexts = std::map<JSGlobalContextRef, Copyable(Context)>();
     impl->m_exec_maps = std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>>();
@@ -82,11 +82,18 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_isLocked = false;
     impl->m_entered_count = 0;
     
+    new (&impl->m_pending_interrupt_mutex) std::mutex();
+    impl->m_pending_interrupts = std::vector<IsolateImpl::PendingInterrupt>();
+
     HandleScope scope(isolate);
     
     impl->m_params = params;
     
     impl->m_group = JSContextGroupCreate();
+    
+    // Poll every second during script execution to see if there are any interrupts
+    // pending
+    JSContextGroupSetExecutionTimeLimit(impl->m_group, 1, IsolateImpl::PollForInterrupts, impl);
     
     JSContextGroupAddMarkingConstraint(impl->m_group, MarkingConstraintCallback, impl);
     JSContextGroupAddHeapFinalizer(impl->m_group, HeapFinalizerCallback, impl);
@@ -163,6 +170,26 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->ii.thread_local_top_.pending_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
     
     return reinterpret_cast<v8::Isolate*>(isolate);
+}
+
+bool IsolateImpl::PollForInterrupts(JSContextRef ctx, void* context)
+{
+    IsolateImpl* iso = (IsolateImpl*)context;
+    // Reset poll to one-second
+    JSContextGroupSetExecutionTimeLimit(iso->m_group, 1, IsolateImpl::PollForInterrupts, iso);
+    bool empty = false;
+    iso->m_pending_interrupt_mutex.lock();
+    empty = iso->m_pending_interrupts.empty();
+    while (!empty) {
+        IsolateImpl::PendingInterrupt interrupt = iso->m_pending_interrupts.front();
+        iso->m_pending_interrupt_mutex.unlock();
+        interrupt.m_callback(V82JSC::ToIsolate(iso), interrupt.m_data);
+        iso->m_pending_interrupt_mutex.lock();
+        iso->m_pending_interrupts.erase(iso->m_pending_interrupts.begin());
+        empty = iso->m_pending_interrupts.empty();
+    }
+    iso->m_pending_interrupt_mutex.unlock();
+    return false;
 }
 
 void IsolateImpl::TriggerGCPrologue()
@@ -341,20 +368,22 @@ void Isolate::Exit()
 
 void IsolateImpl::EnterContext(Local<v8::Context> ctx)
 {
+    auto context_stack = ContextStackForThread();
     Copyable(v8::Context) persist(V82JSC::ToIsolate(this), ctx);
-    m_context_stack.push(persist);
+    context_stack->push(persist);
     persist.Reset();
 }
 
 void IsolateImpl::ExitContext(Local<v8::Context> ctx)
 {
-    assert(m_context_stack.size());
-    JSContextRef top = V82JSC::ToContextRef(m_context_stack.top().Get(V82JSC::ToIsolate(this)));
+    auto context_stack = ContextStackForThread();
+    assert(context_stack->size());
+    JSContextRef top = V82JSC::ToContextRef(context_stack->top().Get(V82JSC::ToIsolate(this)));
     JSContextRef newctx = V82JSC::ToContextRef(ctx);
     assert(top == newctx);
 
-    m_context_stack.top().Reset();
-    m_context_stack.pop();
+    context_stack->top().Reset();
+    context_stack->pop();
 }
 
 /**
@@ -376,9 +405,10 @@ void Isolate::Dispose()
         return;
     }
 
+    JSContextGroupClearExecutionTimeLimit(isolate->m_group);
+
     // Hmm.  There is no JSContextGroupRemoveMarkingConstraint() equivalent
     JSContextGroupRemoveHeapFinalizer(isolate->m_group, HeapFinalizerCallback, isolate);
-    
     {
         HandleScope scope(V82JSC::ToIsolate(isolate));
         while (!isolate->m_external_strings.empty()) {
@@ -399,7 +429,8 @@ void Isolate::Dispose()
     }
     isolate->m_global_contexts.clear();
     isolate->m_exec_maps.clear();
-    while (!isolate->m_context_stack.empty()) isolate->m_context_stack.pop();
+    auto context_stack = isolate->ContextStackForThread();
+    while (!context_stack->empty()) context_stack->pop();
     isolate->m_nullContext.Reset();
     
     while (isolate->m_handlers) {
@@ -408,6 +439,11 @@ void Isolate::Dispose()
         delete(tcc);
     }
     
+    for (auto i=isolate->m_context_stacks.begin(); i!=isolate->m_context_stacks.end(); ++i) {
+        delete i->second;
+    }
+    isolate->m_context_stacks.clear();
+    isolate->m_pending_interrupts.clear();
     isolate->m_global_symbols.clear();
     isolate->m_private_symbols.clear();
     isolate->m_message_listeners.clear();
@@ -584,7 +620,8 @@ HeapProfiler* Isolate::GetHeapProfiler()
 bool Isolate::InContext()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
-    return impl->m_context_stack.size() != 0;
+    auto context_stack = impl->ContextStackForThread();
+    return context_stack->size() != 0;
 }
 
 /**
@@ -594,11 +631,12 @@ bool Isolate::InContext()
 Local<Context> Isolate::GetCurrentContext()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
-    if (!impl->m_context_stack.size()) {
+    auto context_stack = impl->ContextStackForThread();
+    if (!context_stack->size()) {
         return Local<Context>();
     }
     
-    return Local<Context>::New(this, impl->m_context_stack.top());
+    return Local<Context>::New(this, context_stack->top());
 }
 
 /** Returns the last context entered through V8's C++ API. */
@@ -838,7 +876,13 @@ void Isolate::CancelTerminateExecution()
  */
 void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
 {
-    assert(0);
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(this);
+    iso->m_pending_interrupt_mutex.lock();
+    iso->m_pending_interrupts.push_back(IsolateImpl::PendingInterrupt(callback,data));
+    iso->m_pending_interrupt_mutex.unlock();
+    // If we haven't started the script yet, this will force an interrupt immediately
+    // The interval will get set back to 1 second after the first interrupt
+    JSContextGroupSetExecutionTimeLimit(iso->m_group, 0, IsolateImpl::PollForInterrupts, iso);
 }
 
 #ifdef __cplusplus

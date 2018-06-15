@@ -107,7 +107,18 @@ struct IsolateImpl {
     
     v8::Isolate::CreateParams m_params;
     
-    std::stack<Copyable(v8::Context)> m_context_stack;
+    std::map<size_t, std::stack<Copyable(v8::Context)>*> m_context_stacks;
+    std::stack<Copyable(v8::Context)> * ContextStackForThread()
+    {
+        size_t hash = std::hash<std::thread::id>()(std::this_thread::get_id());
+        bool has = m_context_stacks.count(hash);
+        if (!has) {
+            auto stack = new std::stack<Copyable(v8::Context)>();
+            m_context_stacks[hash] = stack;
+        }
+        return m_context_stacks[hash];
+    }
+    
     std::stack<v8::HandleScope*> m_scope_stack;
     
     std::map<JSGlobalContextRef, Copyable(v8::Context)> m_global_contexts;
@@ -160,6 +171,14 @@ struct IsolateImpl {
     };
     static std::mutex s_thread_data_mutex;
     static std::map<size_t, PerThreadData*> s_thread_data;
+    
+    struct PendingInterrupt {
+        PendingInterrupt(InterruptCallback callback, void* data) : m_callback(callback), m_data(data) {}
+        InterruptCallback m_callback;
+        void *m_data;
+    };
+    std::mutex m_pending_interrupt_mutex;
+    std::vector<PendingInterrupt> m_pending_interrupts;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
@@ -169,6 +188,7 @@ struct IsolateImpl {
     void TriggerGCFirstPassPhantomCallbacks();
     void TriggerGCEpilogue();
     void CollectExternalStrings();
+    static bool PollForInterrupts(JSContextRef ctx, void* context);
     
     v8::internal::GetGlobalHandles getGlobalHandles;
     v8::internal::WeakObjectNearDeath weakObjectNearDeath;

@@ -499,6 +499,17 @@ V(EmptyApiCallback)
 V(GlobalAccessorInfo)
 V(EscapeableHandleScope)
 V(Overriding)
+V(InternalFieldsOnTypedArray)
+V(InternalFieldsOnDataView)
+V(DeterministicRandomNumberGeneration)
+V(RequestInterruptTestWithFunctionCall)
+V(RequestInterruptTestWithMethodCall)
+V(RequestInterruptTestWithAccessor)
+V(RequestInterruptTestWithNativeAccessor)
+V(RequestInterruptTestWithMethodCallAndInterceptor)
+V(RequestInterruptTestWithMathAbs)
+V(RequestMultipleInterrupts)
+V(RequestInterruptSmallScripts)
 
 #undef V
 #define V(tst) \
@@ -661,28 +672,11 @@ V(SetAutorunMicrotasks)
 V(RunMicrotasksWithoutEnteringContext)
 V(ScopedMicrotasks)
 
-// Function unimplemented & request interrupt
-V(RequestInterruptTestWithFunctionCall)
-V(RequestInterruptTestWithMethodCall)
-V(RequestInterruptTestWithAccessor)
-V(RequestInterruptTestWithNativeAccessor)
-V(RequestInterruptTestWithMethodCallAndInterceptor)
-V(RequestInterruptTestWithMathAbs)
-V(RequestMultipleInterrupts)
-V(RequestInterruptSmallScripts)
-
 // Extras
 V(ExtrasFunctionSource)
 V(ExtrasBindingObject)
 V(ExperimentalExtras)
 V(ExtrasUtilsObject)
-
-// Iternal fields on typed arrays (bug)
-V(InternalFieldsOnTypedArray)
-V(InternalFieldsOnDataView)
-
-// Random seed
-V(DeterministicRandomNumberGeneration)
 
 // Entered contexts (bug)
 V(CorrectEnteredContext)

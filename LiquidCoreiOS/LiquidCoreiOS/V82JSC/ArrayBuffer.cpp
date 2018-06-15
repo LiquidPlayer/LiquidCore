@@ -191,6 +191,10 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
     wrap->m_internal_fields_array = JSObjectMakeArray(ctx, 0, nullptr, &excp);
     assert(excp==0);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
+    JSValueRef zero = V82JSC::ToJSValueRef(External::New(isolate, nullptr), context);
+    for (int i=0; i<ArrayBuffer::kInternalFieldCount; i++) {
+        JSObjectSetPropertyAtIndex(ctx, wrap->m_internal_fields_array, i, zero, 0);
+    }
     
     Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context),
                                                array_buffer,
@@ -246,7 +250,11 @@ Local<ArrayBuffer> ArrayBuffer::New(
     wrap->m_internal_fields_array = JSObjectMakeArray(ctx, 0, nullptr, &excp);
     assert(excp==0);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
-    
+    JSValueRef zero = V82JSC::ToJSValueRef(External::New(isolate, nullptr), context);
+    for (int i=0; i<ArrayBuffer::kInternalFieldCount; i++) {
+        JSObjectSetPropertyAtIndex(ctx, wrap->m_internal_fields_array, i, zero, 0);
+    }
+
     Local<ArrayBuffer> buffer = ValueImpl::New(V82JSC::ToContextImpl(context),
                                                array_buffer,
                                                isolateimpl->m_array_buffer_map).As<ArrayBuffer>();

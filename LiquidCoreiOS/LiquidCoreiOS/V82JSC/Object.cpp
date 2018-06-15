@@ -1489,13 +1489,15 @@ Local<Value> Object::SlowGetInternalField(int index)
 
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, obj);
+    if (index < v8::ArrayBufferView::kInternalFieldCount && (IsTypedArray() || IsDataView())) {
+        JSStringRef buffer = JSStringCreateWithUTF8CString("buffer");
+        obj = (JSObjectRef) JSObjectGetProperty(ctx, obj, buffer, 0);
+        JSStringRelease(buffer);
+        wrap = getPrivateInstance(ctx, obj);
+    }
     if (wrap && index < wrap->m_num_internal_fields) {
-        char ndx[32];
-        sprintf(ndx, "%d", index);
-        JSStringRef s = JSStringCreateWithUTF8CString(ndx);
         Local<Value> r = ValueImpl::New(V82JSC::ToContextImpl(context),
-                                        JSObjectGetProperty(ctx, wrap->m_internal_fields_array, s, 0));
-        JSStringRelease(s);
+                                        JSObjectGetPropertyAtIndex(ctx, wrap->m_internal_fields_array, index, 0));
         return r;
     }
     return Local<Value>();
