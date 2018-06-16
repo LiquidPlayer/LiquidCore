@@ -330,7 +330,7 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
             if (t == v8::internal::FUNCTION_TEMPLATE_INFO_TYPE) {
                 FunctionTemplateImpl *fti = V82JSC::ToImpl<FunctionTemplateImpl>(vv);
                 Local<FunctionTemplate> ft = V82JSC::CreateLocal<FunctionTemplate>(isolate, fti);
-                MaybeLocal<Function> o = ft->GetFunction(context);
+                MaybeLocal<Function> o = FunctionTemplateImpl::GetFunction(*ft, context, prop->name.Get(isolate));
                 if (!o.IsEmpty()) {
                     v = V82JSC::ToJSValueRef<Function>(o.ToLocalChecked(), context);
                 }

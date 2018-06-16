@@ -377,6 +377,7 @@ v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> val
     const char *parse_error_frames =
     "var frames = _1.split('\\n'); "
     "var frame_array = []; "
+    "var skipnext = false; "
     "for (var i=0; frames != '' && i<frames.length; i++) { "
     "    const re_loc = /:*([0-9]*):*([0-9]*)$/ig; "
     "    const re_names = /([^@]*)@*(.*)/ig; "
@@ -388,10 +389,12 @@ v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> val
     "    if (array[1] == '') array[1] = ''; "
     "    if (array[2] == '') array[2] = 1; else array[2] = parseInt(array[2]); "
     "    if (array[3] == '') array[3] = 0; else array[3] = parseInt(array[3]); "
-    "    if (array[0] != 'Function' && array[0] != '[native code]' && array[1] != '[native code]' && !(array[0] == 'global code' && array[1] == '')) "
+    "    if (/*array[0] != 'Function' &&*/!skipnext && array[0] != '[native code]' && array[1] != '[native code]' && !(array[0] == 'global code' && array[1] == '')) "
     "        frame_array.push(array); "
+    "    skipnext = array[0] == '[native code]';"
     "} "
     "var frames = _2.split('\\n'); "
+    /*
     "var back_frame_array = []; "
     "for (var i=0; frames != '' && i<frames.length; i++) { "
     "    var re = /#[0-9]* ([^\\(]*)\\(\\) at ([^:\\n]*):*([0-9]*)/g; "
@@ -406,6 +409,7 @@ v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> val
     "if (frame_array.length == back_frame_array.length) {"
     "   for (var i=0; i<frame_array.length; i++) { if (frame_array[i][2] == 1) frame_array[i][2] = back_frame_array[i][2]; }"
     "}"
+     */
     "for (var i=frame_array.length; i>0; --i) { "
     "    if (i < frame_array.length && frame_array[i-1][0] != 'eval code' && frame_array[i-1][1] == '') "
     "        frame_array[i-1][1] = frame_array[i][1]; "

@@ -145,6 +145,9 @@ struct FunctionTemplateImpl : V82JSC_HeapObject::FunctionTemplate
                                                 size_t argumentCount,
                                                 const JSValueRef arguments[],
                                                 JSValueRef* exception);
+    static v8::MaybeLocal<v8::Function> GetFunction(v8::FunctionTemplate * templ,
+                                                    v8::Local<v8::Context> context,
+                                                    v8::Local<v8::Name> inferred_name);
 };
 
 struct ObjectTemplateImpl : V82JSC_HeapObject::ObjectTemplate

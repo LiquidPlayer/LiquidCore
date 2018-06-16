@@ -95,6 +95,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_microtask_queue = std::vector<IsolateImpl::EnqueuedMicrotask>();
     impl->m_microtasks_completed_callback = std::vector<v8::MicrotasksCompletedCallback>();
     impl->m_microtasks_policy = v8::MicrotasksPolicy::kAuto;
+    impl->m_jsobjects = std::map<JSObjectRef, ValueImpl*>();
 
     impl->m_locker = nullptr;
     impl->m_isLocked = false;
@@ -498,6 +499,7 @@ void Isolate::Dispose()
     isolate->m_gc_prologue_callbacks.clear();
     isolate->m_gc_epilogue_callbacks.clear();
     isolate->m_second_pass_callbacks.clear();
+    isolate->m_jsobjects.clear();
     
     // Finally, blitz the global handles and the heap
     isolate->ii.global_handles()->TearDown();
@@ -1428,7 +1430,8 @@ void Isolate::SetOOMErrorHandler(OOMErrorCallback that)
 void Isolate::SetAllowCodeGenerationFromStringsCallback(
                                                FreshNewAllowCodeGenerationFromStringsCallback callback)
 {
-    assert(0);
+    IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    impl->m_allow_code_gen_callback = callback;
 }
 
 /**
@@ -1605,7 +1608,7 @@ bool Isolate::IsInUse()
  */
 void Isolate::SetAllowAtomicsWait(bool allow)
 {
-    assert(0);
+    reinterpret_cast<internal::Isolate*>(this)->allow_atomics_wait_ = allow;
 }
 
 void Isolate::ReportExternalAllocationLimitReached()

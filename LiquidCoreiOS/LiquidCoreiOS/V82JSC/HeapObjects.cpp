@@ -16,8 +16,16 @@ void V82JSC_HeapObject::GlobalContext::RemoveContextFromIsolate(IsolateImpl *iso
 {
     iso->m_global_contexts.erase(ctx);
     iso->m_exec_maps.erase(ctx);
-//    IsolateImpl::s_context_to_isolate_map.erase(ctx);
+    // Don't do this.  Sometimes stray callbacks come in from JSC and we will need this after the context
+    // is gone.
+    //IsolateImpl::s_context_to_isolate_map.erase(ctx);
 }
+
+void V82JSC_HeapObject::Value::RemoveObjectFromMap(IsolateImpl* iso, JSObjectRef o)
+{
+    iso->m_jsobjects.erase(o);
+}
+
 
 HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint32_t size)
 {

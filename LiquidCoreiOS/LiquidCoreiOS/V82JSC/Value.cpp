@@ -64,6 +64,10 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
                 break;
             }
             case kJSTypeObject: {
+                if (isolateimpl->m_jsobjects.count((JSObjectRef)value)) {
+                    ValueImpl* obj = isolateimpl->m_jsobjects[(JSObjectRef)value];
+                    return V82JSC::CreateLocal<v8::Value>(isolate, obj);
+                }
                 JSValueRef exception = 0;
                 JSValueRef isArrayBuffer = V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &value, &exception);
                 if (!exception && JSValueToBoolean(ctx->m_ctxRef, isArrayBuffer)) {
@@ -95,6 +99,9 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
     JSValueProtect(ctx->m_ctxRef, impl->m_value);
     if (t == kJSTypeNumber) {
         reinterpret_cast<internal::HeapNumber*>(H::ToHeapPointer(impl))->set_value(num);
+    }
+    if (t == kJSTypeObject) {
+        isolateimpl->m_jsobjects[(JSObjectRef)value] = impl;
     }
 
     return V82JSC::CreateLocal<v8::Value>(V82JSC::ToIsolate(isolateimpl), impl);

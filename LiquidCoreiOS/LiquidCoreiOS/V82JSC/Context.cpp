@@ -18,6 +18,8 @@ static void WriteField(internal::Object* ptr, int offset, T value) {
     reinterpret_cast<uint8_t*>(ptr) + offset - internal::kHeapObjectTag;
     *reinterpret_cast<T*>(addr) = value;
 }
+static JSValueRef DisallowCodeGenFromStrings(JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
+                                             size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception);
 
 /**
  * Returns the global proxy object.
@@ -236,6 +238,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSClassRelease(claz);
     }
     
+    JSGlobalContextSetIncludesNativeCallStackWhenReportingExceptions((JSGlobalContextRef)context->m_ctxRef, false);
+    
     JSObjectRef global_o = JSContextGetGlobalObject(context->m_ctxRef);
     // Set a reference back to our context so we can find our way back to the creation context
     JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
@@ -359,37 +363,45 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSValueRef new_bind = V82JSC::ToJSValueRef(bind_template->GetFunction(ctx).ToLocalChecked(), ctx);
         V82JSC::exec(context->m_ctxRef, "Function.prototype.bind = _1", 1, &new_bind);
         
-        /* Overriding eval will not work reliably
-        // Override eval to handle //# sourceURL= and //@ sourceURL=
-        JSStringRef e = JSStringCreateWithUTF8CString("eval");
-        auto evalcb = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
-                         size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) -> JSValueRef
-        {
-            JSStringRef sourceURL = JSStringCreateWithUTF8CString("[eval]");
-            if (argumentCount > 0) {
-                JSValueRef code = arguments[0];
-                JSStringRef s = JSValueToStringCopy(ctx, code, 0);
-                
-                JSValueRef surl = V82JSC::exec(ctx,
-                        "return (/\\/\\/[#@] *sourceURL[\\s]*=([A-Za-z0-9_]*)\\s*$/gm.exec(_1)||['',null])[1]",
-                        1, &code);
-                if (!JSValueIsNull(ctx, surl)) {
-                    JSStringRelease(sourceURL);
-                    sourceURL = JSValueToStringCopy(ctx, surl, 0);
-                    JSStringRetain(sourceURL);
-                }
-                JSValueRef ret = JSEvaluateScript(ctx, s, thisObject, sourceURL, 1, exception);
-                return ret;
-            }
-            return JSValueMakeUndefined(ctx);
-        };
+        JSValueRef eval = V82JSC::exec(context->m_ctxRef, "return eval", 0, nullptr);
+        context->Eval.Reset(isolate, ValueImpl::New(reinterpret_cast<ContextImpl*>(context), eval).As<v8::Function>());
+        
+        JSStringRef e = JSStringCreateWithUTF8CString("Function");
         JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes |= kJSClassAttributeNoAutomaticPrototype;
-        def.callAsFunction = evalcb;
+        def.callAsFunction = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
+                                size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) ->JSValueRef
+        {
+            IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
+            
+            HandleScope scope(isolate);
+            
+            Local<Context> global_context = iso->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(isolate);
+            GlobalContextImpl *context = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+            bool allow;
+            if (iso->m_allow_code_gen_callback) {
+                Local<String> source = ValueImpl::New(reinterpret_cast<ContextImpl*>(context),
+                                                      arguments[0]).As<String>();
+                allow = iso->m_allow_code_gen_callback(global_context, source);
+            } else {
+                allow = !context->m_code_eval_from_strings_disallowed;
+            }
+            
+            if (!allow) {
+                return DisallowCodeGenFromStrings(ctx, proxy_function, thisObject, argumentCount, arguments, exception);
+            } else {
+                return V82JSC::exec(ctx, "return Reflect.construct(_1, _2, _3)",
+                                    (int)argumentCount, arguments, exception);
+            }
+        };
         JSClassRef klass = JSClassCreate(&def);
-        JSObjectRef evalf = JSObjectMake(context->m_ctxRef, klass, 0);
-        JSObjectSetProperty(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef), e, evalf, 0, 0);
-        */
+        JSValueRef FunctionCtor = JSObjectMake(context->m_ctxRef, klass, 0);
+        JSStringRelease(e);
+        V82JSC::exec(context->m_ctxRef,
+                     "const handler = { construct: _1 };"
+                     "Function = new Proxy(Function, handler);",
+                     1, &FunctionCtor);
         
         std::map<std::string, bool> loaded_extensions;
 
@@ -594,6 +606,27 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
     SetEmbedderData(index, *v);
 }
 
+static JSValueRef DisallowCodeGenFromStrings(JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
+                                             size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception)
+{
+    IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
+    
+    HandleScope scope(isolate);
+    
+    Local<Context> global_context = iso->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(isolate);
+    GlobalContextImpl *context = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+    Local<String> error = context->m_code_gen_error.Get(isolate);
+    if (error.IsEmpty()) {
+        error = String::NewFromUtf8(isolate, "code generation from strings not allowed",
+                                    NewStringType::kNormal).ToLocalChecked();
+    }
+    JSValueRef msg = V82JSC::ToJSValueRef(error, global_context);
+    *exception = V82JSC::exec(ctx, "return new EvalError(_1)", 1, &msg);
+
+    return NULL;
+}
+
 /**
  * Control whether code generation from strings is allowed. Calling
  * this method with false will disable 'eval' and the 'Function'
@@ -609,7 +642,52 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
  */
 void Context::AllowCodeGenerationFromStrings(bool allow)
 {
-    assert(0);
+    ContextImpl *local_ctx = V82JSC::ToContextImpl(this);
+    Isolate *isolate = V82JSC::ToIsolate(local_ctx);
+    
+    HandleScope scope(isolate);
+    
+    Local<Context> global_context = V82JSC::ToIsolateImpl(isolate)->
+        m_global_contexts[JSContextGetGlobalContext(local_ctx->m_ctxRef)].Get(isolate);
+    GlobalContextImpl *context = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+    
+    JSStringRef e = JSStringCreateWithUTF8CString("eval");
+    JSObjectRef evalf = (JSObjectRef) V82JSC::ToJSValueRef(context->Eval.Get(isolate), global_context);
+    if (!allow) {
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        def.attributes |= kJSClassAttributeNoAutomaticPrototype;
+        def.callAsFunction = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
+                                size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) ->JSValueRef
+        {
+            IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
+            
+            HandleScope scope(isolate);
+            
+            Local<Context> global_context = iso->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(isolate);
+            GlobalContextImpl *context = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+            bool allow;
+            if (iso->m_allow_code_gen_callback) {
+                Local<String> source = ValueImpl::New(reinterpret_cast<ContextImpl*>(context),
+                                                      arguments[0]).As<String>();
+                allow = iso->m_allow_code_gen_callback(global_context, source);
+            } else {
+                allow = !context->m_code_eval_from_strings_disallowed;
+            }
+            
+            if (!allow) {
+                return DisallowCodeGenFromStrings(ctx, proxy_function, thisObject, argumentCount, arguments, exception);
+            } else {
+                JSObjectRef eval = (JSObjectRef) V82JSC::ToJSValueRef(context->Eval.Get(isolate), global_context);
+                return JSObjectCallAsFunction(ctx, eval, thisObject, argumentCount, arguments, exception);
+            }
+        };
+        JSClassRef klass = JSClassCreate(&def);
+        evalf = JSObjectMake(context->m_ctxRef, klass, 0);
+    }
+    JSObjectSetProperty(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef), e, evalf, 0, 0);
+    JSStringRelease(e);
+    context->m_code_eval_from_strings_disallowed = !allow;
 }
 
 /**
@@ -618,8 +696,15 @@ void Context::AllowCodeGenerationFromStrings(bool allow)
  */
 bool Context::IsCodeGenerationFromStringsAllowed()
 {
-    assert(0);
-    return false;
+    ContextImpl *local_ctx = V82JSC::ToContextImpl(this);
+    Isolate *isolate = V82JSC::ToIsolate(local_ctx);
+    
+    HandleScope scope(isolate);
+    
+    Local<Context> global_context = V82JSC::ToIsolateImpl(isolate)->
+    m_global_contexts[JSContextGetGlobalContext(local_ctx->m_ctxRef)].Get(isolate);
+    GlobalContextImpl *context = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+    return !context->m_code_eval_from_strings_disallowed;
 }
 
 /**
@@ -629,5 +714,13 @@ bool Context::IsCodeGenerationFromStringsAllowed()
  */
 void Context::SetErrorMessageForCodeGenerationFromStrings(Local<String> message)
 {
-    assert(0);
+    ContextImpl *local_ctx = V82JSC::ToContextImpl(this);
+    Isolate *isolate = V82JSC::ToIsolate(local_ctx);
+    
+    HandleScope scope(isolate);
+    
+    Local<Context> global_context = V82JSC::ToIsolateImpl(isolate)->
+        m_global_contexts[JSContextGetGlobalContext(local_ctx->m_ctxRef)].Get(isolate);
+    GlobalContextImpl *context = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+    context->m_code_gen_error.Reset(isolate, message);
 }

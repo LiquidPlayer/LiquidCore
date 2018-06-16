@@ -893,7 +893,7 @@ void ObjectTemplate::SetCallAsFunctionHandler(FunctionCallback callback,
  */
 void ObjectTemplate::MarkAsUndetectable()
 {
-    assert(0);
+    printf("V82JSC: Undetectable objects not supported in JSC\n");
 }
 
 /**

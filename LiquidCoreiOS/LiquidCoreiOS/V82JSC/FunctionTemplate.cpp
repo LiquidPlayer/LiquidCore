@@ -99,7 +99,14 @@ Local<FunctionTemplate> FunctionTemplate::NewWithCache(
 /** Returns the unique function instance in the current execution context.*/
 MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
 {
-    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,FunctionTemplate>(this);
+    return FunctionTemplateImpl::GetFunction(this, context, Local<String>());
+}
+
+MaybeLocal<Function> FunctionTemplateImpl::GetFunction(v8::FunctionTemplate * ft,
+                                                       v8::Local<v8::Context> context,
+                                                       v8::Local<v8::Name> inferred_name)
+{
+    FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl,v8::FunctionTemplate>(ft);
     const ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctximpl);
@@ -107,7 +114,7 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     
     EscapableHandleScope scope(isolate);
 
-    Local<FunctionTemplate> thiz = V82JSC::CreateLocal<FunctionTemplate>(isolate, impl);
+    Local<v8::FunctionTemplate> thiz = V82JSC::CreateLocal<v8::FunctionTemplate>(isolate, impl);
 
     assert(impl->m_functions_array);
     int length = static_cast<int>(JSValueToNumber(ctx, V82JSC::exec(ctx, "return _1.length",
@@ -141,28 +148,28 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
                                                          "return Object.getPrototypeOf(_1)", 1,
                                                          &generic_function);
 
-    void * data = V82JSC::PersistentData<Template>(isolate, thiz);
+    void * data = V82JSC::PersistentData<v8::Template>(isolate, thiz);
     
     JSClassDefinition function_def = kJSClassDefinitionEmpty;
     function_def.callAsFunction = TemplateImpl::callAsFunctionCallback;
     function_def.className = "function_proxy";
     function_def.finalize = [](JSObjectRef object) {
         void * data = JSObjectGetPrivate(object);
-        V82JSC::ReleasePersistentData<Template>(data);
+        V82JSC::ReleasePersistentData<v8::Template>(data);
     };
     JSClassRef function_class = JSClassCreate(&function_def);
     JSObjectRef function_proxy = JSObjectMake(ctx, function_class, data);
     V82JSC::SetRealPrototype(context, function_proxy, generic_function_prototype);
     JSClassRelease(function_class);
 
-    void * data2 = V82JSC::PersistentData<Template>(isolate, thiz);
+    void * data2 = V82JSC::PersistentData<v8::Template>(isolate, thiz);
 
     JSClassDefinition constructor_def = kJSClassDefinitionEmpty;
     constructor_def.callAsFunction = FunctionTemplateImpl::callAsConstructorCallback;
     constructor_def.className = "constructor_proxy";
     constructor_def.finalize = [](JSObjectRef object) {
         void * data = JSObjectGetPrivate(object);
-        V82JSC::ReleasePersistentData<Template>(data);
+        V82JSC::ReleasePersistentData<v8::Template>(data);
     };
     JSClassRef constructor_class = JSClassCreate(&constructor_def);
     JSObjectRef constructor_proxy = JSObjectMake(ctx, constructor_class, data2);
@@ -200,7 +207,11 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     
     std::string proxy_function_body = impl->m_removePrototype ? proxy_noconstructor_template : proxy_function_template;
     Local<String> name_ = impl->m_name.Get(isolate);
-    if (name_.IsEmpty()) name_ = v8::String::NewFromUtf8(isolate, "Function", NewStringType::kNormal).ToLocalChecked();
+    if (name_.IsEmpty() && !inferred_name.IsEmpty() && inferred_name->IsString()) {
+        name_ = inferred_name.As<String>();
+    } else if (name_.IsEmpty()) {
+        name_ = v8::String::NewFromUtf8(isolate, "Function", NewStringType::kNormal).ToLocalChecked();
+    }
     String::Utf8Value str(name_);
     const char *sname = !name_.IsEmpty() ? *str : "Function";
     ReplaceStringInPlace(proxy_function_body, "name", sname);

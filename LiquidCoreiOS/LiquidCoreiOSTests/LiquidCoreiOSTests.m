@@ -518,6 +518,12 @@ V(ScopedMicrotasks)
 V(MemoryPressure)
 V(RegExpInterruption)
 V(GCFromWeakCallbacks)
+V(ExtensibleOnUndetectable)
+V(CallbackFunctionName)
+V(AllowCodeGenFromStrings)
+V(SetErrorMessageForCodeGenFromStrings)
+V(CaptureSourceForCodeGenFromStrings)
+V(AllowAtomicsWait)
 
 #undef V
 #define V(tst) \
@@ -540,7 +546,7 @@ V(ScriptPositionInfo)
 V(ErrorLevelWarning)
 V(TestIdleNotification)
 
-// Handle issues
+// WeakMap
 V(GlobalValueMap)
 
 // strict mode
@@ -554,12 +560,6 @@ V(DetachGlobal)
 V(DetachedAccesses)
 V(EvalInDetachedGlobal)
 V(DefinePropertyPostDetach)
-
-// Undetectable objects
-V(UndetectableObject)
-V(VoidLiteral)
-V(ExtensibleOnUndetectable)
-V(Regress567998)
 
 // Fatal error handler
 V(ErrorReporting)
@@ -607,9 +607,6 @@ V(AccessCheckThrows)
 
 // Hidden prototypes
 V(FunctionCallOptimization)
-
-// Function name
-V(CallbackFunctionName)
 
 // Constructor bug
 V(InterceptorOnConstructorPrototype)
@@ -661,13 +658,6 @@ V(DisallowJavascriptExecutionScope)
 V(AllowJavascriptExecutionScope)
 V(ThrowOnJavascriptExecution)
 V(AbortOnUncaughtExceptionNoAbort)
-V(AllowAtomicsWait)
-V(DynamicImport)
-
-// Disallow code generation
-V(AllowCodeGenFromStrings)
-V(SetErrorMessageForCodeGenFromStrings)
-V(CaptureSourceForCodeGenFromStrings)
 
 // Extras
 V(ExtrasFunctionSource)
@@ -718,5 +708,13 @@ V(FixedFloat32Array)
 V(FixedFloat64Array)
 // JIT / compiler stuff
 V(SetJitCodeEventHandler)
+
+// Undetectable objects cannot be simulated on JSC
+V(UndetectableObject)
+V(VoidLiteral)
+V(Regress567998)
+
+// Experimental features
+V(DynamicImport)
 
 @end

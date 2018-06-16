@@ -6916,7 +6916,7 @@ static void ReturnThis(const v8::FunctionCallbackInfo<v8::Value>& args) {
   args.GetReturnValue().Set(args.This());
 }
 
-THREADED_TEST(UndetectableObject) {
+V82JSC_SKIP_TEST(UndetectableObject) {
   LocalContext env;
   v8::HandleScope scope(env->GetIsolate());
 
@@ -6965,7 +6965,7 @@ THREADED_TEST(UndetectableObject) {
 }
 
 
-THREADED_TEST(VoidLiteral) {
+V82JSC_SKIP_TEST(VoidLiteral) {
   LocalContext env;
   v8::Isolate* isolate = env->GetIsolate();
   v8::HandleScope scope(isolate);
@@ -11941,7 +11941,7 @@ THREADED_TEST(CallableObject) {
 }
 
 
-THREADED_TEST(Regress567998) {
+V82JSC_SKIP_TEST(Regress567998) {
   LocalContext env;
   v8::HandleScope scope(env->GetIsolate());
 
@@ -27041,7 +27041,7 @@ v8::MaybeLocal<v8::Promise> HostImportModuleDynamicallyCallbackResolve(
   return resolver->GetPromise();
 }
 
-TEST(DynamicImport) {
+V82JSC_SKIP_TEST(DynamicImport) {
   i::FLAG_harmony_dynamic_import = true;
   LocalContext context;
   v8::Isolate* isolate = context->GetIsolate();

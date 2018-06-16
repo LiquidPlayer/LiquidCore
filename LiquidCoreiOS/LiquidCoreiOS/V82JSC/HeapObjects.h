@@ -222,6 +222,9 @@ namespace V82JSC_HeapObject {
         Copyable(v8::Function) ObjectGetPrototypeOf;
         Copyable(v8::Function) ObjectPrototypeToString;
         Copyable(v8::Function) FunctionPrototypeBind;
+        Copyable(v8::Function) Eval;
+        bool m_code_eval_from_strings_disallowed;
+        Copyable(v8::String) m_code_gen_error;
 
         static void Constructor(GlobalContext *obj) {}
         static int Destructor(GlobalContext *obj, CanonicalHandles& handles, WeakHandles& weak,
@@ -235,6 +238,8 @@ namespace V82JSC_HeapObject {
             freed +=SmartReset<v8::Function>(obj->ObjectGetPrototypeOf, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->ObjectPrototypeToString, handles, weak, callbacks);
             freed +=SmartReset<v8::Function>(obj->FunctionPrototypeBind, handles, weak, callbacks);
+            freed +=SmartReset<v8::Function>(obj->Eval, handles, weak, callbacks);
+            freed +=SmartReset<v8::String>(obj->m_code_gen_error, handles, weak, callbacks);
             freed +=SmartReset<v8::EmbeddedFixedArray>(obj->m_embedder_data, handles, weak, callbacks);
 
             RemoveContextFromIsolate(iso, (JSGlobalContextRef)obj->m_ctxRef);
@@ -301,8 +306,11 @@ namespace V82JSC_HeapObject {
                               std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             if (obj->m_value) JSValueUnprotect(obj->GetNullContext(), obj->m_value);
+            RemoveObjectFromMap(obj->GetIsolate(), (JSObjectRef)obj->m_value);
             return 0;
         }
+        
+        static void RemoveObjectFromMap(IsolateImpl* iso, JSObjectRef o);
     };
 
     struct WeakValue : Value {

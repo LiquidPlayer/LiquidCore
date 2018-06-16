@@ -13,6 +13,8 @@
 #include "JSMarkingConstraintPrivate.h"
 #include <thread>
 
+struct ValueImpl;
+
 namespace v8 {
 namespace internal {
     
@@ -59,7 +61,7 @@ typedef std::function<void(v8::internal::Object**, std::vector<v8::internal::Sec
 typedef std::function<void(v8::Isolate*, v8::internal::SecondPassCallback&)> WeakHeapObjectFinalized;
 typedef std::function<void(JSGlobalContextRef, JSObjectRef)> WeakJSObjectFinalized;
 typedef std::function<void(JSMarkerRef, std::map<void*, JSObjectRef>&)> PerformIncrementalMarking;
-    
+
 struct IsolateImpl {
     v8::internal::Isolate ii;
     
@@ -102,6 +104,8 @@ struct IsolateImpl {
     H::Map<H::Message> *m_message_map;
 
     v8::TryCatch *m_handlers;
+    
+    std::map<JSObjectRef, ValueImpl*> m_jsobjects;
     
     std::map<std::string, JSValueRef> m_global_symbols;
     std::map<std::string, JSValueRef> m_private_symbols;
@@ -202,6 +206,8 @@ struct IsolateImpl {
     v8::MicrotasksPolicy m_microtasks_policy;
     std::vector<v8::MicrotasksCompletedCallback> m_microtasks_completed_callback;
     int m_run_microtasks_depth;
+    
+    v8::FreshNewAllowCodeGenerationFromStringsCallback m_allow_code_gen_callback;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
