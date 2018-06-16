@@ -21,15 +21,13 @@ double Number::Value() const
 
 Local<Number> Number::New(Isolate* isolate, double value)
 {
+    EscapableHandleScope scope(isolate);
     JSContextRef ctx;
     ContextImpl* ci;
-    {
-        HandleScope scope(isolate);
-        Local<Context> context = V82JSC::OperatingContext(isolate);
-        ctx = V82JSC::ToContextRef(context);
-        ci = V82JSC::ToContextImpl(context);
-    }
-    return ValueImpl::New(ci, JSValueMakeNumber(ctx, value)).As<Number>();
+    Local<Context> context = V82JSC::OperatingContext(isolate);
+    ctx = V82JSC::ToContextRef(context);
+    ci = V82JSC::ToContextImpl(context);
+    return scope.Escape(ValueImpl::New(ci, JSValueMakeNumber(ctx, value)).As<Number>());
 }
 
 Local<Integer> Integer::New(Isolate* isolate, int32_t value)

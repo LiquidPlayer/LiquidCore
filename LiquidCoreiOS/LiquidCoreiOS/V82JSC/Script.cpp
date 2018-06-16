@@ -34,6 +34,9 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
 
     UnboundScriptImpl *unbound = V82JSC::ToImpl<UnboundScriptImpl>(impl->m_unbound_script.Get(isolate));
     
+    // Check if there are pending interrupts before even executing
+    IsolateImpl::PollForInterrupts(ctx, iso);
+
     if (iso->m_callback_depth == 0 && isolate->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
         iso->m_callback_depth++;
         isolate->RunMicrotasks();

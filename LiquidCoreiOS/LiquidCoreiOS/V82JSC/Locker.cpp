@@ -36,12 +36,13 @@ bool Locker::IsLocked(Isolate* isolate)
 {
     IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
     if (iso->m_locker==nullptr) return false;
-    bool unlocked = iso->m_locker->try_lock();
-    if (unlocked) {
-        unlocked = !iso->m_isLocked;
+    bool have_locked = iso->m_locker->try_lock();
+    if (have_locked) {
+        bool locked_by_this_thread = iso->m_isLocked;
         iso->m_locker->unlock();
+        return locked_by_this_thread;
     }
-    return !unlocked;
+    return false;
 }
 
 /**

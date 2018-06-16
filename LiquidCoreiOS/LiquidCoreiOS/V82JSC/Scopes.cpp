@@ -476,12 +476,9 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
     iso->weakJSObjectFinalized = [&](JSGlobalContextRef ctx, JSObjectRef obj)
     {
         IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[ctx];
-        for (auto i=iso->m_second_pass_callbacks.begin(); i!=iso->m_second_pass_callbacks.end(); ) {
+        for (auto i=iso->m_second_pass_callbacks.begin(); i!=iso->m_second_pass_callbacks.end(); ++i) {
             if ((*i).object_ == obj) {
-                iso->weakHeapObjectFinalized(V82JSC::ToIsolate(iso), (*i));
-                iso->m_second_pass_callbacks.erase(i);
-            } else {
-                ++i;
+                (*i).ready_to_call = true;
             }
         }
     };

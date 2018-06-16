@@ -120,34 +120,8 @@ size_t Heap::SizeOfObjects()
 bool Heap::CollectGarbage(AllocationSpace space, GarbageCollectionReason gc_reason,
                           const GCCallbackFlags gc_callback_flags)
 {
-    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate());
-    if (iso->m_in_gc++) return true;
-
-    // First pass, clear anything on the V82JSC side that is not in use
-    iso->CollectGarbage();
-    
-    // Next, trigger garbage collection in JSC
-    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
-    }
-
-    iso->TriggerGCPrologue();
-    iso->TriggerGCFirstPassPhantomCallbacks();
-
-    // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
-    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
-    }
-
-    iso->TriggerGCFirstPassPhantomCallbacks();
-    iso->CollectExternalStrings();
-
-    // Second pass, clear V82JSC garbage again in case any weak references were cleared
-    iso->CollectGarbage();
-    iso->TriggerGCEpilogue();
-
-    iso->m_in_gc = 0;
-
+    reinterpret_cast<v8::Isolate*>(isolate())->
+    RequestGarbageCollectionForTesting(v8::Isolate::GarbageCollectionType::kFullGarbageCollection);
     return false;
 }
 
@@ -168,8 +142,7 @@ void Heap::CollectAllAvailableGarbage(GarbageCollectionReason gc_reason)
 
 bool Heap::ShouldOptimizeForMemoryUsage()
 {
-    assert(0);
-    return false;
+    return reinterpret_cast<IsolateImpl*>(isolate_)->m_should_optimize_for_memory_usage;
 }
 
 // Start incremental marking and ensure that idle time handler can perform
@@ -536,7 +509,7 @@ internal::Handle<internal::Context> JSReceiver::GetCreationContext()
 //
 // internal::StackGuard
 //
-void StackGuard::RequestInterrupt(InterruptFlag flag) { assert(0); }
+void StackGuard::RequestInterrupt(InterruptFlag flag) { /*assert(0);*/ }
 
 //
 // internal:MarkCompactCollector

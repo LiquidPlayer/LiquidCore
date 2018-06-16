@@ -104,6 +104,8 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     JSContextRef ctx = V82JSC::ToContextRef(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctximpl);
     Isolate* isolate = V82JSC::ToIsolate(iso);
+    
+    EscapableHandleScope scope(isolate);
 
     Local<FunctionTemplate> thiz = V82JSC::CreateLocal<FunctionTemplate>(isolate, impl);
 
@@ -123,7 +125,7 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
         }
     }
     if (function) {
-        return ValueImpl::New(ctximpl, function).As<Function>();
+        return scope.Escape(ValueImpl::New(ctximpl, function).As<Function>());
     }
 
     JSStringRef generic_function_name = JSStringCreateWithUTF8CString("generic_function");
@@ -235,7 +237,6 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     
     LocalException exception(iso);
 
-    
     MaybeLocal<Object> thizo = reinterpret_cast<TemplateImpl*>(impl)->
         InitInstance(context, function, exception);
     if (thizo.IsEmpty()) {
@@ -285,7 +286,7 @@ MaybeLocal<Function> FunctionTemplate::GetFunction(Local<Context> context)
     JSValueRef args[] = { impl->m_functions_array, function };
     V82JSC::exec(ctx, "_1.push(_2)", 2, args);
 
-    return ValueImpl::New(ctximpl, function).As<Function>();
+    return scope.Escape(ValueImpl::New(ctximpl, function).As<Function>());
 }
 
 /**

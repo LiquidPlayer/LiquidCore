@@ -84,7 +84,7 @@ bool TryCatch::CanContinue() const
  */
 bool TryCatch::HasTerminated() const
 {
-    assert(0);
+    return reinterpret_cast<IsolateImpl*>(isolate_)->m_terminate_execution;
 }
 
 /**

@@ -16,6 +16,7 @@ using namespace v8;
 
 Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap* type, void *resource)
 {
+    EscapableHandleScope scope(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::OperatingContext(isolate));
     IsolateImpl *i = V82JSC::ToIsolateImpl(isolate);
 
@@ -46,7 +47,7 @@ Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap*
                                internal::Internals::kStringResourceOffset) = resource;
     JSStringRelease(str);
     
-    return local;
+    return scope.Escape(local);
 }
 
 static std::map<void*,JSStringRef> s_string_map;

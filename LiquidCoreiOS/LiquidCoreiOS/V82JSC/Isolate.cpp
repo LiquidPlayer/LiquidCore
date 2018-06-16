@@ -28,17 +28,32 @@ ISOLATE_INIT_LIST(DECLARE_FIELDS);
 
 std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map;
 
+static void triggerGarbageCollection(IsolateImpl* iso)
+{
+    if (!v8::Locker::IsLocked(V82JSC::ToIsolate(iso))) {
+        V82JSC::ToIsolate(iso)->RequestInterrupt([](Isolate* isolate, void* data) {
+            isolate->EnqueueMicrotask([](void *data){
+                reinterpret_cast<IsolateImpl*>(data)->CollectGarbage();
+            }, isolate);
+        }, nullptr);
+    } else {
+        iso->CollectGarbage();
+    }
+}
+
 static void MarkingConstraintCallback(JSMarkerRef marker, void *userData)
 {
     IsolateImpl *impl = (IsolateImpl*)userData;
     impl->performIncrementalMarking(marker, impl->m_near_death);
     impl->m_pending_prologue = true;
+    triggerGarbageCollection(impl);
 }
 
 static void HeapFinalizerCallback(JSContextGroupRef grp, void *userData)
 {
     IsolateImpl *impl = (IsolateImpl*)userData;
     impl->m_pending_epilogue = true;
+    triggerGarbageCollection(impl);
 }
 
 std::atomic<bool> IsolateImpl::s_isLockerActive(false);
@@ -181,7 +196,13 @@ bool IsolateImpl::PollForInterrupts(JSContextRef ctx, void* context)
     // Reset poll to one-second
     JSContextGroupSetExecutionTimeLimit(iso->m_group, 1, IsolateImpl::PollForInterrupts, iso);
     bool empty = false;
+    bool terminate = iso->m_terminate_execution;
     iso->m_pending_interrupt_mutex.lock();
+    
+    if (terminate) {
+        return true;
+    }
+    
     empty = iso->m_pending_interrupts.empty();
     while (!empty) {
         IsolateImpl::PendingInterrupt interrupt = iso->m_pending_interrupts.front();
@@ -334,7 +355,28 @@ void Isolate::SetHostImportModuleDynamicallyCallback(HostImportModuleDynamically
  */
 void Isolate::MemoryPressureNotification(MemoryPressureLevel level)
 {
-    //assert(0);
+    static auto collectGarbage = [](IsolateImpl* iso) {
+        /*
+        iso->CollectGarbage();
+        for (auto i=iso->m_global_contexts.begin(); i!=iso->m_global_contexts.end(); ++i) {
+            JSGarbageCollect(V82JSC::ToContextImpl(i->second.Get(V82JSC::ToIsolate(iso)))->m_ctxRef);
+        }
+        */
+        V82JSC::ToIsolate(iso)->RequestGarbageCollectionForTesting(GarbageCollectionType::kFullGarbageCollection);
+    };
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    iso->m_should_optimize_for_memory_usage = (level > MemoryPressureLevel::kNone);
+    if (iso->m_should_optimize_for_memory_usage) {
+        if (!v8::Locker::IsLocked(this)) {
+            RequestInterrupt([](Isolate* isolate, void* data) {
+                isolate->EnqueueMicrotask([](void *data){
+                    collectGarbage(reinterpret_cast<IsolateImpl*>(data));
+                }, isolate);
+            }, nullptr);
+        } else {
+            collectGarbage(iso);
+        }
+    }
 }
 
 /**
@@ -467,9 +509,20 @@ void Isolate::Dispose()
     free(isolate);
 }
 
+// This method is called once JSC's garbage collector has run
 void IsolateImpl::CollectGarbage()
 {
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(this);
+    if (iso->m_in_gc++) return;
+    
     H::HeapAllocator::CollectGarbage(this);
+
+    iso->TriggerGCPrologue();
+    iso->CollectExternalStrings();
+    
+    iso->TriggerGCEpilogue();
+    
+    iso->m_in_gc = 0;
 }
 
 /**
@@ -831,7 +884,9 @@ void Isolate::SetGetExternallyAllocatedMemoryInBytesCallback(
  */
 void Isolate::TerminateExecution()
 {
-    assert(0);
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(this);
+    iso->m_terminate_execution = true;
+    JSContextGroupSetExecutionTimeLimit(iso->m_group, 0, IsolateImpl::PollForInterrupts, iso);
 }
 
 /**
@@ -844,8 +899,8 @@ void Isolate::TerminateExecution()
  */
 bool Isolate::IsExecutionTerminating()
 {
-    assert(0);
-    return false;
+    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(this);
+    return iso->m_terminate_execution;
 }
 
 /**
@@ -883,7 +938,9 @@ void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
     iso->m_pending_interrupt_mutex.unlock();
     // If we haven't started the script yet, this will force an interrupt immediately
     // The interval will get set back to 1 second after the first interrupt
+    /*
     JSContextGroupSetExecutionTimeLimit(iso->m_group, 0, IsolateImpl::PollForInterrupts, iso);
+    */
 }
 
 #ifdef __cplusplus
@@ -910,7 +967,7 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
     if (iso->m_in_gc++) return;
     
     // First pass, clear anything on the V82JSC side that is not in use
-    iso->CollectGarbage();
+    H::HeapAllocator::CollectGarbage(iso);
     
     // Next, trigger garbage collection in JSC
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
@@ -923,13 +980,19 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
     // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
         JSSynchronousGarbageCollectForDebugging(i->first);
+        JSSynchronousGarbageCollectForDebugging(i->first);
     }
     
     iso->TriggerGCFirstPassPhantomCallbacks();
     iso->CollectExternalStrings();
-    
+    H::HeapAllocator::CollectGarbage(iso);
+
+    for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
+        JSSynchronousGarbageCollectForDebugging(i->first);
+    }
+
     // Second pass, clear V82JSC garbage again in case any weak references were cleared
-    iso->CollectGarbage();
+    H::HeapAllocator::CollectGarbage(iso);
     iso->TriggerGCEpilogue();
     
     iso->m_in_gc = 0;

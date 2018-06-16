@@ -216,10 +216,12 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     //
     // There shouldn't be any other non-transient references.  We have to also be careful not to collect
     // garbage while inside of a callback, as transient references may exist
+    /*
     if (iso->m_callback_depth) {
         iso->m_pending_garbage_collection = true;
         return false;
     }
+    */
     iso->m_pending_garbage_collection = false;
     
     CanonicalHandles canonical_handles;
@@ -322,12 +324,21 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     }
     heapimpl->m_heap_top = in_use;
     
-    // Finally finally, make any second pass phantom callbacks for primtive values (Object value finalizers
-    // will get called in the TrackedObject finalizer)
+    // Make any second pass phantom callbacks for primtive values
     for (auto i=second_pass_callbacks.begin(); i!= second_pass_callbacks.end(); ) {
         iso->weakHeapObjectFinalized(reinterpret_cast<v8::Isolate*>(iso), *i);
         second_pass_callbacks.erase(i);
     }
+    // And second pass phantom calls for object values that are ready
+    for (auto i=iso->m_second_pass_callbacks.begin(); i!= iso->m_second_pass_callbacks.end(); ) {
+        if ((*i).ready_to_call) {
+            iso->weakHeapObjectFinalized(reinterpret_cast<v8::Isolate*>(iso), *i);
+            iso->m_second_pass_callbacks.erase(i);
+        } else {
+            ++i;
+        }
+    }
+
     assert(second_pass_callbacks.empty());
     
     printf ("V82JSC Garbage Collector: Freed %d bytes; Deallocated %d / %d kB chunks; %d kB in use\n",

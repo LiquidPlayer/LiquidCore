@@ -40,6 +40,7 @@ struct SecondPassCallback {
     v8::WeakCallbackInfo<void>::Callback callback_;
     void *param_;
     void *embedder_fields_[2];
+    bool ready_to_call;
 };
     
 struct MessageListener {
@@ -179,6 +180,9 @@ struct IsolateImpl {
     };
     std::mutex m_pending_interrupt_mutex;
     std::vector<PendingInterrupt> m_pending_interrupts;
+    bool m_terminate_execution;
+    
+    bool m_should_optimize_for_memory_usage;
     
     struct EnqueuedMicrotask {
         EnqueuedMicrotask(v8::Isolate* isolate, Local<Function> callback) {

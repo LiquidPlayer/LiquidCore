@@ -57,6 +57,9 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     Context::Scope context_scope(context);
 
+    // Check if there are pending interrupts before even executing
+    IsolateImpl::PollForInterrupts(V82JSC::ToContextRef(context), iso);
+
     if (iso->m_callback_depth == 0 && V82JSC::ToIsolate(iso)->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
         iso->m_callback_depth++;
         V82JSC::ToIsolate(iso)->RunMicrotasks();
@@ -71,6 +74,7 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
         args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
     }
     LocalException exception(iso);
+    
     JSValueRef excp = 0;
     JSValueRef result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &excp);
     if (!result && !excp) {

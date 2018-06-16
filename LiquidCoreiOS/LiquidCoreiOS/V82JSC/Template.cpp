@@ -20,6 +20,7 @@ void Template::Set(Local<Name> name, Local<Data> value, PropertyAttribute attrib
 {
     TemplateImpl *this_ = V82JSC::ToImpl<TemplateImpl,Template>(this);
     Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
 
     H::Prop *prop = static_cast<H::Prop *>
     (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(this_), V82JSC::ToIsolateImpl(this_)->m_property_accessor_map));

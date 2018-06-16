@@ -515,6 +515,9 @@ V(RunMicrotasksIgnoresThrownExceptions)
 V(SetAutorunMicrotasks)
 V(RunMicrotasksWithoutEnteringContext)
 V(ScopedMicrotasks)
+V(MemoryPressure)
+V(RegExpInterruption)
+V(GCFromWeakCallbacks)
 
 #undef V
 #define V(tst) \
@@ -618,7 +621,6 @@ V(DefineProperty)
 V(NewTargetHandler)
 
 // Multithreading
-V(GCFromWeakCallbacks)
 V(Threading1)
 V(Threading2)
 V(Threading3)
@@ -627,9 +629,6 @@ V(Threading5)
 V(Threading6)
 V(Threading7)
 V(Threading8)
-V(MemoryPressure)
-V(FutexInterruption)
-V(RegExpInterruption)
 
 // Function entry hooks
 V(SetFunctionEntryHook)
@@ -703,6 +702,7 @@ V(SharedFloat32Array)
 V(SharedFloat64Array)
 V(SharedUint8ClampedArray)
 V(SharedDataView)
+V(FutexInterruption)
 
 // Native calls (%<func>) not supported in JSC
 V(NativeCallInExtensions)
