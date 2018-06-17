@@ -92,7 +92,7 @@ V(GetSetProperty)
 V(TypeOf)
 V(ScriptException)
 V(LocalHandle)
-V(ReceiverSignature) // Start ObjectTemplate/FunctionTemplate tests
+V(ReceiverSignature)
 V(FunctionTemplateWithProfiler)
 V(FunctionTemplate)
 V(SimpleCallbackWithProfiler)
@@ -524,6 +524,10 @@ V(AllowCodeGenFromStrings)
 V(SetErrorMessageForCodeGenFromStrings)
 V(CaptureSourceForCodeGenFromStrings)
 V(AllowAtomicsWait)
+V(VerifyArrayPrototypeGuarantees)
+V(DisallowJavascriptExecutionScope)
+V(AllowJavascriptExecutionScope)
+V(ThrowOnJavascriptExecution)
 
 #undef V
 #define V(tst) \
@@ -647,16 +651,12 @@ V(FunctionGetScriptId)
 V(FunctionGetBoundFunction)
 
 // Random isolate function
-V(VerifyArrayPrototypeGuarantees)
 V(PersistentHandleVisitor)
 V(PersistentHandleInNewSpaceVisitor)
 V(CallCompletedCallback)
 V(CallCompletedCallbackOneException)
 V(CallCompletedCallbackTwoExceptions)
 V(EventLogging)
-V(DisallowJavascriptExecutionScope)
-V(AllowJavascriptExecutionScope)
-V(ThrowOnJavascriptExecution)
 V(AbortOnUncaughtExceptionNoAbort)
 
 // Extras

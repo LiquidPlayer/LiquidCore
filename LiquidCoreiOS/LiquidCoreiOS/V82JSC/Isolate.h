@@ -208,6 +208,8 @@ struct IsolateImpl {
     int m_run_microtasks_depth;
     
     v8::FreshNewAllowCodeGenerationFromStringsCallback m_allow_code_gen_callback;
+    bool m_disallow_js;
+    v8::Isolate::DisallowJavascriptExecutionScope::OnFailure m_on_failure;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);

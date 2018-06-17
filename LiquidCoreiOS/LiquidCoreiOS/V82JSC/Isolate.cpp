@@ -1616,22 +1616,46 @@ void Isolate::ReportExternalAllocationLimitReached()
     printf ("FIXME! Isolate::ReportExternalAllocationLimitReached()\n");
 }
 
+struct DisallowScopeImpl {
+    DisallowScopeImpl(Isolate* isolate)
+    {
+        m_isolate = V82JSC::ToIsolateImpl(isolate);
+        m_prev_failure = m_isolate->m_on_failure;
+        m_prev_disallow = m_isolate->m_disallow_js;
+    }
+    IsolateImpl* m_isolate;
+    Isolate::DisallowJavascriptExecutionScope::OnFailure m_prev_failure;
+    bool m_prev_disallow;
+};
+
 Isolate::DisallowJavascriptExecutionScope::DisallowJavascriptExecutionScope(Isolate* isolate, OnFailure on_failure)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    internal_ = (void*)new DisallowScopeImpl(isolate);
+    iso->m_disallow_js = true;
+    iso->m_on_failure = on_failure;
 }
 Isolate::DisallowJavascriptExecutionScope::~DisallowJavascriptExecutionScope()
 {
-    assert(0);
+    DisallowScopeImpl* impl = reinterpret_cast<DisallowScopeImpl*>(internal_);
+    impl->m_isolate->m_disallow_js = impl->m_prev_disallow;
+    impl->m_isolate->m_on_failure = impl->m_prev_failure;
+    delete impl;
 }
 
+// Not sure what the intent of internal_assert_ and internal_throws_ are, but we will
+// repurpose them
 Isolate::AllowJavascriptExecutionScope::AllowJavascriptExecutionScope(Isolate* isolate)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    this->internal_assert_ = (void*) iso->m_disallow_js;
+    this->internal_throws_ = (void*) iso;
+    iso->m_disallow_js = false;
 }
 Isolate::AllowJavascriptExecutionScope::~AllowJavascriptExecutionScope()
 {
-    assert(0);
+    IsolateImpl* iso = (IsolateImpl*) internal_throws_;
+    iso->m_disallow_js = (bool)internal_assert_;
 }
 
 Isolate::SuppressMicrotaskExecutionScope::SuppressMicrotaskExecutionScope(Isolate* isolate) :

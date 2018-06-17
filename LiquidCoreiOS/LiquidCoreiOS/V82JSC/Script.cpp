@@ -48,34 +48,42 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     {
         LocalException exception(iso);
         
-        int line_offset = unbound->m_resource_line_offset.IsEmpty() ? 1 : (int)unbound->m_resource_line_offset.Get(isolate)->Value() + 1;
-        JSValueRef value;
-        if (line_offset > 1) {
-            // This is a hack.  Line offset in JSScriptScriptCreateFromString() does not work.  Schade.
-
-            JSStringRef url = 0;
-            if (!unbound->m_sourceURL.IsEmpty()) {
-                Local<Value> v = unbound->m_sourceURL.Get(isolate);
-                if (!v->IsUndefined())
-                    url = JSValueToStringCopy(ctx, V82JSC::ToJSValueRef(v, bound_context), 0);
+        if (iso->m_disallow_js) {
+            if (iso->m_on_failure == Isolate::DisallowJavascriptExecutionScope::OnFailure::CRASH_ON_FAILURE) {
+                FATAL("Javascript execution disallowed");
+            } else {
+                *(&exception) = V82JSC::exec(ctx, "return new Error('Javascript execution disallowed')", 0, nullptr);
             }
-            if (!url && !unbound->m_resource_name.IsEmpty()) {
-                Local<Value> v = unbound->m_resource_name.Get(isolate);
-                if (!v->IsUndefined())
-                    url = JSValueToStringCopy(ctx, V82JSC::ToJSValueRef(v, bound_context), 0);
-            }
-            if (!url) {
-                url = JSStringCreateWithUTF8CString("[undefined]");
-            }
-
-            value = JSEvaluateScript(ctx, unbound->m_script_string, JSContextGetGlobalObject(ctx),
-                                     url, line_offset, &exception);
-            JSStringRelease(url);
         } else {
-            value = JSScriptEvaluate(ctx, unbound->m_script, JSContextGetGlobalObject(ctx), &exception);
-        }
-        if (!exception.ShouldThow()) {
-            ret = ValueImpl::New(V82JSC::ToContextImpl(bound_context), value);
+            int line_offset = unbound->m_resource_line_offset.IsEmpty() ? 1 : (int)unbound->m_resource_line_offset.Get(isolate)->Value() + 1;
+            JSValueRef value;
+            if (line_offset > 1) {
+                // This is a hack.  Line offset in JSScriptScriptCreateFromString() does not work.  Schade.
+
+                JSStringRef url = 0;
+                if (!unbound->m_sourceURL.IsEmpty()) {
+                    Local<Value> v = unbound->m_sourceURL.Get(isolate);
+                    if (!v->IsUndefined())
+                        url = JSValueToStringCopy(ctx, V82JSC::ToJSValueRef(v, bound_context), 0);
+                }
+                if (!url && !unbound->m_resource_name.IsEmpty()) {
+                    Local<Value> v = unbound->m_resource_name.Get(isolate);
+                    if (!v->IsUndefined())
+                        url = JSValueToStringCopy(ctx, V82JSC::ToJSValueRef(v, bound_context), 0);
+                }
+                if (!url) {
+                    url = JSStringCreateWithUTF8CString("[undefined]");
+                }
+
+                value = JSEvaluateScript(ctx, unbound->m_script_string, JSContextGetGlobalObject(ctx),
+                                         url, line_offset, &exception);
+                JSStringRelease(url);
+            } else {
+                value = JSScriptEvaluate(ctx, unbound->m_script, JSContextGetGlobalObject(ctx), &exception);
+            }
+            if (!exception.ShouldThow()) {
+                ret = ValueImpl::New(V82JSC::ToContextImpl(bound_context), value);
+            }
         }
     }
     iso->m_running_scripts.pop();

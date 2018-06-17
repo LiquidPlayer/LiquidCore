@@ -75,12 +75,22 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     }
     LocalException exception(iso);
     
-    JSValueRef excp = 0;
-    JSValueRef result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &excp);
-    if (!result && !excp) {
-        V82JSC::exec(V82JSC::ToContextRef(context), "throw new TypeError('object is not a function');", 1, &func, &exception);
-    } else if (excp) {
-        exception.exception_ = excp;
+    JSValueRef result = 0;
+    if (iso->m_disallow_js) {
+        if (iso->m_on_failure == Isolate::DisallowJavascriptExecutionScope::OnFailure::CRASH_ON_FAILURE) {
+            FATAL("Javascript execution disallowed");
+        } else {
+            *(&exception) = V82JSC::exec(V82JSC::ToContextRef(context),
+                                         "return new Error('Javascript execution disallowed')", 0, nullptr);
+        }
+    } else {
+        JSValueRef excp = 0;
+        result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &excp);
+        if (!result && !excp) {
+            V82JSC::exec(V82JSC::ToContextRef(context), "throw new TypeError('object is not a function');", 1, &func, &exception);
+        } else if (excp) {
+            exception.exception_ = excp;
+        }
     }
     
     iso->m_callback_depth--;
