@@ -210,6 +210,9 @@ struct IsolateImpl {
     v8::FreshNewAllowCodeGenerationFromStringsCallback m_allow_code_gen_callback;
     bool m_disallow_js;
     v8::Isolate::DisallowJavascriptExecutionScope::OnFailure m_on_failure;
+    
+    std::vector<BeforeCallEnteredCallback> m_before_call_callbacks;
+    std::vector<CallCompletedCallback> m_call_completed_callbacks;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);

@@ -96,6 +96,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_microtasks_completed_callback = std::vector<v8::MicrotasksCompletedCallback>();
     impl->m_microtasks_policy = v8::MicrotasksPolicy::kAuto;
     impl->m_jsobjects = std::map<JSObjectRef, ValueImpl*>();
+    impl->m_before_call_callbacks = std::vector<BeforeCallEnteredCallback>();
+    impl->m_call_completed_callbacks = std::vector<CallCompletedCallback>();
 
     impl->m_locker = nullptr;
     impl->m_isLocked = false;
@@ -495,6 +497,8 @@ void Isolate::Dispose()
     isolate->m_global_symbols.clear();
     isolate->m_private_symbols.clear();
     isolate->m_message_listeners.clear();
+    isolate->m_before_call_callbacks.clear();
+    isolate->m_call_completed_callbacks.clear();
     while (!isolate->m_running_scripts.empty()) isolate->m_running_scripts.pop();
     isolate->m_gc_prologue_callbacks.clear();
     isolate->m_gc_epilogue_callbacks.clear();
@@ -1016,7 +1020,9 @@ void Isolate::SetEventLogger(LogEventCallback that)
  */
 void Isolate::AddBeforeCallEnteredCallback(BeforeCallEnteredCallback callback)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    RemoveBeforeCallEnteredCallback(callback);
+    iso->m_before_call_callbacks.push_back(callback);
 }
 
 /**
@@ -1024,7 +1030,11 @@ void Isolate::AddBeforeCallEnteredCallback(BeforeCallEnteredCallback callback)
  */
 void Isolate::RemoveBeforeCallEnteredCallback(BeforeCallEnteredCallback callback)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    for (auto i=iso->m_before_call_callbacks.begin(); i!=iso->m_before_call_callbacks.end(); ) {
+        if ( *i == callback ) iso->m_before_call_callbacks.erase(i);
+        else ++i;
+    }
 }
 
 /**
@@ -1036,7 +1046,9 @@ void Isolate::RemoveBeforeCallEnteredCallback(BeforeCallEnteredCallback callback
  */
 void Isolate::AddCallCompletedCallback(CallCompletedCallback callback)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    RemoveCallCompletedCallback(callback);
+    iso->m_call_completed_callbacks.push_back(callback);
 }
 
 /**
@@ -1044,7 +1056,11 @@ void Isolate::AddCallCompletedCallback(CallCompletedCallback callback)
  */
 void Isolate::RemoveCallCompletedCallback(CallCompletedCallback callback)
 {
-    assert(0);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    for (auto i=iso->m_call_completed_callbacks.begin(); i!=iso->m_call_completed_callbacks.end(); ) {
+        if ( *i == callback ) iso->m_call_completed_callbacks.erase(i);
+        else ++i;
+    }
 }
 
 /**

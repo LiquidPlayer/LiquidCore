@@ -528,6 +528,9 @@ V(VerifyArrayPrototypeGuarantees)
 V(DisallowJavascriptExecutionScope)
 V(AllowJavascriptExecutionScope)
 V(ThrowOnJavascriptExecution)
+V(CallCompletedCallback)
+V(CallCompletedCallbackOneException)
+V(CallCompletedCallbackTwoExceptions)
 
 #undef V
 #define V(tst) \
@@ -653,9 +656,6 @@ V(FunctionGetBoundFunction)
 // Random isolate function
 V(PersistentHandleVisitor)
 V(PersistentHandleInNewSpaceVisitor)
-V(CallCompletedCallback)
-V(CallCompletedCallbackOneException)
-V(CallCompletedCallbackTwoExceptions)
 V(EventLogging)
 V(AbortOnUncaughtExceptionNoAbort)
 

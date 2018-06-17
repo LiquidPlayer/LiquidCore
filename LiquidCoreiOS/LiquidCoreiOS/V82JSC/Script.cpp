@@ -55,6 +55,10 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
                 *(&exception) = V82JSC::exec(ctx, "return new Error('Javascript execution disallowed')", 0, nullptr);
             }
         } else {
+            for (auto i=iso->m_before_call_callbacks.begin(); i!=iso->m_before_call_callbacks.end(); ++i) {
+                (*i)(isolate);
+            }
+            
             int line_offset = unbound->m_resource_line_offset.IsEmpty() ? 1 : (int)unbound->m_resource_line_offset.Get(isolate)->Value() + 1;
             JSValueRef value;
             if (line_offset > 1) {
@@ -88,6 +92,14 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     }
     iso->m_running_scripts.pop();
     iso->m_callback_depth --;
+
+    if (iso->m_callback_depth == 0) {
+        for (auto i=iso->m_call_completed_callbacks.begin(); i!=iso->m_call_completed_callbacks.end(); ++i) {
+            iso->m_callback_depth++;
+            (*i)(V82JSC::ToIsolate(iso));
+            iso->m_callback_depth--;
+        }
+    }
 
     return ret;
 }

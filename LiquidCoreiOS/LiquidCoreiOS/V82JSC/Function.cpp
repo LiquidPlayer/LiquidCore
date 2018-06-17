@@ -84,6 +84,10 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
                                          "return new Error('Javascript execution disallowed')", 0, nullptr);
         }
     } else {
+        for (auto i=iso->m_before_call_callbacks.begin(); i!=iso->m_before_call_callbacks.end(); ++i) {
+            (*i)(V82JSC::ToIsolate(iso));
+        }
+        
         JSValueRef excp = 0;
         result = JSObjectCallAsFunction(V82JSC::ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &excp);
         if (!result && !excp) {
@@ -94,6 +98,13 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     }
     
     iso->m_callback_depth--;
+    if (iso->m_callback_depth == 0) {
+        for (auto i=iso->m_call_completed_callbacks.begin(); i!=iso->m_call_completed_callbacks.end(); ++i) {
+            iso->m_callback_depth++;
+            (*i)(V82JSC::ToIsolate(iso));
+            iso->m_callback_depth--;
+        }
+    }
     
     if (!exception.ShouldThow()) {
         return ValueImpl::New(V82JSC::ToContextImpl(context), result);
