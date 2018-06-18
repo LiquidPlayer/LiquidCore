@@ -26,6 +26,25 @@ void V82JSC_HeapObject::Value::RemoveObjectFromMap(IsolateImpl* iso, JSObjectRef
     iso->m_jsobjects.erase(o);
 }
 
+void V82JSC_HeapObject::WeakExternalString::FinalizeExternalString()
+{
+    v8::internal::Isolate *ii = reinterpret_cast<v8::internal::Isolate*>(GetIsolate());
+    if (m_resource) {
+        v8::String::ExternalStringResourceBase *rsrc = m_resource;
+        int count = 0;
+        std::map<JSValueRef, Copyable(v8::WeakExternalString)>::iterator todelete;
+        for(auto i=GetIsolate()->m_external_strings.begin(); i!=GetIsolate()->m_external_strings.end(); ++i) {
+            auto s = i->second.Get(reinterpret_cast<v8::Isolate*>(GetIsolate()));
+            WeakExternalString* wes = static_cast<WeakExternalString*>(FromHeapPointer(*(internal::Object**)*s));
+            if (wes->m_resource == rsrc && wes != this) count++;
+        }
+        if (count == 0) {
+            intptr_t addr = reinterpret_cast<intptr_t>(this) + v8::internal::ExternalString::kResourceOffset;
+            * reinterpret_cast<v8::String::ExternalStringResourceBase**>(addr) = rsrc;
+            ii->heap()->FinalizeExternalString(reinterpret_cast<v8::internal::String*>(ToHeapPointer(this)));
+        }
+    }
+}
 
 HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint32_t size)
 {

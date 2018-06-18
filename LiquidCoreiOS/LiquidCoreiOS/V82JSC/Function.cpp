@@ -196,8 +196,8 @@ Local<Value> Function::GetDisplayName() const
  */
 int Function::GetScriptLineNumber() const
 {
-    assert(0);
-    return 0;
+    // Don't think this is possible in JSC
+    return kLineOffsetNotFound;
 }
 /**
  * Returns zero based column number of function body and
@@ -205,16 +205,18 @@ int Function::GetScriptLineNumber() const
  */
 int Function::GetScriptColumnNumber() const
 {
-    assert(0);
-    return 0;
+    // Don't think this is possible in JSC
+    return kLineOffsetNotFound;
 }
+
+const int Function::kLineOffsetNotFound = -1;
 
 /**
  * Returns scriptId.
  */
 int Function::ScriptId() const
 {
-    assert(0);
+    // Don't think this is possible in JSC
     return 0;
 }
 
@@ -230,7 +232,7 @@ Local<Value> Function::GetBoundFunction() const
 
 ScriptOrigin Function::GetScriptOrigin() const
 {
-    assert(0);
+    // Don't think this is possible in JSC
     Local<Value> v = Local<Value>();
     ScriptOrigin so(v);
     return so;

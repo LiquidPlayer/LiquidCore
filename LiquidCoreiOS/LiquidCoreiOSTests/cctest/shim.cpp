@@ -59,8 +59,10 @@ internal::Handle<FixedArray> Factory::NewFixedArray(int size, PretenureFlag pret
 
 MaybeHandle<internal::String> Factory::NewExternalStringFromOneByte(const ExternalOneByteString::Resource* resource)
 {
-    assert(0);
-    return MaybeHandle<internal::String>();
+    v8::Isolate *isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+    MaybeLocal<v8::String> string = v8::String::NewExternalOneByte(isolate, const_cast<ExternalOneByteString::Resource*>(resource));
+    return * reinterpret_cast<MaybeHandle<String>*>(&string);
 }
 
 //
@@ -69,7 +71,10 @@ MaybeHandle<internal::String> Factory::NewExternalStringFromOneByte(const Extern
 template <>
 void internal::String::WriteToFlat(internal::String* source, unsigned short* sink, int from, int to)
 {
-    assert(0);
+    StringImpl* impl = reinterpret_cast<StringImpl*>(reinterpret_cast<intptr_t>(source) - internal::kHeapObjectTag);
+    JSStringRef string = JSValueToStringCopy(impl->GetNullContext(), impl->m_value, 0);
+    const uint16_t * str = JSStringGetCharactersPtr(string);
+    memcpy(sink, &str[from], (to-from)*sizeof(uint16_t));
 }
 internal::Handle<internal::String> internal::String::SlowFlatten(Handle<ConsString> cons,
                            PretenureFlag tenure)
@@ -91,8 +96,10 @@ bool internal::String::SlowAsArrayIndex(uint32_t* index)
 
 bool internal::String::MakeExternal(v8::String::ExternalStringResource* resource)
 {
-    assert(0);
-    return false;
+    StringImpl* impl = reinterpret_cast<StringImpl*>(reinterpret_cast<intptr_t>(this) - internal::kHeapObjectTag);
+    v8::HandleScope scope(V82JSC::ToIsolate(impl->GetIsolate()));
+    Local<v8::String> string = V82JSC::CreateLocal<v8::String>(&impl->GetIsolate()->ii, impl);
+    return string->MakeExternal(resource);
 }
 
 internal::Handle<internal::String> StringTable::LookupString(Isolate* isolate, internal::Handle<internal::String> string)

@@ -15451,18 +15451,25 @@ THREADED_TEST(MorphCompositeStringTest) {
     LocalContext env;
     i::Factory* factory = CcTest::i_isolate()->factory();
     v8::HandleScope scope(env->GetIsolate());
+/*
     OneByteVectorResource one_byte_resource(
         i::Vector<const char>(c_string, i::StrLength(c_string)));
     UC16VectorResource uc16_resource(
         i::Vector<const uint16_t>(two_byte_string,
                                   i::StrLength(c_string)));
+*/
+    auto one_byte_resource = new OneByteVectorResource(
+        i::Vector<const char>(c_string, i::StrLength(c_string)));
+    auto uc16_resource = new UC16VectorResource(
+        i::Vector<const uint16_t>(two_byte_string,
+                                  i::StrLength(c_string)));
 
     Local<String> lhs(
         v8::Utils::ToLocal(factory->NewExternalStringFromOneByte(
-                                        &one_byte_resource).ToHandleChecked()));
+                                        /*&*/one_byte_resource).ToHandleChecked()));
     Local<String> rhs(
         v8::Utils::ToLocal(factory->NewExternalStringFromOneByte(
-                                        &one_byte_resource).ToHandleChecked()));
+                                        /*&*/one_byte_resource).ToHandleChecked()));
 
     CHECK(env->Global()->Set(env.local(), v8_str("lhs"), lhs).FromJust());
     CHECK(env->Global()->Set(env.local(), v8_str("rhs"), rhs).FromJust());
@@ -15475,10 +15482,10 @@ THREADED_TEST(MorphCompositeStringTest) {
     CHECK(lhs->IsOneByte());
     CHECK(rhs->IsOneByte());
 
-    MorphAString(*v8::Utils::OpenHandle(*lhs), &one_byte_resource,
-                 &uc16_resource);
-    MorphAString(*v8::Utils::OpenHandle(*rhs), &one_byte_resource,
-                 &uc16_resource);
+    MorphAString(*v8::Utils::OpenHandle(*lhs), /*&*/one_byte_resource,
+                 /*&*/uc16_resource);
+    MorphAString(*v8::Utils::OpenHandle(*rhs), /*&*/one_byte_resource,
+                 /*&*/uc16_resource);
 
     // This should UTF-8 without flattening, since everything is ASCII.
     Local<String> cons =
@@ -18748,10 +18755,12 @@ TEST(VisitExternalStrings) {
           .ToLocalChecked();
   CcTest::CollectAllAvailableGarbage();  // Tenure string.
   // Turn into a symbol.
+/*
   i::Handle<i::String> string3_i = v8::Utils::OpenHandle(*string3);
   CHECK(!CcTest::i_isolate()->factory()->InternalizeString(
       string3_i).is_null());
   CHECK(string3_i->IsInternalizedString());
+*/
 
   // We need to add usages for string* to avoid warnings in GCC 4.7
   CHECK(string0->IsExternal());
@@ -19844,7 +19853,9 @@ TEST(GCCallbacks) {
   isolate->RemoveGCEpilogueCallback(EpilogueCallbackAlloc);
 }
 
-
+// V82JSC: JSC always stores strings as two-byte representations
+// Also, not cool to put TestResource on the stack.  The resource
+// needs to be released by the isolate.
 THREADED_TEST(TwoByteStringInOneByteCons) {
   // See Chromium issue 47824.
   LocalContext context;
@@ -19862,12 +19873,12 @@ THREADED_TEST(TwoByteStringInOneByteCons) {
   CHECK(result->IsString());
   i::Handle<i::String> string = v8::Utils::OpenHandle(String::Cast(*result));
   int length = string->length();
-  CHECK(string->IsOneByteRepresentation());
+//  CHECK(string->IsOneByteRepresentation());
 
   i::Handle<i::String> flat_string = i::String::Flatten(string);
 
-  CHECK(string->IsOneByteRepresentation());
-  CHECK(flat_string->IsOneByteRepresentation());
+//  CHECK(string->IsOneByteRepresentation());
+//  CHECK(flat_string->IsOneByteRepresentation());
 
   // Create external resource.
   uint16_t* uc16_buffer = new uint16_t[length + 1];
@@ -19875,9 +19886,11 @@ THREADED_TEST(TwoByteStringInOneByteCons) {
   i::String::WriteToFlat(*flat_string, uc16_buffer, 0, length);
   uc16_buffer[length] = 0;
 
-  TestResource resource(uc16_buffer);
+//  TestResource resource(uc16_buffer);
+  TestResource* resource = new TestResource(uc16_buffer);
 
-  flat_string->MakeExternal(&resource);
+//  flat_string->MakeExternal(&resource);
+  flat_string->MakeExternal(resource);
 
   CHECK(flat_string->IsTwoByteRepresentation());
 
@@ -19961,7 +19974,7 @@ TEST(ContainsOnlyOneByte) {
   string = String::NewFromTwoByte(isolate, string_contents,
                                   v8::NewStringType::kNormal)
                .ToLocalChecked();
-  CHECK(string->IsOneByte() && string->ContainsOnlyOneByte());
+  CHECK(/*string->IsOneByte() &&*/ string->ContainsOnlyOneByte());
   // Test left right and balanced cons strings.
   Local<String> base = v8_str("a");
   Local<String> left = base;
@@ -19981,7 +19994,7 @@ TEST(ContainsOnlyOneByte) {
   for (size_t i = 0; i < arraysize(cons_strings); i++) {
     // Base assumptions.
     string = cons_strings[i];
-    CHECK(string->IsOneByte() && string->ContainsOnlyOneByte());
+    CHECK(/*string->IsOneByte() &&*/ string->ContainsOnlyOneByte());
     // Test left and right concatentation.
     string = String::Concat(two_byte, cons_strings[i]);
     CHECK(!string->IsOneByte() && string->ContainsOnlyOneByte());
@@ -20196,8 +20209,8 @@ static void BreakArrayGuarantees(const char* script) {
     v8::Local<v8::Context> context =
         v8::Local<v8::Context>::New(isolate1, context1);
     v8::Context::Scope context_scope(context);
-    v8::internal::Isolate* i_isolate =
-        reinterpret_cast<v8::internal::Isolate*>(isolate1);
+//    v8::internal::Isolate* i_isolate =
+//        reinterpret_cast<v8::internal::Isolate*>(isolate1);
 //    CHECK(i_isolate->IsFastArrayConstructorPrototypeChainIntact());
     // Run something in new isolate.
     CompileRun(script);
@@ -24145,7 +24158,7 @@ void StoringEventLoggerCallback(const char* message, int status) {
 }
 
 
-TEST(EventLogging) {
+V82JSC_SKIP_TEST(EventLogging) {
   v8::Isolate* isolate = CcTest::isolate();
   isolate->SetEventLogger(StoringEventLoggerCallback);
   v8::internal::HistogramTimer histogramTimer(
@@ -25490,10 +25503,19 @@ TEST(ParserCacheRejectedGracefully) {
 TEST(StringConcatOverflow) {
   v8::V8::Initialize();
   v8::HandleScope scope(CcTest::isolate());
+  // V82JSC:  Using two byte resource here because the test is hacking a long string
+  // (not really creating one).  Since JSC converts one byte to two byte, the hack
+  // will not work as the test expects.  Using two byte does not iterate the string.
+/*
   RandomLengthOneByteResource* r =
       new RandomLengthOneByteResource(i::String::kMaxLength);
-  v8::Local<v8::String> str =
+ v8::Local<v8::String> str =
       v8::String::NewExternalOneByte(CcTest::isolate(), r).ToLocalChecked();
+*/
+  RandomLengthResource* r =
+      new RandomLengthResource(i::String::kMaxLength);
+  v8::Local<v8::String> str =
+      v8::String::NewExternalTwoByte(CcTest::isolate(), r).ToLocalChecked();
   CHECK(!str.IsEmpty());
   v8::TryCatch try_catch(CcTest::isolate());
   v8::Local<v8::String> result = v8::String::Concat(str, str);

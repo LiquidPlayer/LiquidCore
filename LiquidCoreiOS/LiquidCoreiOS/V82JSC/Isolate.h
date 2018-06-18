@@ -213,6 +213,7 @@ struct IsolateImpl {
     
     std::vector<BeforeCallEnteredCallback> m_before_call_callbacks;
     std::vector<CallCompletedCallback> m_call_completed_callbacks;
+    v8::Isolate::AbortOnUncaughtExceptionCallback m_on_uncaught_exception_callback;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
@@ -223,6 +224,8 @@ struct IsolateImpl {
     void TriggerGCEpilogue();
     void CollectExternalStrings();
     static bool PollForInterrupts(JSContextRef ctx, void* context);
+    
+    internal::IncrementalMarking incremental_marking_;
     
     v8::internal::GetGlobalHandles getGlobalHandles;
     v8::internal::WeakObjectNearDeath weakObjectNearDeath;

@@ -531,6 +531,14 @@ V(ThrowOnJavascriptExecution)
 V(CallCompletedCallback)
 V(CallCompletedCallbackOneException)
 V(CallCompletedCallbackTwoExceptions)
+V(AbortOnUncaughtExceptionNoAbort)
+V(Utf16Trailing3Byte)
+V(MorphCompositeStringTest)
+V(VisitExternalStrings)
+V(TwoByteStringInOneByteCons)
+V(ContainsOnlyOneByte)
+V(StringConcatOverflow)
+
 
 #undef V
 #define V(tst) \
@@ -575,12 +583,6 @@ V(ErrorReporting)
 V(StringWrite)
 V(Utf16)
 V(Utf16Symbol)
-V(Utf16Trailing3Byte)
-V(MorphCompositeStringTest)
-V(VisitExternalStrings)
-V(TwoByteStringInOneByteCons)
-V(ContainsOnlyOneByte)
-V(StringConcatOverflow)
 
 // Security
 V(SecurityHandler)
@@ -647,17 +649,11 @@ V(PromiseThen)
 V(PromiseStateAndValue)
 
 // Uninmplemented function
-V(ScriptOrigin)
-V(ScriptLineNumber)
-V(ScriptColumnNumber)
-V(FunctionGetScriptId)
 V(FunctionGetBoundFunction)
 
 // Random isolate function
 V(PersistentHandleVisitor)
 V(PersistentHandleInNewSpaceVisitor)
-V(EventLogging)
-V(AbortOnUncaughtExceptionNoAbort)
 
 // Extras
 V(ExtrasFunctionSource)
@@ -716,5 +712,14 @@ V(Regress567998)
 
 // Experimental features
 V(DynamicImport)
+
+// internal features not fully exposed to API
+V(EventLogging)
+
+// JSC won't give script info from a function
+V(ScriptOrigin)
+V(ScriptLineNumber)
+V(ScriptColumnNumber)
+V(FunctionGetScriptId)
 
 @end

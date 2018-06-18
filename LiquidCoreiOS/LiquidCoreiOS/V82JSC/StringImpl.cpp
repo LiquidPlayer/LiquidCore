@@ -59,10 +59,10 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         return MaybeLocal<String>();
     }
 
-    char str_[length>=0 ? length : 0];
+    char str_[length>=0 ? length+1 : 0];
     if (length>0) {
         strncpy(str_, data, length);
-        str_[length-1] = 0;
+        str_[length] = 0;
         data = str_;
     }
     return MaybeLocal<String>(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data)));
@@ -348,6 +348,9 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
  */
 Local<String> String::Concat(Local<String> left, Local<String> right)
 {
+    if (left->Length() + right->Length() > v8::String::kMaxLength) {
+        return Local<String>();
+    }
     Local<Context> context = V82JSC::ToCurrentContext(*left);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
     JSValueRef left_ = V82JSC::ToJSValueRef(left, context);
@@ -429,11 +432,13 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
     if (resource->length() > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
-    uint16_t str[resource->length()];
+    uint16_t *str = (uint16_t*) calloc(sizeof (uint16_t), resource->length());
     for (int i=0; i<resource->length(); i++) str[i] = resource->data()[i];
 
-    return StringImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
-                           V82JSC::ToIsolateImpl(isolate)->m_external_one_byte_string_map, resource);
+    Local<String> s = StringImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
+                                      V82JSC::ToIsolateImpl(isolate)->m_external_one_byte_string_map, resource);
+    delete str;
+    return s;
 }
 
 /**

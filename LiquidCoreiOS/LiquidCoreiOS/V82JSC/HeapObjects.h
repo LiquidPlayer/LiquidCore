@@ -351,15 +351,10 @@ namespace V82JSC_HeapObject {
                               std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             if (obj->m_weakRef) JSWeakRelease(obj->GetContextGroup(), obj->m_weakRef);
-            
-            v8::internal::Isolate *ii = reinterpret_cast<v8::internal::Isolate*>(obj->GetIsolate());
-            if (obj->m_resource) {
-                intptr_t addr = reinterpret_cast<intptr_t>(obj) + v8::internal::ExternalString::kResourceOffset;
-                * reinterpret_cast<v8::String::ExternalStringResourceBase**>(addr) = obj->m_resource;
-                ii->heap()->FinalizeExternalString(reinterpret_cast<v8::internal::String*>(ToHeapPointer(obj)));
-            }
+            obj->FinalizeExternalString();
             return WeakValue::Destructor(obj, handles, weak, callbacks);
         }
+        void FinalizeExternalString();
     };
 
     struct FixedArray : HeapObject {

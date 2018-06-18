@@ -78,6 +78,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
     heap->m_heap_top = nullptr;
     heap->m_allocated = 0;
+    heap->SetUp();
     
     impl->m_global_symbols = std::map<std::string, JSValueRef>();
     impl->m_private_symbols = std::map<std::string, JSValueRef>();
@@ -166,6 +167,8 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     roots->true_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_true));
     roots->false_value = reinterpret_cast<internal::Object**> (H::ToV8Map(map_false));
     roots->empty_string = reinterpret_cast<internal::Object**> (H::ToV8Map(map_empty_string));
+    roots->external_one_byte_string_map = reinterpret_cast<internal::Object**> (H::ToV8Map(impl->m_external_one_byte_string_map));
+    roots->external_string_map = reinterpret_cast<internal::Object**> (H::ToV8Map(impl->m_external_string_map));
 
     Local<Context> nullContext = Context::New(isolate);
     impl->m_nullContext.Reset(isolate, nullContext);
@@ -193,6 +196,13 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
 
+bool internal::Heap::SetUp()
+{
+    IsolateImpl* iso = reinterpret_cast<IsolateImpl*>(isolate());
+    incremental_marking_ = &iso->incremental_marking_;
+    return true;
+}
+
 bool IsolateImpl::PollForInterrupts(JSContextRef ctx, void* context)
 {
     IsolateImpl* iso = (IsolateImpl*)context;
@@ -200,12 +210,12 @@ bool IsolateImpl::PollForInterrupts(JSContextRef ctx, void* context)
     JSContextGroupSetExecutionTimeLimit(iso->m_group, 1, IsolateImpl::PollForInterrupts, iso);
     bool empty = false;
     bool terminate = iso->m_terminate_execution;
-    iso->m_pending_interrupt_mutex.lock();
     
     if (terminate) {
         return true;
     }
     
+    iso->m_pending_interrupt_mutex.lock();
     empty = iso->m_pending_interrupts.empty();
     while (!empty) {
         IsolateImpl::PendingInterrupt interrupt = iso->m_pending_interrupts.front();
@@ -259,10 +269,11 @@ void IsolateImpl::TriggerGCEpilogue()
 void IsolateImpl::CollectExternalStrings()
 {
     v8::HandleScope scope(V82JSC::ToIsolate(this));
+    
     for (auto i=m_external_strings.begin(); i!=m_external_strings.end(); ) {
         WeakExternalStringImpl *ext = V82JSC::ToImpl<WeakExternalStringImpl>(i->second.Get(V82JSC::ToIsolate(this)));
         if (JSWeakGetObject(ext->m_weakRef) == 0) {
-            i = m_external_strings.erase(i);
+            m_external_strings.erase(i++);
         } else {
             ++i;
         }
@@ -335,7 +346,8 @@ Isolate* Isolate::GetCurrent()
  */
 void Isolate::SetAbortOnUncaughtExceptionCallback(AbortOnUncaughtExceptionCallback callback)
 {
-    assert(0);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    iso->m_on_uncaught_exception_callback = callback;
 }
 
 /**
@@ -459,14 +471,11 @@ void Isolate::Dispose()
     JSContextGroupRemoveHeapFinalizer(isolate->m_group, HeapFinalizerCallback, isolate);
     {
         HandleScope scope(V82JSC::ToIsolate(isolate));
+        auto deleted = std::map<String::ExternalStringResourceBase*, bool>();
         while (!isolate->m_external_strings.empty()) {
             Local<WeakExternalString> wes = isolate->m_external_strings.begin()->second.Get(V82JSC::ToIsolate(isolate));
             WeakExternalStringImpl *impl = V82JSC::ToImpl<WeakExternalStringImpl>(wes);
-            if (impl->m_resource) {
-                intptr_t addr = reinterpret_cast<intptr_t>(impl) + v8::internal::ExternalString::kResourceOffset;
-                * reinterpret_cast<v8::String::ExternalStringResourceBase**>(addr) = impl->m_resource;
-                isolate->ii.heap()->FinalizeExternalString(reinterpret_cast<v8::internal::String*>(ToHeapPointer(impl)));
-            }
+            impl->FinalizeExternalString();
             isolate->m_external_strings.erase(isolate->m_external_strings.begin());
         }
     }
@@ -1009,7 +1018,7 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
  */
 void Isolate::SetEventLogger(LogEventCallback that)
 {
-    assert(0);
+    reinterpret_cast<internal::Isolate*>(this)->event_logger_ = that;
 }
 
 /**
@@ -1573,7 +1582,15 @@ void Isolate::SetCaptureStackTraceForUncaughtExceptions(
  */
 void Isolate::VisitExternalResources(ExternalResourceVisitor* visitor)
 {
-    assert(0);
+    HandleScope scope(this);
+    
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    for(auto i=iso->m_external_strings.begin(); i!=iso->m_external_strings.end(); ++i) {
+        auto s = i->second.Get(this);
+        H::WeakExternalString* wes = static_cast<H::WeakExternalString*>(H::FromHeapPointer(*(internal::Object**)*s));
+        visitor->VisitExternalString(ValueImpl::New(V82JSC::ToContextImpl(iso->m_nullContext.Get(this)),
+                                                    wes->m_value).As<String>());
+    }
 }
 
 /**

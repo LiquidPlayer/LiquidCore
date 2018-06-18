@@ -31,6 +31,15 @@ void MessageImpl::CallHandlers()
     Local<v8::Message> msg = V82JSC::CreateLocal<v8::Message>(&iso->ii, this);
 
     TryCatch try_catch(V82JSC::ToIsolate(iso));
+    if (iso->m_message_listeners.empty()) {
+        bool abort = false;
+        if (iso->m_on_uncaught_exception_callback)
+            abort = iso->m_on_uncaught_exception_callback(V82JSC::ToIsolate(iso));
+        if (abort) {
+            String::Utf8Value str(msg->Get());
+            FATAL(*str);
+        }
+    }
     for (auto i=iso->m_message_listeners.begin(); i!=iso->m_message_listeners.end(); ++i) {
         Local<v8::Value> data;
         if (i->data_) {
