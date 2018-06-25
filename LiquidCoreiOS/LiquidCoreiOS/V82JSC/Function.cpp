@@ -55,6 +55,7 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
                                  Local<Value> argv[])
 {
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
     Context::Scope context_scope(context);
 
     // Check if there are pending interrupts before even executing
@@ -66,12 +67,15 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     } else {
         iso->m_callback_depth++;
     }
+    ValueImpl *fimpl = V82JSC::ToImpl<ValueImpl>(this);
+    Local<Value> secure_function = TrackedObjectImpl::SecureValue(V82JSC::CreateLocal<Value>(&iso->ii, fimpl));
 
-    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
+    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef(secure_function, context);
     JSValueRef thiz = V82JSC::ToJSValueRef<Value>(recv, context);
     JSValueRef args[argc];
+    recv = TrackedObjectImpl::SecureValue(recv);
     for (int i=0; i<argc; i++) {
-        args[i] = V82JSC::ToJSValueRef<Value>(argv[i], context);
+        args[i] = V82JSC::ToJSValueRef<Value>(TrackedObjectImpl::SecureValue(argv[i]), context);
     }
     LocalException exception(iso);
     
@@ -107,7 +111,7 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     }
     
     if (!exception.ShouldThow()) {
-        return ValueImpl::New(V82JSC::ToContextImpl(context), result);
+        return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(context), result));
     }
     
     return MaybeLocal<Value>();

@@ -21,24 +21,25 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
     typedef v8::internal::Heap::RootListIndex R;
     internal::Object * io;
     void* resource = nullptr;
+    EscapableHandleScope scope(isolate);
     
     double num = 0.0;
     if (!map) {
         switch (t) {
             case kJSTypeUndefined: {
                 io = isolateimpl->ii.heap()->root(R::kUndefinedValueRootIndex);
-                return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
+                return scope.Escape(V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io)));
             }
             case kJSTypeNull: {
                 io = isolateimpl->ii.heap()->root(R::kNullValueRootIndex);
-                return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
+                return scope.Escape(V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io)));
             }
             case kJSTypeBoolean: {
                 if (JSValueToBoolean(ctx->m_ctxRef, value))
                     io = isolateimpl->ii.heap()->root(R::kTrueValueRootIndex);
                 else
                     io = isolateimpl->ii.heap()->root(R::kFalseValueRootIndex);
-                return V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io));
+                return scope.Escape(V82JSC::CreateLocal<v8::Value>(isolate, H::FromHeapPointer(io)));
             }
             case kJSTypeString: {
                 if (isolateimpl->m_external_strings.count(value) == 1) {
@@ -56,8 +57,8 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
                 double intpart;
                 if (value != isolateimpl->m_negative_zero && modf(num, &intpart) == 0.0) {
                     if (internal::Smi::IsValid(intpart)) {
-                        return V82JSC::CreateLocalSmi<v8::Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
-                                                             internal::Smi::FromInt(intpart));
+                        return scope.Escape(V82JSC::CreateLocalSmi<v8::Value>(reinterpret_cast<internal::Isolate*>(isolateimpl),
+                                                             internal::Smi::FromInt(intpart)));
                     }
                 }
                 map = isolateimpl->m_number_map;
@@ -66,15 +67,17 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
             case kJSTypeObject: {
                 if (isolateimpl->m_jsobjects.count((JSObjectRef)value)) {
                     ValueImpl* obj = isolateimpl->m_jsobjects[(JSObjectRef)value];
-                    return V82JSC::CreateLocal<v8::Value>(isolate, obj);
+                    return scope.Escape(V82JSC::CreateLocal<v8::Value>(isolate, obj));
                 }
+                JSValueRef proxyless = JSObjectGetProxyTarget((JSObjectRef)value);
+                if (proxyless == 0) proxyless = value;
                 JSValueRef exception = 0;
-                JSValueRef isArrayBuffer = V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &value, &exception);
+                JSValueRef isArrayBuffer = V82JSC::exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &proxyless, &exception);
                 if (!exception && JSValueToBoolean(ctx->m_ctxRef, isArrayBuffer)) {
                     map = isolateimpl->m_array_buffer_map;
                 } else {
                     exception = 0;
-                    JSValueRef isSymbol = V82JSC::exec(ctx->m_ctxRef, "return typeof _1 === 'symbol'", 1, &value, &exception);
+                    JSValueRef isSymbol = V82JSC::exec(ctx->m_ctxRef, "return typeof _1 === 'symbol'", 1, &proxyless, &exception);
                     if (!exception && JSValueToBoolean(ctx->m_ctxRef, isSymbol)) {
                         map = isolateimpl->m_symbol_map;
                     } else {
@@ -104,7 +107,7 @@ Local<Value> ValueImpl::New(const ContextImpl *ctx, JSValueRef value, V82JSC_Hea
         isolateimpl->m_jsobjects[(JSObjectRef)value] = impl;
     }
 
-    return V82JSC::CreateLocal<v8::Value>(V82JSC::ToIsolate(isolateimpl), impl);
+    return scope.Escape(V82JSC::CreateLocal<v8::Value>(V82JSC::ToIsolate(isolateimpl), impl));
 }
 
 #define FROMTHIS(c,v) \
@@ -573,6 +576,7 @@ JSClassRef s_externalClass = nullptr;
 
 Local<External> External::New(Isolate* isolate, void* value)
 {
+    EscapableHandleScope scope(isolate);
     if (!s_externalClass) {
         JSClassDefinition definition = kJSClassDefinitionEmpty;
         definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
@@ -580,11 +584,12 @@ Local<External> External::New(Isolate* isolate, void* value)
         s_externalClass = JSClassCreate(&definition);
     }
     
-    Local<Context> context = V82JSC::OperatingContext(isolate);
+    Local<Context> context = V82JSC::ToIsolateImpl(isolate)->m_nullContext.Get(isolate);
     JSObjectRef external = JSObjectMake(V82JSC::ToContextRef(context), s_externalClass, value);
     auto e = ValueImpl::New(V82JSC::ToContextImpl(context), external);
     
-    return * reinterpret_cast<Local<External> *>(&e);
+    Local<External> ext = * reinterpret_cast<Local<External> *>(&e);
+    return scope.Escape(ext);
 }
 
 void* External::Value() const

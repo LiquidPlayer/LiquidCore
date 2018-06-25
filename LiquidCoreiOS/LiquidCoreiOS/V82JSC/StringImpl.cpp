@@ -14,11 +14,14 @@ using namespace v8;
 
 #define H V82JSC_HeapObject
 
-Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap* type, void *resource)
+Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap* type,
+                                  void *resource, v8::NewStringType stringtype)
 {
     EscapableHandleScope scope(isolate);
-    JSContextRef ctx = V82JSC::ToContextRef(V82JSC::OperatingContext(isolate));
     IsolateImpl *i = V82JSC::ToIsolateImpl(isolate);
+    Local<Context> context = i->m_nullContext.Get(isolate);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    Context::Scope context_scope(context);
 
     StringImpl *string = static_cast<StringImpl *>(H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
                                                                          type ? type : i->m_string_map));
@@ -35,7 +38,32 @@ Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap*
         string->m_map = H::ToV8Map(type);
     }
     
-    if ((type == i->m_external_string_map || type == i->m_external_one_byte_string_map) &&
+    if (stringtype == NewStringType::kInternalized) {
+        for (auto it=i->m_internalized_strings.begin(); it!=i->m_internalized_strings.end(); ++it) {
+            if (JSStringIsEqual(str, it->first)) {
+                JSStringRelease(str);
+                return scope.Escape(it->second->Get(V82JSC::ToIsolate(i)));
+            }
+        }
+        auto weak = new Copyable(v8::String)(V82JSC::ToIsolate(i), local);
+        weak->SetWeak<Copyable(v8::String)>(weak, [](const WeakCallbackInfo<Copyable(v8::String)>& data) {
+            IsolateImpl* iso = V82JSC::ToIsolateImpl(data.GetIsolate());
+            auto weak = data.GetParameter();
+            for (auto i=iso->m_internalized_strings.begin(); i!=iso->m_internalized_strings.end(); ) {
+                if (i->second == weak) {
+                    iso->m_internalized_strings.erase(i);
+                    break;
+                }
+                i++;
+            }
+            weak->Reset();
+            delete weak;
+        }, v8::WeakCallbackType::kParameter);
+        i->m_internalized_strings[str] = weak;
+    }
+    
+    if ((type == i->m_external_string_map ||
+         type == i->m_external_one_byte_string_map) &&
         resource != nullptr) {
         
         type = i->m_external_string_map ? i->m_weak_external_string_map : i->m_weak_external_one_byte_string_map;
@@ -45,7 +73,10 @@ Local<v8::String> StringImpl::New(Isolate *isolate, JSStringRef str, H::BaseMap*
     
     * reinterpret_cast<void**>(reinterpret_cast<intptr_t>(string) +
                                internal::Internals::kStringResourceOffset) = resource;
-    JSStringRelease(str);
+
+    if (stringtype == NewStringType::kNormal) {
+        JSStringRelease(str);
+    }
     
     return scope.Escape(local);
 }
@@ -65,7 +96,7 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         str_[length] = 0;
         data = str_;
     }
-    return MaybeLocal<String>(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data)));
+    return MaybeLocal<String>(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type));
 }
 
 String::Utf8Value::~Utf8Value()
@@ -325,7 +356,7 @@ MaybeLocal<String> String::NewFromOneByte(Isolate* isolate, const uint8_t* data,
     uint16_t str[length];
     for (int i=0; i<length; i++) str[i] = data[i];
     return StringImpl::New(isolate, JSStringCreateWithCharacters(str, length),
-                           V82JSC::ToIsolateImpl(isolate)->m_one_byte_string_map);
+                           V82JSC::ToIsolateImpl(isolate)->m_one_byte_string_map, nullptr, type);
 }
 
 /** Allocates a new string from UTF-16 data. Only returns an empty value when
@@ -339,7 +370,7 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
     if (length < 0) {
         for (length = 0; data[length] != 0; length++);
     }
-    return StringImpl::New(isolate, JSStringCreateWithCharacters(data, length));
+    return StringImpl::New(isolate, JSStringCreateWithCharacters(data, length), nullptr, nullptr, type);
 }
 
 /**
@@ -429,6 +460,8 @@ bool String::MakeExternal(String::ExternalStringResource* resource)
  */
 MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteStringResource* resource)
 {
+    EscapableHandleScope scope(isolate);
+    
     if (resource->length() > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
@@ -438,7 +471,7 @@ MaybeLocal<String> String::NewExternalOneByte(Isolate* isolate, ExternalOneByteS
     Local<String> s = StringImpl::New(isolate, JSStringCreateWithCharacters(str, resource->length()),
                                       V82JSC::ToIsolateImpl(isolate)->m_external_one_byte_string_map, resource);
     delete str;
-    return s;
+    return scope.Escape(s);
 }
 
 /**

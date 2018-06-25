@@ -27,6 +27,8 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     ScriptImpl *impl = V82JSC::ToImpl<ScriptImpl>(this);
     IsolateImpl* iso = impl->GetIsolate();
     Isolate *isolate = V82JSC::ToIsolate(iso);
+    EscapableHandleScope scope(isolate);
+    
     Local<Context> bound_context = impl->m_context.Get(isolate);
     Context::Scope context_scope(bound_context);
     JSContextRef ctx = V82JSC::ToContextRef(bound_context);
@@ -88,6 +90,19 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
             if (!exception.ShouldThow()) {
                 ret = ValueImpl::New(V82JSC::ToContextImpl(bound_context), value);
             }
+            /* DEBUG
+            if (exception.ShouldThow()) {
+                JSStringRef fail = JSValueToStringCopy(ctx, exception.exception_, 0);
+                if (fail) {
+                    char buffer[JSStringGetMaximumUTF8CStringSize(fail)];
+                    JSStringGetUTF8CString(fail, buffer, JSStringGetMaximumUTF8CStringSize(fail));
+                    printf("DEBUG: Exception in script -> %s\n", buffer);
+                    JSStringRelease(fail);
+                } else {
+                    printf("DEBUG: Exception in script -> [empty]\n");
+                }
+            }
+            */
         }
     }
     iso->m_running_scripts.pop();
@@ -101,7 +116,8 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
         }
     }
 
-    return ret;
+    if (ret.IsEmpty()) return ret;
+    return scope.Escape(ret.ToLocalChecked());
 }
 
 Local<UnboundScript> Script::GetUnboundScript()

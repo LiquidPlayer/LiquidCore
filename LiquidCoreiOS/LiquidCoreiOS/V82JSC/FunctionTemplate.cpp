@@ -113,19 +113,15 @@ MaybeLocal<Function> FunctionTemplateImpl::GetFunction(v8::FunctionTemplate * ft
     Isolate* isolate = V82JSC::ToIsolate(iso);
     
     EscapableHandleScope scope(isolate);
-
+    
     Local<v8::FunctionTemplate> thiz = V82JSC::CreateLocal<v8::FunctionTemplate>(isolate, impl);
 
     assert(impl->m_functions_array);
     int length = static_cast<int>(JSValueToNumber(ctx, V82JSC::exec(ctx, "return _1.length",
                                                                     1, &impl->m_functions_array), 0));
     JSObjectRef function = 0;
-    char index[32];
     for (auto i=0; i < length; ++i) {
-        sprintf(index, "%d", i);
-        JSStringRef s = JSStringCreateWithUTF8CString(index);
-        JSValueRef maybe_function = JSObjectGetProperty(ctx, impl->m_functions_array, s, 0);
-        JSStringRelease(s);
+        JSValueRef maybe_function = JSObjectGetPropertyAtIndex(ctx, impl->m_functions_array, i, 0);
         if (JSObjectGetGlobalContext((JSObjectRef)maybe_function) == JSContextGetGlobalContext(ctx)) {
             function = (JSObjectRef)maybe_function;
             break;
@@ -289,7 +285,7 @@ MaybeLocal<Function> FunctionTemplateImpl::GetFunction(v8::FunctionTemplate * ft
             }
             JSValueRef parentFuncRef = V82JSC::ToJSValueRef<Function>(parentFunc.ToLocalChecked(), context);
             JSValueRef parentFuncPrototype = JSObjectGetProperty(ctx, (JSObjectRef)parentFuncRef, sprototype, 0);
-            V82JSC::SetRealPrototype(context, (JSObjectRef)prototype_property, parentFuncPrototype);
+            V82JSC::SetRealPrototype(context, (JSObjectRef)prototype_property, parentFuncPrototype, true);
         }
         JSStringRelease(sprototype);
     }

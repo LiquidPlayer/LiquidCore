@@ -36,8 +36,15 @@ static JSValueRef DisallowCodeGenFromStrings(JSContextRef ctx, JSObjectRef proxy
 Local<Object> Context::Global()
 {
     ContextImpl *impl = V82JSC::ToContextImpl(this);
+    EscapableHandleScope scope(V82JSC::ToIsolate(impl->GetIsolate()));
+    Local<Context> context = V82JSC::CreateLocal<Context>(&impl->GetIsolate()->ii, impl);
+    Context::Scope context_scope(context);
+    
     JSObjectRef glob = JSContextGetGlobalObject(impl->m_ctxRef);
-    return ValueImpl::New(impl, glob).As<Object>();
+    Local<Value> global = ValueImpl::New(impl, glob);
+    global = TrackedObjectImpl::SecureValue(global);
+    
+    return scope.Escape(global.As<Object>());
 }
 
 /**
@@ -169,6 +176,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                           MaybeLocal<ObjectTemplate> global_template,
                           MaybeLocal<Value> global_object)
 {
+    EscapableHandleScope scope(isolate);
     IsolateImpl * i = V82JSC::ToIsolateImpl(isolate);
     GlobalContextImpl * context = static_cast<GlobalContextImpl *>(H::HeapAllocator::Alloc(i, i->m_global_context_map));
     
@@ -214,12 +222,19 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRelease(sconstructor);
             }
         }
+        TrackedObjectImpl *wrap = makePrivateInstance(i, context->m_ctxRef, instance);
+        wrap->m_isGlobalObject = true;
         MaybeLocal<Object> thiz = impl->NewInstance(ctx, instance, false);
-        TrackedObjectImpl *wrap = getPrivateInstance(context->m_ctxRef, instance);
         if (hash) {
             wrap->m_hash = hash;
         }
-        wrap->m_isGlobalObject = true;
+        
+        // Don't use the access control proxy on the global object.  It is always accessible to the current context
+        // and proxies in the global prototype chain are not allowed in JSC.  We will use it, however, if we pass the
+        // object to another context.
+        if (wrap->m_access_proxies) {
+            thiz = ValueImpl::New(reinterpret_cast<ContextImpl*>(context), wrap->m_proxy_security).As<Object>();
+        }
         
         // Don't use V82JSC::SetRealPrototype() or GetRealPrototype() here because we haven't set them up yet,
         // but otherwise, always use them over the JSC equivalents.  The JSC API legacy functions get confused
@@ -228,7 +243,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSObjectSetPrototype(context->m_ctxRef, global, V82JSC::ToJSValueRef(thiz.ToLocalChecked(), ctx));
 
         if (exception.ShouldThow()) {
-            return Local<Context>();
+            return scope.Escape(Local<Context>());
         }
     } else {
         JSClassDefinition def = kJSClassDefinitionEmpty;
@@ -251,6 +266,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
     }
     
+//    context->m_security_token.Reset(isolate, Undefined(isolate));
+//    context->m_security_token.Reset(isolate, Object::New(isolate));
+    context->m_security_token.Reset();
+
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
         proxyArrayBuffer(context);
@@ -274,6 +293,8 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                         if (isGlobal && !context->Global()->StrictEquals(info[0])) {
                             info.GetReturnValue().Set(False(info.GetIsolate()));
                             return;
+                        } else if (isGlobal) {
+                            obj = obj->GetPrototype().As<Object>();
                         }
                     }
                 }
@@ -306,7 +327,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 Local<Object> obj = info[0].As<Object>();
                 info.GetReturnValue().Set(GetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj));
             });
-        Local<Object> object = ctx->Global()->Get(ctx,
+        // Don't use ctx->Global() here because it may return a proxy, which we can't use in setting up the global object
+        Local<Object> global = ValueImpl::New(reinterpret_cast<ContextImpl*>(context),
+                                              JSContextGetGlobalObject(context->m_ctxRef)).As<Object>();
+        Local<Object> object = global->Get(ctx,
             String::NewFromUtf8(isolate, "Object", NewStringType::kNormal).ToLocalChecked()).ToLocalChecked().As<Object>();
         Local<String> SsetPrototypeOf = String::NewFromUtf8(isolate, "setPrototypeOf", NewStringType::kNormal).ToLocalChecked();
         Local<String> SgetPrototypeOf = String::NewFromUtf8(isolate, "getPrototypeOf", NewStringType::kNormal).ToLocalChecked();
@@ -350,6 +374,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         context->FunctionPrototypeBind.Reset(isolate, ValueImpl::New(ctximpl, bind).As<Function>());
         Local<FunctionTemplate> bind_template = FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
             Local<Context> context = info.This()->CreationContext();
+            Context::Scope context_scope(context);
             Local<Value> args[info.Length()];
             for (int i=0; i<info.Length(); i++) {
                 args[i] = info[i];
@@ -409,13 +434,13 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         if (extensions) {
             for (const char **extension = extensions->begin(); extension != extensions->end(); extension++) {
                 if (!InstallExtension(ctx, *extension, loaded_extensions)) {
-                    return Local<Context>();
+                    return scope.Escape(Local<Context>());
                 }
             }
         }
     }
     
-    return ctx;
+    return scope.Escape(ctx);
 }
 
 /**
@@ -479,8 +504,16 @@ MaybeLocal<Object> Context::NewRemoteContext(
  */
 void Context::SetSecurityToken(Local<Value> token)
 {
-    printf( "FIXME! Context::SetSecurityToken()\n" );
-    //assert(0);
+    ContextImpl *ctximpl = V82JSC::ToContextImpl(this);
+    Isolate* isolate = V82JSC::ToIsolate(ctximpl);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    HandleScope scope(isolate);
+    
+    JSGlobalContextRef gctx = JSContextGetGlobalContext(ctximpl->m_ctxRef);
+    Local<Context> global_context = iso->m_global_contexts[gctx].Get(isolate);
+    GlobalContextImpl *impl = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+    
+    impl->m_security_token.Reset(isolate, token);
 }
 
 /** Restores the security token to the default value. */
@@ -492,8 +525,16 @@ void Context::UseDefaultSecurityToken()
 /** Returns the security token of this context.*/
 Local<Value> Context::GetSecurityToken()
 {
-    assert(0);
-    return Local<Value>();
+    ContextImpl *ctximpl = V82JSC::ToContextImpl(this);
+    Isolate* isolate = V82JSC::ToIsolate(ctximpl);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    EscapableHandleScope scope(isolate);
+    
+    JSGlobalContextRef gctx = JSContextGetGlobalContext(ctximpl->m_ctxRef);
+    Local<Context> global_context = iso->m_global_contexts[gctx].Get(isolate);
+    GlobalContextImpl *impl = V82JSC::ToImpl<GlobalContextImpl>(global_context);
+    
+    return scope.Escape(impl->m_security_token.Get(isolate));
 }
 
 /**

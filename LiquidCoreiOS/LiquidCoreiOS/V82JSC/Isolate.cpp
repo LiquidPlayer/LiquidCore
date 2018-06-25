@@ -93,6 +93,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_near_death = std::map<void*, JSObjectRef>();
     impl->m_second_pass_callbacks = std::vector<internal::SecondPassCallback>();
     impl->m_external_strings = std::map<JSValueRef, Copyable(v8::WeakExternalString)>();
+    impl->m_internalized_strings = std::map<JSStringRef, Copyable(v8::String)*>();
     impl->m_microtask_queue = std::vector<IsolateImpl::EnqueuedMicrotask>();
     impl->m_microtasks_completed_callback = std::vector<v8::MicrotasksCompletedCallback>();
     impl->m_microtasks_policy = v8::MicrotasksPolicy::kAuto;
@@ -479,6 +480,11 @@ void Isolate::Dispose()
             isolate->m_external_strings.erase(isolate->m_external_strings.begin());
         }
     }
+    for (auto i=isolate->m_internalized_strings.begin(); i!=isolate->m_internalized_strings.end(); ++i) {
+        i->second->Reset();
+        delete i->second;
+    }
+    isolate->m_internalized_strings.clear();
 
     JSContextGroupRelease(isolate->m_group);
     for (auto i=isolate->m_global_contexts.begin(); i != isolate->m_global_contexts.end(); i++) {
@@ -1558,9 +1564,10 @@ void Isolate::RemoveMessageListeners(MessageCallback that)
 }
 
 /** Callback function for reporting failed access checks.*/
-void Isolate::SetFailedAccessCheckCallbackFunction(FailedAccessCheckCallback)
+void Isolate::SetFailedAccessCheckCallbackFunction(FailedAccessCheckCallback callback)
 {
-    
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    iso->m_failed_access_check_callback = callback;
 }
 
 /**

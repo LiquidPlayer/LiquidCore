@@ -243,12 +243,6 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     //
     // There shouldn't be any other non-transient references.  We have to also be careful not to collect
     // garbage while inside of a callback, as transient references may exist
-    /*
-    if (iso->m_callback_depth) {
-        iso->m_pending_garbage_collection = true;
-        return false;
-    }
-    */
     iso->m_pending_garbage_collection = false;
     
     CanonicalHandles canonical_handles;
@@ -323,7 +317,6 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     // Finally, deallocate any chunks that are completely free and reset the indicies
     chunk = static_cast<HeapAllocator*>(heapimpl->m_heap_top);
     assert(chunk);
-    HeapAllocator *in_use = nullptr;
     while (chunk) {
         bool used = false;
         for (int i=HEAP_RESERVED_SLOTS/8; i< HEAP_SLOTS/8; i++) {
@@ -334,22 +327,25 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
         }
         HeapAllocator *next = static_cast<HeapAllocator*>(chunk->next_chunk());
         if (used) {
-            chunk->set_next_chunk(in_use);
-            if (in_use) in_use->set_next_chunk(chunk);
-            in_use = chunk;
-
             // Reset all indicies
             for (int i=0; i<HEAP_SMALL_SPACE_LOG; i++)
                 chunk->info.m_small_indicies[i] = HEAP_BLOCKS-1;
             chunk->info.m_large_index = 0;
             used_chunks ++;
         } else {
+            if (chunk->prev_chunk()) {
+                chunk->prev_chunk()->set_next_chunk(chunk->next_chunk());
+            } else {
+                heapimpl->m_heap_top = chunk->next_chunk();
+            }
+            if (chunk->next_chunk()) {
+                chunk->next_chunk()->set_prev_chunk(chunk->prev_chunk());
+            }
             free(chunk);
             freed_chunks ++;
         }
         chunk = next;
     }
-    heapimpl->m_heap_top = in_use;
     
     // Make any second pass phantom callbacks for primtive values
     for (auto i=second_pass_callbacks.begin(); i!= second_pass_callbacks.end(); ) {
@@ -394,6 +390,8 @@ internal::MemoryChunk* internal::MemoryChunk::Initialize(internal::Heap* heap, i
     HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(heap);
     MemoryChunk *chunk = reinterpret_cast<MemoryChunk*>(base);
     memset(chunk, 0, sizeof(MemoryChunk));
+    if (heapimpl->m_heap_top) static_cast<MemoryChunk*>(heapimpl->m_heap_top)->set_prev_chunk(chunk);
+    chunk->set_prev_chunk(nullptr);
     chunk->set_next_chunk(heapimpl->m_heap_top);
     heapimpl->m_heap_top = chunk;
     chunk->heap_ = heap;

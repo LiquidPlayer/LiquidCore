@@ -134,6 +134,29 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
     Isolate* isolate = V82JSC::ToIsolate(iso);
+    EscapableHandleScope scope(isolate);
+    Context::Scope context_scope(context);
+    
+    // Temporarily disable access checks until we are done setting up the object
+    class DisableAccessChecksScope {
+    public:
+        DisableAccessChecksScope(IsolateImpl* iso, ObjectTemplateImpl* templ) :
+        iso_(iso), templ_(templ), callback_(nullptr)
+        {
+            callback_ = templ_->m_access_check;
+            templ_->m_access_check = nullptr;
+        }
+        ~DisableAccessChecksScope()
+        {
+            templ_->m_access_check = callback_;
+        }
+    private:
+        IsolateImpl *iso_;
+        ObjectTemplateImpl *templ_;
+        AccessCheckCallback callback_;
+    };
+    DisableAccessChecksScope disable_scope(iso, impl);
+    
     Local<ObjectTemplate> thiz = V82JSC::CreateLocal<ObjectTemplate>(&iso->ii, impl);
     
     LocalException exception(iso);
@@ -144,7 +167,7 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
         if (!ctor.IsEmpty()) {
             JSValueRef ctor_func = V82JSC::ToJSValueRef(ctor.ToLocalChecked(), context);
             instance = JSObjectCallAsConstructor(ctx->m_ctxRef, (JSObjectRef)ctor_func, 0, 0, &exception);
-            return ValueImpl::New(ctx, instance).As<Object>();
+            return scope.Escape(ValueImpl::New(ctx, instance).As<Object>());
         } else {
             return MaybeLocal<Object>();
         }
@@ -165,7 +188,11 @@ MaybeLocal<Object> ObjectTemplate::NewInstance(Local<Context> context)
     } else {
         instance = JSObjectMake(ctx->m_ctxRef, 0, 0);
     }
-    return impl->NewInstance(context, instance, false);
+    MaybeLocal<Object> o = impl->NewInstance(context, instance, false);
+    if (o.IsEmpty()) {
+        return MaybeLocal<Object>();
+    }
+    return scope.Escape(o.ToLocalChecked());
 }
 
 #undef O
@@ -335,6 +362,8 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     const ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctx);
     Isolate* isolate = V82JSC::ToIsolate(iso);
+    
+    EscapableHandleScope scope(isolate);
     
     LocalException exception(iso);
     Local<v8::ObjectTemplate> thiz = V82JSC::CreateLocal<v8::ObjectTemplate>(isolate, this);
@@ -681,7 +710,7 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         instance = hidden_proxy;
     }
     
-    return instance;
+    return scope.Escape(TrackedObjectImpl::SecureValue(instance.ToLocalChecked()).As<Object>());
 }
 
 /**
@@ -918,7 +947,7 @@ void ObjectTemplate::SetAccessCheckCallback(AccessCheckCallback callback,
     }
     templ->m_access_check_data = V82JSC::ToJSValueRef(data, context);
     JSValueProtect(ctx, templ->m_access_check_data);
-    templ->m_need_proxy = true;
+    //templ->m_need_proxy = true;
 }
 
 /**

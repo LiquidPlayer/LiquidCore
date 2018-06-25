@@ -11,6 +11,7 @@
 
 #include "Isolate.h"
 #include "JSContextRefPrivate.h"
+#include "JSObjectRefPrivate.h"
 
 template <class T>
 class _maybe {
@@ -54,7 +55,7 @@ struct StringImpl : V82JSC_HeapObject::String
 {
     static v8::Local<v8::String> New(v8::Isolate *isolate, JSStringRef string,
                                      V82JSC_HeapObject::BaseMap *map=nullptr,
-                                     void *resource = nullptr);
+                                     void *resource = nullptr, v8::NewStringType stringtype = v8::NewStringType::kNormal);
 };
 
 struct WeakExternalStringImpl : V82JSC_HeapObject::WeakExternalString
@@ -110,7 +111,11 @@ struct PropAccessorImpl : V82JSC_HeapObject::PropAccessor {};
 struct PropImpl : V82JSC_HeapObject::Prop {};
 struct ObjAccessorImpl : V82JSC_HeapObject::ObjAccessor {};
 struct IntrinsicPropImpl : V82JSC_HeapObject::IntrinsicProp {};
-struct TrackedObjectImpl : V82JSC_HeapObject::TrackedObject {};
+struct TrackedObjectImpl : V82JSC_HeapObject::TrackedObject
+{
+    static v8::Local<v8::Value> SecureValue(v8::Local<v8::Value> in_,
+                                            v8::Local<v8::Context> ctx = v8::Local<v8::Context>());
+};
 struct AccessorImpl : V82JSC_HeapObject::Accessor {};
 
 struct LocalException;
@@ -174,6 +179,19 @@ struct TryCatchCopy {
 TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObjectRef object);
 TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object);
 TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx);
+
+struct LocalException {
+    LocalException(IsolateImpl *i) : exception_(0), isolate_(i) {}
+    ~LocalException();
+    inline JSValueRef* operator&()
+    {
+        return &exception_;
+    }
+    inline bool ShouldThow() { return exception_ != nullptr; }
+    inline void Clear() { exception_ = nullptr; }
+    JSValueRef exception_;
+    IsolateImpl *isolate_;
+};
 
 struct V82JSC {
     template <class T>
@@ -410,25 +428,26 @@ struct V82JSC {
             // No worries, it just means this hasn't been set up yet; use the native API
             return JSObjectGetPrototype(ToContextRef(context), obj);
         }
+        JSContextRef ctx = ToContextRef(context);
+        global_context = ToIsolateImpl(isolate)->m_global_contexts[JSObjectGetGlobalContext(obj)].Get(isolate);
         v8::Local<v8::Function> getPrototype = ToGlobalContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
         if (getPrototype.IsEmpty()) {
             // No worries, it just means this hasn't been set up yet; use the native API
             return JSObjectGetPrototype(ToContextRef(context), obj);
         }
-        v8::Local<v8::Value> args[] = {
-            v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj))
-        };
-        v8::Local<v8::Value> our_proto_local = getPrototype->Call(context, Null(isolate), 1, args).ToLocalChecked();
-        JSValueRef our_proto = ToJSValueRef(our_proto_local, context);
+        JSValueRef exception=0;
+        JSValueRef our_proto = JSObjectCallAsFunction(ctx, (JSObjectRef)ToJSValueRef(getPrototype, global_context), 0, 1, &obj, &exception);
+        assert(exception==0);
         return our_proto;
     }
-    static inline void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto)
+    static inline void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto,
+                                        bool override_immutable=false)
     {
         v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
         v8::Local<v8::Context> global_context = FindGlobalContext(context);
 
         TrackedObjectImpl *impl = getPrivateInstance(V82JSC::ToContextRef(context), obj);
-        if (impl && !impl->m_object_template.IsEmpty() &&
+        if (!override_immutable && impl && !impl->m_object_template.IsEmpty() &&
             V82JSC::ToImpl<ObjectTemplateImpl>(impl->m_object_template.Get(isolate))->m_is_immutable_proto) {
             
             isolate->ThrowException
@@ -444,12 +463,13 @@ struct V82JSC {
         }
         v8::Local<v8::Function> setPrototype = ToGlobalContextImpl(global_context)->ObjectSetPrototypeOf.Get(isolate);
         CHECK(!setPrototype.IsEmpty());
-        v8::Local<v8::Value> args[] = {
-            v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), obj)),
-            v8::Local<v8::Value>(ValueImpl::New(ToContextImpl(context), proto))
+        JSContextRef ctx = ToContextRef(context);
+        JSValueRef args[] = {
+            obj,
+            proto
         };
-        v8::TryCatch try_catch(isolate);
-        setPrototype->Call(context, Null(isolate), 2, args).IsEmpty();
+        LocalException exception(ToIsolateImpl(isolate));
+        JSObjectCallAsFunction(ctx, (JSObjectRef)ToJSValueRef(setPrototype, global_context), 0, 2, args, &exception);
     }
     template<typename T>
     static inline void * PersistentData(v8::Isolate *isolate, v8::Local<T> d)
@@ -481,50 +501,39 @@ struct V82JSC {
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)
 
-struct LocalException {
-    LocalException(IsolateImpl *i) : exception_(0), isolate_(i) {}
-    ~LocalException()
-    {
-        v8::HandleScope scope(V82JSC::ToIsolate(isolate_));
-        v8::Local<v8::Script> script;
-        if (!isolate_->m_running_scripts.empty()) {
-            script = isolate_->m_running_scripts.top();
-        }
-
-        v8::Local<v8::Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(isolate_));
-        JSContextRef ctx = V82JSC::ToContextRef(context);
-        if (exception_) {
-            MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
-                                                  JSContextCreateBacktrace(ctx, 32));
-            if (isolate_->m_handlers) {
-                TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers);
-                tcc->exception_ = (void*)exception_;
-                tcc->message_obj_ = (void*)msgi;
-                
-                isolate_->ii.thread_local_top()->scheduled_exception_ =
-                    isolate_->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
-                if (tcc->is_verbose_ && !tcc->next_) {
-                    msgi->CallHandlers();
-                }
-            } else {
+inline LocalException::~LocalException()
+{
+    v8::HandleScope scope(V82JSC::ToIsolate(isolate_));
+    v8::Local<v8::Script> script;
+    if (!isolate_->m_running_scripts.empty()) {
+        script = isolate_->m_running_scripts.top();
+    }
+    
+    v8::Local<v8::Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(isolate_));
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    if (exception_) {
+        MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
+                                              JSContextCreateBacktrace(ctx, 32));
+        if (isolate_->m_handlers) {
+            TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers);
+            tcc->exception_ = (void*)exception_;
+            tcc->message_obj_ = (void*)msgi;
+            
+            isolate_->ii.thread_local_top()->scheduled_exception_ =
+            isolate_->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
+            if (tcc->is_verbose_ && !tcc->next_) {
                 msgi->CallHandlers();
             }
-        } else if (isolate_->m_verbose_exception && !isolate_->m_handlers) {
-            MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
-                                                  JSContextCreateBacktrace(ctx, 32));
+        } else {
             msgi->CallHandlers();
-            isolate_->m_verbose_exception = 0;
         }
+    } else if (isolate_->m_verbose_exception && !isolate_->m_handlers) {
+        MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
+                                              JSContextCreateBacktrace(ctx, 32));
+        msgi->CallHandlers();
+        isolate_->m_verbose_exception = 0;
     }
-    inline JSValueRef* operator&()
-    {
-        return &exception_;
-    }
-    inline bool ShouldThow() { return exception_ != nullptr; }
-    inline void Clear() { exception_ = nullptr; }
-    JSValueRef exception_;
-    IsolateImpl *isolate_;
-};
+}
 
 void proxyArrayBuffer(GlobalContextImpl *ctx);
 bool InstallAutoExtensions(v8::Local<v8::Context> context, std::map<std::string, bool>& loaded_extensions);

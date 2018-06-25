@@ -225,6 +225,7 @@ namespace V82JSC_HeapObject {
         Copyable(v8::Function) Eval;
         bool m_code_eval_from_strings_disallowed;
         Copyable(v8::String) m_code_gen_error;
+        Copyable(v8::Value) m_security_token;
 
         static void Constructor(GlobalContext *obj) {}
         static int Destructor(GlobalContext *obj, CanonicalHandles& handles, WeakHandles& weak,
@@ -241,6 +242,7 @@ namespace V82JSC_HeapObject {
             freed +=SmartReset<v8::Function>(obj->Eval, handles, weak, callbacks);
             freed +=SmartReset<v8::String>(obj->m_code_gen_error, handles, weak, callbacks);
             freed +=SmartReset<v8::EmbeddedFixedArray>(obj->m_embedder_data, handles, weak, callbacks);
+            freed +=SmartReset<v8::Value>(obj->m_security_token, handles, weak, callbacks);
 
             RemoveContextFromIsolate(iso, (JSGlobalContextRef)obj->m_ctxRef);
             
@@ -300,6 +302,7 @@ namespace V82JSC_HeapObject {
         uint64_t reserved_; // For number, value is stored here
         JSValueRef m_value;
         uint64_t reserved2_; // For string, resource is stored here
+        uint64_t reserved3_; // For string, resource data is stored here
 
         static void Constructor(Value *obj) {}
         static int Destructor(Value *obj, CanonicalHandles& handles, WeakHandles& weak,
@@ -339,7 +342,7 @@ namespace V82JSC_HeapObject {
     };
 
     struct WeakExternalString : WeakValue {
-        uint8_t reserved_[v8::internal::ExternalString::kResourceOffset + v8::internal::kApiPointerSize - sizeof(WeakValue)];
+        uint8_t reserved_[v8::internal::ExternalString::kResourceDataOffset + v8::internal::kApiPointerSize - sizeof(WeakValue)];
         JSWeakRef m_weakRef;
         v8::String::ExternalStringResourceBase *m_resource;
         
@@ -551,6 +554,9 @@ namespace V82JSC_HeapObject {
         bool m_isHiddenPrototype;
         bool m_isGlobalObject;
         void *m_embedder_data[2];
+        JSObjectRef m_access_control;
+        JSObjectRef m_access_proxies;
+        JSObjectRef m_global_object_access_proxies;
 
         struct {
             void *buffer;
@@ -573,6 +579,9 @@ namespace V82JSC_HeapObject {
             if (obj->m_private_properties) JSValueUnprotect(obj->GetNullContext(), obj->m_private_properties);
             if (obj->m_hidden_children_array) JSValueUnprotect(obj->GetNullContext(), obj->m_hidden_children_array);
             if (obj->m_internal_fields_array) JSValueUnprotect(obj->GetNullContext(), obj->m_internal_fields_array);
+            if (obj->m_access_control) JSValueUnprotect(obj->GetNullContext(), obj->m_access_control);
+            if (obj->m_access_proxies) JSValueUnprotect(obj->GetNullContext(), obj->m_access_proxies);
+            if (obj->m_global_object_access_proxies) JSValueUnprotect(obj->GetNullContext(), obj->m_global_object_access_proxies);
             return freed;
         }
     };

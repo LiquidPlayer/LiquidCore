@@ -60,9 +60,12 @@ internal::Handle<FixedArray> Factory::NewFixedArray(int size, PretenureFlag pret
 MaybeHandle<internal::String> Factory::NewExternalStringFromOneByte(const ExternalOneByteString::Resource* resource)
 {
     v8::Isolate *isolate = v8::Isolate::GetCurrent();
-    v8::HandleScope scope(isolate);
+    v8::EscapableHandleScope scope(isolate);
     MaybeLocal<v8::String> string = v8::String::NewExternalOneByte(isolate, const_cast<ExternalOneByteString::Resource*>(resource));
-    return * reinterpret_cast<MaybeHandle<String>*>(&string);
+    if (string.IsEmpty()) return MaybeHandle<internal::String>();
+    Local<v8::String> local = scope.Escape(string.ToLocalChecked());
+    MaybeHandle<internal::String> handle = * reinterpret_cast<Handle<String>*>(&local);
+    return handle;
 }
 
 //

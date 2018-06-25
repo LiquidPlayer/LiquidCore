@@ -305,6 +305,9 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     const ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(ctximpl);
     Isolate *isolate = V82JSC::ToIsolate(iso);
+    EscapableHandleScope scope(isolate);
+    Context::Scope context_scope(context);
+    
     JSContextRef ctx = V82JSC::ToContextRef(context);
     Local<Object> thiz = ValueImpl::New(ctximpl, instance).As<Object>();
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, instance);
@@ -460,5 +463,5 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
         }
     }
     
-    return thiz;
+    return scope.Escape(thiz);
 }

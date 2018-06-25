@@ -83,6 +83,8 @@ struct IsolateImpl {
     H::Map<H::String> *m_external_string_map;
     H::Map<H::String> *m_external_one_byte_string_map;
     H::Map<H::String> *m_internalized_string_map;
+    H::Map<H::String> *m_external_internalized_string_map;
+    H::Map<H::String> *m_external_internalized_one_bye_string_map;
     H::Map<H::WeakExternalString> *m_weak_external_string_map;
     H::Map<H::WeakExternalString> *m_weak_external_one_byte_string_map;
     H::Map<H::Value> *m_value_map;
@@ -139,6 +141,7 @@ struct IsolateImpl {
     v8::CreateHistogramCallback m_create_histogram_callback;
     v8::AddHistogramSampleCallback m_add_histogram_sample_callback;
     v8::Isolate::UseCounterCallback m_use_counter_callback;
+    v8::FailedAccessCheckCallback m_failed_access_check_callback;
     
     std::vector<MessageListener> m_message_listeners;
     std::stack<v8::Local<v8::Script>> m_running_scripts;
@@ -162,6 +165,7 @@ struct IsolateImpl {
     int m_in_gc;
     std::vector<SecondPassCallback> m_second_pass_callbacks;
     std::map<JSValueRef, Copyable(v8::WeakExternalString)> m_external_strings;
+    std::map<JSStringRef, Copyable(v8::String)*> m_internalized_strings;
     
     std::recursive_mutex *m_locker;
     std::atomic<bool> m_isLocked;
