@@ -9,6 +9,7 @@
 #include "V82JSC.h"
 #include "JSWeakRefPrivate.h"
 #include "JSStringRefPrivate.h"
+#include <codecvt>
 
 using namespace v8;
 
@@ -96,6 +97,7 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         str_[length] = 0;
         data = str_;
     }
+    
     return MaybeLocal<String>(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type));
 }
 
@@ -174,15 +176,17 @@ int String::Utf8Length() const
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
     const JSChar * chars = JSStringGetCharactersPtr(s);
+    int len = (int)JSStringGetLength(s);
+    
     int c = 0;
-    for (int i=0; i<JSStringGetLength(s); ) {
+    int i;
+    for (i=0; i<len; ) {
         uint32_t unicode = (chars[i] >= 0xd800) ? (chars[i] - 0xd800) * 0x400 + (chars[i+1] - 0xdc00) : chars[i];
         i += (chars[i] >= 0xd800) ? 2 : 1;
         c += unicode >= 0x10000 ? 4 : unicode >= 0x800 ? 3 : unicode >= 0x80 ? 2 : 1;
     }
-    
     JSStringRelease(s);
-    return c;
+    return c - (i-len);
 }
 
 /**

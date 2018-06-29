@@ -60,7 +60,6 @@ V(ScavengeExternalOneByteString)
 V(ExternalStringWithDisposeHandling)
 V(ExternalStringCollectedAtTearDown)
 V(ExternalInternalizedStringCollectedAtTearDown)
-V(ExternalInternalizedStringCollectedAtGC)
 V(StringConcat)
 V(GlobalProperties)
 V(ExternalWrap)
@@ -558,7 +557,28 @@ V(CreationContextOfJsBoundFunction)
 V(CreationContextOfJsFunction)
 V(Regress93759)
 V(RunMicrotasksWithoutEnteringContext)
-
+V(SetPrototype)
+V(IndependentWeakHandle)
+V(QuietSignalingNaNs)
+V(TestIdleNotification)
+V(MultiContexts)
+V(ContextDetachGlobal)
+V(DetachGlobal)
+V(EvalInDetachedGlobal)
+V(DefinePropertyPostDetach)
+V(PromiseThen)
+V(PromiseStateAndValue)
+V(FunctionGetBoundFunction)
+V(DefineProperty)
+V(NewTargetHandler)
+V(ObjectGetConstructorName)
+V(AccessorShouldThrowOnError)
+V(InterceptorShouldThrowOnError)
+V(NativeFunctionConstructCall)
+V(PropertyEnumeration)
+V(InterceptorOnConstructorPrototype)
+V(GlobalObjectInstanceProperties)
+V(ShadowObject)
 
 #undef V
 #define V(tst) \
@@ -569,61 +589,14 @@ cctest_main(3, argv); \
 
 // Extensions
 V(StackTraceInExtension)
-V(NativeFunctionConstructCall)
-
-// internal implementation / not related to API
-V(AccessorIsPreservedOnAttributeChange)
-V(IndependentWeakHandle)
-V(QuietSignalingNaNs)
-V(Regress1516)
-V(CheckCOWArraysCreatedRuntimeCounter)
-V(ScriptPositionInfo)
-V(ErrorLevelWarning)
-V(TestIdleNotification)
-
 // WeakMap
 V(GlobalValueMap)
-
-// strict mode
-V(AccessorShouldThrowOnError)
-V(InterceptorShouldThrowOnError)
-
 // Global object detachment
-V(MultiContexts)
-V(ContextDetachGlobal)
-V(DetachGlobal)
 V(DetachedAccesses)
-V(EvalInDetachedGlobal)
-V(DefinePropertyPostDetach)
-
 // Fatal error handler
 V(ErrorReporting)
-
-// String bugs
-V(StringWrite)
-V(Utf16)
-V(Utf16Symbol)
-
-// Object bugs
-V(ObjectGetConstructorName)
-V(SetPrototype)
-
-// Cannot use proxies on global object prototype chain :(
-V(GlobalObjectInstanceProperties)
-V(ShadowObject)
-
 // Hidden prototypes
 V(FunctionCallOptimization)
-
-// Constructor bug
-V(InterceptorOnConstructorPrototype)
-
-// PropertyDescriptor
-V(DefineProperty)
-
-// Setting new target bug
-V(NewTargetHandler)
-
 // Multithreading
 V(Threading1)
 V(Threading2)
@@ -633,34 +606,15 @@ V(Threading5)
 V(Threading6)
 V(Threading7)
 V(Threading8)
-
 // Function entry hooks
 V(SetFunctionEntryHook)
-
-// Property enumeration bugs
-V(PropertyEnumeration)
-
-// Promise / reject / hook callback
-V(PromiseRejectCallback)
-V(PromiseHook)
-V(PromiseThen)
-V(PromiseStateAndValue)
-
-// Uninmplemented function
-V(FunctionGetBoundFunction)
-
 // Random isolate function
 V(PersistentHandleVisitor)
 V(PersistentHandleInNewSpaceVisitor)
-
-// Extras
-V(ExtrasFunctionSource)
-V(ExtrasBindingObject)
-V(ExperimentalExtras)
-V(ExtrasUtilsObject)
-
 // Entered contexts (bug)
 V(CorrectEnteredContext)
+// Garbage collection
+V(ExternalInternalizedStringCollectedAtGC)
 
 #undef V
 #define V(tst) \
@@ -700,6 +654,9 @@ V(FixedUint32Array)
 V(FixedInt32Array)
 V(FixedFloat32Array)
 V(FixedFloat64Array)
+V(AccessorIsPreservedOnAttributeChange)
+V(CheckCOWArraysCreatedRuntimeCounter)
+
 // JIT / compiler stuff
 V(SetJitCodeEventHandler)
 
@@ -713,11 +670,31 @@ V(DynamicImport)
 
 // internal features not fully exposed to API
 V(EventLogging)
+V(ErrorLevelWarning)
+V(Regress1516)
 
 // JSC won't give script info from a function
 V(ScriptOrigin)
 V(ScriptLineNumber)
 V(ScriptColumnNumber)
 V(FunctionGetScriptId)
+
+// JSC won't give position info
+V(ScriptPositionInfo)
+
+// We could support extras, but it is a low priority
+V(ExtrasFunctionSource)
+V(ExtrasBindingObject)
+V(ExperimentalExtras)
+V(ExtrasUtilsObject)
+
+// Promise lifecycle hooking is not supported in JSC
+V(PromiseRejectCallback)
+V(PromiseHook)
+
+// JSC just handles utf16 edge cases differently than V8
+V(StringWrite)
+V(Utf16)
+V(Utf16Symbol)
 
 @end

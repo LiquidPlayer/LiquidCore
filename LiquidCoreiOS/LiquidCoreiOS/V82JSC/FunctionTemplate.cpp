@@ -47,6 +47,8 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
                                           Local<Signature> signature, int length,
                                           ConstructorBehavior behavior)
 {
+    EscapableHandleScope scope(isolate);
+    
     Local<Context> context = V82JSC::OperatingContext(isolate);
     FunctionTemplateImpl *templ = static_cast<FunctionTemplateImpl*>
     (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
@@ -67,7 +69,7 @@ Local<FunctionTemplate> FunctionTemplate::New(Isolate* isolate, FunctionCallback
     templ->m_functions_array = JSObjectMakeArray(V82JSC::ToContextRef(context), 0, nullptr, 0);
     JSValueProtect(V82JSC::ToContextRef(context), templ->m_functions_array);
     
-    return V82JSC::CreateLocal<FunctionTemplate>(isolate, templ);
+    return scope.Escape(V82JSC::CreateLocal<FunctionTemplate>(isolate, templ));
 }
 
 /**
@@ -175,7 +177,7 @@ MaybeLocal<Function> FunctionTemplateImpl::GetFunction(v8::FunctionTemplate * ft
     static const char *proxy_function_template =
     "function name () { "
     "    if (new.target) { "
-    "        return name_ctor.call(this, new.target == name, ...arguments); "
+    "        return name_ctor.call(this, new.target == name, new.target, ...arguments); "
     "    } else { "
     "        return name_func.call(this, ...arguments); "
     "    } "
@@ -493,10 +495,11 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     Local<Context> context = LocalContextImpl::New(isolate, ctx);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
     
-    assert(argumentCount>0);
+    assert(argumentCount>1);
     bool create_object = JSValueToBoolean(ctx, arguments[0]);
-    argumentCount--;
-    arguments++;
+    JSObjectRef new_target = (JSObjectRef)arguments[1];
+    argumentCount-=2;
+    arguments+=2;
 
     HandleScope scope(isolate);
     Context::Scope context_scope(context);
@@ -507,9 +510,11 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     FunctionTemplateImpl *ftempl = V82JSC::ToImpl<FunctionTemplateImpl>(function_template);
     Local<ObjectTemplate> instance_template = function_template->InstanceTemplate();
     ObjectTemplateImpl* otempl = V82JSC::ToImpl<ObjectTemplateImpl>(*instance_template);
+    JSObjectRef function = (JSObjectRef) V82JSC::ToJSValueRef(function_template->GetFunction(context).ToLocalChecked(), context);
 
+    JSClassDefinition def = kJSClassDefinitionEmpty;
+    void* data_ = nullptr;
     if (create_object) {
-        JSClassDefinition def = kJSClassDefinitionEmpty;
         def.attributes = kJSClassAttributeNoAutomaticPrototype;
         String::Utf8Value str(ftempl->m_name.Get(isolate));
         if (*str) {
@@ -519,29 +524,42 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         if (otempl->m_callback) {
             def.callAsFunction = TemplateImpl::callAsFunctionCallback;
             def.callAsConstructor = TemplateImpl::callAsConstructorCallback;
+        } else {
+            def.callAsFunction = [](JSContextRef ctx,
+                                    JSObjectRef function,
+                                    JSObjectRef thisObject,
+                                    size_t argumentCount,
+                                    const JSValueRef *arguments,
+                                    JSValueRef *exception) -> JSValueRef
+            {
+                *exception = V82JSC::exec(ctx, "return new TypeError('object is not a function')", 0, 0);
+                return 0;
+            };
         }
 
-        void * data = V82JSC::PersistentData(isolate, instance_template);
+        data_ = V82JSC::PersistentData(isolate, instance_template);
         def.finalize = [](JSObjectRef object) {
             void * data = JSObjectGetPrivate(object);
             V82JSC::ReleasePersistentData<Template>(data);
         };
-
-        JSClassRef claz = JSClassCreate(&def);
-        instance = JSObjectMake(ctx, claz, data);
-
-        JSObjectRef function = (JSObjectRef) V82JSC::ToJSValueRef(function_template->GetFunction(context).ToLocalChecked(), context);
-        JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
-        JSValueRef excp = 0;
-        JSObjectRef prototype = (JSObjectRef) JSObjectGetProperty(ctx, function, sprototype, &excp);
-        assert(excp == 0);
-        V82JSC::SetRealPrototype(context, instance, prototype);
-        assert(excp == 0);
     }
     
     TryCatch try_catch(isolate);
     
-    Local<Object> thiz = otempl->NewInstance(context, instance, ftempl->m_isHiddenPrototype).ToLocalChecked();
+    Local<Object> thiz = otempl->NewInstance(context, create_object?0:instance,
+                                             ftempl->m_isHiddenPrototype, create_object?&def:nullptr,data_).ToLocalChecked();
+    if (create_object) {
+        TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)V82JSC::ToJSValueRef(thiz, context));
+        instance = (JSObjectRef)wrap->m_security;
+        JSStringRef sprototype = JSStringCreateWithUTF8CString("prototype");
+        JSValueRef excp = 0;
+        JSObjectRef prototype = (JSObjectRef) JSObjectGetProperty(ctx, function, sprototype, &excp);
+        assert(excp == 0);
+        V82JSC::SetRealPrototype(context, instance, prototype, true);
+        assert(excp == 0);
+    }
+
+    Local<Object> target = ValueImpl::New(V82JSC::ToContextImpl(context), new_target).As<Object>();
     
     if (try_catch.HasCaught()) {
         if (exception) {
@@ -564,7 +582,7 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
         * reinterpret_cast<v8::internal::Object**>(*data),   // kDataIndex = 4;
         nullptr /*deprecated*/,                              // kCalleeIndex = 5;
         nullptr, // FIXME                                    // kContextSaveIndex = 6;
-        * reinterpret_cast<v8::internal::Object**>(*thiz)    // kNewTargetIndex = 7;
+        * reinterpret_cast<v8::internal::Object**>(*target)  // kNewTargetIndex = 7;
     };
     v8::internal::Object * values_[argumentCount + 1];
     v8::internal::Object ** values = values_ + argumentCount - 1;
@@ -597,7 +615,9 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
     }
 
     Local<Value> ret = info.GetReturnValue().Get();
-
+    if (!ret->IsObject()) {
+        return V82JSC::ToJSValueRef<Object>(thiz, context);
+    }
     return (JSObjectRef) V82JSC::ToJSValueRef<Value>(ret, isolate);
 }
 

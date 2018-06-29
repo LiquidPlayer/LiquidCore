@@ -90,6 +90,7 @@ struct IsolateImpl {
     H::Map<H::Value> *m_value_map;
     H::Map<H::Value> *m_number_map;
     H::Map<H::Value> *m_symbol_map;
+    H::Map<H::Value> *m_promise_resolver_map;
     H::Map<H::Signature> *m_signature_map;
     H::Map<H::FunctionTemplate> *m_function_template_map;
     H::Map<H::ObjectTemplate> *m_object_template_map;

@@ -297,6 +297,8 @@ MaybeLocal<UnboundScript> ScriptCompiler::CompileUnboundScript(Isolate* isolate,
                                                                CompileOptions options)
 {
     IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
+    EscapableHandleScope scope(isolate);
+    
     Local<Context> context = iso->m_nullContext.Get(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     
@@ -384,7 +386,7 @@ MaybeLocal<UnboundScript> ScriptCompiler::CompileUnboundScript(Isolate* isolate,
         impl->m_is_module = source->GetResourceOptions().IsModule();
         JSStringRelease(defaultError);
         
-        return V82JSC::CreateLocal<v8::UnboundScript>(&iso->ii, impl);
+        return scope.Escape(V82JSC::CreateLocal<v8::UnboundScript>(&iso->ii, impl));
     }
     
     Local<String> error = StringImpl::New(isolate, errorMessage);
@@ -392,6 +394,9 @@ MaybeLocal<UnboundScript> ScriptCompiler::CompileUnboundScript(Isolate* isolate,
     sprintf (buffer, " (at line %d)", errorLine);
     error = String::Concat(error, String::NewFromUtf8(isolate, buffer, NewStringType::kNormal).ToLocalChecked());
     JSStringRelease(defaultError);
+    
+    String::Utf8Value str(error);
+    printf ("Script error: %s\n", *str);
     
     LocalException exception(iso);
     JSValueRef *x = &exception;

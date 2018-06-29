@@ -165,67 +165,64 @@ Maybe<bool> Object::DefineProperty(Local<Context> context, Local<Name> key,
     HandleScope scope(isolate);
     Context::Scope context_scope(context);
     
+    static JSStringRef
+    get_ = JSStringCreateWithUTF8CString("get"),
+    set_ = JSStringCreateWithUTF8CString("set"),
+    value_ = JSStringCreateWithUTF8CString("value"),
+    writable_ = JSStringCreateWithUTF8CString("writable"),
+    enumerable_ = JSStringCreateWithUTF8CString("enumerable"),
+    configurable_ = JSStringCreateWithUTF8CString("configurable");
+    
     Local<Value> thiz = V82JSC::CreateLocal<Value>(isolate, V82JSC::ToImpl<ValueImpl>(this));
     thiz = TrackedObjectImpl::SecureValue(thiz);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(thiz, context);
     JSValueRef key_ = V82JSC::ToJSValueRef(key, context);
     
-    JSValueRef args[] = {
-        obj,
-        key_,
-        JSValueMakeUndefined(ctx),
-        JSValueMakeUndefined(ctx),
-        JSValueMakeUndefined(ctx)
-    };
-
-    char desc[256];
-    char temp[32];
-    sprintf(desc, "delete _1[_2]; Object.defineProperty(_1, _2, { ");
+    JSObjectRef desc = JSObjectMake(ctx, 0, 0);
     if (descriptor.has_get()) {
-        strcat(desc, " get: _4,");
-        args[3] = V82JSC::ToJSValueRef(descriptor.get(), context);
+        JSObjectSetProperty(ctx, desc, get_, V82JSC::ToJSValueRef(descriptor.get(), context), 0, 0);
     }
     if (descriptor.has_set()) {
-        strcat(desc, " set: _5,");
-        args[4] = V82JSC::ToJSValueRef(descriptor.set(), context);
+        JSObjectSetProperty(ctx, desc, set_, V82JSC::ToJSValueRef(descriptor.set(), context), 0, 0);
     }
     if (descriptor.has_writable()) {
-        sprintf(temp, " writable: %s", descriptor.writable()?"true,":"false,");
-        strcat(desc, temp);
+        JSObjectSetProperty(ctx, desc, writable_, JSValueMakeBoolean(ctx, descriptor.writable()), 0, 0);
     }
     if (descriptor.has_enumerable()) {
-        sprintf(temp, " enumerable: %s", descriptor.enumerable()?"true,":"false,");
-        strcat(desc, temp);
+        JSObjectSetProperty(ctx, desc, enumerable_, JSValueMakeBoolean(ctx, descriptor.enumerable()), 0, 0);
     }
     if (descriptor.has_configurable()) {
-        sprintf(temp, " configurable: %s", descriptor.configurable()?"true,":"false,");
-        strcat(desc, temp);
+        JSObjectSetProperty(ctx, desc, configurable_, JSValueMakeBoolean(ctx, descriptor.configurable()), 0, 0);
     }
     if (descriptor.has_value()) {
-        strcat(desc, " value: _3,");
-        args[2] = V82JSC::ToJSValueRef(descriptor.value(), context);
+        JSObjectSetProperty(ctx, desc, value_, V82JSC::ToJSValueRef(descriptor.value(), context), 0, 0);
     }
-    desc[strlen(desc) - 1] = 0;
-    strcat(desc, " });");
-    printf( "set: %s\n", desc);
 
     TryCatch try_catch(V82JSC::ToIsolate(this));
     {
         LocalException exception(V82JSC::ToIsolateImpl(this));
-        V82JSC::exec(ctx, desc, 5, args, &exception);
+        JSValueRef args[] = {
+            obj,
+            key_,
+            desc
+        };
+        V82JSC::exec(ctx, "Object.defineProperty(_1, _2, _3);", 3, args, &exception);
     }
-    if (try_catch.HasCaught()) return _maybe<bool>(false).toMaybe();
-    
-    JSValueRef foo = V82JSC::exec(ctx,
-                                  "return JSON.stringify(Object.getOwnPropertyDescriptor(_1, _2)); "
-                                  , 2, args);
-    JSStringRef s = JSValueToStringCopy(ctx, foo, 0);
-    char bar[200];
-    JSStringGetUTF8CString(s, bar, 200);
-    printf("get: %s\n", bar);
+    if (try_catch.HasCaught()) {
+        JSValueRef exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
+        JSStringRef err = JSValueToStringCopy(ctx, exception, 0);
+        char e[JSStringGetMaximumUTF8CStringSize(err)];
+        JSStringGetUTF8CString(err, e, JSStringGetMaximumUTF8CStringSize(err));
+        if (strstr(e, "access denied")) {
+            JSStringRelease(err);
+            try_catch.ReThrow();
+            return Nothing<bool>();
+        }
+        JSStringRelease(err);
+        return _maybe<bool>(false).toMaybe();
+    }
 
-    
     return _maybe<bool>(true).toMaybe();
 }
 
@@ -253,7 +250,7 @@ MaybeLocal<Value> Object::Get(Local<Context> context, Local<Value> key)
         V82JSC::ToJSValueRef(key, context)
     };
     
-    JSValueRef ret = V82JSC::exec(ctx, "return _1[_2]", 2, args, &exception);
+    JSValueRef ret = V82JSC::exec(ctx, "return Reflect.get(_1,_2)", 2, args, &exception);
     
     if (!exception.ShouldThow()) {
         return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(context), ret));
@@ -302,15 +299,6 @@ Maybe<PropertyAttribute> Object::GetPropertyAttributes(Local<Context> context, L
         V82JSC::ToJSValueRef(thiz, context),
         V82JSC::ToJSValueRef(key, context),
     };
-    JSValueRef foo = V82JSC::exec(ctx,
-                                  "return JSON.stringify(Object.getOwnPropertyDescriptor(_1, _2)); "
-                                  , 2, args, &exception);
-    JSStringRef s = JSValueToStringCopy(ctx, foo, 0);
-    char bar[200];
-    JSStringGetUTF8CString(s, bar, 200);
-    printf("%s\n", bar);
-
-    
     JSValueRef ret = V82JSC::exec(ctx,
                                   "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
                                   "var d = Object.getOwnPropertyDescriptor(_1, _2); "
@@ -566,9 +554,8 @@ Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
         typedef v8::internal::Heap::RootListIndex R;
         internal::Object *the_hole = iso->ii.heap()->root(R::kTheHoleValueRootIndex);
 
-        // FIXME: This doesn't work
-        JSStringRef s = JSStringCreateWithUTF8CString("(function() {return !this;})()");
-        bool isStrict = JSValueToBoolean(ctx, JSEvaluateScript(ctx, s, 0, 0, 0, 0));
+        // FIXME: I can think of no way to determine whether we were called from strict mode or not
+        bool isStrict = false;
         internal::Object *shouldThrow = internal::Smi::FromInt(isStrict?1:0);
         
         iso->m_callback_depth ++;
@@ -985,6 +972,7 @@ Local<Value> Object::GetPrototype()
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, context);
     JSValueRef our_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)obj);
+    
     return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(context), our_proto));
 }
 
@@ -1001,7 +989,6 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
     Context::Scope context_scope(context);
     
     Local<Value> thiz = V82JSC::CreateLocal<Value>(isolate, V82JSC::ToImpl<ValueImpl>(this));
-    thiz = TrackedObjectImpl::SecureValue(thiz);
     JSValueRef obj = V82JSC::ToJSValueRef(thiz, context);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef new_proto = V82JSC::ToJSValueRef(prototype, isolate);
@@ -1011,11 +998,13 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
         TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)new_proto);
         new_proto_is_hidden = wrap && wrap->m_isHiddenPrototype;
         if (new_proto_is_hidden) {
+            /* FIXME: This doesn't seem to be necessary.  Remove?
             if (JSValueIsStrictEqual(ctx, wrap->m_hidden_proxy_security, new_proto)) {
                 // Don't put the hidden proxy in the prototype chain, just the underlying target object
                 new_proto = wrap->m_proxy_security ? wrap->m_proxy_security : wrap->m_security;
             }
-            // Save a weak reference to this object and propagate our own properties to it
+            */
+            // Save a reference to this object and propagate our own properties to it
             if (!wrap->m_hidden_children_array) {
                 wrap->m_hidden_children_array = JSObjectMakeArray(ctx, 0, nullptr, 0);
                 JSValueProtect(ctx, wrap->m_hidden_children_array);
@@ -1030,15 +1019,6 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
     TryCatch try_catch(isolate);
     
     V82JSC::SetRealPrototype(context, (JSObjectRef)obj, new_proto);
-    
-    if (try_catch.HasCaught()) {
-        JSStringRef err = JSValueToStringCopy(ctx, V82JSC::ToJSValueRef(try_catch.Exception(), context), 0);
-        char e[JSStringGetMaximumUTF8CStringSize(err)];
-        JSStringGetUTF8CString(err, e, JSStringGetMaximumUTF8CStringSize(err));
-        if (strstr(e, "access denied")) {
-            try_catch.ReThrow();
-        }
-    }
     
     bool ok = new_proto_is_hidden || GetPrototype()->StrictEquals(prototype);
     if (!ok) return Nothing<bool>();
@@ -1085,12 +1065,8 @@ void HiddenObjectImpl::PropagateOwnPropertyToChildren(v8::Local<v8::Context> con
     if (wrap->m_hidden_children_array) {
         int length = static_cast<int>(JSValueToNumber(ctx, V82JSC::exec(ctx, "return _1.length",
                                                                         1, &wrap->m_hidden_children_array), 0));
-        char index[32];
-        for (auto i=0; i < length; ++i) {
-            sprintf(index, "%d", i);
-            JSStringRef s = JSStringCreateWithUTF8CString(index);
-            JSValueRef child = JSObjectGetProperty(ctx, wrap->m_hidden_children_array, s, 0);
-            JSStringRelease(s);
+        for (unsigned i=0; i < length; ++i) {
+            JSValueRef child = JSObjectGetPropertyAtIndex(ctx, wrap->m_hidden_children_array, i, 0);
             assert(JSValueIsObject(ctx, child));
             PropagateOwnPropertyToChild(context, property, (JSObjectRef)child);
         }
@@ -1268,11 +1244,7 @@ void Object::SetInternalField(int index, Local<Value> value)
         JSValueProtect(ctx, wrap->m_internal_fields_array);
     }
     if (wrap && index < wrap->m_num_internal_fields) {
-        char ndx[32];
-        sprintf(ndx, "%d", index);
-        JSStringRef s = JSStringCreateWithUTF8CString(ndx);
-        JSObjectSetProperty(ctx, wrap->m_internal_fields_array, s, V82JSC::ToJSValueRef(value, context), 0, 0);
-        JSStringRelease(s);
+        JSObjectSetPropertyAtIndex(ctx, wrap->m_internal_fields_array, index, V82JSC::ToJSValueRef(value, context), 0);
     }
 }
 

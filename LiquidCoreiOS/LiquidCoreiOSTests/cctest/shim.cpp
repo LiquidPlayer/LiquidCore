@@ -53,8 +53,20 @@ internal::Handle<internal::String> Factory::InternalizeOneByteString(Vector<cons
 
 internal::Handle<FixedArray> Factory::NewFixedArray(int size, PretenureFlag pretenure)
 {
-    assert(0);
-    return Handle<FixedArray>();
+    v8::Isolate *isolate = v8::Isolate::GetCurrent();
+    v8::EscapableHandleScope scope(isolate);
+    MaybeLocal<v8::Array> array = Array::New(isolate);
+    JSValueRef a = V82JSC::ToJSValueRef(array.ToLocalChecked(), isolate->GetCurrentContext());
+    for (int i=0; i<size; i++) {
+        JSObjectSetPropertyAtIndex(V82JSC::ToContextRef(isolate->GetCurrentContext()),
+                                   (JSObjectRef)a, i,
+                                   JSValueMakeNumber(V82JSC::ToContextRef(isolate->GetCurrentContext()), i),
+                                   0);
+    }
+    if (array.IsEmpty()) return Handle<internal::FixedArray>();
+    Local<v8::Array> local = scope.Escape(array.ToLocalChecked());
+    Handle<internal::FixedArray> handle = * reinterpret_cast<Handle<FixedArray>*>(&local);
+    return handle;
 }
 
 MaybeHandle<internal::String> Factory::NewExternalStringFromOneByte(const ExternalOneByteString::Resource* resource)
@@ -160,7 +172,7 @@ bool Heap::ShouldOptimizeForMemoryUsage()
 void Heap::StartIdleIncrementalMarking(GarbageCollectionReason gc_reason,
                                        GCCallbackFlags gc_callback_flags)
 {
-    assert(0);
+    
 }
 
 //

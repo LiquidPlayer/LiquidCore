@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0738913F20E631E6009056FD /* V82JSC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738913E20E631E6009056FD /* V82JSC.cpp */; };
 		075AEA1620C6A608002B1098 /* Message.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 075AEA1520C6A608002B1098 /* Message.cpp */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
@@ -103,6 +104,7 @@
 
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
+		0738913E20E631E6009056FD /* V82JSC.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = V82JSC.cpp; sourceTree = "<group>"; };
 		075AEA1520C6A608002B1098 /* Message.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Message.cpp; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
@@ -282,6 +284,7 @@
 				07FE857B2075F53C0013E1B4 /* utils */,
 				07FE85762075F4E80013E1B4 /* v8 */,
 				0717F0FF205EA81D00AA75A7 /* V82JSC.h */,
+				0738913E20E631E6009056FD /* V82JSC.cpp */,
 				076F58E7201E7F5A004780FD /* ArrayBuffer.cpp */,
 				076F58D7201E7EF9004780FD /* Context.cpp */,
 				076F58D9201E7EF9004780FD /* Scopes.cpp */,
@@ -519,6 +522,7 @@
 				07F8049B2027147F00FDFC27 /* Object.cpp in Sources */,
 				076F58DF201E7EF9004780FD /* Isolate.cpp in Sources */,
 				076F58E2201E7EF9004780FD /* Value.cpp in Sources */,
+				0738913F20E631E6009056FD /* V82JSC.cpp in Sources */,
 				07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */,
 				07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */,
 				07FE85982075F6D40013E1B4 /* trace-object.cc in Sources */,

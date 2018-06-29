@@ -157,7 +157,9 @@ struct FunctionTemplateImpl : V82JSC_HeapObject::FunctionTemplate
 
 struct ObjectTemplateImpl : V82JSC_HeapObject::ObjectTemplate
 {
-    v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root, bool isHiddenPrototype);
+    v8::MaybeLocal<v8::Object> NewInstance(v8::Local<v8::Context> context, JSObjectRef root,
+                                           bool isHiddenPrototype, JSClassDefinition* definition=nullptr,
+                                           void* data=nullptr);
 };
 
 struct SignatureImpl : V82JSC_HeapObject::Signature {};
@@ -420,57 +422,9 @@ struct V82JSC {
         }
         return v8::Local<v8::Context>();
     }
-    static inline JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj)
-    {
-        v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
-        v8::Local<v8::Context> global_context = FindGlobalContext(context);
-        if (global_context.IsEmpty()) {
-            // No worries, it just means this hasn't been set up yet; use the native API
-            return JSObjectGetPrototype(ToContextRef(context), obj);
-        }
-        JSContextRef ctx = ToContextRef(context);
-        global_context = ToIsolateImpl(isolate)->m_global_contexts[JSObjectGetGlobalContext(obj)].Get(isolate);
-        v8::Local<v8::Function> getPrototype = ToGlobalContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
-        if (getPrototype.IsEmpty()) {
-            // No worries, it just means this hasn't been set up yet; use the native API
-            return JSObjectGetPrototype(ToContextRef(context), obj);
-        }
-        JSValueRef exception=0;
-        JSValueRef our_proto = JSObjectCallAsFunction(ctx, (JSObjectRef)ToJSValueRef(getPrototype, global_context), 0, 1, &obj, &exception);
-        assert(exception==0);
-        return our_proto;
-    }
-    static inline void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto,
-                                        bool override_immutable=false)
-    {
-        v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
-        v8::Local<v8::Context> global_context = FindGlobalContext(context);
-
-        TrackedObjectImpl *impl = getPrivateInstance(V82JSC::ToContextRef(context), obj);
-        if (!override_immutable && impl && !impl->m_object_template.IsEmpty() &&
-            V82JSC::ToImpl<ObjectTemplateImpl>(impl->m_object_template.Get(isolate))->m_is_immutable_proto) {
-            
-            isolate->ThrowException
-            (v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "prototype is immutable",
-                                                              v8::NewStringType::kNormal).ToLocalChecked()));
-            return;
-        }
-
-        if (global_context.IsEmpty()) {
-            // No worries, it just means this hasn't been set up yet; use the native API
-            JSObjectSetPrototype(ToContextRef(context), obj, proto);
-            return;
-        }
-        v8::Local<v8::Function> setPrototype = ToGlobalContextImpl(global_context)->ObjectSetPrototypeOf.Get(isolate);
-        CHECK(!setPrototype.IsEmpty());
-        JSContextRef ctx = ToContextRef(context);
-        JSValueRef args[] = {
-            obj,
-            proto
-        };
-        LocalException exception(ToIsolateImpl(isolate));
-        JSObjectCallAsFunction(ctx, (JSObjectRef)ToJSValueRef(setPrototype, global_context), 0, 2, args, &exception);
-    }
+    static JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj);
+    static void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto,
+                                 bool override_immutable=false);
     template<typename T>
     static inline void * PersistentData(v8::Isolate *isolate, v8::Local<T> d)
     {
@@ -501,43 +455,27 @@ struct V82JSC {
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)
 
-inline LocalException::~LocalException()
-{
-    v8::HandleScope scope(V82JSC::ToIsolate(isolate_));
-    v8::Local<v8::Script> script;
-    if (!isolate_->m_running_scripts.empty()) {
-        script = isolate_->m_running_scripts.top();
-    }
-    
-    v8::Local<v8::Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(isolate_));
-    JSContextRef ctx = V82JSC::ToContextRef(context);
-    if (exception_) {
-        MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
-                                              JSContextCreateBacktrace(ctx, 32));
-        if (isolate_->m_handlers) {
-            TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(isolate_->m_handlers);
-            tcc->exception_ = (void*)exception_;
-            tcc->message_obj_ = (void*)msgi;
-            
-            isolate_->ii.thread_local_top()->scheduled_exception_ =
-            isolate_->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
-            if (tcc->is_verbose_ && !tcc->next_) {
-                msgi->CallHandlers();
-            }
-        } else {
-            msgi->CallHandlers();
-        }
-    } else if (isolate_->m_verbose_exception && !isolate_->m_handlers) {
-        MessageImpl * msgi = MessageImpl::New(isolate_, (JSValueRef)exception_, script,
-                                              JSContextCreateBacktrace(ctx, 32));
-        msgi->CallHandlers();
-        isolate_->m_verbose_exception = 0;
-    }
-}
-
 void proxyArrayBuffer(GlobalContextImpl *ctx);
 bool InstallAutoExtensions(v8::Local<v8::Context> context, std::map<std::string, bool>& loaded_extensions);
 bool InstallExtension(v8::Local<v8::Context> context, const char *extension_name, std::map<std::string, bool>& loaded_extensions);
 void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* impl, JSObjectRef object);
+
+class DisableAccessChecksScope {
+public:
+    DisableAccessChecksScope(IsolateImpl* iso, ObjectTemplateImpl* templ) :
+    iso_(iso), templ_(templ), callback_(nullptr)
+    {
+        callback_ = templ_->m_access_check;
+        templ_->m_access_check = nullptr;
+    }
+    ~DisableAccessChecksScope()
+    {
+        templ_->m_access_check = callback_;
+    }
+private:
+    IsolateImpl *iso_;
+    ObjectTemplateImpl *templ_;
+    v8::AccessCheckCallback callback_;
+};
 
 #endif /* V82JSC_h */

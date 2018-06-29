@@ -74,7 +74,7 @@ TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object)
 {
     IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
     HandleScope scope(V82JSC::ToIsolate(iso));
-    JSObjectRef maybe_proxy_object = JSObjectGetProxyTarget(object);
+    //JSObjectRef maybe_proxy_object = JSObjectGetProxyTarget(object);
     JSValueRef args[] = {
         /*maybe_proxy_object ? maybe_proxy_object :*/ object,
         iso->m_private_symbol
@@ -212,6 +212,13 @@ Local<Value> TrackedObjectImpl::SecureValue(Local<Value> in, Local<Context> toCo
             }
         }
     }
+    
+    if (!install_proxy) {
+        if (!wrap || !wrap->m_isGlobalObject) {
+            TrackedObjectImpl *global_wrap = getPrivateInstance(ctx, JSContextGetGlobalObject(ctx));
+            install_proxy = global_wrap && (global_wrap->m_isDetached || global_wrap->m_reattached_global);
+        }
+    }
 
     if (install_proxy) {
         JSClassDefinition def = kJSClassDefinitionEmpty;
@@ -244,12 +251,16 @@ Local<Value> TrackedObjectImpl::SecureValue(Local<Value> in, Local<Context> toCo
             if (!strcmp(buffer,"get") && JSValueIsStrictEqual(ctx, arguments[3], iso->m_private_symbol)) {
                 return arguments[1];
             }
+            if (JSContextGetGlobalContext(ctx) == V82JSC::ToContextRef(iso->m_nullContext.Get(isolate))) {
+                return arguments[1];
+            }
 
             JSObjectRef in_value = (JSObjectRef)arguments[1];
             JSGlobalContextRef orig_context = JSObjectGetGlobalContext(in_value);
             Local<Context> accessing_context = LocalContextImpl::New(isolate, ctx);
             Local<Object> accessing_object = ValueImpl::New(V82JSC::ToContextImpl(accessing_context), in_value).As<Object>();
             bool allow = false;
+            bool detached_behavior = false;
 
             if (argumentCount>4 && !JSValueIsNull(ctx,arguments[4])) {
                 JSObjectRef target = JSObjectGetProxyTarget((JSObjectRef)arguments[4]);
@@ -271,65 +282,84 @@ Local<Value> TrackedObjectImpl::SecureValue(Local<Value> in, Local<Context> toCo
                 oi = ot.IsEmpty() ? nullptr : V82JSC::ToImpl<ObjectTemplateImpl>(ot);
             }
             
-            if (argumentCount > 3) {
-                auto access_requested = static_cast<v8::AccessControl>(JSValueToNumber(ctx, arguments[2], 0));
-                JSObjectRef proto = in_value;
-                TrackedObjectImpl *proto_wrap = wrap;
-                while (JSValueIsObject(ctx, proto)) {
-                    if (proto_wrap && proto_wrap->m_access_control) {
-                        JSValueRef args[] = {
-                            proto_wrap->m_access_control,
-                            arguments[3]
-                        };
-                        JSValueRef access_granted_value = V82JSC::exec(ctx, "return _1[_2]", 2, args);
-                        if (JSValueIsNumber(ctx, access_granted_value)) {
-                            access_granted = static_cast<AccessControl>(JSValueToNumber(ctx, access_granted_value, 0));
-                            break;
+            if (wrap && wrap->m_isDetached) {
+                allow = false;
+                detached_behavior = true;
+            } else if (wrap && wrap->m_reattached_global) {
+                Local<Value> reattached = SecureValue(ValueImpl::New(V82JSC::ToContextImpl(accessing_context),
+                                                                     wrap->m_reattached_global));
+                in_value = (JSObjectRef) V82JSC::ToJSValueRef(reattached, accessing_context);
+                allow = true;
+            } else {
+                if (argumentCount > 3) {
+                    auto access_requested = static_cast<v8::AccessControl>(JSValueToNumber(ctx, arguments[2], 0));
+                    JSObjectRef proto = in_value;
+                    TrackedObjectImpl *proto_wrap = wrap;
+                    while (JSValueIsObject(ctx, proto)) {
+                        if (proto_wrap && proto_wrap->m_access_control) {
+                            JSValueRef args[] = {
+                                proto_wrap->m_access_control,
+                                arguments[3]
+                            };
+                            JSValueRef access_granted_value = V82JSC::exec(ctx, "return _1[_2]", 2, args);
+                            if (JSValueIsNumber(ctx, access_granted_value)) {
+                                access_granted = static_cast<AccessControl>(JSValueToNumber(ctx, access_granted_value, 0));
+                                break;
+                            }
+                        }
+                        proto = (JSObjectRef) V82JSC::GetRealPrototype(accessing_context, proto);
+                        if (JSValueIsObject(ctx, proto)) {
+                            proto_wrap = getPrivateInstance(ctx, proto);
                         }
                     }
-                    proto = (JSObjectRef) V82JSC::GetRealPrototype(accessing_context, proto);
-                    if (JSValueIsObject(ctx, proto)) {
-                        proto_wrap = getPrivateInstance(ctx, proto);
+                    allow = (access_granted & access_requested) != 0;
+                }
+                
+                // If we don't have our own access check, inherit from our global object
+                TrackedObjectImpl *global_wrap = nullptr;
+                AccessCheckCallback access_check = oi ? oi->m_access_check : nullptr;
+                JSValueRef access_check_data = oi ? oi->m_access_check_data : 0;
+                if (!access_check && (!wrap || !wrap->m_isGlobalObject)) {
+                    JSObjectRef global = JSContextGetGlobalObject(orig_context);
+                    global_wrap = getPrivateInstance(orig_context, global);
+                    if (global_wrap && !global_wrap->m_object_template.IsEmpty()) {
+                        ObjectTemplateImpl *otmpl = V82JSC::ToImpl<ObjectTemplateImpl>(global_wrap->m_object_template.Get(isolate));
+                        access_check = otmpl->m_access_check;
+                        access_check_data = otmpl->m_access_check_data;
                     }
                 }
-                allow = (access_granted & access_requested) != 0;
-            }
-            
-            // If we don't have our own access check, inherit from our global object
-            AccessCheckCallback access_check = oi ? oi->m_access_check : nullptr;
-            JSValueRef access_check_data = oi ? oi->m_access_check_data : 0;
-            if (!access_check && (!wrap || !wrap->m_isGlobalObject)) {
-                JSObjectRef global = JSContextGetGlobalObject(orig_context);
-                TrackedObjectImpl *global_wrap = getPrivateInstance(orig_context, global);
-                if (global_wrap && !global_wrap->m_object_template.IsEmpty()) {
-                    ObjectTemplateImpl *otmpl = V82JSC::ToImpl<ObjectTemplateImpl>(global_wrap->m_object_template.Get(isolate));
-                    access_check = otmpl->m_access_check;
-                    access_check_data = otmpl->m_access_check_data;
-                }
-            }
 
-            // STEP 1: If there is an access check callback, use that to decide
-            if (!allow && access_check) {
-                if (wrap->m_isGlobalObject && (JSContextGetGlobalContext(ctx) == orig_context)) {
-                    allow = true;
+                if (global_wrap && global_wrap->m_isDetached) {
+                    allow = !(JSContextGetGlobalContext(ctx) == orig_context);
+                    detached_behavior = true;
                 } else {
-                    Local<Value> accessing_data = ValueImpl::New(V82JSC::ToContextImpl(accessing_context), access_check_data);
-                    allow = access_check(accessing_context, accessing_object, accessing_data);
+                    // STEP 1: If there is an access check callback, use that to decide
+                    if (!allow && access_check) {
+                        if (wrap->m_isGlobalObject && (JSContextGetGlobalContext(ctx) == orig_context)) {
+                            allow = true;
+                        } else {
+                            Local<Value> accessing_data = ValueImpl::New(V82JSC::ToContextImpl(accessing_context), access_check_data);
+                            allow = access_check(accessing_context, accessing_object, accessing_data);
+                        }
+                    // STEP 2: If no access check callback, see if security tokens match
+                    } else if (!allow) {
+                        Local<Value> accessing_token = accessing_context->GetSecurityToken();
+                        Local<Context> orig_global_context = iso->m_global_contexts[orig_context].Get(isolate);
+                        Local<Value> orig_token = orig_global_context->GetSecurityToken();
+                        if (orig_token.IsEmpty() && (!wrap || !wrap->m_isGlobalObject)) {
+                            allow = true;
+                        } else if (orig_token.IsEmpty()) {
+                            allow = false;
+                        } else if (accessing_token.IsEmpty()) {
+                            allow = orig_token.IsEmpty();
+                        } else {
+                            allow = accessing_token->StrictEquals(orig_token);
+                        }
+                    }
                 }
-            // STEP 2: If no access check callback, see if security tokens match
-            } else if (!allow) {
-                Local<Value> accessing_token = accessing_context->GetSecurityToken();
-                Local<Context> orig_global_context = iso->m_global_contexts[orig_context].Get(isolate);
-                Local<Value> orig_token = orig_global_context->GetSecurityToken();
-                if (orig_token.IsEmpty() && (!wrap || !wrap->m_isGlobalObject)) {
-                    allow = true;
-                } else if (orig_token.IsEmpty()) {
-                    allow = false;
-                } else if (accessing_token.IsEmpty()) {
-                    allow = orig_token.IsEmpty();
-                } else {
-                    allow = accessing_token->StrictEquals(orig_token);
-                }
+            }
+            if (allow && !strcmp(buffer, "apply") && detached_behavior) {
+                return V82JSC::exec(ctx, "return function(){}", 0, nullptr);
             }
             if (allow && !strcmp(buffer, "getOwnPropertyDescriptor")) {
                 JSValueRef proto = JSObjectGetPrototype(ctx, in_value);

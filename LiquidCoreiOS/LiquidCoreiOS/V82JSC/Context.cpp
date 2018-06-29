@@ -53,8 +53,15 @@ Local<Object> Context::Global()
  */
 void Context::DetachGlobal()
 {
-    printf( "FIXME! Context::DetachGlobal()\n");
-    //assert(0);
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
+    ContextImpl *impl = V82JSC::ToContextImpl(this);
+    Local<Context> context = V82JSC::CreateLocal<Context>(isolate, impl);
+    Context::Scope context_scope(context);
+    
+    JSObjectRef glob = JSContextGetGlobalObject(impl->m_ctxRef);
+    TrackedObjectImpl *wrap = makePrivateInstance(V82JSC::ToIsolateImpl(isolate), impl->m_ctxRef, glob);
+    wrap->m_isDetached = true;
 }
 
 EmbedderDataImpl * get_embedder_data(const Context* cx)
@@ -185,8 +192,12 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     Local<Context> ctx = V82JSC::CreateLocal<Context>(isolate, context);
     int hash = 0;
     
+    TrackedObjectImpl *global_wrap = nullptr;
     if (!global_object.IsEmpty()) {
         hash = global_object.ToLocalChecked().As<Object>()->GetIdentityHash();
+        global_wrap = getPrivateInstance(context->GetNullContext(),
+                                         (JSObjectRef) V82JSC::ToJSValueRef(global_object.ToLocalChecked(), ctx));
+        global_template = global_wrap->m_object_template.Get(isolate);
     }
 
     Context::Scope context_scope(ctx);
@@ -194,6 +205,9 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     if (!global_template.IsEmpty()) {
         ObjectTemplateImpl *impl = V82JSC::ToImpl<ObjectTemplateImpl>(*global_template.ToLocalChecked());
         LocalException exception(V82JSC::ToIsolateImpl(isolate));
+        
+        // Temporarily disable access checks until we are done setting up the object
+        DisableAccessChecksScope disable_scope(i, impl);
         
         JSClassDefinition def = kJSClassDefinitionEmpty;
         JSClassRef claz = JSClassCreate(&def);
@@ -203,9 +217,20 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
         i->m_exec_maps[(JSGlobalContextRef)context->m_ctxRef] = std::map<const char*, JSObjectRef>();
 
-        JSObjectRef instance = JSObjectMake(ctxRef, 0, nullptr);
+        def = kJSClassDefinitionEmpty;
+        def.className = "GlobalObject";
+        MaybeLocal<Object> thiz = impl->NewInstance(ctx, 0, false, &def, 0);
+        JSObjectRef instance = (JSObjectRef) V82JSC::ToJSValueRef(thiz.ToLocalChecked(), ctx);
+        TrackedObjectImpl *wrap = getPrivateInstance(context->m_ctxRef, instance);
+        wrap->m_isGlobalObject = true;
+        if (hash) {
+            wrap->m_hash = hash;
+        }
+        // Don't use the ES6 proxy, if there is one.  JSC won't allow it in the global prototype chain
+        instance = (JSObjectRef)wrap->m_security;
+        thiz = ValueImpl::New(reinterpret_cast<ContextImpl*>(context), instance).As<Object>();
+
         auto ctortempl = Local<FunctionTemplate>::New(isolate, impl->m_constructor_template);
-        
         if (!ctortempl.IsEmpty()) {
             MaybeLocal<Function> ctor = ctortempl->GetFunction(ctx);
             if (!ctor.IsEmpty()) {
@@ -222,13 +247,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSStringRelease(sconstructor);
             }
         }
-        TrackedObjectImpl *wrap = makePrivateInstance(i, context->m_ctxRef, instance);
-        wrap->m_isGlobalObject = true;
-        MaybeLocal<Object> thiz = impl->NewInstance(ctx, instance, false);
-        if (hash) {
-            wrap->m_hash = hash;
-        }
-        
+
         // Don't use the access control proxy on the global object.  It is always accessible to the current context
         // and proxies in the global prototype chain are not allowed in JSC.  We will use it, however, if we pass the
         // object to another context.
@@ -259,15 +278,19 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     // Set a reference back to our context so we can find our way back to the creation context
     JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
     assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
-    
+
+    if (!global_object.IsEmpty()) {
+        global_wrap->m_isDetached = false;
+        global_wrap->m_reattached_global = global_o;
+        JSValueProtect(context->m_ctxRef, global_wrap->m_reattached_global);
+    }
+
     {
         Copyable(Context) persistent(isolate, ctx);
         persistent.SetWeak();
         i->m_global_contexts[(JSGlobalContextRef)context->m_ctxRef] = std::move(persistent);
     }
     
-//    context->m_security_token.Reset(isolate, Undefined(isolate));
-//    context->m_security_token.Reset(isolate, Object::New(isolate));
     context->m_security_token.Reset();
 
     // Don't do anything fancy if we are setting up the default context
@@ -296,6 +319,22 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                         } else if (isGlobal) {
                             obj = obj->GetPrototype().As<Object>();
                         }
+                    }
+                }
+                
+                bool in_global_prototype_chain = false;
+                JSObjectRef global = JSContextGetGlobalObject(ctx);
+                while (JSValueIsObject(ctx, global) && !in_global_prototype_chain) {
+                    in_global_prototype_chain = JSValueIsStrictEqual(ctx, global, o);
+                    global = (JSObjectRef) JSObjectGetPrototype(ctx, global);
+                }
+                if (in_global_prototype_chain) {
+                    // We can't have proxies in the global prototype chain.  If this is proxied,
+                    // remove the ES6 proxy.  We will rely on the legacy proxy instead.
+                    JSObjectRef maybe_proxy = (JSObjectRef) V82JSC::ToJSValueRef(proto, context);
+                    TrackedObjectImpl *wrap = getPrivateInstance(ctx, maybe_proxy);
+                    if (wrap) {
+                        proto = ValueImpl::New(V82JSC::ToContextImpl(context), wrap->m_security);
                     }
                 }
 
@@ -382,6 +421,13 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
             MaybeLocal<Value> bound = V82JSC::ToGlobalContextImpl(context)->FunctionPrototypeBind.Get(info.GetIsolate())
                 ->Call(context, info.This(), info.Length(), args);
             if (!bound.IsEmpty()) {
+                JSObjectRef bf = (JSObjectRef) V82JSC::ToJSValueRef(bound.ToLocalChecked(), context);
+                JSObjectRef bound_function = (JSObjectRef) V82JSC::ToJSValueRef(info.This(), context);
+                TrackedObjectImpl *wrap = makePrivateInstance(V82JSC::ToIsolateImpl(info.GetIsolate()),
+                                                              V82JSC::ToContextRef(context), bf);
+                wrap->m_bound_function = bound_function;
+                JSValueProtect(V82JSC::ToContextRef(context), wrap->m_bound_function);
+                
                 info.GetReturnValue().Set(bound.ToLocalChecked());
             }
         });

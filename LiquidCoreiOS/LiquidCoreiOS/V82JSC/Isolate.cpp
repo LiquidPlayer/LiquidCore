@@ -145,6 +145,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_value_map = H::Map<H::Value>::New(impl, internal::JS_VALUE_TYPE);
     impl->m_number_map = H::Map<H::Value>::New(impl, internal::HEAP_NUMBER_TYPE);
     impl->m_symbol_map = H::Map<H::Value>::New(impl, internal::SYMBOL_TYPE);
+    impl->m_promise_resolver_map = H::Map<H::Value>::New(impl, internal::JS_PROMISE_TYPE);
     impl->m_signature_map = H::Map<H::Signature>::New(impl, internal::JS_SPECIAL_API_OBJECT_TYPE);
     impl->m_function_template_map = H::Map<H::FunctionTemplate>::New(impl, internal::FUNCTION_TEMPLATE_INFO_TYPE);
     impl->m_object_template_map = H::Map<H::ObjectTemplate>::New(impl, internal::OBJECT_TEMPLATE_INFO_TYPE);
@@ -1292,8 +1293,9 @@ void Isolate::SetAddHistogramSampleFunction(AddHistogramSampleCallback that)
  */
 bool Isolate::IdleNotificationDeadline(double deadline_in_seconds)
 {
-    assert(0);
-    return false;
+    RequestGarbageCollectionForTesting(GarbageCollectionType::kFullGarbageCollection);
+
+    return true;
 }
 
 /**

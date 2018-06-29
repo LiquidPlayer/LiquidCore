@@ -405,7 +405,7 @@ Maybe<T> handleException(IsolateImpl* isolate, F&& lambda)
 }
 
 template <typename T>
-Maybe<T> toValue(const Value* thiz, Local<Context> context)
+Maybe<T> toValue(const Value* thiz, Local<Context> context, bool isNaNZero=false)
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     JSValueRef value = V82JSC::ToJSValueRef<Value>(thiz, context);
@@ -417,7 +417,7 @@ Maybe<T> toValue(const Value* thiz, Local<Context> context)
         ret = JSValueToBoolean(ctx->m_ctxRef, value);
     } else {
         double number = JSValueToNumber(ctx->m_ctxRef, value, &exception);
-        if (std::isnan(number)) number = 0;
+        if (isNaNZero && std::isnan(number)) number = 0;
         ret = static_cast<T>(number);
     }
     if (!exception.ShouldThow()) {
@@ -427,9 +427,9 @@ Maybe<T> toValue(const Value* thiz, Local<Context> context)
 }
 Maybe<bool> Value::BooleanValue(Local<Context> context) const    { return toValue<bool>(this, context); }
 Maybe<double> Value::NumberValue(Local<Context> context) const   { return toValue<double>(this, context); }
-Maybe<int64_t> Value::IntegerValue(Local<Context> context) const { return toValue<int64_t>(this, context); }
-Maybe<uint32_t> Value::Uint32Value(Local<Context> context) const { return toValue<uint32_t>(this, context); }
-Maybe<int32_t> Value::Int32Value(Local<Context> context) const   { return toValue<int32_t>(this, context); }
+Maybe<int64_t> Value::IntegerValue(Local<Context> context) const { return toValue<int64_t>(this, context, true); }
+Maybe<uint32_t> Value::Uint32Value(Local<Context> context) const { return toValue<uint32_t>(this, context, true); }
+Maybe<int32_t> Value::Int32Value(Local<Context> context) const   { return toValue<int32_t>(this, context, true); }
 
 Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const
 {

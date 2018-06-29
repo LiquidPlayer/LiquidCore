@@ -230,8 +230,17 @@ int Function::ScriptId() const
  */
 Local<Value> Function::GetBoundFunction() const
 {
-    assert(0);
-    return Local<Value>();
+    Isolate* isolate = V82JSC::ToIsolate(this);
+    EscapableHandleScope scope(isolate);
+    ValueImpl* impl = V82JSC::ToImpl<ValueImpl>(this);
+    
+    TrackedObjectImpl *wrap = getPrivateInstance(impl->GetNullContext(), (JSObjectRef)impl->m_value);
+    if (wrap && wrap->m_bound_function) {
+        return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(V82JSC::OperatingContext(isolate)),
+                                           wrap->m_bound_function));
+    }
+
+    return scope.Escape(Undefined(isolate));
 }
 
 ScriptOrigin Function::GetScriptOrigin() const

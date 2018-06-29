@@ -183,7 +183,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
             impl->ArrayBufferInfo.buffer = nullptr;
         }
         impl->ArrayBufferInfo.m_self.Reset();
-    }, (void*) byte_length, &exception);
+    }, (void*) wrap, &exception);
     
     setPrivateInstance(isolateimpl, ctx, wrap, array_buffer);
 
@@ -242,7 +242,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
                                                                            impl->ArrayBufferInfo.byte_length);
             impl->ArrayBufferInfo.buffer = nullptr;
         }
-    }, (void*) byte_length, &exception);
+    }, (void*) wrap, &exception);
     
     setPrivateInstance(isolateimpl, ctx, wrap, array_buffer);
     

@@ -303,12 +303,14 @@ namespace V82JSC_HeapObject {
         JSValueRef m_value;
         uint64_t reserved2_; // For string, resource is stored here
         uint64_t reserved3_; // For string, resource data is stored here
+        JSValueRef m_secondary_value;
 
         static void Constructor(Value *obj) {}
         static int Destructor(Value *obj, CanonicalHandles& handles, WeakHandles& weak,
                               std::vector<v8::internal::SecondPassCallback>& callbacks)
         {
             if (obj->m_value) JSValueUnprotect(obj->GetNullContext(), obj->m_value);
+            if (obj->m_secondary_value) JSValueUnprotect(obj->GetNullContext(), obj->m_secondary_value);
             RemoveObjectFromMap(obj->GetIsolate(), (JSObjectRef)obj->m_value);
             return 0;
         }
@@ -342,7 +344,6 @@ namespace V82JSC_HeapObject {
     };
 
     struct WeakExternalString : WeakValue {
-        uint8_t reserved_[v8::internal::ExternalString::kResourceDataOffset + v8::internal::kApiPointerSize - sizeof(WeakValue)];
         JSWeakRef m_weakRef;
         v8::String::ExternalStringResourceBase *m_resource;
         
@@ -557,6 +558,9 @@ namespace V82JSC_HeapObject {
         JSObjectRef m_access_control;
         JSObjectRef m_access_proxies;
         JSObjectRef m_global_object_access_proxies;
+        bool m_isDetached;
+        JSObjectRef m_reattached_global;
+        JSObjectRef m_bound_function;
 
         struct {
             void *buffer;
@@ -582,6 +586,8 @@ namespace V82JSC_HeapObject {
             if (obj->m_access_control) JSValueUnprotect(obj->GetNullContext(), obj->m_access_control);
             if (obj->m_access_proxies) JSValueUnprotect(obj->GetNullContext(), obj->m_access_proxies);
             if (obj->m_global_object_access_proxies) JSValueUnprotect(obj->GetNullContext(), obj->m_global_object_access_proxies);
+            if (obj->m_reattached_global) JSValueUnprotect(obj->GetNullContext(), obj->m_reattached_global);
+            if (obj->m_bound_function) JSValueUnprotect(obj->GetNullContext(), obj->m_bound_function);
             return freed;
         }
     };
