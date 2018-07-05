@@ -100,8 +100,10 @@ Local<ObjectTemplate> ObjectTemplate::New(
                                  Isolate* isolate,
                                  Local<FunctionTemplate> constructor)
 {
+    EscapableHandleScope scope(isolate);
+    
     if (!constructor.IsEmpty()) {
-        return constructor->InstanceTemplate();
+        return scope.Escape(constructor->InstanceTemplate());
     } else {
         ObjectTemplateImpl *otempl = static_cast<ObjectTemplateImpl*>
             (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate),
@@ -115,7 +117,7 @@ Local<ObjectTemplate> ObjectTemplate::New(
         otempl->m_named_failed_access_handler = AccessDeniedNamedHandlers();
         otempl->m_indexed_failed_access_handler = AccessDeniedIndexedHandlers();
 
-        return V82JSC::CreateLocal<ObjectTemplate>(isolate, otempl);
+        return scope.Escape(V82JSC::CreateLocal<ObjectTemplate>(isolate, otempl));
     }
 }
 
@@ -200,6 +202,11 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     //  has            - target, property                  -> True (has), False (not has)
     //  ownKeys        - target                            -> Array of keys
     IsolateImpl *isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
+    v8::Locker lock(isolate);
+
+    HandleScope scope(isolate);
+
     *exception = 0;
     assert(argumentCount > 0);
     JSValueRef excp = 0;
@@ -208,7 +215,8 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     bool isSymbol = false;
     bool isIndex = false;
     int index = 0;
-    
+    auto thread = IsolateImpl::PerThreadData::Get(isolateimpl);
+
     if (argumentCount > 1) {
         isSymbol = JSValueToBoolean(ctx, V82JSC::exec(ctx, "return typeof _1 === 'symbol'", 1, &arguments[1]));
         if (!isSymbol) {
@@ -247,8 +255,6 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         value = JSValueMakeUndefined(ctx);
     }
     TrackedObjectImpl* wrap = getPrivateInstance(ctx, target);
-    Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
-    HandleScope scope(isolate);
     
     const ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
     Local<Context> context = LocalContextImpl::New(V82JSC::ToIsolate(isolateimpl), ctx);
@@ -282,7 +288,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
         }
     }
 
-    ++ isolateimpl->m_callback_depth;
+    ++ thread->m_callback_depth;
 
     Local<Value> thiz = ValueImpl::New(ctximpl, arguments[receiver_loc]);
     typedef v8::internal::Heap::RootListIndex R;
@@ -305,7 +311,7 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     PropertyCallbackImpl<V> info(implicit);
     Local<Value> set = ValueImpl::New(ctximpl, value);
     
-    isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
+    thread->m_scheduled_exception = the_hole;
     TryCatch try_catch(V82JSC::ToIsolate(isolateimpl));
 
     if (isSymbol || !isIndex) {
@@ -320,13 +326,13 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (isolateimpl->ii.thread_local_top()->scheduled_exception_ != the_hole) {
-        internal::Object * excep = isolateimpl->ii.thread_local_top()->scheduled_exception_;
+    } else if (thread->m_scheduled_exception != the_hole) {
+        internal::Object * excep = thread->m_scheduled_exception;
         *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
-        isolateimpl->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        thread->m_scheduled_exception = the_hole;
     }
 
-    -- isolateimpl->m_callback_depth;
+    -- thread->m_callback_depth;
     
     if (implicit[4] == the_hole) {
         return NULL;
@@ -586,11 +592,6 @@ static JSValueRef proxy_getPrototypeOf(CALLBACK_PARAMS)
     HandleScope scope(isolate);
     Local<Context> context = LocalContextImpl::New(isolate, ctx);
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
-    /*
-     if (templ->m_access_check && !templ->m_access_check(context,
-     ValueImpl::New(V82JSC::ToContextImpl(context), arguments[0]).As<Object>(),
-     ValueImpl::New(V82JSC::ToContextImpl(context), templ->m_access_check_data)))
-     */
     if (templ->m_access_check)
     {
         return JSValueMakeNull(ctx);
@@ -895,6 +896,7 @@ void ObjectTemplate::SetAccessor(
 {
     ObjectTemplateImpl *this_ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
     Isolate* isolate = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(this_));
+    HandleScope scope(isolate);
     
     H::ObjAccessor *accessor = static_cast<H::ObjAccessor *>
     (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(this_), V82JSC::ToIsolateImpl(this_)->m_object_accessor_map));
@@ -974,6 +976,8 @@ void ObjectTemplate::SetNamedPropertyHandler(NamedPropertyGetterCallback getter,
 void ObjectTemplate::SetHandler(const NamedPropertyHandlerConfiguration& configuration)
 {
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    HandleScope scope(V82JSC::ToIsolate(templ->GetIsolate()));
+    
     Local<Value> data = configuration.data;
     if (configuration.getter) templ->m_named_handler.getter = configuration.getter;
     if (configuration.setter) templ->m_named_handler.setter = configuration.setter;
@@ -1006,6 +1010,8 @@ void ObjectTemplate::SetHandler(const NamedPropertyHandlerConfiguration& configu
 void ObjectTemplate::SetHandler(const IndexedPropertyHandlerConfiguration& configuration)
 {
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    HandleScope scope(V82JSC::ToIsolate(templ->GetIsolate()));
+
     Local<Value> data = configuration.data;
     if (configuration.getter) templ->m_indexed_handler.getter = configuration.getter;
     if (configuration.setter) templ->m_indexed_handler.setter = configuration.setter;
@@ -1036,6 +1042,7 @@ void ObjectTemplate::SetCallAsFunctionHandler(FunctionCallback callback,
 {
     Isolate* isolate = V82JSC::ToIsolate(this);
     HandleScope scope(isolate);
+    
     Local<Context> context = V82JSC::ToCurrentContext(this);
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
     templ->m_callback = callback;
@@ -1073,6 +1080,7 @@ void ObjectTemplate::SetAccessCheckCallback(AccessCheckCallback callback,
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
     Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolateImpl(templ));
     HandleScope scope(isolate);
+    
     Local<Context> context = V82JSC::OperatingContext(isolate);
     JSContextRef ctx = V82JSC::ToContextRef(context);
     templ->m_access_check = callback;
@@ -1081,7 +1089,6 @@ void ObjectTemplate::SetAccessCheckCallback(AccessCheckCallback callback,
     }
     templ->m_access_check_data = V82JSC::ToJSValueRef(data, context);
     JSValueProtect(ctx, templ->m_access_check_data);
-    //templ->m_need_proxy = true;
 }
 
 /**
@@ -1099,6 +1106,8 @@ void ObjectTemplate::SetAccessCheckCallbackAndHandler(
     SetAccessCheckCallback(callback, data);
     
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl,ObjectTemplate>(this);
+    HandleScope scope(V82JSC::ToIsolate(templ->GetIsolate()));
+
     Local<Value> named_data = named_handler.data;
     if (named_handler.getter) templ->m_named_failed_access_handler.getter = named_handler.getter;
     if (named_handler.setter) templ->m_named_failed_access_handler.setter = named_handler.setter;

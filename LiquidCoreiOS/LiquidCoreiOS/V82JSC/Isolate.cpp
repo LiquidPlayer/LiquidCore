@@ -82,12 +82,9 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     impl->m_global_symbols = std::map<std::string, JSValueRef>();
     impl->m_private_symbols = std::map<std::string, JSValueRef>();
-    impl->m_context_stacks = std::map<size_t, std::stack<Copyable(v8::Context)> *>();
-    impl->m_scope_stack = std::stack<HandleScope*>();
     impl->m_global_contexts = std::map<JSGlobalContextRef, Copyable(Context)>();
     impl->m_exec_maps = std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>>();
     impl->m_message_listeners = std::vector<internal::MessageListener>();
-    impl->m_running_scripts = std::stack<Local<v8::Script>>();
     impl->m_gc_prologue_callbacks = std::vector<IsolateImpl::GCCallbackStruct>();
     impl->m_gc_epilogue_callbacks = std::vector<IsolateImpl::GCCallbackStruct>();
     impl->m_near_death = std::map<void*, JSObjectRef>();
@@ -102,9 +99,9 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_call_completed_callbacks = std::vector<CallCompletedCallback>();
 
     impl->m_locker = nullptr;
-    impl->m_isLocked = false;
     impl->m_entered_count = 0;
     
+    new (&impl->m_isolate_lock) std::mutex();
     new (&impl->m_pending_interrupt_mutex) std::mutex();
     impl->m_pending_interrupts = std::vector<IsolateImpl::PendingInterrupt>();
 
@@ -194,6 +191,9 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->ii.thread_local_top_.isolate_ = &impl->ii;
     impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
     impl->ii.thread_local_top_.pending_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
+    auto thread = IsolateImpl::PerThreadData::Get(impl);
+    thread->m_scheduled_exception =
+        impl->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
     
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
@@ -312,17 +312,37 @@ std::mutex IsolateImpl::s_thread_data_mutex;
 std::map<size_t, IsolateImpl::PerThreadData*> IsolateImpl::s_thread_data;
 IsolateImpl::PerThreadData* IsolateImpl::PerThreadData::Get()
 {
-    s_thread_data_mutex.lock();
+    std::unique_lock<std::mutex> lock(s_thread_data_mutex);
     size_t hash = std::hash<std::thread::id>()(std::this_thread::get_id());
-    bool has = s_thread_data.count(hash);
-    if (!has) {
+    size_t has = s_thread_data.count(hash);
+    if (has == 0) {
         PerThreadData *data = new PerThreadData();
         s_thread_data[hash] = data;
+        return data;
+    } else {
+        return s_thread_data[hash];
     }
-    PerThreadData* data = s_thread_data[hash];
-    s_thread_data_mutex.unlock();
-    return data;
 }
+void IsolateImpl::PerThreadData::EnterThreadContext(v8::Isolate *isolate)
+{
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
+    size_t hash = std::hash<std::thread::id>()(std::this_thread::get_id());
+    if (hash != iso->m_current_thread_hash) {
+        auto thread = Get(iso);
+        if (iso->m_current_thread_context != thread) {
+            if (iso->m_current_thread_context) {
+                memcpy(&iso->m_current_thread_context->m_handle_scope_data,
+                       iso->ii.handle_scope_data(), sizeof(HandleScopeData));
+            }
+            iso->m_current_thread_context = thread;
+            memcpy(iso->ii.handle_scope_data(), &iso->m_current_thread_context->m_handle_scope_data,
+                   sizeof(HandleScopeData));
+            iso->m_scope_stack = &thread->m_scope_stack;
+        }
+        iso->m_current_thread_hash = hash;
+    }
+}
+
 
 /**
  * Returns the entered isolate for the current thread or NULL in
@@ -430,22 +450,22 @@ void Isolate::Exit()
 
 void IsolateImpl::EnterContext(Local<v8::Context> ctx)
 {
-    auto context_stack = ContextStackForThread();
+    auto thread = IsolateImpl::PerThreadData::Get(this);
     Copyable(v8::Context) persist(V82JSC::ToIsolate(this), ctx);
-    context_stack->push(persist);
+    thread->m_context_stack.push(persist);
     persist.Reset();
 }
 
 void IsolateImpl::ExitContext(Local<v8::Context> ctx)
 {
-    auto context_stack = ContextStackForThread();
-    assert(context_stack->size());
-    JSContextRef top = V82JSC::ToContextRef(context_stack->top().Get(V82JSC::ToIsolate(this)));
+    auto thread = IsolateImpl::PerThreadData::Get(this);
+    assert(thread->m_context_stack.size());
+    JSContextRef top = V82JSC::ToContextRef(thread->m_context_stack.top().Get(V82JSC::ToIsolate(this)));
     JSContextRef newctx = V82JSC::ToContextRef(ctx);
     assert(top == newctx);
 
-    context_stack->top().Reset();
-    context_stack->pop();
+    thread->m_context_stack.top().Reset();
+    thread->m_context_stack.pop();
 }
 
 /**
@@ -454,6 +474,14 @@ void IsolateImpl::ExitContext(Local<v8::Context> ctx)
  */
 
 JS_EXPORT void JSContextGroupRemoveMarkingConstraint(JSContextGroupRef, JSMarkingConstraint, void *userData);
+
+IsolateImpl::PerIsolateThreadData::~PerIsolateThreadData() {
+    while (m_handlers) {
+        TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(m_handlers);
+        m_handlers = tcc->next_;
+        delete(tcc);
+    }
+}
 
 void Isolate::Dispose()
 {
@@ -493,40 +521,42 @@ void Isolate::Dispose()
     }
     isolate->m_global_contexts.clear();
     isolate->m_exec_maps.clear();
-    auto context_stack = isolate->ContextStackForThread();
-    while (!context_stack->empty()) context_stack->pop();
     isolate->m_nullContext.Reset();
-    
-    while (isolate->m_handlers) {
-        TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(isolate->m_handlers);
-        isolate->m_handlers = tcc->next_;
-        delete(tcc);
-    }
-    
-    for (auto i=isolate->m_context_stacks.begin(); i!=isolate->m_context_stacks.end(); ++i) {
-        delete i->second;
-    }
     isolate->m_microtask_queue.clear();
     isolate->m_microtasks_completed_callback.clear();
-    isolate->m_context_stacks.clear();
     isolate->m_pending_interrupts.clear();
     isolate->m_global_symbols.clear();
     isolate->m_private_symbols.clear();
     isolate->m_message_listeners.clear();
     isolate->m_before_call_callbacks.clear();
     isolate->m_call_completed_callbacks.clear();
-    while (!isolate->m_running_scripts.empty()) isolate->m_running_scripts.pop();
     isolate->m_gc_prologue_callbacks.clear();
     isolate->m_gc_epilogue_callbacks.clear();
     isolate->m_second_pass_callbacks.clear();
     isolate->m_jsobjects.clear();
+
+    auto thread = IsolateImpl::PerThreadData::Get(isolate);
+    for (auto i=IsolateImpl::s_thread_data.begin(); i!=IsolateImpl::s_thread_data.end(); i++) {
+        if (i->second->m_isolate_data.count(isolate) != 0) {
+            i->second->m_isolate_data.erase(isolate);
+        }
+    }
+    delete thread;
+
+    for (auto i=IsolateImpl::s_context_to_isolate_map.begin(); i!=IsolateImpl::s_context_to_isolate_map.end(); ) {
+        if (i->second == isolate) {
+            IsolateImpl::s_context_to_isolate_map.erase(i++);
+        } else {
+            i++;
+        }
+    }
     
     // Finally, blitz the global handles and the heap
     isolate->ii.global_handles()->TearDown();
     V82JSC_HeapObject::HeapAllocator::TearDown(isolate);
     
     if (isolate->m_locker) delete isolate->m_locker;
-
+    
     // And now we the isolate is done
     free(isolate);
 }
@@ -696,8 +726,8 @@ HeapProfiler* Isolate::GetHeapProfiler()
 bool Isolate::InContext()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
-    auto context_stack = impl->ContextStackForThread();
-    return context_stack->size() != 0;
+    auto thread = IsolateImpl::PerThreadData::Get(impl);
+    return thread->m_context_stack.size() != 0;
 }
 
 /**
@@ -707,12 +737,12 @@ bool Isolate::InContext()
 Local<Context> Isolate::GetCurrentContext()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
-    auto context_stack = impl->ContextStackForThread();
-    if (!context_stack->size()) {
+    auto thread = IsolateImpl::PerThreadData::Get(impl);
+    if (!thread->m_context_stack.size()) {
         return Local<Context>();
     }
     
-    return Local<Context>::New(this, context_stack->top());
+    return Local<Context>::New(this, thread->m_context_stack.top());
 }
 
 /** Returns the last context entered through V8's C++ API. */
@@ -753,10 +783,12 @@ Local<Context> Isolate::GetIncumbentContext()
 Local<Value> Isolate::ThrowException(Local<Value> exception)
 {
     IsolateImpl* impl = V82JSC::ToIsolateImpl(this);
+    auto thread = IsolateImpl::PerThreadData::Get(impl);
+    
     if (exception.IsEmpty()) {
-        impl->ii.thread_local_top()->scheduled_exception_ = impl->ii.heap()->root(v8::internal::Heap::RootListIndex::kUndefinedValueRootIndex);
+        thread->m_scheduled_exception = impl->ii.heap()->root(v8::internal::Heap::RootListIndex::kUndefinedValueRootIndex);
     } else {
-        impl->ii.thread_local_top()->scheduled_exception_ = * reinterpret_cast<internal::Object**>(*exception);
+        thread->m_scheduled_exception = * reinterpret_cast<internal::Object**>(*exception);
     }
 
     return exception;

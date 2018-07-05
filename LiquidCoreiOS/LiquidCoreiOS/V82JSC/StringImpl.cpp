@@ -87,6 +87,8 @@ static std::map<void*,JSStringRef> s_string_map;
 MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
                                        v8::NewStringType type, int length)
 {
+    EscapableHandleScope scope(isolate);
+    
     if (length > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
@@ -98,7 +100,7 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         data = str_;
     }
     
-    return MaybeLocal<String>(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type));
+    return scope.Escape(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type));
 }
 
 String::Utf8Value::~Utf8Value()
@@ -116,7 +118,8 @@ String::Utf8Value::Utf8Value(Local<v8::Value> obj)
         str_ = nullptr;
         length_ = 0;
     } else {
-        Local<Context> context = V82JSC::ToCurrentContext(*obj);
+        HandleScope scope(Isolate::GetCurrent());
+        Local<Context> context = V82JSC::OperatingContext(Isolate::GetCurrent());
         JSValueRef value = V82JSC::ToJSValueRef(obj, context);
 
         JSValueRef exception = nullptr;
@@ -134,6 +137,7 @@ String::Utf8Value::Utf8Value(Local<v8::Value> obj)
 
 String::Value::Value(Local<v8::Value> obj)
 {
+    HandleScope scope(Isolate::GetCurrent());
     Local<Context> context = V82JSC::ToCurrentContext(*obj);
     JSValueRef value = V82JSC::ToJSValueRef(obj, context);
     
@@ -157,6 +161,7 @@ String::Value::~Value()
  */
 int String::Length() const
 {
+    HandleScope scope(Isolate::GetCurrent());
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
 
@@ -172,6 +177,8 @@ int String::Length() const
  */
 int String::Utf8Length() const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
@@ -207,6 +214,8 @@ bool String::IsOneByte() const
  */
 bool String::ContainsOnlyOneByte() const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
@@ -252,6 +261,8 @@ int String::Write(uint16_t* buffer,
           int length,
           int options) const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
@@ -272,6 +283,8 @@ int String::WriteOneByte(uint8_t* buffer,
                  int length,
                  int options) const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
@@ -292,6 +305,8 @@ int String::WriteUtf8(char* buffer,
               int* nchars_ref,
               int options) const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef value = V82JSC::ToJSValueRef(this, context);
     JSStringRef s = JSValueToStringCopy(V82JSC::ToContextRef(context), value, 0);
@@ -351,6 +366,8 @@ const String::ExternalOneByteStringResource* String::GetExternalOneByteStringRes
 MaybeLocal<String> String::NewFromOneByte(Isolate* isolate, const uint8_t* data, v8::NewStringType type,
                                           int length)
 {
+    EscapableHandleScope scope(isolate);
+
     if (length > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
@@ -359,8 +376,8 @@ MaybeLocal<String> String::NewFromOneByte(Isolate* isolate, const uint8_t* data,
     }
     uint16_t str[length];
     for (int i=0; i<length; i++) str[i] = data[i];
-    return StringImpl::New(isolate, JSStringCreateWithCharacters(str, length),
-                           V82JSC::ToIsolateImpl(isolate)->m_one_byte_string_map, nullptr, type);
+    return scope.Escape(StringImpl::New(isolate, JSStringCreateWithCharacters(str, length),
+                           V82JSC::ToIsolateImpl(isolate)->m_one_byte_string_map, nullptr, type));
 }
 
 /** Allocates a new string from UTF-16 data. Only returns an empty value when
@@ -368,13 +385,15 @@ MaybeLocal<String> String::NewFromOneByte(Isolate* isolate, const uint8_t* data,
 MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data, v8::NewStringType type,
                                           int length)
 {
+    EscapableHandleScope scope(isolate);
+    
     if (length > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
     if (length < 0) {
         for (length = 0; data[length] != 0; length++);
     }
-    return StringImpl::New(isolate, JSStringCreateWithCharacters(data, length), nullptr, nullptr, type);
+    return scope.Escape(StringImpl::New(isolate, JSStringCreateWithCharacters(data, length), nullptr, nullptr, type));
 }
 
 /**
@@ -383,6 +402,8 @@ MaybeLocal<String> String::NewFromTwoByte(Isolate* isolate, const uint16_t* data
  */
 Local<String> String::Concat(Local<String> left, Local<String> right)
 {
+    EscapableHandleScope scope(Isolate::GetCurrent());
+
     if (left->Length() + right->Length() > v8::String::kMaxLength) {
         return Local<String>();
     }
@@ -405,7 +426,7 @@ Local<String> String::Concat(Local<String> left, Local<String> right)
     JSStringRelease(sleft);
     JSStringRelease(sright);
     JSStringRelease(concatted);
-    return ret;
+    return scope.Escape(ret);
 }
 
 /**
@@ -418,11 +439,13 @@ Local<String> String::Concat(Local<String> left, Local<String> right)
  */
 MaybeLocal<String> String::NewExternalTwoByte(Isolate* isolate, String::ExternalStringResource* resource)
 {
+    EscapableHandleScope scope(isolate);
+    
     if (resource->length() > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
-    return StringImpl::New(isolate, JSStringCreateWithCharactersNoCopy(resource->data(), resource->length()),
-                           V82JSC::ToIsolateImpl(isolate)->m_external_string_map, resource);
+    return scope.Escape(StringImpl::New(isolate, JSStringCreateWithCharactersNoCopy(resource->data(), resource->length()),
+                           V82JSC::ToIsolateImpl(isolate)->m_external_string_map, resource));
 }
 
 /**

@@ -7492,6 +7492,7 @@ v8::Local<v8::FunctionTemplate> FunctionExtension::GetNativeFunctionTemplate(
 
 
 THREADED_TEST(FunctionLookup) {
+  lookup_count = 0;
   v8::RegisterExtension(new FunctionExtension());
   v8::HandleScope handle_scope(CcTest::isolate());
   static const char* exts[1] = {"functiontest"};
@@ -10024,7 +10025,7 @@ static bool AccessAlwaysAllowed(Local<v8::Context> accessing_context,
   return true;
 }
 
-THREADED_TEST(AccessControlGetOwnPropertyNames) {
+/*THREADED_*/TEST(AccessControlGetOwnPropertyNames) {
   v8::Isolate* isolate = CcTest::isolate();
   v8::HandleScope handle_scope(isolate);
   v8::Local<v8::ObjectTemplate> obj_template = v8::ObjectTemplate::New(isolate);

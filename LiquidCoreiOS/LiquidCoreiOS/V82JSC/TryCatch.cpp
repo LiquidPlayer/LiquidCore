@@ -19,9 +19,10 @@ TryCatch::TryCatch(Isolate* isolate)
 {
     IsolateImpl *i = reinterpret_cast<IsolateImpl *>(isolate);
     isolate_ = reinterpret_cast<internal::Isolate *>(isolate);
+    auto thread = IsolateImpl::PerThreadData::Get(i);
     
-    next_ = i->m_handlers;
-    i->m_handlers = this;
+    next_ = thread->m_handlers;
+    thread->m_handlers = this;
     
     exception_ = nullptr;
     message_obj_ = nullptr;
@@ -35,16 +36,17 @@ TryCatch::TryCatch(Isolate* isolate)
  */
 TryCatch::~TryCatch()
 {
-    reinterpret_cast<IsolateImpl*>(isolate_)->m_handlers = next_;
+    auto thread = IsolateImpl::PerThreadData::Get(reinterpret_cast<IsolateImpl*>(isolate_));
+    thread->m_handlers = next_;
     
     if (is_verbose_) {
-        reinterpret_cast<IsolateImpl*>(isolate_)->m_verbose_exception = (JSValueRef) exception_;
+        thread->m_verbose_exception = (JSValueRef) exception_;
     }
 
     if (rethrow_ && !Exception().IsEmpty()) {
         reinterpret_cast<v8::Isolate*>(isolate_)->ThrowException(Exception());
     } else {
-        isolate_->thread_local_top()->scheduled_exception_ = THE_HOLE;
+        thread->m_scheduled_exception = THE_HOLE;
     }
 }
 
@@ -53,7 +55,8 @@ TryCatch::~TryCatch()
  */
 bool TryCatch::HasCaught() const
 {
-    return exception_ != nullptr || isolate_->thread_local_top()->scheduled_exception_ != THE_HOLE;
+    auto thread = IsolateImpl::PerThreadData::Get(reinterpret_cast<IsolateImpl*>(isolate_));
+    return exception_ != nullptr || thread->m_scheduled_exception != THE_HOLE;
 }
 
 /**
@@ -108,16 +111,18 @@ Local<Value> TryCatch::ReThrow()
  */
 Local<Value> TryCatch::Exception() const
 {
+    EscapableHandleScope scope(reinterpret_cast<v8::Isolate*>(isolate_));
+    auto thread = IsolateImpl::PerThreadData::Get(reinterpret_cast<IsolateImpl*>(isolate_));
     Local<v8::Context> context = reinterpret_cast<Isolate*>(this->isolate_)->GetCurrentContext();
     
-    internal::Object *sched = isolate_->thread_local_top()->scheduled_exception_;
+    internal::Object *sched = thread->m_scheduled_exception;
     JSValueRef excep = (JSValueRef) exception_;
     if (sched != THE_HOLE) {
         excep = V82JSC::ToJSValueRef_<Value>(sched, context);
     }
 
     if (excep) {
-        return ValueImpl::New(V82JSC::ToContextImpl(context), (JSValueRef)excep);
+        return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(context), (JSValueRef)excep));
     }
     return Local<Value>();
 }
@@ -128,13 +133,14 @@ Local<Value> TryCatch::Exception() const
  */
 MaybeLocal<Value> TryCatch::StackTrace(Local<Context> context) const
 {
+    EscapableHandleScope scope(reinterpret_cast<v8::Isolate*>(isolate_));
     Local<Value> exception = Exception();
     if (!exception.IsEmpty() && exception->IsObject()) {
         MaybeLocal<Value> stack = exception.As<Object>()->
             Get(context,
                 String::NewFromUtf8(reinterpret_cast<v8::Isolate*>(isolate_), "stack", NewStringType::kNormal).ToLocalChecked());
         if (!stack.IsEmpty() && !stack.ToLocalChecked()->IsUndefined()) {
-            return stack.ToLocalChecked();
+            return scope.Escape(stack.ToLocalChecked());
         }
     }
     return MaybeLocal<Value>();
@@ -149,9 +155,11 @@ MaybeLocal<Value> TryCatch::StackTrace(Local<Context> context) const
  */
 Local<v8::Message> TryCatch::Message() const
 {
+    EscapableHandleScope scope(reinterpret_cast<v8::Isolate*>(isolate_));
+
     if (message_obj_) {
         MessageImpl *impl = reinterpret_cast<MessageImpl*>(message_obj_);
-        return V82JSC::CreateLocal<v8::Message>(isolate_, impl);
+        return scope.Escape(V82JSC::CreateLocal<v8::Message>(isolate_, impl));
     }
     return Local<v8::Message>();
 }
@@ -172,7 +180,8 @@ void TryCatch::Reset()
     message_obj_ = nullptr;
     js_stack_comparable_address_ = nullptr;
     rethrow_ = false;
-    isolate_->thread_local_top()->scheduled_exception_ = THE_HOLE;
+    auto thread = IsolateImpl::PerThreadData::Get(reinterpret_cast<IsolateImpl*>(isolate_));
+    thread->m_scheduled_exception = THE_HOLE;
 }
 
 /**

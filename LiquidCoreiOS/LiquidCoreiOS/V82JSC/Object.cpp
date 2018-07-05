@@ -83,6 +83,10 @@ Maybe<bool> Object::CreateDataProperty(Local<Context> context,
                                        uint32_t index,
                                        Local<Value> value)
 {
+    Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
+    Context::Scope context_scope(context);
+    
     Local<Value> k = Number::New(V82JSC::ToIsolate(V82JSC::ToContextImpl(context)), index);
     Local<Name> key = k->ToString(context).ToLocalChecked();
     return CreateDataProperty(context, key, value);
@@ -508,10 +512,13 @@ Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
     {
         IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
         Isolate* isolate = V82JSC::ToIsolate(iso);
+        v8::Locker lock(isolate);
+
         HandleScope scope (isolate);
         void * persistent = JSObjectGetPrivate(function);
         Local<v8::AccessorInfo> acc_info = V82JSC::FromPersistentData<v8::AccessorInfo>(V82JSC::ToIsolate(iso), persistent);
         AccessorImpl *wrap = V82JSC::ToImpl<AccessorImpl>(acc_info);
+        auto thread = IsolateImpl::PerThreadData::Get(iso);
         
         Local<Context> context = LocalContextImpl::New(isolate, ctx);
         Context::Scope context_scope(context);
@@ -558,7 +565,7 @@ Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
         bool isStrict = false;
         internal::Object *shouldThrow = internal::Smi::FromInt(isStrict?1:0);
         
-        iso->m_callback_depth ++;
+        thread->m_callback_depth ++;
         
         v8::internal::Object * implicit[] = {
             shouldThrow,                                             // kShouldThrowOnErrorIndex = 0;
@@ -570,7 +577,7 @@ Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
             * reinterpret_cast<v8::internal::Object**>(*thiz),       // kThisIndex = 6;
         };
         
-        iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        thread->m_scheduled_exception = the_hole;
         TryCatch try_catch(V82JSC::ToIsolate(iso));
 
         Local<Value> ret = Undefined(V82JSC::ToIsolate(iso));
@@ -580,20 +587,23 @@ Maybe<bool> ObjectImpl::SetAccessor(Local<Context> context,
             ret = info.GetReturnValue().Get();
         } else {
             PropertyCallbackImpl<void> info(implicit);
-            wrap->setter(ValueImpl::New(ctximpl, wrap->m_property).As<Name>(),
-                         ValueImpl::New(ctximpl, arguments[0]),
-                         info);
+            {
+                Unlocker unlock(isolate);
+                wrap->setter(ValueImpl::New(ctximpl, wrap->m_property).As<Name>(),
+                             ValueImpl::New(ctximpl, arguments[0]),
+                             info);
+            }
         }
         
         if (try_catch.HasCaught()) {
             *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-        } else if (iso->ii.thread_local_top()->scheduled_exception_ != the_hole) {
-            internal::Object * excep = iso->ii.thread_local_top()->scheduled_exception_;
+        } else if (thread->m_scheduled_exception != the_hole) {
+            internal::Object * excep = thread->m_scheduled_exception;
             *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
-            iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
+            thread->m_scheduled_exception = the_hole;
         }
 
-        -- iso->m_callback_depth;
+        -- thread->m_callback_depth;
 
         return V82JSC::ToJSValueRef<Value>(ret, context);
     };
@@ -728,9 +738,11 @@ Maybe<bool> Object::SetNativeDataProperty(Local<Context> context, Local<Name> na
  */
 Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
 {
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    HandleScope scope(V82JSC::ToIsolate(iso));
+    
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
-    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
 
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
@@ -751,6 +763,7 @@ Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    HandleScope scope(V82JSC::ToIsolate(iso));
 
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (!wrap) wrap = makePrivateInstance(iso, ctx, (JSObjectRef)obj);
@@ -773,6 +786,7 @@ Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    HandleScope scope(V82JSC::ToIsolate(iso));
 
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
@@ -792,6 +806,7 @@ MaybeLocal<Value> Object::GetPrivate(Local<Context> context, Local<Private> key)
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSValueRef obj = V82JSC::ToJSValueRef(this, context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
 
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)obj);
     if (wrap && wrap->m_private_properties) {
@@ -802,9 +817,9 @@ MaybeLocal<Value> Object::GetPrivate(Local<Context> context, Local<Private> key)
         LocalException exception(iso);
         JSValueRef ret = V82JSC::exec(ctx, "return _1[_2]", 2, args);
         if (exception.ShouldThow()) return MaybeLocal<Value>();
-        return ValueImpl::New(V82JSC::ToContextImpl(context), ret);
+        return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(context), ret));
     }
-    return Undefined(context->GetIsolate());
+    return scope.Escape(Undefined(context->GetIsolate()));
 }
 
 /**
@@ -969,6 +984,7 @@ Local<Value> Object::GetPrototype()
 {
     Isolate* isolate = V82JSC::ToIsolate(this);
     EscapableHandleScope scope(isolate);
+    
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef obj = V82JSC::ToJSValueRef<Value>(this, context);
     JSValueRef our_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)obj);
@@ -1090,9 +1106,11 @@ void HiddenObjectImpl::PropagateOwnPropertiesToChild(v8::Local<v8::Context> cont
  */
 Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
 {
-    Local<Context> context = V82JSC::ToCurrentContext(this);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     Isolate *isolate = V82JSC::ToIsolate(iso);
+    EscapableHandleScope scope(isolate);
+    
+    Local<Context> context = V82JSC::ToCurrentContext(this);
     JSContextRef ctx = V82JSC::ToContextRef(context);
 
     FunctionTemplateImpl* tmplimpl = V82JSC::ToImpl<FunctionTemplateImpl>(tmpl);
@@ -1108,7 +1126,7 @@ Local<Object> Object::FindInstanceInPrototypeChain(Local<FunctionTemplate> tmpl)
             while (!t.IsEmpty()) {
                 FunctionTemplateImpl *tt = V82JSC::ToImpl<FunctionTemplateImpl>(t);
                 if (tt == tmplimpl) {
-                    return proto.As<Object>();
+                    return scope.Escape(proto.As<Object>());
                 }
                 t = Local<FunctionTemplate>::New(isolate, tt->m_parent);
             }
@@ -1378,10 +1396,15 @@ MaybeLocal<Value> Object::GetRealNamedPropertyInPrototypeChain(Local<Context> co
                                                                Local<Name> key)
 {
     Isolate* isolate = V82JSC::ToIsolate(this);
-    HandleScope scope(isolate);
+    EscapableHandleScope scope(isolate);
     Context::Scope context_scope(context);
     Local<Value> proto = GetPrototype();
-    return proto.As<Object>()->GetRealNamedProperty(context, key);
+    
+    MaybeLocal<Value> v = proto.As<Object>()->GetRealNamedProperty(context, key);
+    if (!v.IsEmpty()) {
+        return scope.Escape(v.ToLocalChecked());
+    }
+    return MaybeLocal<Value>();
 }
 
 /**

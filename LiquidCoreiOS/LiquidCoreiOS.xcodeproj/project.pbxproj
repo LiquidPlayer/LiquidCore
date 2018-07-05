@@ -8,6 +8,126 @@
 
 /* Begin PBXBuildFile section */
 		0738913F20E631E6009056FD /* V82JSC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738913E20E631E6009056FD /* V82JSC.cpp */; };
+		0738914420E8C0B3009056FD /* JSCPrivate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738914220E8C0B3009056FD /* JSCPrivate.cpp */; };
+		0738914520E8C0B3009056FD /* JSCPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738914320E8C0B3009056FD /* JSCPrivate.h */; };
+		0738914B20EBBF77009056FD /* machine in Resources */ = {isa = PBXBuildFile; fileRef = 0738914A20EBBF76009056FD /* machine */; };
+		0738917720EE07AC009056FD /* uv-version.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738914D20EE07A7009056FD /* uv-version.h */; };
+		0738917820EE07AC009056FD /* dl.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738914E20EE07A7009056FD /* dl.c */; };
+		0738917920EE07AC009056FD /* fsevents.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738914F20EE07A7009056FD /* fsevents.c */; };
+		0738917A20EE07AC009056FD /* fs-poll.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915020EE07A7009056FD /* fs-poll.c */; };
+		0738917B20EE07AC009056FD /* getaddrinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915120EE07A7009056FD /* getaddrinfo.c */; };
+		0738917C20EE07AC009056FD /* core.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915220EE07A7009056FD /* core.c */; };
+		0738917D20EE07AC009056FD /* uv-common.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915320EE07A7009056FD /* uv-common.h */; };
+		0738917E20EE07AC009056FD /* uv-threadpool.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915420EE07A7009056FD /* uv-threadpool.h */; };
+		0738917F20EE07AC009056FD /* heap-inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915520EE07A8009056FD /* heap-inl.h */; };
+		0738918020EE07AC009056FD /* loop-watcher.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915620EE07A8009056FD /* loop-watcher.c */; };
+		0738918120EE07AC009056FD /* spinlock.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915720EE07A8009056FD /* spinlock.h */; };
+		0738918220EE07AC009056FD /* inet.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915820EE07A8009056FD /* inet.c */; };
+		0738918320EE07AC009056FD /* getnameinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915920EE07A8009056FD /* getnameinfo.c */; };
+		0738918420EE07AC009056FD /* bsd-ifaddrs.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915A20EE07A8009056FD /* bsd-ifaddrs.c */; };
+		0738918520EE07AC009056FD /* process.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915B20EE07A8009056FD /* process.c */; };
+		0738918620EE07AC009056FD /* atomic-ops.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915C20EE07A8009056FD /* atomic-ops.h */; };
+		0738918720EE07AC009056FD /* async.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738915D20EE07A8009056FD /* async.c */; };
+		0738918820EE07AC009056FD /* internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915E20EE07A9009056FD /* internal.h */; };
+		0738918920EE07AC009056FD /* pthread-barrier.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738915F20EE07A9009056FD /* pthread-barrier.h */; };
+		0738918A20EE07AC009056FD /* poll.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916020EE07A9009056FD /* poll.c */; };
+		0738918B20EE07AC009056FD /* thread.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916120EE07A9009056FD /* thread.c */; };
+		0738918C20EE07AC009056FD /* pipe.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916220EE07A9009056FD /* pipe.c */; };
+		0738918D20EE07AC009056FD /* loop.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916320EE07A9009056FD /* loop.c */; };
+		0738918E20EE07AC009056FD /* darwin.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916420EE07A9009056FD /* darwin.c */; };
+		0738918F20EE07AC009056FD /* proctitle.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916520EE07A9009056FD /* proctitle.c */; };
+		0738919020EE07AC009056FD /* signal.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916620EE07A9009056FD /* signal.c */; };
+		0738919120EE07AC009056FD /* timer.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916720EE07AA009056FD /* timer.c */; };
+		0738919220EE07AC009056FD /* fs.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916820EE07AA009056FD /* fs.c */; };
+		0738919320EE07AC009056FD /* udp.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916920EE07AA009056FD /* udp.c */; };
+		0738919420EE07AC009056FD /* tty.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916A20EE07AA009056FD /* tty.c */; };
+		0738919520EE07AC009056FD /* uv-errno.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738916B20EE07AA009056FD /* uv-errno.h */; };
+		0738919620EE07AC009056FD /* uv-unix.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738916C20EE07AA009056FD /* uv-unix.h */; };
+		0738919720EE07AC009056FD /* queue.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738916D20EE07AA009056FD /* queue.h */; };
+		0738919820EE07AC009056FD /* tcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916E20EE07AB009056FD /* tcp.c */; };
+		0738919920EE07AC009056FD /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738916F20EE07AB009056FD /* version.c */; };
+		0738919A20EE07AC009056FD /* uv-darwin.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738917020EE07AB009056FD /* uv-darwin.h */; };
+		0738919B20EE07AC009056FD /* threadpool.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738917120EE07AB009056FD /* threadpool.c */; };
+		0738919C20EE07AC009056FD /* stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738917220EE07AB009056FD /* stream.c */; };
+		0738919D20EE07AC009056FD /* darwin-proctitle.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738917320EE07AB009056FD /* darwin-proctitle.c */; };
+		0738919E20EE07AC009056FD /* kqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738917420EE07AB009056FD /* kqueue.c */; };
+		0738919F20EE07AC009056FD /* uv-common.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738917520EE07AC009056FD /* uv-common.c */; };
+		073891A020EE07AC009056FD /* uv.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738917620EE07AC009056FD /* uv.h */; };
+		073891A220EE08A6009056FD /* tree.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891A120EE08A6009056FD /* tree.h */; };
+		073891A620EE0A06009056FD /* http_parser.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891A420EE0A06009056FD /* http_parser.h */; };
+		073891A720EE0A06009056FD /* http_parser.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891A520EE0A06009056FD /* http_parser.c */; };
+		073891ED20EE0CEE009056FD /* bitncmp.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891A920EE0CE7009056FD /* bitncmp.h */; };
+		073891EE20EE0CEE009056FD /* ares_create_query.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891AA20EE0CE7009056FD /* ares_create_query.c */; };
+		073891EF20EE0CEE009056FD /* ares_cancel.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891AB20EE0CE7009056FD /* ares_cancel.c */; };
+		073891F020EE0CEE009056FD /* ares_dns.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891AC20EE0CE7009056FD /* ares_dns.h */; };
+		073891F120EE0CEE009056FD /* ares__get_hostent.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891AD20EE0CE7009056FD /* ares__get_hostent.c */; };
+		073891F220EE0CEE009056FD /* ares_getnameinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891AE20EE0CE7009056FD /* ares_getnameinfo.c */; };
+		073891F320EE0CEE009056FD /* ares_writev.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891AF20EE0CE7009056FD /* ares_writev.h */; };
+		073891F420EE0CEE009056FD /* ares_getsock.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891B020EE0CE7009056FD /* ares_getsock.c */; };
+		073891F520EE0CEE009056FD /* ares_init.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891B120EE0CE7009056FD /* ares_init.c */; };
+		073891F620EE0CEE009056FD /* ares_setup.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891B220EE0CE7009056FD /* ares_setup.h */; };
+		073891F720EE0CEE009056FD /* ares_ipv6.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891B320EE0CE8009056FD /* ares_ipv6.h */; };
+		073891F820EE0CEE009056FD /* ares__read_line.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891B420EE0CE8009056FD /* ares__read_line.c */; };
+		073891F920EE0CEE009056FD /* ares_free_string.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891B520EE0CE8009056FD /* ares_free_string.c */; };
+		073891FA20EE0CEE009056FD /* ares_library_init.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891B620EE0CE8009056FD /* ares_library_init.h */; };
+		073891FB20EE0CEE009056FD /* ares_llist.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891B720EE0CE8009056FD /* ares_llist.h */; };
+		073891FC20EE0CEE009056FD /* ares_parse_soa_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891B820EE0CE8009056FD /* ares_parse_soa_reply.c */; };
+		073891FD20EE0CEE009056FD /* ares_gethostbyname.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891B920EE0CE8009056FD /* ares_gethostbyname.c */; };
+		073891FE20EE0CEE009056FD /* ares_parse_txt_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891BA20EE0CE8009056FD /* ares_parse_txt_reply.c */; };
+		073891FF20EE0CEE009056FD /* ares_rules.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891BB20EE0CE8009056FD /* ares_rules.h */; };
+		0738920020EE0CEE009056FD /* ares_strcasecmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891BC20EE0CE8009056FD /* ares_strcasecmp.c */; };
+		0738920120EE0CEE009056FD /* ares_getenv.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891BD20EE0CE8009056FD /* ares_getenv.h */; };
+		0738920220EE0CEE009056FD /* ares_strdup.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891BE20EE0CE9009056FD /* ares_strdup.h */; };
+		0738920320EE0CEE009056FD /* inet_net_pton.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891BF20EE0CE9009056FD /* inet_net_pton.c */; };
+		0738920420EE0CEE009056FD /* ares_expand_string.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C020EE0CE9009056FD /* ares_expand_string.c */; };
+		0738920520EE0CEE009056FD /* inet_ntop.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C120EE0CE9009056FD /* inet_ntop.c */; };
+		0738920620EE0CEE009056FD /* nameser.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891C220EE0CE9009056FD /* nameser.h */; };
+		0738920720EE0CEE009056FD /* ares_expand_name.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C320EE0CE9009056FD /* ares_expand_name.c */; };
+		0738920820EE0CEE009056FD /* ares_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891C420EE0CE9009056FD /* ares_platform.h */; };
+		0738920920EE0CEE009056FD /* ares_gethostbyaddr.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C520EE0CE9009056FD /* ares_gethostbyaddr.c */; };
+		0738920A20EE0CEE009056FD /* ares_parse_naptr_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C620EE0CE9009056FD /* ares_parse_naptr_reply.c */; };
+		0738920B20EE0CEE009056FD /* ares_parse_ptr_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C720EE0CE9009056FD /* ares_parse_ptr_reply.c */; };
+		0738920C20EE0CEE009056FD /* ares__timeval.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C820EE0CEA009056FD /* ares__timeval.c */; };
+		0738920D20EE0CEE009056FD /* ares_options.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891C920EE0CEA009056FD /* ares_options.c */; };
+		0738920E20EE0CEE009056FD /* ares_process.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891CA20EE0CEA009056FD /* ares_process.c */; };
+		0738920F20EE0CEE009056FD /* ares_data.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891CB20EE0CEA009056FD /* ares_data.h */; };
+		0738921020EE0CEE009056FD /* ares_fds.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891CC20EE0CEA009056FD /* ares_fds.c */; };
+		0738921120EE0CEE009056FD /* ares_getopt.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891CD20EE0CEA009056FD /* ares_getopt.h */; };
+		0738921220EE0CEE009056FD /* ares_search.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891CE20EE0CEA009056FD /* ares_search.c */; };
+		0738921320EE0CEE009056FD /* ares_strerror.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891CF20EE0CEA009056FD /* ares_strerror.c */; };
+		0738921420EE0CEE009056FD /* ares_timeout.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D020EE0CEA009056FD /* ares_timeout.c */; };
+		0738921520EE0CEE009056FD /* bitncmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D120EE0CEB009056FD /* bitncmp.c */; };
+		0738921620EE0CEE009056FD /* ares_strdup.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D220EE0CEB009056FD /* ares_strdup.c */; };
+		0738921720EE0CEE009056FD /* ares_destroy.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D320EE0CEB009056FD /* ares_destroy.c */; };
+		0738921820EE0CEE009056FD /* ares_getopt.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D420EE0CEB009056FD /* ares_getopt.c */; };
+		0738921920EE0CEE009056FD /* ares_inet_net_pton.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891D520EE0CEB009056FD /* ares_inet_net_pton.h */; };
+		0738921A20EE0CEE009056FD /* ares_mkquery.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D620EE0CEB009056FD /* ares_mkquery.c */; };
+		0738921B20EE0CEE009056FD /* ares.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891D720EE0CEB009056FD /* ares.h */; };
+		0738921C20EE0CEE009056FD /* ares_llist.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D820EE0CEB009056FD /* ares_llist.c */; };
+		0738921D20EE0CEE009056FD /* ares_parse_aaaa_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891D920EE0CEB009056FD /* ares_parse_aaaa_reply.c */; };
+		0738921E20EE0CEE009056FD /* ares_library_init.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891DA20EE0CEC009056FD /* ares_library_init.c */; };
+		0738921F20EE0CEE009056FD /* ares_parse_mx_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891DB20EE0CEC009056FD /* ares_parse_mx_reply.c */; };
+		0738922020EE0CEE009056FD /* ares_parse_ns_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891DC20EE0CEC009056FD /* ares_parse_ns_reply.c */; };
+		0738922120EE0CEE009056FD /* ares_query.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891DD20EE0CEC009056FD /* ares_query.c */; };
+		0738922220EE0CEE009056FD /* ares_nowarn.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891DE20EE0CEC009056FD /* ares_nowarn.h */; };
+		0738922320EE0CEE009056FD /* ares__close_sockets.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891DF20EE0CEC009056FD /* ares__close_sockets.c */; };
+		0738922420EE0CEE009056FD /* ares_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891E020EE0CEC009056FD /* ares_version.h */; };
+		0738922520EE0CEE009056FD /* ares_data.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E120EE0CEC009056FD /* ares_data.c */; };
+		0738922620EE0CEE009056FD /* ares_send.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E220EE0CED009056FD /* ares_send.c */; };
+		0738922720EE0CEE009056FD /* ares_parse_srv_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E320EE0CED009056FD /* ares_parse_srv_reply.c */; };
+		0738922820EE0CEE009056FD /* ares_private.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891E420EE0CED009056FD /* ares_private.h */; };
+		0738922920EE0CEE009056FD /* ares_strcasecmp.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891E520EE0CED009056FD /* ares_strcasecmp.h */; };
+		0738922A20EE0CEE009056FD /* ares_parse_a_reply.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E620EE0CED009056FD /* ares_parse_a_reply.c */; };
+		0738922B20EE0CEE009056FD /* ares_nowarn.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E720EE0CED009056FD /* ares_nowarn.c */; };
+		0738922C20EE0CEE009056FD /* ares_writev.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E820EE0CED009056FD /* ares_writev.c */; };
+		0738922D20EE0CEE009056FD /* ares_version.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891E920EE0CEE009056FD /* ares_version.c */; };
+		0738922E20EE0CEE009056FD /* ares_free_hostent.c in Sources */ = {isa = PBXBuildFile; fileRef = 073891EA20EE0CEE009056FD /* ares_free_hostent.c */; };
+		0738922F20EE0CEE009056FD /* ares_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891EB20EE0CEE009056FD /* ares_config.h */; };
+		0738923020EE0CEE009056FD /* setup_once.h in Headers */ = {isa = PBXBuildFile; fileRef = 073891EC20EE0CEE009056FD /* setup_once.h */; };
+		0738923220EE0E00009056FD /* libapple_nghttp2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0738923120EE0DFF009056FD /* libapple_nghttp2.tbd */; };
+		0738923420EE0E2B009056FD /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0738923320EE0E2B009056FD /* libz.tbd */; };
+		0738923620EE0F2A009056FD /* libboringssl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0738923520EE0F2A009056FD /* libboringssl.tbd */; };
+		0738923820EE0F34009056FD /* libapple_crypto.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0738923720EE0F34009056FD /* libapple_crypto.tbd */; };
 		075AEA1620C6A608002B1098 /* Message.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 075AEA1520C6A608002B1098 /* Message.cpp */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
@@ -105,6 +225,127 @@
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
 		0738913E20E631E6009056FD /* V82JSC.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = V82JSC.cpp; sourceTree = "<group>"; };
+		0738914220E8C0B3009056FD /* JSCPrivate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = JSCPrivate.cpp; sourceTree = "<group>"; };
+		0738914320E8C0B3009056FD /* JSCPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSCPrivate.h; sourceTree = "<group>"; };
+		0738914720EBBDAD009056FD /* pthread_machdep.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pthread_machdep.h; sourceTree = "<group>"; };
+		0738914A20EBBF76009056FD /* machine */ = {isa = PBXFileReference; lastKnownFileType = folder; path = machine; sourceTree = "<group>"; };
+		0738914D20EE07A7009056FD /* uv-version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "uv-version.h"; path = "../../../deps/node-8.9.3/deps/uv/include/uv-version.h"; sourceTree = "<group>"; };
+		0738914E20EE07A7009056FD /* dl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dl.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/dl.c"; sourceTree = "<group>"; };
+		0738914F20EE07A7009056FD /* fsevents.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fsevents.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/fsevents.c"; sourceTree = "<group>"; };
+		0738915020EE07A7009056FD /* fs-poll.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "fs-poll.c"; path = "../../../deps/node-8.9.3/deps/uv/src/fs-poll.c"; sourceTree = "<group>"; };
+		0738915120EE07A7009056FD /* getaddrinfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = getaddrinfo.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/getaddrinfo.c"; sourceTree = "<group>"; };
+		0738915220EE07A7009056FD /* core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = core.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/core.c"; sourceTree = "<group>"; };
+		0738915320EE07A7009056FD /* uv-common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "uv-common.h"; path = "../../../deps/node-8.9.3/deps/uv/src/uv-common.h"; sourceTree = "<group>"; };
+		0738915420EE07A7009056FD /* uv-threadpool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "uv-threadpool.h"; path = "../../../deps/node-8.9.3/deps/uv/include/uv-threadpool.h"; sourceTree = "<group>"; };
+		0738915520EE07A8009056FD /* heap-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "heap-inl.h"; path = "../../../deps/node-8.9.3/deps/uv/src/heap-inl.h"; sourceTree = "<group>"; };
+		0738915620EE07A8009056FD /* loop-watcher.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "loop-watcher.c"; path = "../../../deps/node-8.9.3/deps/uv/src/unix/loop-watcher.c"; sourceTree = "<group>"; };
+		0738915720EE07A8009056FD /* spinlock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = spinlock.h; path = "../../../deps/node-8.9.3/deps/uv/src/unix/spinlock.h"; sourceTree = "<group>"; };
+		0738915820EE07A8009056FD /* inet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = inet.c; path = "../../../deps/node-8.9.3/deps/uv/src/inet.c"; sourceTree = "<group>"; };
+		0738915920EE07A8009056FD /* getnameinfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = getnameinfo.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/getnameinfo.c"; sourceTree = "<group>"; };
+		0738915A20EE07A8009056FD /* bsd-ifaddrs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "bsd-ifaddrs.c"; path = "../../../deps/node-8.9.3/deps/uv/src/unix/bsd-ifaddrs.c"; sourceTree = "<group>"; };
+		0738915B20EE07A8009056FD /* process.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = process.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/process.c"; sourceTree = "<group>"; };
+		0738915C20EE07A8009056FD /* atomic-ops.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "atomic-ops.h"; path = "../../../deps/node-8.9.3/deps/uv/src/unix/atomic-ops.h"; sourceTree = "<group>"; };
+		0738915D20EE07A8009056FD /* async.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = async.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/async.c"; sourceTree = "<group>"; };
+		0738915E20EE07A9009056FD /* internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = internal.h; path = "../../../deps/node-8.9.3/deps/uv/src/unix/internal.h"; sourceTree = "<group>"; };
+		0738915F20EE07A9009056FD /* pthread-barrier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "pthread-barrier.h"; path = "../../../deps/node-8.9.3/deps/uv/include/pthread-barrier.h"; sourceTree = "<group>"; };
+		0738916020EE07A9009056FD /* poll.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = poll.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/poll.c"; sourceTree = "<group>"; };
+		0738916120EE07A9009056FD /* thread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = thread.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/thread.c"; sourceTree = "<group>"; };
+		0738916220EE07A9009056FD /* pipe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pipe.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/pipe.c"; sourceTree = "<group>"; };
+		0738916320EE07A9009056FD /* loop.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = loop.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/loop.c"; sourceTree = "<group>"; };
+		0738916420EE07A9009056FD /* darwin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = darwin.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/darwin.c"; sourceTree = "<group>"; };
+		0738916520EE07A9009056FD /* proctitle.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = proctitle.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/proctitle.c"; sourceTree = "<group>"; };
+		0738916620EE07A9009056FD /* signal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = signal.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/signal.c"; sourceTree = "<group>"; };
+		0738916720EE07AA009056FD /* timer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = timer.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/timer.c"; sourceTree = "<group>"; };
+		0738916820EE07AA009056FD /* fs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fs.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/fs.c"; sourceTree = "<group>"; };
+		0738916920EE07AA009056FD /* udp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = udp.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/udp.c"; sourceTree = "<group>"; };
+		0738916A20EE07AA009056FD /* tty.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tty.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/tty.c"; sourceTree = "<group>"; };
+		0738916B20EE07AA009056FD /* uv-errno.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "uv-errno.h"; path = "../../../deps/node-8.9.3/deps/uv/include/uv-errno.h"; sourceTree = "<group>"; };
+		0738916C20EE07AA009056FD /* uv-unix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "uv-unix.h"; path = "../../../deps/node-8.9.3/deps/uv/include/uv-unix.h"; sourceTree = "<group>"; };
+		0738916D20EE07AA009056FD /* queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = queue.h; path = "../../../deps/node-8.9.3/deps/uv/src/queue.h"; sourceTree = "<group>"; };
+		0738916E20EE07AB009056FD /* tcp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tcp.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/tcp.c"; sourceTree = "<group>"; };
+		0738916F20EE07AB009056FD /* version.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = version.c; path = "../../../deps/node-8.9.3/deps/uv/src/version.c"; sourceTree = "<group>"; };
+		0738917020EE07AB009056FD /* uv-darwin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "uv-darwin.h"; path = "../../../deps/node-8.9.3/deps/uv/include/uv-darwin.h"; sourceTree = "<group>"; };
+		0738917120EE07AB009056FD /* threadpool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = threadpool.c; path = "../../../deps/node-8.9.3/deps/uv/src/threadpool.c"; sourceTree = "<group>"; };
+		0738917220EE07AB009056FD /* stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stream.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/stream.c"; sourceTree = "<group>"; };
+		0738917320EE07AB009056FD /* darwin-proctitle.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "darwin-proctitle.c"; path = "../../../deps/node-8.9.3/deps/uv/src/unix/darwin-proctitle.c"; sourceTree = "<group>"; };
+		0738917420EE07AB009056FD /* kqueue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = kqueue.c; path = "../../../deps/node-8.9.3/deps/uv/src/unix/kqueue.c"; sourceTree = "<group>"; };
+		0738917520EE07AC009056FD /* uv-common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "uv-common.c"; path = "../../../deps/node-8.9.3/deps/uv/src/uv-common.c"; sourceTree = "<group>"; };
+		0738917620EE07AC009056FD /* uv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uv.h; path = "../../../deps/node-8.9.3/deps/uv/include/uv.h"; sourceTree = "<group>"; };
+		073891A120EE08A6009056FD /* tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tree.h; path = "../../../deps/node-8.9.3/deps/uv/include/tree.h"; sourceTree = "<group>"; };
+		073891A420EE0A06009056FD /* http_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http_parser.h; path = "../../../deps/node-8.9.3/deps/http_parser/http_parser.h"; sourceTree = "<group>"; };
+		073891A520EE0A06009056FD /* http_parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = http_parser.c; path = "../../../deps/node-8.9.3/deps/http_parser/http_parser.c"; sourceTree = "<group>"; };
+		073891A920EE0CE7009056FD /* bitncmp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitncmp.h; path = "../../../deps/node-8.9.3/deps/cares/src/bitncmp.h"; sourceTree = "<group>"; };
+		073891AA20EE0CE7009056FD /* ares_create_query.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_create_query.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_create_query.c"; sourceTree = "<group>"; };
+		073891AB20EE0CE7009056FD /* ares_cancel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_cancel.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_cancel.c"; sourceTree = "<group>"; };
+		073891AC20EE0CE7009056FD /* ares_dns.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_dns.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_dns.h"; sourceTree = "<group>"; };
+		073891AD20EE0CE7009056FD /* ares__get_hostent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares__get_hostent.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares__get_hostent.c"; sourceTree = "<group>"; };
+		073891AE20EE0CE7009056FD /* ares_getnameinfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_getnameinfo.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_getnameinfo.c"; sourceTree = "<group>"; };
+		073891AF20EE0CE7009056FD /* ares_writev.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_writev.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_writev.h"; sourceTree = "<group>"; };
+		073891B020EE0CE7009056FD /* ares_getsock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_getsock.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_getsock.c"; sourceTree = "<group>"; };
+		073891B120EE0CE7009056FD /* ares_init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_init.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_init.c"; sourceTree = "<group>"; };
+		073891B220EE0CE7009056FD /* ares_setup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_setup.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_setup.h"; sourceTree = "<group>"; };
+		073891B320EE0CE8009056FD /* ares_ipv6.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_ipv6.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_ipv6.h"; sourceTree = "<group>"; };
+		073891B420EE0CE8009056FD /* ares__read_line.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares__read_line.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares__read_line.c"; sourceTree = "<group>"; };
+		073891B520EE0CE8009056FD /* ares_free_string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_free_string.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_free_string.c"; sourceTree = "<group>"; };
+		073891B620EE0CE8009056FD /* ares_library_init.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_library_init.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_library_init.h"; sourceTree = "<group>"; };
+		073891B720EE0CE8009056FD /* ares_llist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_llist.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_llist.h"; sourceTree = "<group>"; };
+		073891B820EE0CE8009056FD /* ares_parse_soa_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_soa_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_soa_reply.c"; sourceTree = "<group>"; };
+		073891B920EE0CE8009056FD /* ares_gethostbyname.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_gethostbyname.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_gethostbyname.c"; sourceTree = "<group>"; };
+		073891BA20EE0CE8009056FD /* ares_parse_txt_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_txt_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_txt_reply.c"; sourceTree = "<group>"; };
+		073891BB20EE0CE8009056FD /* ares_rules.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_rules.h; path = "../../../deps/node-8.9.3/deps/cares/include/ares_rules.h"; sourceTree = "<group>"; };
+		073891BC20EE0CE8009056FD /* ares_strcasecmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_strcasecmp.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_strcasecmp.c"; sourceTree = "<group>"; };
+		073891BD20EE0CE8009056FD /* ares_getenv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_getenv.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_getenv.h"; sourceTree = "<group>"; };
+		073891BE20EE0CE9009056FD /* ares_strdup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_strdup.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_strdup.h"; sourceTree = "<group>"; };
+		073891BF20EE0CE9009056FD /* inet_net_pton.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = inet_net_pton.c; path = "../../../deps/node-8.9.3/deps/cares/src/inet_net_pton.c"; sourceTree = "<group>"; };
+		073891C020EE0CE9009056FD /* ares_expand_string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_expand_string.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_expand_string.c"; sourceTree = "<group>"; };
+		073891C120EE0CE9009056FD /* inet_ntop.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = inet_ntop.c; path = "../../../deps/node-8.9.3/deps/cares/src/inet_ntop.c"; sourceTree = "<group>"; };
+		073891C220EE0CE9009056FD /* nameser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nameser.h; path = "../../../deps/node-8.9.3/deps/cares/include/nameser.h"; sourceTree = "<group>"; };
+		073891C320EE0CE9009056FD /* ares_expand_name.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_expand_name.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_expand_name.c"; sourceTree = "<group>"; };
+		073891C420EE0CE9009056FD /* ares_platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_platform.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_platform.h"; sourceTree = "<group>"; };
+		073891C520EE0CE9009056FD /* ares_gethostbyaddr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_gethostbyaddr.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_gethostbyaddr.c"; sourceTree = "<group>"; };
+		073891C620EE0CE9009056FD /* ares_parse_naptr_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_naptr_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_naptr_reply.c"; sourceTree = "<group>"; };
+		073891C720EE0CE9009056FD /* ares_parse_ptr_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_ptr_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_ptr_reply.c"; sourceTree = "<group>"; };
+		073891C820EE0CEA009056FD /* ares__timeval.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares__timeval.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares__timeval.c"; sourceTree = "<group>"; };
+		073891C920EE0CEA009056FD /* ares_options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_options.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_options.c"; sourceTree = "<group>"; };
+		073891CA20EE0CEA009056FD /* ares_process.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_process.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_process.c"; sourceTree = "<group>"; };
+		073891CB20EE0CEA009056FD /* ares_data.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_data.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_data.h"; sourceTree = "<group>"; };
+		073891CC20EE0CEA009056FD /* ares_fds.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_fds.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_fds.c"; sourceTree = "<group>"; };
+		073891CD20EE0CEA009056FD /* ares_getopt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_getopt.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_getopt.h"; sourceTree = "<group>"; };
+		073891CE20EE0CEA009056FD /* ares_search.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_search.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_search.c"; sourceTree = "<group>"; };
+		073891CF20EE0CEA009056FD /* ares_strerror.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_strerror.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_strerror.c"; sourceTree = "<group>"; };
+		073891D020EE0CEA009056FD /* ares_timeout.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_timeout.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_timeout.c"; sourceTree = "<group>"; };
+		073891D120EE0CEB009056FD /* bitncmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bitncmp.c; path = "../../../deps/node-8.9.3/deps/cares/src/bitncmp.c"; sourceTree = "<group>"; };
+		073891D220EE0CEB009056FD /* ares_strdup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_strdup.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_strdup.c"; sourceTree = "<group>"; };
+		073891D320EE0CEB009056FD /* ares_destroy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_destroy.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_destroy.c"; sourceTree = "<group>"; };
+		073891D420EE0CEB009056FD /* ares_getopt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_getopt.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_getopt.c"; sourceTree = "<group>"; };
+		073891D520EE0CEB009056FD /* ares_inet_net_pton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_inet_net_pton.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_inet_net_pton.h"; sourceTree = "<group>"; };
+		073891D620EE0CEB009056FD /* ares_mkquery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_mkquery.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_mkquery.c"; sourceTree = "<group>"; };
+		073891D720EE0CEB009056FD /* ares.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares.h; path = "../../../deps/node-8.9.3/deps/cares/include/ares.h"; sourceTree = "<group>"; };
+		073891D820EE0CEB009056FD /* ares_llist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_llist.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_llist.c"; sourceTree = "<group>"; };
+		073891D920EE0CEB009056FD /* ares_parse_aaaa_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_aaaa_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_aaaa_reply.c"; sourceTree = "<group>"; };
+		073891DA20EE0CEC009056FD /* ares_library_init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_library_init.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_library_init.c"; sourceTree = "<group>"; };
+		073891DB20EE0CEC009056FD /* ares_parse_mx_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_mx_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_mx_reply.c"; sourceTree = "<group>"; };
+		073891DC20EE0CEC009056FD /* ares_parse_ns_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_ns_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_ns_reply.c"; sourceTree = "<group>"; };
+		073891DD20EE0CEC009056FD /* ares_query.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_query.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_query.c"; sourceTree = "<group>"; };
+		073891DE20EE0CEC009056FD /* ares_nowarn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_nowarn.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_nowarn.h"; sourceTree = "<group>"; };
+		073891DF20EE0CEC009056FD /* ares__close_sockets.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares__close_sockets.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares__close_sockets.c"; sourceTree = "<group>"; };
+		073891E020EE0CEC009056FD /* ares_version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_version.h; path = "../../../deps/node-8.9.3/deps/cares/include/ares_version.h"; sourceTree = "<group>"; };
+		073891E120EE0CEC009056FD /* ares_data.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_data.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_data.c"; sourceTree = "<group>"; };
+		073891E220EE0CED009056FD /* ares_send.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_send.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_send.c"; sourceTree = "<group>"; };
+		073891E320EE0CED009056FD /* ares_parse_srv_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_srv_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_srv_reply.c"; sourceTree = "<group>"; };
+		073891E420EE0CED009056FD /* ares_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_private.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_private.h"; sourceTree = "<group>"; };
+		073891E520EE0CED009056FD /* ares_strcasecmp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_strcasecmp.h; path = "../../../deps/node-8.9.3/deps/cares/src/ares_strcasecmp.h"; sourceTree = "<group>"; };
+		073891E620EE0CED009056FD /* ares_parse_a_reply.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_parse_a_reply.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_parse_a_reply.c"; sourceTree = "<group>"; };
+		073891E720EE0CED009056FD /* ares_nowarn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_nowarn.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_nowarn.c"; sourceTree = "<group>"; };
+		073891E820EE0CED009056FD /* ares_writev.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_writev.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_writev.c"; sourceTree = "<group>"; };
+		073891E920EE0CEE009056FD /* ares_version.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_version.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_version.c"; sourceTree = "<group>"; };
+		073891EA20EE0CEE009056FD /* ares_free_hostent.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ares_free_hostent.c; path = "../../../deps/node-8.9.3/deps/cares/src/ares_free_hostent.c"; sourceTree = "<group>"; };
+		073891EB20EE0CEE009056FD /* ares_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ares_config.h; path = "../../../deps/node-8.9.3/deps/cares/config/darwin/ares_config.h"; sourceTree = "<group>"; };
+		073891EC20EE0CEE009056FD /* setup_once.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = setup_once.h; path = "../../../deps/node-8.9.3/deps/cares/src/setup_once.h"; sourceTree = "<group>"; };
+		0738923120EE0DFF009056FD /* libapple_nghttp2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libapple_nghttp2.tbd; path = usr/lib/libapple_nghttp2.tbd; sourceTree = SDKROOT; };
+		0738923320EE0E2B009056FD /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		0738923520EE0F2A009056FD /* libboringssl.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libboringssl.tbd; path = usr/lib/libboringssl.tbd; sourceTree = SDKROOT; };
+		0738923720EE0F34009056FD /* libapple_crypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libapple_crypto.tbd; path = usr/lib/libapple_crypto.tbd; sourceTree = SDKROOT; };
 		075AEA1520C6A608002B1098 /* Message.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Message.cpp; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
@@ -206,6 +447,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0738923820EE0F34009056FD /* libapple_crypto.tbd in Frameworks */,
+				0738923620EE0F2A009056FD /* libboringssl.tbd in Frameworks */,
+				0738923420EE0E2B009056FD /* libz.tbd in Frameworks */,
+				0738923220EE0E00009056FD /* libapple_nghttp2.tbd in Frameworks */,
 				076F58C8201E7B9C004780FD /* JavaScriptCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -236,6 +481,149 @@
 			path = cctest;
 			sourceTree = "<group>";
 		};
+		0738914620EBBD8D009056FD /* System */ = {
+			isa = PBXGroup;
+			children = (
+				0738914A20EBBF76009056FD /* machine */,
+				0738914720EBBDAD009056FD /* pthread_machdep.h */,
+			);
+			path = System;
+			sourceTree = "<group>";
+		};
+		0738914C20EE05C4009056FD /* uv */ = {
+			isa = PBXGroup;
+			children = (
+				073891A120EE08A6009056FD /* tree.h */,
+				0738915D20EE07A8009056FD /* async.c */,
+				0738915C20EE07A8009056FD /* atomic-ops.h */,
+				0738915A20EE07A8009056FD /* bsd-ifaddrs.c */,
+				0738915220EE07A7009056FD /* core.c */,
+				0738917320EE07AB009056FD /* darwin-proctitle.c */,
+				0738916420EE07A9009056FD /* darwin.c */,
+				0738914E20EE07A7009056FD /* dl.c */,
+				0738915020EE07A7009056FD /* fs-poll.c */,
+				0738916820EE07AA009056FD /* fs.c */,
+				0738914F20EE07A7009056FD /* fsevents.c */,
+				0738915120EE07A7009056FD /* getaddrinfo.c */,
+				0738915920EE07A8009056FD /* getnameinfo.c */,
+				0738915520EE07A8009056FD /* heap-inl.h */,
+				0738915820EE07A8009056FD /* inet.c */,
+				0738915E20EE07A9009056FD /* internal.h */,
+				0738917420EE07AB009056FD /* kqueue.c */,
+				0738915620EE07A8009056FD /* loop-watcher.c */,
+				0738916320EE07A9009056FD /* loop.c */,
+				0738916220EE07A9009056FD /* pipe.c */,
+				0738916020EE07A9009056FD /* poll.c */,
+				0738915B20EE07A8009056FD /* process.c */,
+				0738916520EE07A9009056FD /* proctitle.c */,
+				0738915F20EE07A9009056FD /* pthread-barrier.h */,
+				0738916D20EE07AA009056FD /* queue.h */,
+				0738916620EE07A9009056FD /* signal.c */,
+				0738915720EE07A8009056FD /* spinlock.h */,
+				0738917220EE07AB009056FD /* stream.c */,
+				0738916E20EE07AB009056FD /* tcp.c */,
+				0738916120EE07A9009056FD /* thread.c */,
+				0738917120EE07AB009056FD /* threadpool.c */,
+				0738916720EE07AA009056FD /* timer.c */,
+				0738916A20EE07AA009056FD /* tty.c */,
+				0738916920EE07AA009056FD /* udp.c */,
+				0738917520EE07AC009056FD /* uv-common.c */,
+				0738915320EE07A7009056FD /* uv-common.h */,
+				0738917020EE07AB009056FD /* uv-darwin.h */,
+				0738916B20EE07AA009056FD /* uv-errno.h */,
+				0738915420EE07A7009056FD /* uv-threadpool.h */,
+				0738916C20EE07AA009056FD /* uv-unix.h */,
+				0738914D20EE07A7009056FD /* uv-version.h */,
+				0738917620EE07AC009056FD /* uv.h */,
+				0738916F20EE07AB009056FD /* version.c */,
+			);
+			path = uv;
+			sourceTree = "<group>";
+		};
+		073891A320EE09BC009056FD /* http_parser */ = {
+			isa = PBXGroup;
+			children = (
+				073891A520EE0A06009056FD /* http_parser.c */,
+				073891A420EE0A06009056FD /* http_parser.h */,
+			);
+			path = http_parser;
+			sourceTree = "<group>";
+		};
+		073891A820EE0AE8009056FD /* cares */ = {
+			isa = PBXGroup;
+			children = (
+				073891DF20EE0CEC009056FD /* ares__close_sockets.c */,
+				073891AD20EE0CE7009056FD /* ares__get_hostent.c */,
+				073891B420EE0CE8009056FD /* ares__read_line.c */,
+				073891C820EE0CEA009056FD /* ares__timeval.c */,
+				073891AB20EE0CE7009056FD /* ares_cancel.c */,
+				073891EB20EE0CEE009056FD /* ares_config.h */,
+				073891AA20EE0CE7009056FD /* ares_create_query.c */,
+				073891E120EE0CEC009056FD /* ares_data.c */,
+				073891CB20EE0CEA009056FD /* ares_data.h */,
+				073891D320EE0CEB009056FD /* ares_destroy.c */,
+				073891AC20EE0CE7009056FD /* ares_dns.h */,
+				073891C320EE0CE9009056FD /* ares_expand_name.c */,
+				073891C020EE0CE9009056FD /* ares_expand_string.c */,
+				073891CC20EE0CEA009056FD /* ares_fds.c */,
+				073891EA20EE0CEE009056FD /* ares_free_hostent.c */,
+				073891B520EE0CE8009056FD /* ares_free_string.c */,
+				073891BD20EE0CE8009056FD /* ares_getenv.h */,
+				073891C520EE0CE9009056FD /* ares_gethostbyaddr.c */,
+				073891B920EE0CE8009056FD /* ares_gethostbyname.c */,
+				073891AE20EE0CE7009056FD /* ares_getnameinfo.c */,
+				073891D420EE0CEB009056FD /* ares_getopt.c */,
+				073891CD20EE0CEA009056FD /* ares_getopt.h */,
+				073891B020EE0CE7009056FD /* ares_getsock.c */,
+				073891D520EE0CEB009056FD /* ares_inet_net_pton.h */,
+				073891B120EE0CE7009056FD /* ares_init.c */,
+				073891B320EE0CE8009056FD /* ares_ipv6.h */,
+				073891DA20EE0CEC009056FD /* ares_library_init.c */,
+				073891B620EE0CE8009056FD /* ares_library_init.h */,
+				073891D820EE0CEB009056FD /* ares_llist.c */,
+				073891B720EE0CE8009056FD /* ares_llist.h */,
+				073891D620EE0CEB009056FD /* ares_mkquery.c */,
+				073891E720EE0CED009056FD /* ares_nowarn.c */,
+				073891DE20EE0CEC009056FD /* ares_nowarn.h */,
+				073891C920EE0CEA009056FD /* ares_options.c */,
+				073891E620EE0CED009056FD /* ares_parse_a_reply.c */,
+				073891D920EE0CEB009056FD /* ares_parse_aaaa_reply.c */,
+				073891DB20EE0CEC009056FD /* ares_parse_mx_reply.c */,
+				073891C620EE0CE9009056FD /* ares_parse_naptr_reply.c */,
+				073891DC20EE0CEC009056FD /* ares_parse_ns_reply.c */,
+				073891C720EE0CE9009056FD /* ares_parse_ptr_reply.c */,
+				073891B820EE0CE8009056FD /* ares_parse_soa_reply.c */,
+				073891E320EE0CED009056FD /* ares_parse_srv_reply.c */,
+				073891BA20EE0CE8009056FD /* ares_parse_txt_reply.c */,
+				073891C420EE0CE9009056FD /* ares_platform.h */,
+				073891E420EE0CED009056FD /* ares_private.h */,
+				073891CA20EE0CEA009056FD /* ares_process.c */,
+				073891DD20EE0CEC009056FD /* ares_query.c */,
+				073891BB20EE0CE8009056FD /* ares_rules.h */,
+				073891CE20EE0CEA009056FD /* ares_search.c */,
+				073891E220EE0CED009056FD /* ares_send.c */,
+				073891B220EE0CE7009056FD /* ares_setup.h */,
+				073891BC20EE0CE8009056FD /* ares_strcasecmp.c */,
+				073891E520EE0CED009056FD /* ares_strcasecmp.h */,
+				073891D220EE0CEB009056FD /* ares_strdup.c */,
+				073891BE20EE0CE9009056FD /* ares_strdup.h */,
+				073891CF20EE0CEA009056FD /* ares_strerror.c */,
+				073891D020EE0CEA009056FD /* ares_timeout.c */,
+				073891E920EE0CEE009056FD /* ares_version.c */,
+				073891E020EE0CEC009056FD /* ares_version.h */,
+				073891E820EE0CED009056FD /* ares_writev.c */,
+				073891AF20EE0CE7009056FD /* ares_writev.h */,
+				073891D720EE0CEB009056FD /* ares.h */,
+				073891D120EE0CEB009056FD /* bitncmp.c */,
+				073891A920EE0CE7009056FD /* bitncmp.h */,
+				073891BF20EE0CE9009056FD /* inet_net_pton.c */,
+				073891C120EE0CE9009056FD /* inet_ntop.c */,
+				073891C220EE0CE9009056FD /* nameser.h */,
+				073891EC20EE0CEE009056FD /* setup_once.h */,
+			);
+			path = cares;
+			sourceTree = "<group>";
+		};
 		076F587A201E797F004780FD = {
 			isa = PBXGroup;
 			children = (
@@ -258,6 +646,9 @@
 		076F5886201E797F004780FD /* LiquidCoreiOS */ = {
 			isa = PBXGroup;
 			children = (
+				073891A820EE0AE8009056FD /* cares */,
+				073891A320EE09BC009056FD /* http_parser */,
+				0738914C20EE05C4009056FD /* uv */,
 				076F589E201E79F0004780FD /* V82JSC */,
 				076F5887201E797F004780FD /* LiquidCoreiOS.h */,
 				076F5888201E797F004780FD /* Info.plist */,
@@ -280,6 +671,7 @@
 		076F589E201E79F0004780FD /* V82JSC */ = {
 			isa = PBXGroup;
 			children = (
+				0738914620EBBD8D009056FD /* System */,
 				07FE857E2075F5BB0013E1B4 /* platform */,
 				07FE857B2075F53C0013E1B4 /* utils */,
 				07FE85762075F4E80013E1B4 /* v8 */,
@@ -334,6 +726,8 @@
 				07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */,
 				07AA616120CEE7F600EA6B43 /* JSWeakRefPrivate.h */,
 				07AA616220CFA5ED00EA6B43 /* JSStringRefPrivate.h */,
+				0738914220E8C0B3009056FD /* JSCPrivate.cpp */,
+				0738914320E8C0B3009056FD /* JSCPrivate.h */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -341,6 +735,10 @@
 		076F58C5201E7B5E004780FD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0738923720EE0F34009056FD /* libapple_crypto.tbd */,
+				0738923520EE0F2A009056FD /* libboringssl.tbd */,
+				0738923320EE0E2B009056FD /* libz.tbd */,
+				0738923120EE0DFF009056FD /* libapple_nghttp2.tbd */,
 				076F58C6201E7B5F004780FD /* JavaScriptCore.framework */,
 			);
 			name = Frameworks;
@@ -403,7 +801,45 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0738918120EE07AC009056FD /* spinlock.h in Headers */,
+				073891F620EE0CEE009056FD /* ares_setup.h in Headers */,
 				076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */,
+				073891ED20EE0CEE009056FD /* bitncmp.h in Headers */,
+				0738922220EE0CEE009056FD /* ares_nowarn.h in Headers */,
+				073891FB20EE0CEE009056FD /* ares_llist.h in Headers */,
+				0738919A20EE07AC009056FD /* uv-darwin.h in Headers */,
+				0738917720EE07AC009056FD /* uv-version.h in Headers */,
+				0738922420EE0CEE009056FD /* ares_version.h in Headers */,
+				0738918920EE07AC009056FD /* pthread-barrier.h in Headers */,
+				073891F320EE0CEE009056FD /* ares_writev.h in Headers */,
+				073891F020EE0CEE009056FD /* ares_dns.h in Headers */,
+				0738921920EE0CEE009056FD /* ares_inet_net_pton.h in Headers */,
+				0738919520EE07AC009056FD /* uv-errno.h in Headers */,
+				073891FA20EE0CEE009056FD /* ares_library_init.h in Headers */,
+				0738918820EE07AC009056FD /* internal.h in Headers */,
+				0738919720EE07AC009056FD /* queue.h in Headers */,
+				0738920620EE0CEE009056FD /* nameser.h in Headers */,
+				073891F720EE0CEE009056FD /* ares_ipv6.h in Headers */,
+				0738917D20EE07AC009056FD /* uv-common.h in Headers */,
+				0738920220EE0CEE009056FD /* ares_strdup.h in Headers */,
+				0738921B20EE0CEE009056FD /* ares.h in Headers */,
+				0738920820EE0CEE009056FD /* ares_platform.h in Headers */,
+				0738923020EE0CEE009056FD /* setup_once.h in Headers */,
+				0738922920EE0CEE009056FD /* ares_strcasecmp.h in Headers */,
+				0738914520E8C0B3009056FD /* JSCPrivate.h in Headers */,
+				0738921120EE0CEE009056FD /* ares_getopt.h in Headers */,
+				0738917F20EE07AC009056FD /* heap-inl.h in Headers */,
+				0738922F20EE0CEE009056FD /* ares_config.h in Headers */,
+				0738918620EE07AC009056FD /* atomic-ops.h in Headers */,
+				073891FF20EE0CEE009056FD /* ares_rules.h in Headers */,
+				0738920120EE0CEE009056FD /* ares_getenv.h in Headers */,
+				073891A220EE08A6009056FD /* tree.h in Headers */,
+				0738917E20EE07AC009056FD /* uv-threadpool.h in Headers */,
+				073891A020EE07AC009056FD /* uv.h in Headers */,
+				0738919620EE07AC009056FD /* uv-unix.h in Headers */,
+				0738922820EE0CEE009056FD /* ares_private.h in Headers */,
+				073891A620EE0A06009056FD /* http_parser.h in Headers */,
+				0738920F20EE0CEE009056FD /* ares_data.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,6 +924,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0738914B20EBBF77009056FD /* machine in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -506,74 +943,151 @@
 			buildActionMask = 2147483647;
 			files = (
 				07FE85962075F6D40013E1B4 /* trace-config.cc in Sources */,
+				0738918420EE07AC009056FD /* bsd-ifaddrs.c in Sources */,
+				0738914420E8C0B3009056FD /* JSCPrivate.cpp in Sources */,
+				0738919320EE07AC009056FD /* udp.c in Sources */,
+				0738922520EE0CEE009056FD /* ares_data.c in Sources */,
+				0738920A20EE0CEE009056FD /* ares_parse_naptr_reply.c in Sources */,
+				0738917920EE07AC009056FD /* fsevents.c in Sources */,
 				07FE85B12075F92A0013E1B4 /* stack_trace_posix.cc in Sources */,
+				0738921520EE0CEE009056FD /* bitncmp.c in Sources */,
+				0738918D20EE07AC009056FD /* loop.c in Sources */,
 				07FE857D2075F5970013E1B4 /* random-number-generator.cc in Sources */,
 				07FE859B2075F6D40013E1B4 /* task-queue.cc in Sources */,
+				073891EE20EE0CEE009056FD /* ares_create_query.c in Sources */,
+				0738921220EE0CEE009056FD /* ares_search.c in Sources */,
+				0738919420EE07AC009056FD /* tty.c in Sources */,
+				073891F220EE0CEE009056FD /* ares_getnameinfo.c in Sources */,
+				0738917820EE07AC009056FD /* dl.c in Sources */,
 				07F804FA202DD85D00FDFC27 /* TryCatch.cpp in Sources */,
 				07F804B320298A7F00FDFC27 /* PrimitiveObjects.cpp in Sources */,
+				0738922020EE0CEE009056FD /* ares_parse_ns_reply.c in Sources */,
 				07FE85792075F52F0013E1B4 /* assert-scope.cc in Sources */,
 				07FE85992075F6D40013E1B4 /* trace-writer.cc in Sources */,
+				0738919B20EE07AC009056FD /* threadpool.c in Sources */,
+				073891F120EE0CEE009056FD /* ares__get_hostent.c in Sources */,
+				0738920720EE0CEE009056FD /* ares_expand_name.c in Sources */,
+				0738922320EE0CEE009056FD /* ares__close_sockets.c in Sources */,
 				076F58E0201E7EF9004780FD /* Scopes.cpp in Sources */,
+				0738920920EE0CEE009056FD /* ares_gethostbyaddr.c in Sources */,
+				0738920020EE0CEE009056FD /* ares_strcasecmp.c in Sources */,
+				0738917B20EE07AC009056FD /* getaddrinfo.c in Sources */,
 				076F58DE201E7EF9004780FD /* Context.cpp in Sources */,
 				07F804CE202D85DC00FDFC27 /* ValueSerializer.cpp in Sources */,
+				0738920520EE0CEE009056FD /* inet_ntop.c in Sources */,
 				07F804CA202D852500FDFC27 /* JSON.cpp in Sources */,
+				0738921720EE0CEE009056FD /* ares_destroy.c in Sources */,
+				0738922D20EE0CEE009056FD /* ares_version.c in Sources */,
 				07F804E2202D8E2900FDFC27 /* RegExp.cpp in Sources */,
 				07FE85A72075F7A90013E1B4 /* ieee754.cc in Sources */,
+				0738922A20EE0CEE009056FD /* ares_parse_a_reply.c in Sources */,
 				07F8049B2027147F00FDFC27 /* Object.cpp in Sources */,
 				076F58DF201E7EF9004780FD /* Isolate.cpp in Sources */,
+				0738921420EE0CEE009056FD /* ares_timeout.c in Sources */,
 				076F58E2201E7EF9004780FD /* Value.cpp in Sources */,
+				0738922120EE0CEE009056FD /* ares_query.c in Sources */,
 				0738913F20E631E6009056FD /* V82JSC.cpp in Sources */,
+				0738922E20EE0CEE009056FD /* ares_free_hostent.c in Sources */,
+				0738919020EE07AC009056FD /* signal.c in Sources */,
 				07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */,
+				0738921620EE0CEE009056FD /* ares_strdup.c in Sources */,
 				07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */,
+				0738919120EE07AC009056FD /* timer.c in Sources */,
 				07FE85982075F6D40013E1B4 /* trace-object.cc in Sources */,
 				07FE85A82075F7A90013E1B4 /* functional.cc in Sources */,
 				07F804C2202C2EDF00FDFC27 /* Set.cpp in Sources */,
 				07FE858C2075F6730013E1B4 /* platform-posix-time.cc in Sources */,
+				073891FE20EE0CEE009056FD /* ares_parse_txt_reply.c in Sources */,
+				073891A720EE0A06009056FD /* http_parser.c in Sources */,
+				0738920E20EE0CEE009056FD /* ares_process.c in Sources */,
+				0738917C20EE07AC009056FD /* core.c in Sources */,
+				0738919920EE07AC009056FD /* version.c in Sources */,
 				07F804BE202C2D7500FDFC27 /* Map.cpp in Sources */,
 				07F804BB202B81FC00FDFC27 /* HeapStatistics.cpp in Sources */,
+				0738922720EE0CEE009056FD /* ares_parse_srv_reply.c in Sources */,
+				0738922B20EE0CEE009056FD /* ares_nowarn.c in Sources */,
+				073891F420EE0CEE009056FD /* ares_getsock.c in Sources */,
+				0738919220EE07AC009056FD /* fs.c in Sources */,
 				07FE85AB2075F7A90013E1B4 /* logging.cc in Sources */,
 				07FE85AD2075F7A90013E1B4 /* once.cc in Sources */,
 				07FE859C2075F6D40013E1B4 /* tracing-controller.cc in Sources */,
 				07F804DE202D8DF800FDFC27 /* Date.cpp in Sources */,
+				0738918720EE07AC009056FD /* async.c in Sources */,
+				0738917A20EE07AC009056FD /* fs-poll.c in Sources */,
 				075AEA1620C6A608002B1098 /* Message.cpp in Sources */,
 				07F804D6202D8B8E00FDFC27 /* Promise.cpp in Sources */,
 				07FE85AE2075F7A90013E1B4 /* sys-info.cc in Sources */,
+				0738921F20EE0CEE009056FD /* ares_parse_mx_reply.c in Sources */,
+				0738918F20EE07AC009056FD /* proctitle.c in Sources */,
 				07FE85972075F6D40013E1B4 /* default-platform.cc in Sources */,
 				07FE85B22075F92A0013E1B4 /* stack_trace.cc in Sources */,
 				07F804DA202D8D1100FDFC27 /* Proxy.cpp in Sources */,
 				07FE859A2075F6D40013E1B4 /* worker-thread.cc in Sources */,
+				0738921A20EE0CEE009056FD /* ares_mkquery.c in Sources */,
+				0738919E20EE07AC009056FD /* kqueue.c in Sources */,
+				0738922C20EE0CEE009056FD /* ares_writev.c in Sources */,
 				07F804F6202DD5AD00FDFC27 /* Exception.cpp in Sources */,
 				07FE85AC2075F7A90013E1B4 /* file-utils.cc in Sources */,
+				0738920B20EE0CEE009056FD /* ares_parse_ptr_reply.c in Sources */,
 				07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */,
 				07E9ADC920BC1281002F2002 /* HeapLookup.cpp in Sources */,
+				0738921820EE0CEE009056FD /* ares_getopt.c in Sources */,
+				0738920420EE0CEE009056FD /* ares_expand_string.c in Sources */,
+				0738920C20EE0CEE009056FD /* ares__timeval.c in Sources */,
+				0738921E20EE0CEE009056FD /* ares_library_init.c in Sources */,
 				07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */,
 				07E9ADCB20BD359A002F2002 /* TrackedObject.cpp in Sources */,
+				0738921320EE0CEE009056FD /* ares_strerror.c in Sources */,
+				0738918520EE07AC009056FD /* process.c in Sources */,
+				0738921C20EE0CEE009056FD /* ares_llist.c in Sources */,
+				073891FD20EE0CEE009056FD /* ares_gethostbyname.c in Sources */,
 				076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */,
+				0738918B20EE07AC009056FD /* thread.c in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
+				073891F920EE0CEE009056FD /* ares_free_string.c in Sources */,
+				073891F520EE0CEE009056FD /* ares_init.c in Sources */,
+				0738922620EE0CEE009056FD /* ares_send.c in Sources */,
 				07F804FE202DDA4400FDFC27 /* Locker.cpp in Sources */,
+				0738920D20EE0CEE009056FD /* ares_options.c in Sources */,
+				0738918E20EE07AC009056FD /* darwin.c in Sources */,
 				07FE85A62075F7A90013E1B4 /* cpu.cc in Sources */,
+				073891FC20EE0CEE009056FD /* ares_parse_soa_reply.c in Sources */,
 				07F804A72027AD6D00FDFC27 /* Function.cpp in Sources */,
 				07FE85892075F6730013E1B4 /* mutex.cc in Sources */,
+				0738921020EE0CEE009056FD /* ares_fds.c in Sources */,
 				07F804D2202D8A8B00FDFC27 /* Array.cpp in Sources */,
+				0738918320EE07AC009056FD /* getnameinfo.c in Sources */,
 				07F804EA202D9F4300FDFC27 /* FunctionTemplate.cpp in Sources */,
 				07FE857A2075F52F0013E1B4 /* ostreams.cc in Sources */,
 				076F58E6201E7F2F004780FD /* ResourceConstraints.cpp in Sources */,
 				07F804A320277DC700FDFC27 /* TypedArray.cpp in Sources */,
 				07F804EE202D9F5300FDFC27 /* ObjectTemplate.cpp in Sources */,
 				07F804B720298D3000FDFC27 /* Symbol.cpp in Sources */,
+				0738919C20EE07AC009056FD /* stream.c in Sources */,
 				07F804F2202DA7AF00FDFC27 /* Extension.cpp in Sources */,
 				07FE85952075F6D40013E1B4 /* trace-buffer.cc in Sources */,
+				0738921D20EE0CEE009056FD /* ares_parse_aaaa_reply.c in Sources */,
 				076F58EC201E7F97004780FD /* V8.cpp in Sources */,
+				0738918220EE07AC009056FD /* inet.c in Sources */,
 				07FE85A92075F7A90013E1B4 /* division-by-constant.cc in Sources */,
 				07FE858B2075F6730013E1B4 /* time.cc in Sources */,
+				0738919F20EE07AC009056FD /* uv-common.c in Sources */,
 				07F804AB2028380800FDFC27 /* PropertyDescriptor.cpp in Sources */,
 				076F58E8201E7F5A004780FD /* ArrayBuffer.cpp in Sources */,
+				0738918C20EE07AC009056FD /* pipe.c in Sources */,
+				0738919D20EE07AC009056FD /* darwin-proctitle.c in Sources */,
 				07FE85872075F6730013E1B4 /* condition-variable.cc in Sources */,
+				073891EF20EE0CEE009056FD /* ares_cancel.c in Sources */,
+				073891F820EE0CEE009056FD /* ares__read_line.c in Sources */,
 				07FE858A2075F6730013E1B4 /* platform-posix.cc in Sources */,
 				07FE85882075F6730013E1B4 /* semaphore.cc in Sources */,
 				07F804E6202D9F3100FDFC27 /* Template.cpp in Sources */,
 				07F804AF2029863600FDFC27 /* Primitives.cpp in Sources */,
+				0738919820EE07AC009056FD /* tcp.c in Sources */,
+				0738918A20EE07AC009056FD /* poll.c in Sources */,
+				0738920320EE0CEE009056FD /* inet_net_pton.c in Sources */,
 				07FE85AA2075F7A90013E1B4 /* bits.cc in Sources */,
+				0738918020EE07AC009056FD /* loop-watcher.c in Sources */,
 				076F58F0201E7FCD004780FD /* Script.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -725,16 +1239,29 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				OTHER_CFLAGS = (
+					"-D_DARWIN_USE_64_BIT_INODE=1",
+					"-D_DARWIN_UNLIMITED_SELECT=1",
+					"-DHTTP_PARSER_STRICT=0",
+					"-D_LARGEFILE_SOURCE",
+					"-D_FILE_OFFSET_BITS=64",
+					"-D_GNU_SOURCE",
+					"-DHAVE_CONFIG_H",
+				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"-I../deps/node-8.9.3/deps/v8/include",
 					"-I../deps/node-8.9.3/deps/v8",
+					"-DV8_OS_MACOSX",
+					"-DV8_FAST_TLS_SUPPORTED",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SYSTEM_HEADER_SEARCH_PATHS = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -749,16 +1276,29 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				OTHER_CFLAGS = (
+					"-D_DARWIN_USE_64_BIT_INODE=1",
+					"-D_DARWIN_UNLIMITED_SELECT=1",
+					"-DHTTP_PARSER_STRICT=0",
+					"-D_LARGEFILE_SOURCE",
+					"-D_FILE_OFFSET_BITS=64",
+					"-D_GNU_SOURCE",
+					"-DHAVE_CONFIG_H",
+				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"-I../deps/node-8.9.3/deps/v8/include",
 					"-I../deps/node-8.9.3/deps/v8",
+					"-DV8_OS_MACOSX",
+					"-DV8_FAST_TLS_SUPPORTED",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SYSTEM_HEADER_SEARCH_PATHS = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

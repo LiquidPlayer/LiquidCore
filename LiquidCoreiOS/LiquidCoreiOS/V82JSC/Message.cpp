@@ -14,6 +14,8 @@ using namespace v8;
 
 MessageImpl* MessageImpl::New(IsolateImpl* iso, JSValueRef exception, Local<Script> script, JSStringRef back_trace)
 {
+    HandleScope scope(V82JSC::ToIsolate(iso));
+    
     Local<Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(iso));
     MessageImpl * msgi = static_cast<MessageImpl*>(V82JSC_HeapObject::HeapAllocator::Alloc(iso, iso->m_message_map));
     msgi->m_value = exception;
@@ -27,6 +29,7 @@ void MessageImpl::CallHandlers()
 {
     IsolateImpl * iso = GetIsolate();
     HandleScope scope(V82JSC::ToIsolate(iso));
+    
     Local<Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(iso));
     Local<v8::Message> msg = V82JSC::CreateLocal<v8::Message>(&iso->ii, this);
 
@@ -54,15 +57,17 @@ void MessageImpl::CallHandlers()
 Local<String> Message::Get() const
 {
     Isolate *isolate = V82JSC::ToIsolate(this);
+    EscapableHandleScope scope(isolate);
+    
     Local<Context> context = V82JSC::OperatingContext(isolate);
     TryCatch try_catch(isolate);
     
     MaybeLocal<String> msg = reinterpret_cast<const v8::Value*>(this)->ToString(context);
     if (msg.IsEmpty()) {
-        return String::NewFromUtf8(isolate, "Uncaught exception", NewStringType::kNormal).ToLocalChecked();
+        return scope.Escape(String::NewFromUtf8(isolate, "Uncaught exception", NewStringType::kNormal).ToLocalChecked());
     }
-    return String::Concat(String::NewFromUtf8(isolate, "Uncaught ",
-                                              NewStringType::kNormal).ToLocalChecked(), msg.ToLocalChecked());
+    return scope.Escape(String::Concat(String::NewFromUtf8(isolate, "Uncaught ",
+                                              NewStringType::kNormal).ToLocalChecked(), msg.ToLocalChecked()));
 }
 
 MaybeLocal<String> Message::GetSourceLine(Local<Context> context) const
@@ -77,9 +82,9 @@ MaybeLocal<String> Message::GetSourceLine(Local<Context> context) const
  */
 ScriptOrigin Message::GetScriptOrigin() const
 {
+    // Do not create a handle scope here.  We are returning more than one handle.
     Isolate *isolate = V82JSC::ToIsolate(this);
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
-    HandleScope scope(isolate);
     Local<Context> context = V82JSC::OperatingContext(isolate);
     
     if (impl->m_script.IsEmpty()) {
@@ -120,6 +125,9 @@ Local<Value> Message::GetScriptResourceName() const
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
     IsolateImpl *iso = impl->GetIsolate();
     Isolate* isolate = V82JSC::ToIsolate(iso);
+    EscapableHandleScope scope(isolate);
+    
+    auto thread = IsolateImpl::PerThreadData::Get(iso);
 
     Local<StackTrace> trace = StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, impl),
                                                   impl->m_script.Get(V82JSC::ToIsolate(iso)), impl->m_back_trace);
@@ -127,19 +135,19 @@ Local<Value> Message::GetScriptResourceName() const
         Local<String> name = trace->GetFrame(0)->GetScriptName();
         if (!name.IsEmpty() && name->Equals(V82JSC::OperatingContext(isolate),
                          String::NewFromUtf8(isolate, "undefined", NewStringType::kNormal).ToLocalChecked()).ToChecked()) {
-            return Undefined(isolate);
+            return scope.Escape(Undefined(isolate));
         }
 
-        if (!name.IsEmpty()) return name;
+        if (!name.IsEmpty()) return scope.Escape(name);
     }
 
     Local<Script> script;
-    if (!iso->m_running_scripts.empty()) {
-        script = iso->m_running_scripts.top();
+    if (!thread->m_running_scripts.empty()) {
+        script = thread->m_running_scripts.top();
     }
     if (!script.IsEmpty()) {
         UnboundScriptImpl* scr = V82JSC::ToImpl<UnboundScriptImpl>(script->GetUnboundScript());
-        return scr->m_resource_name.Get(V82JSC::ToIsolate(iso));
+        return scope.Escape(scr->m_resource_name.Get(V82JSC::ToIsolate(iso)));
     }
 
     return Local<Value>();
@@ -154,10 +162,11 @@ Local<StackTrace> Message::GetStackTrace() const
 {
     MessageImpl *message = V82JSC::ToImpl<MessageImpl>(this);
     IsolateImpl *iso = message->GetIsolate();
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
 
     if (iso->m_capture_stack_trace_for_uncaught_exceptions) {
-        return StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, message),
-                                   message->m_script.Get(V82JSC::ToIsolate(iso)), message->m_back_trace);
+        return scope.Escape(StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, message),
+                                   message->m_script.Get(V82JSC::ToIsolate(iso)), message->m_back_trace));
     } else {
         return Local<StackTrace>();
     }
@@ -170,6 +179,7 @@ Maybe<int> Message::GetLineNumber(Local<Context> context) const
 {
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
     IsolateImpl *iso = impl->GetIsolate();
+    HandleScope scope(V82JSC::ToIsolate(iso));
     
     Local<StackTrace> trace = StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, impl),
                                                   impl->m_script.Get(V82JSC::ToIsolate(iso)), impl->m_back_trace);
@@ -218,6 +228,7 @@ Maybe<int> Message::GetStartColumn(Local<Context> context) const
     // the end column.
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
     IsolateImpl *iso = impl->GetIsolate();
+    HandleScope scope(V82JSC::ToIsolate(iso));
     
     Local<StackTrace> trace = StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, impl),
                                                   impl->m_script.Get(V82JSC::ToIsolate(iso)), impl->m_back_trace);
@@ -235,6 +246,7 @@ Maybe<int> Message::GetEndColumn(Local<Context> context) const
 {
     MessageImpl *impl = V82JSC::ToImpl<MessageImpl>(this);
     IsolateImpl *iso = impl->GetIsolate();
+    HandleScope scope(V82JSC::ToIsolate(iso));
     
     Local<StackTrace> trace = StackTraceImpl::New(iso, V82JSC::CreateLocal<Value>(&iso->ii, impl),
                                                   impl->m_script.Get(V82JSC::ToIsolate(iso)), impl->m_back_trace);
@@ -323,8 +335,9 @@ Local<String> StackFrame::GetScriptName() const
 {
     StackFrameImpl *impl = V82JSC::ToImpl<StackFrameImpl>(this);
     Isolate *isolate = V82JSC::ToIsolate(impl->GetIsolate());
+    EscapableHandleScope scope(isolate);
     Local<String> name = impl->m_script_name.Get(isolate);
-    return name;
+    return scope.Escape(name);
 }
 
 /**
@@ -344,7 +357,8 @@ Local<String> StackFrame::GetScriptNameOrSourceURL() const
 Local<String> StackFrame::GetFunctionName() const
 {
     StackFrameImpl *impl = V82JSC::ToImpl<StackFrameImpl>(this);
-    return impl->m_function_name.Get(V82JSC::ToIsolate(impl->GetIsolate()));
+    EscapableHandleScope scope(V82JSC::ToIsolate(impl->GetIsolate()));
+    return scope.Escape(impl->m_function_name.Get(V82JSC::ToIsolate(impl->GetIsolate())));
 }
 
 /**
@@ -379,6 +393,7 @@ bool StackFrame::IsWasm() const
 v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> value,
                                               Local<v8::Script> script, JSStringRef back_trace)
 {
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
     JSContextRef ctx = V82JSC::ToContextRef(V82JSC::ToIsolate(iso));
     Local<Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(iso));
     JSValueRef v = V82JSC::ToJSValueRef(value, context);
@@ -481,13 +496,15 @@ v8::Local<v8::StackTrace> StackTraceImpl::New(IsolateImpl* iso, Local<Value> val
     }
     */
 
-    return local;
+    return scope.Escape(local);
 }
 
 Local<StackFrame> StackTrace::GetFrame(uint32_t index) const
 {
     StackTraceImpl *impl = V82JSC::ToImpl<StackTraceImpl>(this);
     IsolateImpl *iso = impl->GetIsolate();
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
+    
     Local<Context> context = V82JSC::OperatingContext(V82JSC::ToIsolate(iso));
     JSContextRef ctx = V82JSC::ToContextRef(context);
     
@@ -518,7 +535,7 @@ Local<StackFrame> StackTrace::GetFrame(uint32_t index) const
             stack_frame->m_is_eval = is_eval;
             stack_frame->m_stack_trace.Reset(V82JSC::ToIsolate(iso), V82JSC::CreateLocal<StackTrace>(&iso->ii, impl));
             
-            return V82JSC::CreateLocal<v8::StackFrame>(&iso->ii, stack_frame);
+            return scope.Escape(V82JSC::CreateLocal<v8::StackFrame>(&iso->ii, stack_frame));
         }
     }
 
@@ -552,15 +569,18 @@ int StackTrace::GetFrameCount() const
 Local<StackTrace> StackTrace::CurrentStackTrace(Isolate* isolate, int frame_limit,
                                                 StackTraceOptions options)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = V82JSC::OperatingContext(isolate);
     Local<Script> script;
-    if (!V82JSC::ToIsolateImpl(isolate)->m_running_scripts.empty()) {
-        script = V82JSC::ToIsolateImpl(isolate)->m_running_scripts.top();
+    auto thread = IsolateImpl::PerThreadData::Get(V82JSC::ToIsolateImpl(isolate));
+
+    if (!thread->m_running_scripts.empty()) {
+        script = thread->m_running_scripts.top();
     }
 
     JSStringRef e = JSStringCreateWithUTF8CString("new Error()");
     JSValueRef error = JSEvaluateScript(V82JSC::ToContextRef(context), e, 0, 0, 0, 0);
     Local<Value> err = ValueImpl::New(V82JSC::ToContextImpl(context), error);
-    return StackTraceImpl::New(V82JSC::ToIsolateImpl(isolate), err, script,
-                               JSContextCreateBacktrace(V82JSC::ToContextRef(context), frame_limit));
+    return scope.Escape(StackTraceImpl::New(V82JSC::ToIsolateImpl(isolate), err, script,
+                               JSContextCreateBacktrace(V82JSC::ToContextRef(context), frame_limit)));
 }

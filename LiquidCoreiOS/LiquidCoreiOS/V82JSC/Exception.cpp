@@ -70,10 +70,11 @@ Local<Message> Exception::CreateMessage(Isolate* isolate, Local<Value> exception
 {
     IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
     Local<Context> context = V82JSC::OperatingContext(isolate);
+    auto thread = IsolateImpl::PerThreadData::Get(iso);
  
     Local<Script> script;
-    if (!iso->m_running_scripts.empty()) {
-        script = iso->m_running_scripts.top();
+    if (!thread->m_running_scripts.empty()) {
+        script = thread->m_running_scripts.top();
     }
 
     MessageImpl * msgi = MessageImpl::New(iso, V82JSC::ToJSValueRef(exception, context), script, 0);

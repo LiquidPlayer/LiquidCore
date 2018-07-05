@@ -27,8 +27,10 @@ MaybeLocal<Function> Function::New(Local<Context> context, FunctionCallback call
 
 MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local<Value> argv[]) const
 {
-    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
     IsolateImpl *iso = V82JSC::ToIsolateImpl(this);
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
+
+    JSObjectRef func = (JSObjectRef) V82JSC::ToJSValueRef<Function>(this, context);
     JSGlobalContextRef ctx = JSObjectGetGlobalContext((JSObjectRef)V82JSC::ToJSValueRef(this, context));
     Local<Context> cc = iso->m_global_contexts[ctx].Get(V82JSC::ToIsolate(iso));
     JSValueRef args[argc];
@@ -45,7 +47,7 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
         exception.exception_ = excp;
     }
     if (!exception.ShouldThow()) {
-        return ValueImpl::New(V82JSC::ToContextImpl(cc), newobj).As<Object>();
+        return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(cc), newobj).As<Object>());
     }
     return MaybeLocal<Object>();
 }
@@ -57,15 +59,16 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
     IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     EscapableHandleScope scope(V82JSC::ToIsolate(iso));
     Context::Scope context_scope(context);
+    auto thread = IsolateImpl::PerThreadData::Get(iso);
 
     // Check if there are pending interrupts before even executing
     IsolateImpl::PollForInterrupts(V82JSC::ToContextRef(context), iso);
 
-    if (iso->m_callback_depth == 0 && V82JSC::ToIsolate(iso)->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
-        iso->m_callback_depth++;
+    if (thread->m_callback_depth == 0 && V82JSC::ToIsolate(iso)->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
+        thread->m_callback_depth++;
         V82JSC::ToIsolate(iso)->RunMicrotasks();
     } else {
-        iso->m_callback_depth++;
+        thread->m_callback_depth++;
     }
     ValueImpl *fimpl = V82JSC::ToImpl<ValueImpl>(this);
     Local<Value> secure_function = TrackedObjectImpl::SecureValue(V82JSC::CreateLocal<Value>(&iso->ii, fimpl));
@@ -101,12 +104,12 @@ MaybeLocal<Value> Function::Call(Local<Context> context,
         }
     }
     
-    iso->m_callback_depth--;
-    if (iso->m_callback_depth == 0) {
+    thread->m_callback_depth--;
+    if (thread->m_callback_depth == 0) {
         for (auto i=iso->m_call_completed_callbacks.begin(); i!=iso->m_call_completed_callbacks.end(); ++i) {
-            iso->m_callback_depth++;
+            thread->m_callback_depth++;
             (*i)(V82JSC::ToIsolate(iso));
-            iso->m_callback_depth--;
+            thread->m_callback_depth--;
         }
     }
     
@@ -132,17 +135,19 @@ void Function::SetName(Local<String> name)
 
 Local<Value> Function::GetName() const
 {
-    v8::Object* thiz = reinterpret_cast<v8::Object *>(const_cast<Function*>(this));
-    IsolateImpl* iso = V82JSC::ToIsolateImpl(thiz);
+    IsolateImpl* iso = V82JSC::ToIsolateImpl(this);
     Isolate* isolate = V82JSC::ToIsolate(iso);
-    TryCatch try_catch(Isolate::GetCurrent());
+    EscapableHandleScope scope(isolate);
+    
+    v8::Object* thiz = reinterpret_cast<v8::Object *>(const_cast<Function*>(this));
+    TryCatch try_catch(isolate);
     MaybeLocal<Value> name = thiz->Get(isolate->GetCurrentContext(),
                                        String::NewFromUtf8(isolate, "name",
                                                            NewStringType::kNormal).ToLocalChecked());
     if (name.IsEmpty()) {
-        return Undefined(isolate);
+        return scope.Escape(Undefined(isolate));
     }
-    return name.ToLocalChecked();
+    return scope.Escape(name.ToLocalChecked());
 }
 
 /**
@@ -163,10 +168,11 @@ Local<Value> Function::GetInferredName() const
  */
 Local<Value> Function::GetDebugName() const
 {
+    EscapableHandleScope scope(V82JSC::ToIsolate(this));
     Local<Value> name = GetDisplayName();
     if (name->IsUndefined()) name = GetName();
     if (name->IsUndefined()) name = GetInferredName();
-    return name;
+    return scope.Escape(name);
 }
 
 /**
@@ -178,7 +184,9 @@ Local<Value> Function::GetDisplayName() const
     v8::Object* thiz = reinterpret_cast<v8::Object *>(const_cast<Function*>(this));
     IsolateImpl* iso = V82JSC::ToIsolateImpl(thiz);
     Isolate* isolate = V82JSC::ToIsolate(iso);
-    TryCatch try_catch(Isolate::GetCurrent());
+    EscapableHandleScope scope(isolate);
+    
+    TryCatch try_catch(isolate);
     MaybeLocal<Value> name = thiz->GetRealNamedProperty(isolate->GetCurrentContext(),
                                        String::NewFromUtf8(isolate, "displayName",
                                                            NewStringType::kNormal).ToLocalChecked());
@@ -189,9 +197,9 @@ Local<Value> Function::GetDisplayName() const
     }
     
     if (name.IsEmpty()) {
-        return Undefined(isolate);
+        return scope.Escape(Undefined(isolate));
     }
-    return name.ToLocalChecked();
+    return scope.Escape(name.ToLocalChecked());
 }
 
 /**

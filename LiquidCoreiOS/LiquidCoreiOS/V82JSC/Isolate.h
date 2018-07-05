@@ -106,8 +106,6 @@ struct IsolateImpl {
     H::Map<H::StackTrace> *m_stack_trace_map;
     H::Map<H::Message> *m_message_map;
 
-    v8::TryCatch *m_handlers;
-    
     std::map<JSObjectRef, ValueImpl*> m_jsobjects;
     
     std::map<std::string, JSValueRef> m_global_symbols;
@@ -115,26 +113,11 @@ struct IsolateImpl {
     
     v8::Isolate::CreateParams m_params;
     
-    std::map<size_t, std::stack<Copyable(v8::Context)>*> m_context_stacks;
-    std::stack<Copyable(v8::Context)> * ContextStackForThread()
-    {
-        size_t hash = std::hash<std::thread::id>()(std::this_thread::get_id());
-        bool has = m_context_stacks.count(hash);
-        if (!has) {
-            auto stack = new std::stack<Copyable(v8::Context)>();
-            m_context_stacks[hash] = stack;
-        }
-        return m_context_stacks[hash];
-    }
-    
-    std::stack<v8::HandleScope*> m_scope_stack;
-    
     std::map<JSGlobalContextRef, Copyable(v8::Context)> m_global_contexts;
     static std::map<JSGlobalContextRef, IsolateImpl*> s_context_to_isolate_map;
     
     std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>> m_exec_maps;
 
-    int m_callback_depth;
     bool m_pending_garbage_collection;
 
     v8::FatalErrorCallback m_fatal_error_callback;
@@ -145,9 +128,7 @@ struct IsolateImpl {
     v8::FailedAccessCheckCallback m_failed_access_check_callback;
     
     std::vector<MessageListener> m_message_listeners;
-    std::stack<v8::Local<v8::Script>> m_running_scripts;
     bool m_capture_stack_trace_for_uncaught_exceptions;
-    JSValueRef m_verbose_exception;
     
     std::atomic<int> m_entered_count;
     struct GCCallbackStruct
@@ -169,16 +150,57 @@ struct IsolateImpl {
     std::map<JSStringRef, Copyable(v8::String)*> m_internalized_strings;
     
     std::recursive_mutex *m_locker;
-    std::atomic<bool> m_isLocked;
     static std::atomic<bool> s_isLockerActive;
+    std::atomic<int> m_locks;
+    std::thread::id m_owner;
+    
+    std::mutex m_isolate_lock;
+
+    struct PerIsolateThreadData
+    {
+        std::vector<int> m_unlock_counts;
+        std::atomic<int> m_locks;
+        std::vector<void*> m_locker_tokens;
+        std::vector<void*> m_unlocker_tokens;
+        
+        v8::TryCatch *m_handlers;
+        std::stack<v8::Local<v8::Script>> m_running_scripts;
+        std::stack<Copyable(v8::Context)> m_context_stack;
+        int m_callback_depth;
+        v8::internal::Object *m_scheduled_exception;
+        JSValueRef m_verbose_exception;
+        HandleScopeData m_handle_scope_data;
+        std::vector<v8::HandleScope*> m_scope_stack;
+        
+        ~PerIsolateThreadData();
+    };
     
     struct PerThreadData
     {
         PerThreadData() {}
         std::vector<v8::Isolate*> m_entered_isolates;
+        std::map<IsolateImpl*, PerIsolateThreadData*> m_isolate_data;
+        std::mutex m_mutex;
 
         static PerThreadData* Get();
+        static PerIsolateThreadData* Get(IsolateImpl* iso)
+        {
+            PerThreadData* data = Get();
+            std::unique_lock<std::mutex> lock(data->m_mutex);
+            if (data->m_isolate_data.count(iso) == 0) {
+                auto periso = new PerIsolateThreadData();
+                periso->m_scheduled_exception =
+                iso->ii.heap()->root(v8::internal::Heap::RootListIndex::kTheHoleValueRootIndex);
+                data->m_isolate_data[iso] = periso;
+            }
+            auto periso = data->m_isolate_data[iso];
+            return periso;
+        }
+        static void EnterThreadContext(v8::Isolate *isolate);
     };
+    std::atomic<size_t> m_current_thread_hash;
+    PerIsolateThreadData *m_current_thread_context;
+    std::vector<v8::HandleScope*> *m_scope_stack;
     static std::mutex s_thread_data_mutex;
     static std::map<size_t, PerThreadData*> s_thread_data;
     
@@ -189,7 +211,7 @@ struct IsolateImpl {
     };
     std::mutex m_pending_interrupt_mutex;
     std::vector<PendingInterrupt> m_pending_interrupts;
-    bool m_terminate_execution;
+    std::atomic<bool> m_terminate_execution;
     
     bool m_should_optimize_for_memory_usage;
     

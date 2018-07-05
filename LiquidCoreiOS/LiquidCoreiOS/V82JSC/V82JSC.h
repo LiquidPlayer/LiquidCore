@@ -364,11 +364,12 @@ struct V82JSC {
     
     static inline v8::Local<v8::Context> OperatingContext(v8::Isolate* isolate)
     {
+        v8::EscapableHandleScope scope(isolate);
         v8::Local<v8::Context> context = isolate->GetCurrentContext();
         if (context.IsEmpty()) {
             context = v8::Local<v8::Context>::New(isolate, ToIsolateImpl(isolate)->m_nullContext);
         }
-        return context;
+        return scope.Escape(context);
     }
     template <class T>
     static inline v8::Local<v8::Context> ToCurrentContext(const T* thiz)
@@ -378,6 +379,7 @@ struct V82JSC {
     
     static inline bool is__(const v8::Value* thiz, const char *name_, const char *code_)
     {
+        v8::HandleScope scope(v8::Isolate::GetCurrent());
         v8::Local<v8::Context> context = ToCurrentContext(thiz);
         auto ctx = V82JSC::ToContextRef(context);
         auto v = V82JSC::ToJSValueRef<v8::Value>(thiz, context);
@@ -415,10 +417,12 @@ struct V82JSC {
     static inline v8::Local<v8::Context> FindGlobalContext(v8::Local<v8::Context> context)
     {
         v8::Isolate* isolate = ToIsolate(V82JSC::ToContextImpl(context));
+        v8::EscapableHandleScope scope(isolate);
+        
         IsolateImpl *i = ToIsolateImpl(isolate);
         JSGlobalContextRef gctx = JSContextGetGlobalContext(V82JSC::ToContextRef(context));
         if (i->m_global_contexts.count(gctx) > 0) {
-            return i->m_global_contexts[gctx].Get(isolate);
+            return scope.Escape(i->m_global_contexts[gctx].Get(isolate));
         }
         return v8::Local<v8::Context>();
     }
@@ -449,8 +453,10 @@ struct V82JSC {
     template<typename T>
     static inline v8::Local<T> FromPersistentData(v8::Isolate *isolate, void *data)
     {
+        v8::EscapableHandleScope scope(isolate);
+        
         Copyable(T) * persistent = reinterpret_cast<Copyable(T) *>(&data);
-        return persistent->Get(isolate);
+        return scope.Escape(persistent->Get(isolate));
     }
 };
 #define IS(name_,code_) V82JSC::is__(this,#name_,code_)

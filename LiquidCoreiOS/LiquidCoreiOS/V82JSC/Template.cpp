@@ -7,6 +7,7 @@
 //
 
 #include "V82JSC.h"
+#include "JSCPrivate.h"
 
 using namespace v8;
 #define H V82JSC_HeapObject
@@ -46,6 +47,7 @@ void Template::SetAccessorProperty(
 {
     TemplateImpl *this_ = V82JSC::ToImpl<TemplateImpl,Template>(this);
     Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
 
     H::PropAccessor *accessor = static_cast<H::PropAccessor *>
     (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(this_), V82JSC::ToIsolateImpl(this_)->m_property_accessor_map));
@@ -132,6 +134,7 @@ void Template::SetIntrinsicDataProperty(Local<Name> name, Intrinsic intrinsic,
 {
     TemplateImpl *templ = V82JSC::ToImpl<TemplateImpl, Template>(this);
     Isolate *isolate = V82JSC::ToIsolate(this);
+    HandleScope scope(isolate);
     
     H::IntrinsicProp *prop = static_cast<H::IntrinsicProp *>
     (H::HeapAllocator::Alloc(V82JSC::ToIsolateImpl(isolate), V82JSC::ToIsolateImpl(isolate)->m_intrinsic_property_map));
@@ -159,9 +162,13 @@ static T callAsCallback(JSContextRef ctx,
     bool isConstructCall = std::is_same<T, JSObjectRef>::value;
     IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
     Isolate *isolate = V82JSC::ToIsolate(iso);
+    v8::Locker lock(isolate);
+
     HandleScope scope(isolate);
-    Local<v8::Template> local = V82JSC::FromPersistentData<v8::Template>(isolate, JSObjectGetPrivate(proxy_function));
     
+    Local<v8::Template> local = V82JSC::FromPersistentData<v8::Template>(isolate, JSObjectGetPrivate(proxy_function));
+    auto thread = IsolateImpl::PerThreadData::Get(iso);
+
     Local<Context> context = LocalContextImpl::New(isolate, ctx);
     Context::Scope context_scope(context);
     ContextImpl *ctximpl = V82JSC::ToContextImpl(context);
@@ -203,7 +210,7 @@ static T callAsCallback(JSContextRef ctx,
         return 0;
     }
     
-    ++ iso->m_callback_depth;
+    ++ thread->m_callback_depth;
 
     Local<Value> data = ValueImpl::New(ctximpl, templ->m_data);
     typedef v8::internal::Heap::RootListIndex R;
@@ -233,7 +240,7 @@ static T callAsCallback(JSContextRef ctx,
         *(values-i) = * reinterpret_cast<v8::internal::Object**>(*arg);
     }
     
-    iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
+    thread->m_scheduled_exception = the_hole;
     
     FunctionCallbackImpl info(implicit, values, (int) argumentCount);
     TryCatch try_catch(V82JSC::ToIsolate(iso));
@@ -246,13 +253,13 @@ static T callAsCallback(JSContextRef ctx,
 
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (iso->ii.thread_local_top()->scheduled_exception_ != the_hole) {
-        internal::Object * excep = iso->ii.thread_local_top()->scheduled_exception_;
+    } else if (thread->m_scheduled_exception != the_hole) {
+        internal::Object * excep = thread->m_scheduled_exception;
         *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
-        iso->ii.thread_local_top()->scheduled_exception_ = the_hole;
+        thread->m_scheduled_exception = the_hole;
     }
 
-    -- iso->m_callback_depth;
+    -- thread->m_callback_depth;
     
     if (!*exception) {
         Local<Value> ret = info.GetReturnValue().Get();
@@ -287,6 +294,8 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
 {
     FunctionTemplateImpl *impl = V82JSC::ToImpl<FunctionTemplateImpl>(ft);
     Isolate *isolate = V82JSC::ToIsolate(impl);
+    EscapableHandleScope scope(isolate);
+    
     Local<ObjectTemplate> instance_template = ft->InstanceTemplate();
     ObjectTemplateImpl *instance_impl = V82JSC::ToImpl<ObjectTemplateImpl>(instance_template);
     
@@ -296,8 +305,9 @@ MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRe
     }
     if (!excep.ShouldThow()) {
         thiz = reinterpret_cast<TemplateImpl*>(instance_impl)->InitInstance(context, instance, excep);
+        return scope.Escape(thiz.ToLocalChecked());
     }
-    return thiz;
+    return MaybeLocal<Object>();
 };
 
 MaybeLocal<Object> TemplateImpl::InitInstance(Local<Context> context, JSObjectRef instance, LocalException& exception)

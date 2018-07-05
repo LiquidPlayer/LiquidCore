@@ -171,6 +171,8 @@ bool Value::IsExternal() const { return IS(IsExternal, "return Object.prototype.
  */
 bool Value::IsInt32() const
 {
+    HandleScope scope(Isolate::GetCurrent());
+    
     MaybeLocal<Number> num = ToNumber();
     if (!num.IsEmpty()) {
         FROMTHIS(c,v);
@@ -190,6 +192,8 @@ bool Value::IsInt32() const
  */
 bool Value::IsUint32() const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     MaybeLocal<Number> num = ToNumber();
     if (!num.IsEmpty()) {
         JSValueRef exception = nullptr;
@@ -370,9 +374,6 @@ bool Value::IsSharedArrayBuffer() const { return false; } // FIXME
  */
 bool Value::IsProxy() const
 {
-    // We are relying on what may be a bug in the legacy JSC API, so keep vigilant if this stops
-    // working in the future.  But, JSObjectGetPrototype() will return a different value than
-    // Object.getPrototypeOf() when called on a proxy.  We use this inconsistency to detect a proxy.
     Isolate *isolate = V82JSC::ToIsolate(this);
     HandleScope scope(isolate);
     Local<Context> context = V82JSC::ToCurrentContext(this);
@@ -380,15 +381,6 @@ bool Value::IsProxy() const
     JSValueRef maybe_proxy = V82JSC::ToJSValueRef(this, context);
     
     return (JSValueIsObject(ctx, maybe_proxy) && JSObjectGetProxyTarget((JSObjectRef)maybe_proxy) != 0);
-
-    /*
-    if (JSValueIsObject(ctx, maybe_proxy)) {
-        JSValueRef maybe_proxy_proto = JSObjectGetPrototype(ctx, (JSObjectRef)maybe_proxy);
-        JSValueRef real_proto = V82JSC::GetRealPrototype(context, (JSObjectRef)maybe_proxy);
-        return !JSValueIsStrictEqual(ctx, maybe_proxy_proto, real_proto);
-    }
-    return false;
-    */
 }
 
 bool Value::IsWebAssemblyCompiledModule() const { return false; } // FIXME
@@ -447,6 +439,8 @@ Maybe<bool> Value::Equals(Local<Context> context, Local<Value> that) const
 }
 bool Value::StrictEquals(Local<Value> that) const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef this_ = V82JSC::ToJSValueRef(this, context);
     JSValueRef that_ = V82JSC::ToJSValueRef(that, context);
@@ -454,6 +448,8 @@ bool Value::StrictEquals(Local<Value> that) const
 }
 bool Value::SameValue(Local<Value> that) const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     Local<Context> context = V82JSC::ToCurrentContext(this);
     JSValueRef this_ = V82JSC::ToJSValueRef(this, context);
     JSValueRef that_ = V82JSC::ToJSValueRef(that, context);
@@ -491,6 +487,8 @@ Maybe<bool> Value::InstanceOf(Local<Context> context, Local<Object> object)
 
 MaybeLocal<Uint32> Value::ToArrayIndex(Local<Context> context) const
 {
+    HandleScope scope(Isolate::GetCurrent());
+
     MaybeLocal<Number> num = ToNumber(context);
     if (!num.IsEmpty() && num.ToLocalChecked()->IsUint32()) {
         return ToUint32(context);
@@ -508,6 +506,7 @@ MaybeLocal<String> Value::ToString(Local<Context> context) const
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
 
     JSValueRef v = V82JSC::ToJSValueRef(this, context);
     LocalException exception(iso);
@@ -515,13 +514,14 @@ MaybeLocal<String> Value::ToString(Local<Context> context) const
     if (exception.ShouldThow()) {
         return MaybeLocal<String>();
     }
-    return StringImpl::New(reinterpret_cast<Isolate*>(iso), s);
+    return scope.Escape(StringImpl::New(reinterpret_cast<Isolate*>(iso), s));
 }
 MaybeLocal<String> Value::ToDetailString(Local<Context> context) const { return ToString(context); } // FIXME
 MaybeLocal<Object> Value::ToObject(Local<Context> context) const
 {
     ContextImpl *ctx = V82JSC::ToContextImpl(context);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(V82JSC::ToContextImpl(context));
+    EscapableHandleScope scope(V82JSC::ToIsolate(iso));
 
     JSValueRef v = V82JSC::ToJSValueRef(this, context);
     LocalException exception(iso);
@@ -529,7 +529,7 @@ MaybeLocal<Object> Value::ToObject(Local<Context> context) const
     if (exception.ShouldThow()) {
         return MaybeLocal<Object>();
     }
-    return ValueImpl::New(ctx, o).As<Object>();
+    return scope.Escape(ValueImpl::New(ctx, o).As<Object>());
 }
 
 template<class T, typename C>

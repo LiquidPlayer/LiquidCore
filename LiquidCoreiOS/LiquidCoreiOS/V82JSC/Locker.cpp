@@ -7,26 +7,21 @@
 //
 
 #include "V82JSC.h"
+#include "JSCPrivate.h"
 
 using namespace v8;
 
-Unlocker::~Unlocker()
-{
-    IsolateImpl* iso = reinterpret_cast<IsolateImpl*>(isolate_);
-    if (iso->m_locker) {
-        iso->m_locker->lock();
-    }
-}
-
 void Unlocker::Initialize(Isolate* isolate)
 {
-    isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
     IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
-    if (iso->m_locker) {
-        iso->m_locker->unlock();
-    }
+    isolate_ = (internal::Isolate*) JSCPrivate::UnlockAllJSCLocks(iso, iso->m_group);
 }
 
+Unlocker::~Unlocker()
+{
+    IsolateImpl* iso = JSCPrivate::ReinstateAllJSCLocks(isolate_);
+    IsolateImpl::PerThreadData::EnterThreadContext(reinterpret_cast<v8::Isolate*>(iso));
+}
 
 /**
  * Returns whether or not the locker for a given isolate, is locked by the
@@ -35,14 +30,7 @@ void Unlocker::Initialize(Isolate* isolate)
 bool Locker::IsLocked(Isolate* isolate)
 {
     IsolateImpl* iso = V82JSC::ToIsolateImpl(isolate);
-    if (iso->m_locker==nullptr) return false;
-    bool have_locked = iso->m_locker->try_lock();
-    if (have_locked) {
-        bool locked_by_this_thread = iso->m_isLocked;
-        iso->m_locker->unlock();
-        return locked_by_this_thread;
-    }
-    return false;
+    return JSCPrivate::HasLock(iso, iso->m_group);
 }
 
 /**
@@ -55,25 +43,12 @@ bool Locker::IsActive()
 
 void Locker::Initialize(Isolate* isolate)
 {
-    isolate_ = reinterpret_cast<internal::Isolate*>(isolate);
-    has_lock_ = false;
-    top_level_ = false;
-    
     IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
-    if (!iso->m_locker) {
-        iso->m_locker = new std::recursive_mutex();
-    }
-    iso->m_locker->lock();
-    has_lock_ = iso->m_isLocked;
-    iso->m_isLocked = true;
+    isolate_ = (internal::Isolate*) JSCPrivate::LockJSC(iso, iso->m_group);
     IsolateImpl::s_isLockerActive = true;
 }
 
 Locker::~Locker()
 {
-    IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(isolate_);
-    if (iso->m_locker) {
-        iso->m_isLocked = has_lock_;
-        iso->m_locker->unlock();
-    }
+    JSCPrivate::UnlockJSC(isolate_);
 }

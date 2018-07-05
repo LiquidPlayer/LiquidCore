@@ -10,6 +10,7 @@
 #include "JSObjectRefPrivate.h"
 
 using namespace v8;
+#include <malloc/malloc.h>
 
 #define HANDLEBLOCK_SIZE 0x4000
 #define NUM_HANDLES ((HANDLEBLOCK_SIZE - 2*sizeof(HandleBlock*))/ sizeof(internal::Object*))
@@ -28,6 +29,7 @@ static const uint8_t kActiveNearDeath = internal::Internals::kNodeStateIsNearDea
 
 HandleScope::HandleScope(Isolate* isolate)
 {
+    IsolateImpl::PerThreadData::EnterThreadContext(isolate);
     Initialize(isolate);
 }
 
@@ -39,7 +41,7 @@ void HandleScope::Initialize(Isolate* isolate)
     prev_next_ = impl->ii.handle_scope_data()->next;
     prev_limit_ = impl->ii.handle_scope_data()->limit;
     
-    impl->m_scope_stack.push(this);
+    impl->m_scope_stack->push_back(this);
 }
 
 
@@ -54,6 +56,7 @@ HandleScope::~HandleScope()
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(isolate_);
     internal::HandleScopeData *data = impl->ii.handle_scope_data();
 
+    assert(this == impl->m_scope_stack->back());
     data->next = prev_next_;
     data->limit = prev_limit_;
     
@@ -64,7 +67,7 @@ HandleScope::~HandleScope()
         HandleBlock *thisBlock = reinterpret_cast<HandleBlock*>(addr);
         delBlock(thisBlock->next_);
         thisBlock->next_ = nullptr;
-        if (impl->m_scope_stack.size() == 1) {
+        if (impl->m_scope_stack->size() == 1) {
             CHECK_EQ(data->next, data->limit);
             free (thisBlock);
             data->next = nullptr;
@@ -72,7 +75,7 @@ HandleScope::~HandleScope()
         }
     }
     
-    impl->m_scope_stack.pop();
+    impl->m_scope_stack->pop_back();
 }
 
 //
@@ -87,8 +90,12 @@ void internal::HandleScope::DeleteExtensions(Isolate* isolate)
 // Counts the number of allocated handles.
 int internal::HandleScope::NumberOfHandles(Isolate* ii)
 {
-    HandleScopeData *data = ii->handle_scope_data();
+    // Seal off current thread's handle scopes
+    auto thread = IsolateImpl::PerThreadData::Get(reinterpret_cast<IsolateImpl*>(ii));
+    memcpy(&thread->m_handle_scope_data, ii->handle_scope_data(), sizeof(HandleScopeData));
+
     size_t handles = 0;
+    HandleScopeData *data = ii->handle_scope_data();
     if (data->limit) {
         intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
         addr &= ~(HANDLEBLOCK_SIZE -1);
@@ -109,7 +116,7 @@ int internal::HandleScope::NumberOfHandles(Isolate* ii)
 internal::Object** internal::HandleScope::Extend(Isolate* isolate)
 {
     IsolateImpl* isolateimpl = reinterpret_cast<IsolateImpl*>(isolate);
-    DCHECK(!isolateimpl->m_scope_stack.empty());
+    DCHECK(!isolateimpl->m_scope_stack->empty());
     
     HandleBlock *ptr;
     posix_memalign((void**)&ptr, HANDLEBLOCK_SIZE, sizeof(HandleBlock));
@@ -135,21 +142,32 @@ internal::Object** internal::HandleScope::Extend(Isolate* isolate)
 
 void IsolateImpl::GetActiveLocalHandles(std::map<v8::internal::Object*, int>& dontDeleteMap)
 {
-    HandleScopeData *data = ii.handle_scope_data();
-    if (data->limit) {
-        intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
-        addr &= ~(HANDLEBLOCK_SIZE -1);
-        HandleBlock *block = reinterpret_cast<HandleBlock*>(addr);
-        internal::Object ** limit = data->next;
-        while (block) {
-            for (internal::Object ** handle = &block->handles_[0]; handle < limit; handle++ ) {
-                if ((*handle)->IsHeapObject()) {
-                    int count = dontDeleteMap.count(*handle) ? dontDeleteMap[*handle] : 0;
-                    dontDeleteMap[*handle] = count + 1;
+    // Seal off current thread's handle scopes
+    auto thread = PerThreadData::Get(this);
+    memcpy(&thread->m_handle_scope_data, ii.handle_scope_data(), sizeof(HandleScopeData));
+    
+    std::unique_lock<std::mutex> lock(s_thread_data_mutex);
+    for (auto it=s_thread_data.begin(); it!=s_thread_data.end(); it++) {
+        for (auto it2=it->second->m_isolate_data.begin(); it2!=it->second->m_isolate_data.end(); it2++) {
+            if (it2->first == this) {
+                HandleScopeData *data = &it2->second->m_handle_scope_data;
+                if (data->limit) {
+                    intptr_t addr = reinterpret_cast<intptr_t>(data->limit - 1);
+                    addr &= ~(HANDLEBLOCK_SIZE -1);
+                    HandleBlock *block = reinterpret_cast<HandleBlock*>(addr);
+                    internal::Object ** limit = data->next;
+                    while (block) {
+                        for (internal::Object ** handle = &block->handles_[0]; handle < limit; handle++ ) {
+                            if ((*handle)->IsHeapObject()) {
+                                int count = dontDeleteMap.count(*handle) ? dontDeleteMap[*handle] : 0;
+                                dontDeleteMap[*handle] = count + 1;
+                            }
+                        }
+                        block = block->next_;
+                        limit = block ? &block->next_->handles_[NUM_HANDLES] : nullptr;
+                    }
                 }
             }
-            block = block->next_;
-            limit = block ? &block->next_->handles_[NUM_HANDLES] : nullptr;
         }
     }
 }
@@ -180,6 +198,7 @@ internal::Object** HandleScope::CreateHandle(internal::HeapObject* heap_object,
 
 EscapableHandleScope::EscapableHandleScope(Isolate* isolate) : HandleScope()
 {
+    IsolateImpl::PerThreadData::EnterThreadContext(isolate);
     // Creates a slot which we will transfer to the previous scope upon Escape()
     escape_slot_ = HandleScope::CreateHandle(reinterpret_cast<internal::Isolate*>(isolate), 0);
     Initialize(isolate);
@@ -311,6 +330,8 @@ public:
     }
     void Reset(internal::Object ** handle)
     {
+        if (malloc_size(this) == 0) return;
+        
         int64_t index = (reinterpret_cast<intptr_t>(handle) - reinterpret_cast<intptr_t>(&handles_[0])) / sizeof(Node);
         assert(index >= 0 && index < 64);
         bool wasFull = bitmap_ == 0;

@@ -28,7 +28,8 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     IsolateImpl* iso = impl->GetIsolate();
     Isolate *isolate = V82JSC::ToIsolate(iso);
     EscapableHandleScope scope(isolate);
-    
+    auto thread = IsolateImpl::PerThreadData::Get(iso);
+
     Local<Context> bound_context = impl->m_context.Get(isolate);
     Context::Scope context_scope(bound_context);
     JSContextRef ctx = V82JSC::ToContextRef(bound_context);
@@ -39,13 +40,13 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
     // Check if there are pending interrupts before even executing
     IsolateImpl::PollForInterrupts(ctx, iso);
 
-    if (iso->m_callback_depth == 0 && isolate->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
-        iso->m_callback_depth++;
+    if (thread->m_callback_depth == 0 && isolate->GetMicrotasksPolicy() == MicrotasksPolicy::kAuto) {
+        thread->m_callback_depth++;
         isolate->RunMicrotasks();
     } else {
-        iso->m_callback_depth ++;
+        thread->m_callback_depth ++;
     }
-    iso->m_running_scripts.push(local);
+    thread->m_running_scripts.push(local);
     MaybeLocal<Value> ret;
     {
         LocalException exception(iso);
@@ -105,14 +106,14 @@ MaybeLocal<Value> Script::Run(Local<Context> context)
             */
         }
     }
-    iso->m_running_scripts.pop();
-    iso->m_callback_depth --;
+    thread->m_running_scripts.pop();
+    thread->m_callback_depth --;
 
-    if (iso->m_callback_depth == 0) {
+    if (thread->m_callback_depth == 0) {
         for (auto i=iso->m_call_completed_callbacks.begin(); i!=iso->m_call_completed_callbacks.end(); ++i) {
-            iso->m_callback_depth++;
+            thread->m_callback_depth++;
             (*i)(V82JSC::ToIsolate(iso));
-            iso->m_callback_depth--;
+            thread->m_callback_depth--;
         }
     }
 

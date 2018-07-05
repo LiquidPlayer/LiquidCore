@@ -22,6 +22,7 @@ TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx)
 
 void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* impl, JSObjectRef object)
 {
+    HandleScope scope(V82JSC::ToIsolate(iso));
     // Keep only a weak reference to m_security to avoid cyclical references
     impl->m_security = object;
     
@@ -36,7 +37,7 @@ void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* i
         JSGlobalContextRef ctx = JSObjectGetGlobalContext(object);
         assert(ctx);
         IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[ctx];
-        assert(iso);
+        if (!iso) return;
 
         HandleScope scope(V82JSC::ToIsolate(iso));
         Local<TrackedObject> local = V82JSC::FromPersistentData<TrackedObject>(V82JSC::ToIsolate(iso), persistent);
