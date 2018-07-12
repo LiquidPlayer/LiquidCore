@@ -1766,6 +1766,14 @@ void InitFs(Local<Object> target,
   target->Set(wrapString, fst->GetFunction());
 }
 
-}  // end namespace node
+}  // end namespace nodedroid
+
+#ifdef __APPLE__
+namespace node {
+void FillStatsArray(double* fields, const uv_stat_t* s) {
+    return nodedroid::FillStatsArray(fields, s);
+}
+}
+#endif
 
 NODE_MODULE_CONTEXT_AWARE_BUILTIN(fs, nodedroid::InitFs)

@@ -132,7 +132,6 @@
 		073892A020EE5E29009056FD /* env.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738924220EE5E1F009056FD /* env.h */; };
 		073892A120EE5E29009056FD /* node_buffer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738924320EE5E1F009056FD /* node_buffer.cc */; };
 		073892A220EE5E29009056FD /* node_zlib.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738924420EE5E1F009056FD /* node_zlib.cc */; };
-		073892A320EE5E29009056FD /* process_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738924520EE5E1F009056FD /* process_wrap.cc */; };
 		073892A420EE5E29009056FD /* spawn_sync.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738924620EE5E1F009056FD /* spawn_sync.cc */; };
 		073892A520EE5E29009056FD /* env-inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738924720EE5E1F009056FD /* env-inl.h */; };
 		073892A620EE5E29009056FD /* async-wrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738924820EE5E1F009056FD /* async-wrap.h */; };
@@ -208,7 +207,6 @@
 		073892EE20EE5E29009056FD /* timer_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738929020EE5E27009056FD /* timer_wrap.cc */; };
 		073892EF20EE5E29009056FD /* base-object-inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738929120EE5E27009056FD /* base-object-inl.h */; };
 		073892F020EE5E29009056FD /* node_i18n.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738929220EE5E27009056FD /* node_i18n.cc */; };
-		073892F120EE5E29009056FD /* node_file.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738929320EE5E27009056FD /* node_file.cc */; };
 		073892F220EE5E29009056FD /* node_http2.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738929420EE5E28009056FD /* node_http2.h */; };
 		073892F320EE5E29009056FD /* node_debug_options.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738929520EE5E28009056FD /* node_debug_options.cc */; };
 		073892F420EE5E29009056FD /* node_serdes.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738929620EE5E28009056FD /* node_serdes.cc */; };
@@ -281,6 +279,9 @@
 		0738938120EFFF0F009056FD /* NodeInstance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738937A20EFFF0F009056FD /* NodeInstance.cpp */; };
 		0738938220EFFF0F009056FD /* nodedroid_file.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738937B20EFFF0F009056FD /* nodedroid_file.cc */; };
 		075AEA1620C6A608002B1098 /* Message.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 075AEA1520C6A608002B1098 /* Message.cpp */; };
+		076563BA20F66CA8002C330B /* module_wrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563B820F66CA8002C330B /* module_wrap.h */; };
+		076563BB20F66CA8002C330B /* module_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563B920F66CA8002C330B /* module_wrap.cc */; };
+		076563BF20F66DF2002C330B /* Module.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076563BE20F66DF2002C330B /* Module.cpp */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
 		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -294,7 +295,6 @@
 		076F58EC201E7F97004780FD /* V8.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EB201E7F96004780FD /* V8.cpp */; };
 		076F58F0201E7FCD004780FD /* Script.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EE201E7FCD004780FD /* Script.cpp */; };
 		076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F5201E80A4004780FD /* StringImpl.cpp */; };
-		076F58FA201E8155004780FD /* helloworld.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F9201E8155004780FD /* helloworld.cpp */; };
 		07A7CF09209220C000352ABF /* print-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF08209220BF00352ABF /* print-extension.cc */; };
 		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
 		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
@@ -510,7 +510,6 @@
 		0738924220EE5E1F009056FD /* env.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = env.h; path = "../../../../deps/node-8.9.3/src/env.h"; sourceTree = "<group>"; };
 		0738924320EE5E1F009056FD /* node_buffer.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_buffer.cc; path = "../../../../deps/node-8.9.3/src/node_buffer.cc"; sourceTree = "<group>"; };
 		0738924420EE5E1F009056FD /* node_zlib.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_zlib.cc; path = "../../../../deps/node-8.9.3/src/node_zlib.cc"; sourceTree = "<group>"; };
-		0738924520EE5E1F009056FD /* process_wrap.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = process_wrap.cc; path = "../../../../deps/node-8.9.3/src/process_wrap.cc"; sourceTree = "<group>"; };
 		0738924620EE5E1F009056FD /* spawn_sync.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = spawn_sync.cc; path = "../../../../deps/node-8.9.3/src/spawn_sync.cc"; sourceTree = "<group>"; };
 		0738924720EE5E1F009056FD /* env-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "env-inl.h"; path = "../../../../deps/node-8.9.3/src/env-inl.h"; sourceTree = "<group>"; };
 		0738924820EE5E1F009056FD /* async-wrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "async-wrap.h"; path = "../../../../deps/node-8.9.3/src/async-wrap.h"; sourceTree = "<group>"; };
@@ -586,7 +585,6 @@
 		0738929020EE5E27009056FD /* timer_wrap.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = timer_wrap.cc; path = "../../../../deps/node-8.9.3/src/timer_wrap.cc"; sourceTree = "<group>"; };
 		0738929120EE5E27009056FD /* base-object-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "base-object-inl.h"; path = "../../../../deps/node-8.9.3/src/base-object-inl.h"; sourceTree = "<group>"; };
 		0738929220EE5E27009056FD /* node_i18n.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_i18n.cc; path = "../../../../deps/node-8.9.3/src/node_i18n.cc"; sourceTree = "<group>"; };
-		0738929320EE5E27009056FD /* node_file.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_file.cc; path = "../../../../deps/node-8.9.3/src/node_file.cc"; sourceTree = "<group>"; };
 		0738929420EE5E28009056FD /* node_http2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_http2.h; path = "../../../../deps/node-8.9.3/src/node_http2.h"; sourceTree = "<group>"; };
 		0738929520EE5E28009056FD /* node_debug_options.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_debug_options.cc; path = "../../../../deps/node-8.9.3/src/node_debug_options.cc"; sourceTree = "<group>"; };
 		0738929620EE5E28009056FD /* node_serdes.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_serdes.cc; path = "../../../../deps/node-8.9.3/src/node_serdes.cc"; sourceTree = "<group>"; };
@@ -659,6 +657,9 @@
 		0738937A20EFFF0F009056FD /* NodeInstance.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NodeInstance.cpp; path = ../../LiquidCoreCommon/node/NodeInstance.cpp; sourceTree = "<group>"; };
 		0738937B20EFFF0F009056FD /* nodedroid_file.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = nodedroid_file.cc; path = ../../LiquidCoreCommon/node/nodedroid_file.cc; sourceTree = "<group>"; };
 		075AEA1520C6A608002B1098 /* Message.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Message.cpp; sourceTree = "<group>"; };
+		076563B820F66CA8002C330B /* module_wrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = module_wrap.h; path = "../../../../deps/node-8.9.3/src/module_wrap.h"; sourceTree = "<group>"; };
+		076563B920F66CA8002C330B /* module_wrap.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = module_wrap.cc; path = "../../../../deps/node-8.9.3/src/module_wrap.cc"; sourceTree = "<group>"; };
+		076563BE20F66DF2002C330B /* Module.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Module.cpp; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -675,8 +676,6 @@
 		076F58EB201E7F96004780FD /* V8.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = V8.cpp; sourceTree = "<group>"; };
 		076F58EE201E7FCD004780FD /* Script.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Script.cpp; sourceTree = "<group>"; };
 		076F58F5201E80A4004780FD /* StringImpl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StringImpl.cpp; sourceTree = "<group>"; };
-		076F58F9201E8155004780FD /* helloworld.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = helloworld.cpp; sourceTree = "<group>"; };
-		076F58FF201FB615004780FD /* helloworld.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = helloworld.h; sourceTree = "<group>"; };
 		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
@@ -943,6 +942,8 @@
 		0738923A20EE5A0C009056FD /* node */ = {
 			isa = PBXGroup;
 			children = (
+				076563B920F66CA8002C330B /* module_wrap.cc */,
+				076563B820F66CA8002C330B /* module_wrap.h */,
 				0738937220EFF976009056FD /* backtrace_posix.cc */,
 				0738937020EFF820009056FD /* javascript_cc.cc */,
 				073892FC20EE5F42009056FD /* node_http_parser.cc */,
@@ -985,7 +986,6 @@
 				0738929A20EE5E28009056FD /* node_contextify.cc */,
 				0738929520EE5E28009056FD /* node_debug_options.cc */,
 				0738925320EE5E20009056FD /* node_debug_options.h */,
-				0738929320EE5E27009056FD /* node_file.cc */,
 				0738924A20EE5E1F009056FD /* node_http2_state.h */,
 				0738927620EE5E23009056FD /* node_http2.cc */,
 				0738929420EE5E28009056FD /* node_http2.h */,
@@ -1018,7 +1018,6 @@
 				0738926D20EE5E22009056FD /* node.h */,
 				0738929720EE5E28009056FD /* pipe_wrap.cc */,
 				0738928B20EE5E26009056FD /* pipe_wrap.h */,
-				0738924520EE5E1F009056FD /* process_wrap.cc */,
 				0738925920EE5E20009056FD /* signal_wrap.cc */,
 				0738924620EE5E1F009056FD /* spawn_sync.cc */,
 				0738927A20EE5E24009056FD /* spawn_sync.h */,
@@ -1166,8 +1165,6 @@
 				0718F6892025FF0900C588AA /* cctest */,
 				076F5892201E797F004780FD /* LiquidCoreiOSTests.m */,
 				076F5894201E797F004780FD /* Info.plist */,
-				076F58F9201E8155004780FD /* helloworld.cpp */,
-				076F58FF201FB615004780FD /* helloworld.h */,
 				07CA454920F5244E00862266 /* ProcessTests.m */,
 			);
 			path = LiquidCoreiOSTests;
@@ -1234,6 +1231,7 @@
 				0738914220E8C0B3009056FD /* JSCPrivate.cpp */,
 				0738914320E8C0B3009056FD /* JSCPrivate.h */,
 				0738936E20EE6ED4009056FD /* Deprecated.cpp */,
+				076563BE20F66DF2002C330B /* Module.cpp */,
 			);
 			path = V82JSC;
 			sourceTree = "<group>";
@@ -1415,6 +1413,7 @@
 				0738920120EE0CEE009056FD /* ares_getenv.h in Headers */,
 				073891A220EE08A6009056FD /* tree.h in Headers */,
 				0738917E20EE07AC009056FD /* uv-threadpool.h in Headers */,
+				076563BA20F66CA8002C330B /* module_wrap.h in Headers */,
 				073892F620EE5E29009056FD /* util-inl.h in Headers */,
 				073892DB20EE5E29009056FD /* tty_wrap.h in Headers */,
 				073891A020EE07AC009056FD /* uv.h in Headers */,
@@ -1574,6 +1573,7 @@
 				0738920720EE0CEE009056FD /* ares_expand_name.c in Sources */,
 				0738922320EE0CEE009056FD /* ares__close_sockets.c in Sources */,
 				076F58E0201E7EF9004780FD /* Scopes.cpp in Sources */,
+				076563BB20F66CA8002C330B /* module_wrap.cc in Sources */,
 				073892D620EE5E29009056FD /* string_search.cc in Sources */,
 				0738934020EE64C5009056FD /* nghttp2_buf.c in Sources */,
 				0738936F20EE6ED4009056FD /* Deprecated.cpp in Sources */,
@@ -1606,7 +1606,6 @@
 				076F58E2201E7EF9004780FD /* Value.cpp in Sources */,
 				0738933D20EE64C5009056FD /* nghttp2_npn.c in Sources */,
 				0738922120EE0CEE009056FD /* ares_query.c in Sources */,
-				073892F120EE5E29009056FD /* node_file.cc in Sources */,
 				0738935B20EE64C5009056FD /* nghttp2_helper.c in Sources */,
 				0738913F20E631E6009056FD /* V82JSC.cpp in Sources */,
 				0738922E20EE0CEE009056FD /* ares_free_hostent.c in Sources */,
@@ -1672,6 +1671,7 @@
 				073892E420EE5E29009056FD /* js_stream.cc in Sources */,
 				07FE859A2075F6D40013E1B4 /* worker-thread.cc in Sources */,
 				0738921A20EE0CEE009056FD /* ares_mkquery.c in Sources */,
+				076563BF20F66DF2002C330B /* Module.cpp in Sources */,
 				0738919E20EE07AC009056FD /* kqueue.c in Sources */,
 				0738922C20EE0CEE009056FD /* ares_writev.c in Sources */,
 				073892BB20EE5E29009056FD /* string_bytes.cc in Sources */,
@@ -1760,7 +1760,6 @@
 				0738919820EE07AC009056FD /* tcp.c in Sources */,
 				0738918A20EE07AC009056FD /* poll.c in Sources */,
 				073892DC20EE5E29009056FD /* util.cc in Sources */,
-				073892A320EE5E29009056FD /* process_wrap.cc in Sources */,
 				073892F520EE5E29009056FD /* pipe_wrap.cc in Sources */,
 				0738920320EE0CEE009056FD /* inet_net_pton.c in Sources */,
 				07FE85AA2075F7A90013E1B4 /* bits.cc in Sources */,
@@ -1782,7 +1781,6 @@
 				07A7CF09209220C000352ABF /* print-extension.cc in Sources */,
 				07CA454A20F5244E00862266 /* ProcessTests.m in Sources */,
 				07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */,
-				076F58FA201E8155004780FD /* helloworld.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

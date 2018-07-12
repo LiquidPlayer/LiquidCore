@@ -160,7 +160,11 @@ static T callAsCallback(JSContextRef ctx,
                         JSValueRef *exception)
 {
     bool isConstructCall = std::is_same<T, JSObjectRef>::value;
-    IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    IsolateImpl *iso;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    }
     Isolate *isolate = V82JSC::ToIsolate(iso);
     v8::Locker lock(isolate);
 

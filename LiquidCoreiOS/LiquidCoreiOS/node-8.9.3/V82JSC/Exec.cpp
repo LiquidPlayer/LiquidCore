@@ -12,7 +12,11 @@ using namespace v8;
 
 JSObjectRef V82JSC::make_exec_function(JSGlobalContextRef gctx, const char *body, int argc)
 {
-    IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[gctx];
+    IsolateImpl* iso;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        iso = IsolateImpl::s_context_to_isolate_map[gctx];
+    }
     JSValueRef exception = 0;
 
     JSStringRef argNames[argc];

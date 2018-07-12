@@ -14,16 +14,12 @@
 @property (nonatomic, readwrite) NSString* cwd;
 @property (nonatomic, readonly) JSValue *fs;
 @property (nonatomic, readonly) JSValue *alias;
-@property (nonatomic, readwrite) NSMutableArray *aliases_;
-@property (nonatomic, readwrite) NSMutableArray *access_;
 @end
 
 @interface FileSystemImpl : FileSystem<FileSystemExports>
 @property (nonatomic, readwrite) NSString* cwd;
 @property (nonatomic, readwrite) JSValue *fs;
 @property (nonatomic, readwrite) JSValue *alias;
-@property (nonatomic, readwrite) NSMutableArray *aliases_;
-@property (nonatomic, readwrite) NSMutableArray *access_;
 
 @property (nonatomic, copy) NSString *uniqueID;
 @property (nonatomic, copy) NSString *sessionID;
@@ -46,7 +42,7 @@
     return fs;
 }
 
-- (void)uninstallLocal:(NSString *)uniqueID {}
++ (void)uninstallLocal:(NSString *)uniqueID {}
 - (void)cleanUp {}
 @end
 
@@ -65,7 +61,7 @@
 {
     self = [super init];
     if (self) {
-        _js = [[NSMutableString alloc] init];
+        _js = [[NSMutableString alloc] initWithString:@"fs_.aliases_={};fs_.access_={};"];
     }
     return self;
 }
@@ -125,15 +121,22 @@
     [self alias:alias ios:target mask:mask];
 }
 
-- (void) symlinkRealTarget:(NSString*)alias target:(NSString*)target linkpath:(NSString*)linkpath mask:(MediaAccessMask)mask
+- (void) mkdirAndSymlink:(NSString*)alias target:(NSString*)target linkpath:(NSString*)linkpath mask:(MediaAccessMask)mask
 {
-    [self append:@"(function(){fs.symlinkSync("];
-    [self realDir:target];
-    [self append:@",'"];
-    [self append:linkpath];
-    [self append:@"');})();"];
-
-    [self alias:alias ios:target mask:mask];
+    NSError *error;
+    
+    if (![[NSFileManager defaultManager] createDirectoryAtPath:target
+                                   withIntermediateDirectories:YES
+                                                    attributes:nil
+                                                         error:&error])
+    {
+        NSLog(@"Create directory error: %@", error);
+    }
+    else
+    {
+        NSLog(@"mkdir: Created directory %@", target);
+    }
+    [self symlink:alias target:target linkpath:linkpath mask:mask];
 }
 @end
 
@@ -209,9 +212,6 @@ static NSString* alias_code =
         }
         [FileSystemImpl.activeSessions addObject:_sessionID];
         
-        _aliases_ = [[NSMutableArray alloc] init];
-        _access_ = [[NSMutableArray alloc] init];
-        
         [self setUp:context mediaAccessMask:mask];
         
         _fs = [context evaluateScript:fs_code];
@@ -249,17 +249,26 @@ static NSString* alias_code =
     {
         NSLog(@"mkdir: Created directory %@", module);
     }
-    [js symlinkRealTarget:@"/home/module"
-                   target:module
-                 linkpath:[NSString stringWithFormat:@"%@/home/module", sessionPath]
-                     mask:PermissionsRead];
+    [js symlink:@"/home/module"
+         target:module
+       linkpath:[NSString stringWithFormat:@"%@/home/module", sessionPath]
+           mask:PermissionsRead];
     
     // Set up /home/temp (read/write)
-    [js mkdir:@"/home/temp" ios:[NSString stringWithFormat:@"%@/temp", sessionPath] mask:PermissionsRW];
+    [js mkdirAndSymlink:@"/home/temp"
+                    target:[NSString stringWithFormat:@"%@/temp", sessionPath]
+               linkpath:[NSString stringWithFormat:@"%@/home/temp", sessionPath]
+                   mask:PermissionsRW];
     // Set up /home/cache (read/write)
-    [js mkdir:@"/home/cache" ios:[NSString stringWithFormat:@"%@/cache", path] mask:PermissionsRW];
+    [js mkdirAndSymlink:@"/home/cache"
+                 target:[NSString stringWithFormat:@"%@/cache", path]
+               linkpath:[NSString stringWithFormat:@"%@/home/cache", sessionPath]
+                   mask:PermissionsRW];
     // Set up /home/local (read/write)
-    [js mkdir:@"/home/local" ios:[NSString stringWithFormat:@"%@/local", localPath] mask:PermissionsRW];
+    [js mkdirAndSymlink:@"/home/local"
+                    target:[NSString stringWithFormat:@"%@/local", localPath]
+               linkpath:[NSString stringWithFormat:@"%@/home/local", sessionPath]
+                   mask:PermissionsRW];
     // Permit access to node_modules
     [js symlink:@"/home/node_modules"
          target:node_modules
@@ -270,7 +279,7 @@ static NSString* alias_code =
     
     context[@"fs_"] = self;
     [context evaluateScript:js.js];
-    context[@"fs_"] = [JSValue valueWithUndefinedInContext:context];
+    [[context globalObject] deleteProperty:@"fs_"];
 }
 
 + (NSMutableArray *)activeSessions
@@ -282,7 +291,7 @@ static NSString* alias_code =
 {
     NSError *error = nil;
     NSString* homedir = NSHomeDirectory();
-    NSString* session = [NSString stringWithFormat:@"%@/__org.liquidplayer.node__/sessions/%@", homedir, sessionId];
+    NSString* session = [NSString stringWithFormat:@"%@/tmp/__org.liquidplayer.node__/sessions/%@", homedir, sessionId];
     NSLog(@"sessionWatchdog: deleting session %@", sessionId);
 
     [[NSFileManager defaultManager] removeItemAtPath:session error:&error];
@@ -296,7 +305,7 @@ static NSString* alias_code =
     if ([lastBark timeIntervalSinceNow] < -5 * 60) {
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             NSString* homedir = NSHomeDirectory();
-            NSString* sessions = [NSString stringWithFormat:@"%@/__org.liquidplayer.node__/sessions", homedir];
+            NSString* sessions = [NSString stringWithFormat:@"%@/tmp/__org.liquidplayer.node__/sessions", homedir];
 
             NSFileManager *fileManager = [NSFileManager defaultManager];
             
@@ -305,7 +314,8 @@ static NSString* alias_code =
             NSString* path;
             while (path = [enumerator nextObject])
             {
-                if (![FileSystemImpl.activeSessions containsObject:path]) {
+                if (![path containsString:@"/"] &&
+                    ![FileSystemImpl.activeSessions containsObject:path]) {
                     [FileSystemImpl uninstallSession:path];
                 }
             }

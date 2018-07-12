@@ -66,7 +66,7 @@ StartupData V8::WarmUpSnapshotDataBlob(StartupData cold_startup_blob,
  */
 void V8::SetFlagsFromString(const char* str, int length)
 {
-    assert(0);
+    // V8 flags not supported
 }
 
 /**
@@ -209,8 +209,13 @@ bool V8::RegisterDefaultSignalHandler()
 
 Value* V8::Eternalize(Isolate* isolate, Value* handle)
 {
-    assert(0);
-    return nullptr;
+    HandleScope scope(isolate);
+    IsolateImpl *iso = V82JSC::ToIsolateImpl(isolate);
+    Local<Value> local = V82JSC::CreateLocal<Value>(isolate, V82JSC::ToImpl<ValueImpl>(handle));
+    auto persistent = new Copyable(Value)(isolate, local);
+    iso->m_eternal_handles.push_back(persistent);
+    
+    return *reinterpret_cast<Value**>(persistent);
 }
 
 void V8::RegisterExternallyReferencedObject(internal::Object** object,

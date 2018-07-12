@@ -26,6 +26,7 @@ struct Roots {
 const intptr_t v8::internal::Isolate::name##_debug_offset_ = (reinterpret_cast<intptr_t>(&(reinterpret_cast<v8::internal::Isolate*>(16)->name##_)) - 16);
 ISOLATE_INIT_LIST(DECLARE_FIELDS);
 
+std::mutex IsolateImpl::s_isolate_mutex;
 std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map;
 
 static void triggerGarbageCollection(IsolateImpl* iso)
@@ -97,6 +98,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_jsobjects = std::map<JSObjectRef, ValueImpl*>();
     impl->m_before_call_callbacks = std::vector<BeforeCallEnteredCallback>();
     impl->m_call_completed_callbacks = std::vector<CallCompletedCallback>();
+    impl->m_eternal_handles = std::vector<Copyable(v8::Value) *>();
 
     impl->m_locker = nullptr;
     impl->m_entered_count = 0;
@@ -516,8 +518,11 @@ void Isolate::Dispose()
     isolate->m_internalized_strings.clear();
 
     JSContextGroupRelease(isolate->m_group);
-    for (auto i=isolate->m_global_contexts.begin(); i != isolate->m_global_contexts.end(); i++) {
-        IsolateImpl::s_context_to_isolate_map.erase(i->first);
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        for (auto i=isolate->m_global_contexts.begin(); i != isolate->m_global_contexts.end(); i++) {
+            IsolateImpl::s_context_to_isolate_map.erase(i->first);
+        }
     }
     isolate->m_global_contexts.clear();
     isolate->m_exec_maps.clear();
@@ -534,6 +539,12 @@ void Isolate::Dispose()
     isolate->m_gc_epilogue_callbacks.clear();
     isolate->m_second_pass_callbacks.clear();
     isolate->m_jsobjects.clear();
+    
+    for (auto i=isolate->m_eternal_handles.begin(); i!=isolate->m_eternal_handles.end(); ++i) {
+        (*i)->Reset();
+        delete (*i);
+    }
+    isolate->m_eternal_handles.clear();
 
     auto thread = IsolateImpl::PerThreadData::Get(isolate);
     for (auto i=IsolateImpl::s_thread_data.begin(); i!=IsolateImpl::s_thread_data.end(); i++) {
@@ -543,11 +554,14 @@ void Isolate::Dispose()
     }
     delete thread;
 
-    for (auto i=IsolateImpl::s_context_to_isolate_map.begin(); i!=IsolateImpl::s_context_to_isolate_map.end(); ) {
-        if (i->second == isolate) {
-            IsolateImpl::s_context_to_isolate_map.erase(i++);
-        } else {
-            i++;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        for (auto i=IsolateImpl::s_context_to_isolate_map.begin(); i!=IsolateImpl::s_context_to_isolate_map.end(); ) {
+            if (i->second == isolate) {
+                IsolateImpl::s_context_to_isolate_map.erase(i++);
+            } else {
+                i++;
+            }
         }
     }
     
@@ -718,7 +732,7 @@ size_t Isolate::NumberOfPhantomHandleResetsSinceLastCall()
  */
 HeapProfiler* Isolate::GetHeapProfiler()
 {
-    assert(0);
+    // FIXME: assert(0);
     return nullptr;
 }
 
@@ -1126,7 +1140,7 @@ void Isolate::SetPromiseHook(PromiseHook hook)
  */
 void Isolate::SetPromiseRejectCallback(PromiseRejectCallback callback)
 {
-    assert(0);
+    //FIXME! assert(0);
 }
 
 /**

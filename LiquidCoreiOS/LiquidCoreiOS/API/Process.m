@@ -34,21 +34,21 @@
 
 @implementation LoopPreserver {
     void *preserver;
-    Process *process_;
+    void *processRef_;
 }
-- (id) init:(Process*)process
+- (id) init:(void*)processRef
 {
     self = [super init];
     if (self) {
-        process_ = process;
-        preserver = process_keep_alive((__bridge void*)process);
+        processRef_ = processRef;
+        preserver = process_keep_alive(processRef);
     }
     return self;
 }
 - (void) letDie
 {
     if (preserver) {
-        process_let_die((__bridge void*)process_, preserver);
+        process_let_die(processRef_, preserver);
     }
     preserver = NULL;
 }
@@ -74,7 +74,8 @@
 static void onNodeStarted(void *data, JSContextRef ctxRef, JSContextGroupRef ctxGroupRef)
 {
     Process *process = (__bridge Process*) data;
-    [process onNodeStarted:(__bridge JSContext*)ctxRef group:ctxGroupRef];
+    [process onNodeStarted:[JSContext contextWithJSGlobalContextRef:JSContextGetGlobalContext(ctxRef)]
+                     group:ctxGroupRef];
 }
 
 static void onNodeExit(void *data, int code)
@@ -142,6 +143,9 @@ static void onNodeExit(void *data, int code)
             
             // set the filesystem
             fs_ = [FileSystem createInContext:self.context uniqueID:uniqueID_ mediaAccessMask:mediaAccessMask_];
+            JSValue *o = [JSValue valueWithNewObjectInContext:self.context];
+            o[@"fs"] = fs_;
+            process_set_filesystem([self.context JSGlobalContextRef], (JSObjectRef)[o[@"fs"] JSValueRef]);
             
             // set the exit handler
             self.context[@"__tmp"] = [JSValue valueWithObject:^(int code) {
@@ -262,7 +266,7 @@ static void callback_(void *data)
 
 - (id<LoopPreserver>) keepAlive
 {
-    return [[LoopPreserver alloc] init:self];
+    return [[LoopPreserver alloc] init:processRef_];
 }
 
 + (void) uninstall:(NSString*)uniqueID scope:(UninstallScope)scope

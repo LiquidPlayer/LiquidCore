@@ -214,7 +214,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
         JSClassRelease(claz);
         JSContextRef ctxRef = context->m_ctxRef;
-        IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
+        {
+            std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+            IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
+        }
         i->m_exec_maps[(JSGlobalContextRef)context->m_ctxRef] = std::map<const char*, JSObjectRef>();
 
         def = kJSClassDefinitionEmpty;
@@ -268,7 +271,10 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSClassDefinition def = kJSClassDefinitionEmpty;
         JSClassRef claz = JSClassCreate(&def);
         context->m_ctxRef = JSGlobalContextCreateInGroup(i->m_group, claz);
-        IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
+        {
+            std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+            IsolateImpl::s_context_to_isolate_map[(JSGlobalContextRef)context->m_ctxRef] = i;
+        }
         JSClassRelease(claz);
     }
     
@@ -443,7 +449,11 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         def.callAsFunction = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
                                 size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) ->JSValueRef
         {
-            IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            IsolateImpl* iso;
+            {
+                std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+                iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            }
             Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
             
             HandleScope scope(isolate);
@@ -696,7 +706,11 @@ void Context::SetAlignedPointerInEmbedderData(int index, void* value)
 static JSValueRef DisallowCodeGenFromStrings(JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
                                              size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception)
 {
-    IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    IsolateImpl* iso;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    }
     Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
     
     HandleScope scope(isolate);
@@ -746,7 +760,11 @@ void Context::AllowCodeGenerationFromStrings(bool allow)
         def.callAsFunction = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
                                 size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) ->JSValueRef
         {
-            IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            IsolateImpl* iso;
+            {
+                std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+                iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            }
             Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
             
             HandleScope scope(isolate);

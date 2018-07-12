@@ -394,7 +394,11 @@ struct V82JSC {
                                   const JSValueRef *argv, JSValueRef *pexcp=nullptr)
     {
         JSGlobalContextRef gctx = JSContextGetGlobalContext(ctx);
-        IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[gctx];
+        IsolateImpl* iso;
+        {
+            std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+            iso = IsolateImpl::s_context_to_isolate_map[gctx];
+        }
         JSObjectRef function = iso->m_exec_maps[gctx].count(body) == 0 ?
             make_exec_function(gctx, body, argc) :
             iso->m_exec_maps[gctx][body];

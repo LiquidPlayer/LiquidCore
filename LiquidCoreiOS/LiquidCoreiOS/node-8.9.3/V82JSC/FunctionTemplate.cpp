@@ -502,7 +502,11 @@ JSValueRef FunctionTemplateImpl::callAsConstructorCallback(JSContextRef ctx,
                                                            const JSValueRef *arguments,
                                                            JSValueRef *exception)
 {
-    IsolateImpl *isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    IsolateImpl *isolateimpl;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    }
     v8::Locker lock(V82JSC::ToIsolate(isolateimpl));
     
     Isolate *isolate = V82JSC::ToIsolate(isolateimpl);

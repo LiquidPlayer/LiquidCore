@@ -36,7 +36,11 @@ void setPrivateInstance(IsolateImpl* iso, JSContextRef ctx, TrackedObjectImpl* i
         assert(persistent);
         JSGlobalContextRef ctx = JSObjectGetGlobalContext(object);
         assert(ctx);
-        IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[ctx];
+        IsolateImpl *iso;
+        {
+            std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+            iso = IsolateImpl::s_context_to_isolate_map[ctx];
+        }
         if (!iso) return;
 
         HandleScope scope(V82JSC::ToIsolate(iso));
@@ -73,7 +77,11 @@ TrackedObjectImpl* makePrivateInstance(IsolateImpl* iso, JSContextRef ctx, JSObj
 
 TrackedObjectImpl* getPrivateInstance(JSContextRef ctx, JSObjectRef object)
 {
-    IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    IsolateImpl *iso;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    }
     HandleScope scope(V82JSC::ToIsolate(iso));
     //JSObjectRef maybe_proxy_object = JSObjectGetProxyTarget(object);
     JSValueRef args[] = {
@@ -227,7 +235,11 @@ Local<Value> TrackedObjectImpl::SecureValue(Local<Value> in, Local<Context> toCo
         def.callAsFunction = [](JSContextRef ctx, JSObjectRef proxy_function, JSObjectRef thisObject,
                                 size_t argumentCount, const JSValueRef *arguments, JSValueRef *exception) ->JSValueRef
         {
-            IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            IsolateImpl* iso;
+            {
+                std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+                iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+            }
             Isolate* isolate = V82JSC::ToIsolate(iso);
             HandleScope scope(isolate);
             

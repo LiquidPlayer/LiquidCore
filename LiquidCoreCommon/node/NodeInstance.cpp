@@ -608,6 +608,8 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
 #endif
   HandleScope handle_scope(isolate);
   JSGlobalContextRef ctxRef = nullptr;
+    
+#ifdef __ANDROID__
   JSClassRef globalClass = nullptr;
   {
     JSClassDefinition definition = kJSClassDefinitionEmpty;
@@ -616,11 +618,11 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
     ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
   }
   JSClassRelease(globalClass);
-#ifdef __ANDROID__
   auto java_node_context = ctxRef->Context();
   Local<Context> context = java_node_context->Value();
 #else
-  Local<Context> context = LocalContextImpl::New(isolate, ctxRef);
+    Local<Context> context = Context::New(isolate);
+    ctxRef = (JSGlobalContextRef) V82JSC::ToContextRef(context);
 #endif
   /* ===End */
 
@@ -861,6 +863,8 @@ inline void NodeInstance::PlatformInit() {
 #endif  // _WIN32
 }
 
+std::mutex init_mutex;
+
 int NodeInstance::StartInstance(int argc, char *argv[]) {
   atexit([] () { uv_tty_reset_mode(); });
   PlatformInit();
@@ -875,7 +879,11 @@ int NodeInstance::StartInstance(int argc, char *argv[]) {
   // optional, in case you're wondering.
   int exec_argc;
   const char** exec_argv;
-  Init(&argc, const_cast<const char**>(argv), &exec_argc, &exec_argv);
+    
+  {
+    std::unique_lock<std::mutex> lk(init_mutex);
+    Init(&argc, const_cast<const char**>(argv), &exec_argc, &exec_argv);
+  }
 
 #if HAVE_OPENSSL
   {

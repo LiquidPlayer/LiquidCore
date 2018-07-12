@@ -114,6 +114,7 @@ struct IsolateImpl {
     v8::Isolate::CreateParams m_params;
     
     std::map<JSGlobalContextRef, Copyable(v8::Context)> m_global_contexts;
+    static std::mutex s_isolate_mutex;
     static std::map<JSGlobalContextRef, IsolateImpl*> s_context_to_isolate_map;
     
     std::map<JSGlobalContextRef, std::map<const char *, JSObjectRef>> m_exec_maps;
@@ -241,6 +242,8 @@ struct IsolateImpl {
     std::vector<BeforeCallEnteredCallback> m_before_call_callbacks;
     std::vector<CallCompletedCallback> m_call_completed_callbacks;
     v8::Isolate::AbortOnUncaughtExceptionCallback m_on_uncaught_exception_callback;
+    
+    std::vector<Copyable(v8::Value) *> m_eternal_handles;
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);

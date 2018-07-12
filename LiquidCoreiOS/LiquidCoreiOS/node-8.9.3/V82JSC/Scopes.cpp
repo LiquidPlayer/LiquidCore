@@ -496,7 +496,11 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
     
     iso->weakJSObjectFinalized = [&](JSGlobalContextRef ctx, JSObjectRef obj)
     {
-        IsolateImpl* iso = IsolateImpl::s_context_to_isolate_map[ctx];
+        IsolateImpl* iso;
+        {
+            std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+            iso = IsolateImpl::s_context_to_isolate_map[ctx];
+        }
         for (auto i=iso->m_second_pass_callbacks.begin(); i!=iso->m_second_pass_callbacks.end(); ++i) {
             if ((*i).object_ == obj) {
                 (*i).ready_to_call = true;

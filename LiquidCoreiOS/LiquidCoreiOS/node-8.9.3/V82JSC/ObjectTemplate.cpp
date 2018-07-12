@@ -201,7 +201,11 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     //  deleteProperty - target, property                  -> True (deleted), False (not deleted)
     //  has            - target, property                  -> True (has), False (not has)
     //  ownKeys        - target                            -> Array of keys
-    IsolateImpl *isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    IsolateImpl *isolateimpl;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        isolateimpl = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+    }
     Isolate *isolate = V82JSC::ToIsolate(isolateimpl);
     v8::Locker lock(isolate);
 
@@ -535,7 +539,11 @@ static JSValueRef proxy_ownKeys(CALLBACK_PARAMS)
     (PASS, [](NAMED_PARAMS(v8::Array)) { config.enumerator(info); },
      [](INDEXED_PARAMS(v8::Array)) { config.enumerator(info); });
     if (!*exception && ret == NULL) {
-        IsolateImpl *iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+        IsolateImpl *iso;
+        {
+            std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+            iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+        }
         assert(argumentCount>0);
         JSValueRef args[] = {
             arguments[0],
@@ -588,7 +596,11 @@ static JSValueRef proxy_getPrototypeOf(CALLBACK_PARAMS)
 {
     assert(argumentCount>0);
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
-    Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+    Isolate *isolate;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+    }
     HandleScope scope(isolate);
     Local<Context> context = LocalContextImpl::New(isolate, ctx);
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
@@ -605,7 +617,11 @@ static JSValueRef proxy_setPrototypeOf(CALLBACK_PARAMS)
 {
     assert(argumentCount>1);
     TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
-    Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+    Isolate *isolate;
+    {
+        std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+        isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+    }
     HandleScope scope(isolate);
     Local<Context> context = LocalContextImpl::New(isolate, ctx);
     ObjectTemplateImpl *templ = V82JSC::ToImpl<ObjectTemplateImpl>(wrap->m_object_template.Get(isolate));
@@ -814,7 +830,11 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
         JSObjectRef propagate_set = JSObjectMakeFunctionWithCallback(ctx->m_ctxRef, sname, [](CALLBACK_PARAMS) -> JSValueRef {
             TrackedObjectImpl *wrap = getPrivateInstance(ctx, (JSObjectRef)arguments[0]);
             assert(wrap && wrap->m_hidden_proxy_security);
-            Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+            Isolate *isolate;
+            {
+                std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+                isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+            }
             HandleScope scope(isolate);
             Local<Context> context = LocalContextImpl::New(isolate, ctx);
             Local<Name> property = ValueImpl::New(V82JSC::ToContextImpl(context), arguments[1]).As<Name>();
