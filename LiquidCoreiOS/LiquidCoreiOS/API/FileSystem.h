@@ -12,6 +12,7 @@
 #import "Process.h"
 
 @interface FileSystem : NSObject
+@property (nonatomic, copy) NSString* modulePath;
 + (id) createInContext:(JSContext *)context
               uniqueID:(NSString*)uniqueID
        mediaAccessMask:(MediaAccessMask)mask;

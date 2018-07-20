@@ -126,6 +126,22 @@ Local<Array> Object::GetOwnPropertyNames()
     return GetOwnPropertyNames(isolate->GetCurrentContext()).ToLocalChecked();
 }
 
+// Sets an own property on this object bypassing interceptors and
+// overriding accessors or read-only properties.
+//
+// Note that if the object has an interceptor the property will be set
+// locally, but since the interceptor takes precedence the local property
+// will only be returned if the interceptor doesn't return a value.
+//
+// Note also that this only works for named properties.
+Maybe<bool> Object::ForceSet(Local<Context> context,
+                             Local<Value> key, Local<Value> value,
+                             PropertyAttribute attribs)
+{
+    return DefineOwnProperty(context, key.As<Name>(), value, attribs);
+}
+
+
 Local<String> String::NewFromUtf8(Isolate* isolate, char const* str, String::NewStringType type, int length)
 {
     return String::NewFromUtf8(isolate, str,

@@ -257,9 +257,10 @@ static T callAsCallback(JSContextRef ctx,
 
     if (try_catch.HasCaught()) {
         *exception = V82JSC::ToJSValueRef(try_catch.Exception(), context);
-    } else if (thread->m_scheduled_exception != the_hole) {
-        internal::Object * excep = thread->m_scheduled_exception;
-        *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
+        if (!*exception && thread->m_scheduled_exception != the_hole) {
+            internal::Object * excep = thread->m_scheduled_exception;
+            *exception = V82JSC::ToJSValueRef_<Value>(excep, context);
+        }
         thread->m_scheduled_exception = the_hole;
     }
 

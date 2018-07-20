@@ -7,10 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		072E6C8520FCE17800B80349 /* node_crypto_groups.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6C7D20FCE17700B80349 /* node_crypto_groups.h */; };
+		072E6C8620FCE17800B80349 /* node_crypto_bio.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6C7E20FCE17700B80349 /* node_crypto_bio.h */; };
+		072E6C8720FCE17800B80349 /* node_crypto_clienthello-inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6C7F20FCE17700B80349 /* node_crypto_clienthello-inl.h */; };
+		072E6C8820FCE17800B80349 /* node_crypto.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6C8020FCE17700B80349 /* node_crypto.h */; };
+		072E6C8920FCE17800B80349 /* node_crypto_clienthello.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6C8120FCE17700B80349 /* node_crypto_clienthello.h */; };
+		072E6C8A20FCE17800B80349 /* node_crypto_bio.cc in Sources */ = {isa = PBXBuildFile; fileRef = 072E6C8220FCE17800B80349 /* node_crypto_bio.cc */; };
+		072E6C8B20FCE17800B80349 /* node_crypto_clienthello.cc in Sources */ = {isa = PBXBuildFile; fileRef = 072E6C8320FCE17800B80349 /* node_crypto_clienthello.cc */; };
+		072E6C8C20FCE17800B80349 /* node_crypto.cc in Sources */ = {isa = PBXBuildFile; fileRef = 072E6C8420FCE17800B80349 /* node_crypto.cc */; };
+		072E6C9920FCF16600B80349 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 072E6C9720FCF16600B80349 /* libcrypto.a */; };
+		072E6C9A20FCF16600B80349 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 072E6C9820FCF16600B80349 /* libssl.a */; };
+		072E6C9D20FCF1F800B80349 /* tls_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 072E6C9B20FCF1F700B80349 /* tls_wrap.cc */; };
+		072E6C9E20FCF1F800B80349 /* tls_wrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6C9C20FCF1F800B80349 /* tls_wrap.h */; };
+		072E6CA120FCF37300B80349 /* node_dtrace.cc in Sources */ = {isa = PBXBuildFile; fileRef = 072E6C9F20FCF37200B80349 /* node_dtrace.cc */; };
+		072E6CA220FCF37300B80349 /* node_dtrace.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6CA020FCF37300B80349 /* node_dtrace.h */; };
+		072E6CA520FCF6FC00B80349 /* node_provider.h in Headers */ = {isa = PBXBuildFile; fileRef = 072E6CA420FCF6FC00B80349 /* node_provider.h */; };
 		0738913F20E631E6009056FD /* V82JSC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738913E20E631E6009056FD /* V82JSC.cpp */; };
 		0738914420E8C0B3009056FD /* JSCPrivate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738914220E8C0B3009056FD /* JSCPrivate.cpp */; };
 		0738914520E8C0B3009056FD /* JSCPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738914320E8C0B3009056FD /* JSCPrivate.h */; };
-		0738914B20EBBF77009056FD /* machine in Resources */ = {isa = PBXBuildFile; fileRef = 0738914A20EBBF76009056FD /* machine */; };
 		0738917720EE07AC009056FD /* uv-version.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738914D20EE07A7009056FD /* uv-version.h */; };
 		0738917820EE07AC009056FD /* dl.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738914E20EE07A7009056FD /* dl.c */; };
 		0738917920EE07AC009056FD /* fsevents.c in Sources */ = {isa = PBXBuildFile; fileRef = 0738914F20EE07A7009056FD /* fsevents.c */; };
@@ -271,7 +285,6 @@
 		0738936B20EE661C009056FD /* nghttp2ver.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738936920EE661C009056FD /* nghttp2ver.h */; };
 		0738936D20EE6B3D009056FD /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0738923320EE0E2B009056FD /* libz.tbd */; };
 		0738936F20EE6ED4009056FD /* Deprecated.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738936E20EE6ED4009056FD /* Deprecated.cpp */; };
-		0738937120EFF820009056FD /* javascript_cc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738937020EFF820009056FD /* javascript_cc.cc */; };
 		0738937320EFF976009056FD /* backtrace_posix.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738937220EFF976009056FD /* backtrace_posix.cc */; };
 		0738937E20EFFF0F009056FD /* NodeInstance.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738937720EFFF0F009056FD /* NodeInstance.h */; };
 		0738937F20EFFF0F009056FD /* nodedroid_file.h in Headers */ = {isa = PBXBuildFile; fileRef = 0738937820EFFF0F009056FD /* nodedroid_file.h */; };
@@ -282,8 +295,43 @@
 		076563BA20F66CA8002C330B /* module_wrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563B820F66CA8002C330B /* module_wrap.h */; };
 		076563BB20F66CA8002C330B /* module_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563B920F66CA8002C330B /* module_wrap.cc */; };
 		076563BF20F66DF2002C330B /* Module.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076563BE20F66DF2002C330B /* Module.cpp */; };
+		076563C120F7A85D002C330B /* FileSystemTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076563C020F7A85D002C330B /* FileSystemTests.m */; };
+		076563C820F8B47A002C330B /* node_javascript.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563C720F8B47A002C330B /* node_javascript.cc */; };
+		076563CA20F9DF62002C330B /* node_modules in Resources */ = {isa = PBXBuildFile; fileRef = 076563C920F9DF62002C330B /* node_modules */; };
+		076563D720F9E50E002C330B /* gcc-preinclude.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563CE20F9E50E002C330B /* gcc-preinclude.h */; };
+		076563D820F9E50E002C330B /* async.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563CF20F9E50E002C330B /* async.h */; };
+		076563D920F9E50E002C330B /* statement.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563D020F9E50E002C330B /* statement.cc */; };
+		076563DA20F9E50E002C330B /* database.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563D120F9E50E002C330B /* database.cc */; };
+		076563DB20F9E50E002C330B /* statement.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563D220F9E50E002C330B /* statement.h */; };
+		076563DC20F9E50E002C330B /* macros.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563D320F9E50E002C330B /* macros.h */; };
+		076563DD20F9E50E002C330B /* node_sqlite3.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563D420F9E50E002C330B /* node_sqlite3.cc */; };
+		076563DE20F9E50E002C330B /* database.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563D520F9E50E002C330B /* database.h */; };
+		076563DF20F9E50E002C330B /* threading.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563D620F9E50E002C330B /* threading.h */; };
+		076563E120F9E538002C330B /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 076563E020F9E537002C330B /* libsqlite3.tbd */; };
+		076563F620F9E611002C330B /* nan_typedarray_contents.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E320F9E610002C330B /* nan_typedarray_contents.h */; };
+		076563F720F9E611002C330B /* nan_new.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E420F9E610002C330B /* nan_new.h */; };
+		076563F820F9E611002C330B /* nan_object_wrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E520F9E610002C330B /* nan_object_wrap.h */; };
+		076563F920F9E611002C330B /* nan_private.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E620F9E610002C330B /* nan_private.h */; };
+		076563FA20F9E611002C330B /* nan_converters_pre_43_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E720F9E610002C330B /* nan_converters_pre_43_inl.h */; };
+		076563FB20F9E611002C330B /* nan_callbacks_pre_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E820F9E610002C330B /* nan_callbacks_pre_12_inl.h */; };
+		076563FC20F9E611002C330B /* nan_callbacks.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563E920F9E610002C330B /* nan_callbacks.h */; };
+		076563FD20F9E611002C330B /* nan_string_bytes.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563EA20F9E610002C330B /* nan_string_bytes.h */; };
+		076563FE20F9E611002C330B /* nan_implementation_pre_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563EB20F9E610002C330B /* nan_implementation_pre_12_inl.h */; };
+		076563FF20F9E611002C330B /* nan_callbacks_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563EC20F9E610002C330B /* nan_callbacks_12_inl.h */; };
+		0765640020F9E611002C330B /* nan.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563ED20F9E610002C330B /* nan.h */; };
+		0765640120F9E611002C330B /* nan_maybe_pre_43_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563EE20F9E611002C330B /* nan_maybe_pre_43_inl.h */; };
+		0765640220F9E611002C330B /* nan_converters.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563EF20F9E611002C330B /* nan_converters.h */; };
+		0765640320F9E611002C330B /* nan_converters_43_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F020F9E611002C330B /* nan_converters_43_inl.h */; };
+		0765640420F9E611002C330B /* nan_maybe_43_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F120F9E611002C330B /* nan_maybe_43_inl.h */; };
+		0765640520F9E611002C330B /* nan_persistent_pre_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F220F9E611002C330B /* nan_persistent_pre_12_inl.h */; };
+		0765640620F9E611002C330B /* nan_implementation_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F320F9E611002C330B /* nan_implementation_12_inl.h */; };
+		0765640720F9E611002C330B /* nan_weak.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F420F9E611002C330B /* nan_weak.h */; };
+		0765640820F9E611002C330B /* nan_persistent_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F520F9E611002C330B /* nan_persistent_12_inl.h */; };
+		0765640B20F9F1F9002C330B /* MicroService.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640A20F9F1F9002C330B /* MicroService.m */; };
+		0765640D20FBBD96002C330B /* MicroServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640C20FBBD96002C330B /* MicroServiceTests.m */; };
+		0765640F20FBBECC002C330B /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = 0765640E20FBBECC002C330B /* Resources */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
-		076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* LiquidCoreiOSTests.m */; };
+		076F5893201E797F004780FD /* V8Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* V8Tests.m */; };
 		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		076F58C8201E7B9C004780FD /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		076F58DE201E7EF9004780FD /* Context.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58D7201E7EF9004780FD /* Context.cpp */; };
@@ -380,6 +428,25 @@
 
 /* Begin PBXFileReference section */
 		0717F0FF205EA81D00AA75A7 /* V82JSC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = V82JSC.h; sourceTree = "<group>"; };
+		072E6C7D20FCE17700B80349 /* node_crypto_groups.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_crypto_groups.h; path = "../../../../deps/node-8.9.3/src/node_crypto_groups.h"; sourceTree = "<group>"; };
+		072E6C7E20FCE17700B80349 /* node_crypto_bio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_crypto_bio.h; path = "../../../../deps/node-8.9.3/src/node_crypto_bio.h"; sourceTree = "<group>"; };
+		072E6C7F20FCE17700B80349 /* node_crypto_clienthello-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "node_crypto_clienthello-inl.h"; path = "../../../../deps/node-8.9.3/src/node_crypto_clienthello-inl.h"; sourceTree = "<group>"; };
+		072E6C8020FCE17700B80349 /* node_crypto.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_crypto.h; path = "../../../../deps/node-8.9.3/src/node_crypto.h"; sourceTree = "<group>"; };
+		072E6C8120FCE17700B80349 /* node_crypto_clienthello.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_crypto_clienthello.h; path = "../../../../deps/node-8.9.3/src/node_crypto_clienthello.h"; sourceTree = "<group>"; };
+		072E6C8220FCE17800B80349 /* node_crypto_bio.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_crypto_bio.cc; path = "../../../../deps/node-8.9.3/src/node_crypto_bio.cc"; sourceTree = "<group>"; };
+		072E6C8320FCE17800B80349 /* node_crypto_clienthello.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_crypto_clienthello.cc; path = "../../../../deps/node-8.9.3/src/node_crypto_clienthello.cc"; sourceTree = "<group>"; };
+		072E6C8420FCE17800B80349 /* node_crypto.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_crypto.cc; path = "../../../../deps/node-8.9.3/src/node_crypto.cc"; sourceTree = "<group>"; };
+		072E6C8D20FCE1F800B80349 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = "../../../../tmp/openssl-1.0.2o/lib-ios/libssl.a"; sourceTree = "<group>"; };
+		072E6C8E20FCE1F800B80349 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "../../../../tmp/openssl-1.0.2o/lib-ios/libcrypto.a"; sourceTree = "<group>"; };
+		072E6C9120FCE33C00B80349 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = prebuilt/libcrypto.a; sourceTree = "<group>"; };
+		072E6C9220FCE33C00B80349 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = prebuilt/libssl.a; sourceTree = "<group>"; };
+		072E6C9720FCF16600B80349 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "../deps/openssl-1.0.2o/lib-ios/libcrypto.a"; sourceTree = "<group>"; };
+		072E6C9820FCF16600B80349 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = "../deps/openssl-1.0.2o/lib-ios/libssl.a"; sourceTree = "<group>"; };
+		072E6C9B20FCF1F700B80349 /* tls_wrap.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tls_wrap.cc; path = "../../../../deps/node-8.9.3/src/tls_wrap.cc"; sourceTree = "<group>"; };
+		072E6C9C20FCF1F800B80349 /* tls_wrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tls_wrap.h; path = "../../../../deps/node-8.9.3/src/tls_wrap.h"; sourceTree = "<group>"; };
+		072E6C9F20FCF37200B80349 /* node_dtrace.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_dtrace.cc; path = "../../../../deps/node-8.9.3/src/node_dtrace.cc"; sourceTree = "<group>"; };
+		072E6CA020FCF37300B80349 /* node_dtrace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_dtrace.h; path = "../../../../deps/node-8.9.3/src/node_dtrace.h"; sourceTree = "<group>"; };
+		072E6CA420FCF6FC00B80349 /* node_provider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = node_provider.h; sourceTree = "<group>"; };
 		0738913E20E631E6009056FD /* V82JSC.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = V82JSC.cpp; sourceTree = "<group>"; };
 		0738914220E8C0B3009056FD /* JSCPrivate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = JSCPrivate.cpp; sourceTree = "<group>"; };
 		0738914320E8C0B3009056FD /* JSCPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSCPrivate.h; sourceTree = "<group>"; };
@@ -649,7 +716,6 @@
 		0738936920EE661C009056FD /* nghttp2ver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nghttp2ver.h; path = "../../../../deps/node-8.9.3/deps/nghttp2/lib/includes/nghttp2/nghttp2ver.h"; sourceTree = "<group>"; };
 		0738936C20EE696F009056FD /* crt_externs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = crt_externs.h; sourceTree = "<group>"; };
 		0738936E20EE6ED4009056FD /* Deprecated.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Deprecated.cpp; sourceTree = "<group>"; };
-		0738937020EFF820009056FD /* javascript_cc.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = javascript_cc.cc; sourceTree = "<group>"; };
 		0738937220EFF976009056FD /* backtrace_posix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = backtrace_posix.cc; path = "../../../../deps/node-8.9.3/src/backtrace_posix.cc"; sourceTree = "<group>"; };
 		0738937720EFFF0F009056FD /* NodeInstance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NodeInstance.h; path = ../../LiquidCoreCommon/node/NodeInstance.h; sourceTree = "<group>"; };
 		0738937820EFFF0F009056FD /* nodedroid_file.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nodedroid_file.h; path = ../../LiquidCoreCommon/node/nodedroid_file.h; sourceTree = "<group>"; };
@@ -660,11 +726,47 @@
 		076563B820F66CA8002C330B /* module_wrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = module_wrap.h; path = "../../../../deps/node-8.9.3/src/module_wrap.h"; sourceTree = "<group>"; };
 		076563B920F66CA8002C330B /* module_wrap.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = module_wrap.cc; path = "../../../../deps/node-8.9.3/src/module_wrap.cc"; sourceTree = "<group>"; };
 		076563BE20F66DF2002C330B /* Module.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Module.cpp; sourceTree = "<group>"; };
+		076563C020F7A85D002C330B /* FileSystemTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FileSystemTests.m; sourceTree = "<group>"; };
+		076563C720F8B47A002C330B /* node_javascript.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = node_javascript.cc; sourceTree = "<group>"; };
+		076563C920F9DF62002C330B /* node_modules */ = {isa = PBXFileReference; lastKnownFileType = folder; name = node_modules; path = LiquidCoreiOS/resources/node_modules; sourceTree = "<group>"; };
+		076563CE20F9E50E002C330B /* gcc-preinclude.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "gcc-preinclude.h"; path = "../../../../deps/node-sqlite3/src/gcc-preinclude.h"; sourceTree = "<group>"; };
+		076563CF20F9E50E002C330B /* async.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = async.h; path = "../../../../deps/node-sqlite3/src/async.h"; sourceTree = "<group>"; };
+		076563D020F9E50E002C330B /* statement.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = statement.cc; path = "../../../../deps/node-sqlite3/src/statement.cc"; sourceTree = "<group>"; };
+		076563D120F9E50E002C330B /* database.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = database.cc; path = "../../../../deps/node-sqlite3/src/database.cc"; sourceTree = "<group>"; };
+		076563D220F9E50E002C330B /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = statement.h; path = "../../../../deps/node-sqlite3/src/statement.h"; sourceTree = "<group>"; };
+		076563D320F9E50E002C330B /* macros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macros.h; path = "../../../../deps/node-sqlite3/src/macros.h"; sourceTree = "<group>"; };
+		076563D420F9E50E002C330B /* node_sqlite3.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_sqlite3.cc; path = "../../../../deps/node-sqlite3/src/node_sqlite3.cc"; sourceTree = "<group>"; };
+		076563D520F9E50E002C330B /* database.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = database.h; path = "../../../../deps/node-sqlite3/src/database.h"; sourceTree = "<group>"; };
+		076563D620F9E50E002C330B /* threading.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = threading.h; path = "../../../../deps/node-sqlite3/src/threading.h"; sourceTree = "<group>"; };
+		076563E020F9E537002C330B /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		076563E320F9E610002C330B /* nan_typedarray_contents.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_typedarray_contents.h; path = "../../../../deps/nan-2.5.1/nan_typedarray_contents.h"; sourceTree = "<group>"; };
+		076563E420F9E610002C330B /* nan_new.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_new.h; path = "../../../../deps/nan-2.5.1/nan_new.h"; sourceTree = "<group>"; };
+		076563E520F9E610002C330B /* nan_object_wrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_object_wrap.h; path = "../../../../deps/nan-2.5.1/nan_object_wrap.h"; sourceTree = "<group>"; };
+		076563E620F9E610002C330B /* nan_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_private.h; path = "../../../../deps/nan-2.5.1/nan_private.h"; sourceTree = "<group>"; };
+		076563E720F9E610002C330B /* nan_converters_pre_43_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_converters_pre_43_inl.h; path = "../../../../deps/nan-2.5.1/nan_converters_pre_43_inl.h"; sourceTree = "<group>"; };
+		076563E820F9E610002C330B /* nan_callbacks_pre_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_callbacks_pre_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_callbacks_pre_12_inl.h"; sourceTree = "<group>"; };
+		076563E920F9E610002C330B /* nan_callbacks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_callbacks.h; path = "../../../../deps/nan-2.5.1/nan_callbacks.h"; sourceTree = "<group>"; };
+		076563EA20F9E610002C330B /* nan_string_bytes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_string_bytes.h; path = "../../../../deps/nan-2.5.1/nan_string_bytes.h"; sourceTree = "<group>"; };
+		076563EB20F9E610002C330B /* nan_implementation_pre_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_implementation_pre_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_implementation_pre_12_inl.h"; sourceTree = "<group>"; };
+		076563EC20F9E610002C330B /* nan_callbacks_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_callbacks_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_callbacks_12_inl.h"; sourceTree = "<group>"; };
+		076563ED20F9E610002C330B /* nan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan.h; path = "../../../../deps/nan-2.5.1/nan.h"; sourceTree = "<group>"; };
+		076563EE20F9E611002C330B /* nan_maybe_pre_43_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_maybe_pre_43_inl.h; path = "../../../../deps/nan-2.5.1/nan_maybe_pre_43_inl.h"; sourceTree = "<group>"; };
+		076563EF20F9E611002C330B /* nan_converters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_converters.h; path = "../../../../deps/nan-2.5.1/nan_converters.h"; sourceTree = "<group>"; };
+		076563F020F9E611002C330B /* nan_converters_43_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_converters_43_inl.h; path = "../../../../deps/nan-2.5.1/nan_converters_43_inl.h"; sourceTree = "<group>"; };
+		076563F120F9E611002C330B /* nan_maybe_43_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_maybe_43_inl.h; path = "../../../../deps/nan-2.5.1/nan_maybe_43_inl.h"; sourceTree = "<group>"; };
+		076563F220F9E611002C330B /* nan_persistent_pre_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_persistent_pre_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_persistent_pre_12_inl.h"; sourceTree = "<group>"; };
+		076563F320F9E611002C330B /* nan_implementation_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_implementation_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_implementation_12_inl.h"; sourceTree = "<group>"; };
+		076563F420F9E611002C330B /* nan_weak.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_weak.h; path = "../../../../deps/nan-2.5.1/nan_weak.h"; sourceTree = "<group>"; };
+		076563F520F9E611002C330B /* nan_persistent_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_persistent_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_persistent_12_inl.h"; sourceTree = "<group>"; };
+		0765640920F9EB70002C330B /* MicroService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MicroService.h; sourceTree = "<group>"; };
+		0765640A20F9F1F9002C330B /* MicroService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MicroService.m; sourceTree = "<group>"; };
+		0765640C20FBBD96002C330B /* MicroServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MicroServiceTests.m; sourceTree = "<group>"; };
+		0765640E20FBBECC002C330B /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Resources; path = LiquidCoreiOSTests/Resources; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		076F5892201E797F004780FD /* LiquidCoreiOSTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiquidCoreiOSTests.m; sourceTree = "<group>"; };
+		076F5892201E797F004780FD /* V8Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = V8Tests.m; sourceTree = "<group>"; };
 		076F5894201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		076F58C6201E7B5F004780FD /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		076F58D7201E7EF9004780FD /* Context.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Context.cpp; sourceTree = "<group>"; };
@@ -765,6 +867,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				072E6C9920FCF16600B80349 /* libcrypto.a in Frameworks */,
+				072E6C9A20FCF16600B80349 /* libssl.a in Frameworks */,
+				076563E120F9E538002C330B /* libsqlite3.tbd in Frameworks */,
 				0738936D20EE6B3D009056FD /* libz.tbd in Frameworks */,
 				076F58C8201E7B9C004780FD /* JavaScriptCore.framework in Frameworks */,
 			);
@@ -942,10 +1047,22 @@
 		0738923A20EE5A0C009056FD /* node */ = {
 			isa = PBXGroup;
 			children = (
+				072E6C9F20FCF37200B80349 /* node_dtrace.cc */,
+				072E6CA020FCF37300B80349 /* node_dtrace.h */,
+				072E6C9B20FCF1F700B80349 /* tls_wrap.cc */,
+				072E6C9C20FCF1F800B80349 /* tls_wrap.h */,
+				072E6C8220FCE17800B80349 /* node_crypto_bio.cc */,
+				072E6C7E20FCE17700B80349 /* node_crypto_bio.h */,
+				072E6C7F20FCE17700B80349 /* node_crypto_clienthello-inl.h */,
+				072E6C8320FCE17800B80349 /* node_crypto_clienthello.cc */,
+				072E6C8120FCE17700B80349 /* node_crypto_clienthello.h */,
+				072E6C7D20FCE17700B80349 /* node_crypto_groups.h */,
+				072E6C8420FCE17800B80349 /* node_crypto.cc */,
+				072E6C8020FCE17700B80349 /* node_crypto.h */,
+				076563C620F8B2C6002C330B /* derived */,
 				076563B920F66CA8002C330B /* module_wrap.cc */,
 				076563B820F66CA8002C330B /* module_wrap.h */,
 				0738937220EFF976009056FD /* backtrace_posix.cc */,
-				0738937020EFF820009056FD /* javascript_cc.cc */,
 				073892FC20EE5F42009056FD /* node_http_parser.cc */,
 				073892FB20EE5F41009056FD /* node_mutex.h */,
 				073892FE20EE5F42009056FD /* node_revert.h */,
@@ -1106,6 +1223,8 @@
 		0738937420EFFE8A009056FD /* node-8.9.3 */ = {
 			isa = PBXGroup;
 			children = (
+				076563E220F9E5D8002C330B /* nan-2.5.1 */,
+				076563CD20F9E4D3002C330B /* node-sqlite3 */,
 				0738930920EE63C4009056FD /* nghttp2 */,
 				0738923A20EE5A0C009056FD /* node */,
 				073891A820EE0AE8009056FD /* cares */,
@@ -1128,9 +1247,62 @@
 			name = Common;
 			sourceTree = "<group>";
 		};
+		076563C620F8B2C6002C330B /* derived */ = {
+			isa = PBXGroup;
+			children = (
+				072E6CA420FCF6FC00B80349 /* node_provider.h */,
+				076563C720F8B47A002C330B /* node_javascript.cc */,
+			);
+			name = derived;
+			sourceTree = "<group>";
+		};
+		076563CD20F9E4D3002C330B /* node-sqlite3 */ = {
+			isa = PBXGroup;
+			children = (
+				076563CF20F9E50E002C330B /* async.h */,
+				076563D120F9E50E002C330B /* database.cc */,
+				076563D520F9E50E002C330B /* database.h */,
+				076563CE20F9E50E002C330B /* gcc-preinclude.h */,
+				076563D320F9E50E002C330B /* macros.h */,
+				076563D420F9E50E002C330B /* node_sqlite3.cc */,
+				076563D020F9E50E002C330B /* statement.cc */,
+				076563D220F9E50E002C330B /* statement.h */,
+				076563D620F9E50E002C330B /* threading.h */,
+			);
+			path = "node-sqlite3";
+			sourceTree = "<group>";
+		};
+		076563E220F9E5D8002C330B /* nan-2.5.1 */ = {
+			isa = PBXGroup;
+			children = (
+				076563EC20F9E610002C330B /* nan_callbacks_12_inl.h */,
+				076563E820F9E610002C330B /* nan_callbacks_pre_12_inl.h */,
+				076563E920F9E610002C330B /* nan_callbacks.h */,
+				076563F020F9E611002C330B /* nan_converters_43_inl.h */,
+				076563E720F9E610002C330B /* nan_converters_pre_43_inl.h */,
+				076563EF20F9E611002C330B /* nan_converters.h */,
+				076563F320F9E611002C330B /* nan_implementation_12_inl.h */,
+				076563EB20F9E610002C330B /* nan_implementation_pre_12_inl.h */,
+				076563F120F9E611002C330B /* nan_maybe_43_inl.h */,
+				076563EE20F9E611002C330B /* nan_maybe_pre_43_inl.h */,
+				076563E420F9E610002C330B /* nan_new.h */,
+				076563E520F9E610002C330B /* nan_object_wrap.h */,
+				076563F520F9E611002C330B /* nan_persistent_12_inl.h */,
+				076563F220F9E611002C330B /* nan_persistent_pre_12_inl.h */,
+				076563E620F9E610002C330B /* nan_private.h */,
+				076563EA20F9E610002C330B /* nan_string_bytes.h */,
+				076563E320F9E610002C330B /* nan_typedarray_contents.h */,
+				076563F420F9E611002C330B /* nan_weak.h */,
+				076563ED20F9E610002C330B /* nan.h */,
+			);
+			path = "nan-2.5.1";
+			sourceTree = "<group>";
+		};
 		076F587A201E797F004780FD = {
 			isa = PBXGroup;
 			children = (
+				0765640E20FBBECC002C330B /* Resources */,
+				076563C920F9DF62002C330B /* node_modules */,
 				076F5886201E797F004780FD /* LiquidCoreiOS */,
 				076F5891201E797F004780FD /* LiquidCoreiOSTests */,
 				076F5885201E797F004780FD /* Products */,
@@ -1162,10 +1334,12 @@
 		076F5891201E797F004780FD /* LiquidCoreiOSTests */ = {
 			isa = PBXGroup;
 			children = (
-				0718F6892025FF0900C588AA /* cctest */,
-				076F5892201E797F004780FD /* LiquidCoreiOSTests.m */,
 				076F5894201E797F004780FD /* Info.plist */,
+				0718F6892025FF0900C588AA /* cctest */,
+				076F5892201E797F004780FD /* V8Tests.m */,
 				07CA454920F5244E00862266 /* ProcessTests.m */,
+				076563C020F7A85D002C330B /* FileSystemTests.m */,
+				0765640C20FBBD96002C330B /* MicroServiceTests.m */,
 			);
 			path = LiquidCoreiOSTests;
 			sourceTree = "<group>";
@@ -1239,6 +1413,13 @@
 		076F58C5201E7B5E004780FD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				072E6C8E20FCE1F800B80349 /* libcrypto.a */,
+				072E6C8D20FCE1F800B80349 /* libssl.a */,
+				072E6C9120FCE33C00B80349 /* libcrypto.a */,
+				072E6C9220FCE33C00B80349 /* libssl.a */,
+				072E6C9720FCF16600B80349 /* libcrypto.a */,
+				072E6C9820FCF16600B80349 /* libssl.a */,
+				076563E020F9E537002C330B /* libsqlite3.tbd */,
 				0738923720EE0F34009056FD /* libapple_crypto.tbd */,
 				0738923520EE0F2A009056FD /* libboringssl.tbd */,
 				0738923320EE0E2B009056FD /* libz.tbd */,
@@ -1257,6 +1438,8 @@
 				07CA454220F10F4700862266 /* NodeBridge.cpp */,
 				07CA454620F4C37E00862266 /* FileSystem.h */,
 				07CA454720F4C3F800862266 /* FileSystem.m */,
+				0765640920F9EB70002C330B /* MicroService.h */,
+				0765640A20F9F1F9002C330B /* MicroService.m */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1320,9 +1503,12 @@
 			files = (
 				0738918120EE07AC009056FD /* spinlock.h in Headers */,
 				073892D520EE5E29009056FD /* string_bytes.h in Headers */,
+				072E6CA220FCF37300B80349 /* node_dtrace.h in Headers */,
 				0738936A20EE661C009056FD /* nghttp2.h in Headers */,
+				0765640620F9E611002C330B /* nan_implementation_12_inl.h in Headers */,
 				0738930620EE5F42009056FD /* node_revert.h in Headers */,
 				0738936220EE64C5009056FD /* nghttp2_debug.h in Headers */,
+				076563D820F9E50E002C330B /* async.h in Headers */,
 				0738936720EE65D0009056FD /* config.h in Headers */,
 				0738934120EE64C5009056FD /* nghttp2_hd.h in Headers */,
 				073892F720EE5E29009056FD /* node_constants.h in Headers */,
@@ -1333,24 +1519,35 @@
 				073892A820EE5E29009056FD /* node_http2_state.h in Headers */,
 				0738933920EE64C5009056FD /* nghttp2_stream.h in Headers */,
 				073892A620EE5E29009056FD /* async-wrap.h in Headers */,
+				0765640520F9E611002C330B /* nan_persistent_pre_12_inl.h in Headers */,
 				0738934620EE64C5009056FD /* nghttp2_outbound_item.h in Headers */,
+				076563FE20F9E611002C330B /* nan_implementation_pre_12_inl.h in Headers */,
+				072E6CA520FCF6FC00B80349 /* node_provider.h in Headers */,
+				072E6C8720FCE17800B80349 /* node_crypto_clienthello-inl.h in Headers */,
+				076563F920F9E611002C330B /* nan_private.h in Headers */,
 				076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */,
 				073891ED20EE0CEE009056FD /* bitncmp.h in Headers */,
 				0738935720EE64C5009056FD /* nghttp2_session.h in Headers */,
+				076563D720F9E50E002C330B /* gcc-preinclude.h in Headers */,
 				0738934820EE64C5009056FD /* nghttp2_npn.h in Headers */,
 				0738933B20EE64C5009056FD /* nghttp2_pq.h in Headers */,
 				0738937E20EFFF0F009056FD /* NodeInstance.h in Headers */,
+				072E6C8520FCE17800B80349 /* node_crypto_groups.h in Headers */,
 				0738935820EE64C5009056FD /* nghttp2_map.h in Headers */,
 				0738930820EE5F42009056FD /* node_root_certs.h in Headers */,
+				0765640820F9E611002C330B /* nan_persistent_12_inl.h in Headers */,
 				0738922220EE0CEE009056FD /* ares_nowarn.h in Headers */,
 				073891FB20EE0CEE009056FD /* ares_llist.h in Headers */,
 				0738933C20EE64C5009056FD /* nghttp2_mem.h in Headers */,
 				073892D720EE5E29009056FD /* handle_wrap.h in Headers */,
+				076563DF20F9E50E002C330B /* threading.h in Headers */,
 				0738930720EE5F42009056FD /* node_wrap.h in Headers */,
 				073892A720EE5E29009056FD /* node_platform.h in Headers */,
 				0738919A20EE07AC009056FD /* uv-darwin.h in Headers */,
 				073892B320EE5E29009056FD /* node_watchdog.h in Headers */,
+				076563F720F9E611002C330B /* nan_new.h in Headers */,
 				0738917720EE07AC009056FD /* uv-version.h in Headers */,
+				072E6C9E20FCF1F800B80349 /* tls_wrap.h in Headers */,
 				073892A520EE5E29009056FD /* env-inl.h in Headers */,
 				0738922420EE0CEE009056FD /* ares_version.h in Headers */,
 				073892C120EE5E29009056FD /* trace_event_common.h in Headers */,
@@ -1360,6 +1557,7 @@
 				073891F320EE0CEE009056FD /* ares_writev.h in Headers */,
 				073892DA20EE5E29009056FD /* agent.h in Headers */,
 				0738930320EE5F42009056FD /* node_mutex.h in Headers */,
+				076563F620F9E611002C330B /* nan_typedarray_contents.h in Headers */,
 				073892D920EE5E29009056FD /* node_trace_buffer.h in Headers */,
 				073892C320EE5E29009056FD /* node_javascript.h in Headers */,
 				073891F020EE0CEE009056FD /* ares_dns.h in Headers */,
@@ -1372,6 +1570,7 @@
 				073892DE20EE5E29009056FD /* node_buffer.h in Headers */,
 				073892EC20EE5E29009056FD /* node_perf_common.h in Headers */,
 				073892BC20EE5E29009056FD /* connect_wrap.h in Headers */,
+				0765640120F9E611002C330B /* nan_maybe_pre_43_inl.h in Headers */,
 				073892C920EE5E29009056FD /* node_url.h in Headers */,
 				0738918820EE07AC009056FD /* internal.h in Headers */,
 				0738919720EE07AC009056FD /* queue.h in Headers */,
@@ -1381,42 +1580,57 @@
 				073892C420EE5E29009056FD /* base-object.h in Headers */,
 				0738936B20EE661C009056FD /* nghttp2ver.h in Headers */,
 				073892CB20EE5E29009056FD /* node.h in Headers */,
+				076563DE20F9E50E002C330B /* database.h in Headers */,
 				073892E320EE5E29009056FD /* node_internals.h in Headers */,
 				0738934320EE64C5009056FD /* nghttp2_submit.h in Headers */,
 				073891F720EE0CEE009056FD /* ares_ipv6.h in Headers */,
+				076563DB20F9E50E002C330B /* statement.h in Headers */,
 				0738917D20EE07AC009056FD /* uv-common.h in Headers */,
+				076563FB20F9E611002C330B /* nan_callbacks_pre_12_inl.h in Headers */,
+				0765640420F9E611002C330B /* nan_maybe_43_inl.h in Headers */,
 				0738920220EE0CEE009056FD /* ares_strdup.h in Headers */,
 				0738921B20EE0CEE009056FD /* ares.h in Headers */,
 				073892A020EE5E29009056FD /* env.h in Headers */,
 				0738934B20EE64C5009056FD /* nghttp2_frame.h in Headers */,
 				073892EB20EE5E29009056FD /* stream_base.h in Headers */,
+				072E6C8620FCE17800B80349 /* node_crypto_bio.h in Headers */,
 				0738920820EE0CEE009056FD /* ares_platform.h in Headers */,
 				073892C620EE5E29009056FD /* tcp_wrap.h in Headers */,
 				0738923020EE0CEE009056FD /* setup_once.h in Headers */,
 				0738922920EE0CEE009056FD /* ares_strcasecmp.h in Headers */,
+				076563F820F9E611002C330B /* nan_object_wrap.h in Headers */,
 				073892ED20EE5E29009056FD /* js_stream.h in Headers */,
 				073892C520EE5E29009056FD /* stream_base-inl.h in Headers */,
+				076563FF20F9E611002C330B /* nan_callbacks_12_inl.h in Headers */,
 				0738935C20EE64C5009056FD /* nghttp2_http.h in Headers */,
 				073892BE20EE5E29009056FD /* trace_event.h in Headers */,
 				0738914520E8C0B3009056FD /* JSCPrivate.h in Headers */,
 				073892B120EE5E29009056FD /* node_debug_options.h in Headers */,
 				0738921120EE0CEE009056FD /* ares_getopt.h in Headers */,
+				076563DC20F9E50E002C330B /* macros.h in Headers */,
 				0738917F20EE07AC009056FD /* heap-inl.h in Headers */,
 				0738922F20EE0CEE009056FD /* ares_config.h in Headers */,
 				073892C220EE5E29009056FD /* node_perf.h in Headers */,
+				076563FC20F9E611002C330B /* nan_callbacks.h in Headers */,
 				073892E920EE5E29009056FD /* pipe_wrap.h in Headers */,
 				0738918620EE07AC009056FD /* atomic-ops.h in Headers */,
 				0738930220EE5F42009056FD /* req-wrap-inl.h in Headers */,
 				0738934E20EE64C5009056FD /* nghttp2_hd_huffman.h in Headers */,
+				076563FA20F9E611002C330B /* nan_converters_pre_43_inl.h in Headers */,
 				073891FF20EE0CEE009056FD /* ares_rules.h in Headers */,
 				0738930520EE5F42009056FD /* req-wrap.h in Headers */,
+				0765640720F9E611002C330B /* nan_weak.h in Headers */,
+				0765640320F9E611002C330B /* nan_converters_43_inl.h in Headers */,
 				0738920120EE0CEE009056FD /* ares_getenv.h in Headers */,
+				072E6C8920FCE17800B80349 /* node_crypto_clienthello.h in Headers */,
 				073891A220EE08A6009056FD /* tree.h in Headers */,
 				0738917E20EE07AC009056FD /* uv-threadpool.h in Headers */,
 				076563BA20F66CA8002C330B /* module_wrap.h in Headers */,
 				073892F620EE5E29009056FD /* util-inl.h in Headers */,
+				0765640020F9E611002C330B /* nan.h in Headers */,
 				073892DB20EE5E29009056FD /* tty_wrap.h in Headers */,
 				073891A020EE07AC009056FD /* uv.h in Headers */,
+				076563FD20F9E611002C330B /* nan_string_bytes.h in Headers */,
 				073892E020EE5E29009056FD /* aliased_buffer.h in Headers */,
 				0738933E20EE64C5009056FD /* nghttp2_int.h in Headers */,
 				073892EF20EE5E29009056FD /* base-object-inl.h in Headers */,
@@ -1424,6 +1638,7 @@
 				0738934420EE64C5009056FD /* nghttp2_rcbuf.h in Headers */,
 				0738919620EE07AC009056FD /* uv-unix.h in Headers */,
 				073892E120EE5E29009056FD /* stream_wrap.h in Headers */,
+				072E6C8820FCE17800B80349 /* node_crypto.h in Headers */,
 				073892CA20EE5E29009056FD /* async-wrap-inl.h in Headers */,
 				0738934F20EE64C5009056FD /* nghttp2_net.h in Headers */,
 				0738934C20EE64C5009056FD /* nghttp2_priority_spec.h in Headers */,
@@ -1437,6 +1652,7 @@
 				0738929E20EE5E29009056FD /* node_stat_watcher.h in Headers */,
 				073892D820EE5E29009056FD /* spawn_sync.h in Headers */,
 				0738930120EE5F42009056FD /* node_version.h in Headers */,
+				0765640220F9E611002C330B /* nan_converters.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1447,6 +1663,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 076F5898201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreiOS" */;
 			buildPhases = (
+				076563C220F8A30C002C330B /* ShellScript */,
+				072E6CA320FCF5CD00B80349 /* ShellScript */,
 				076F587F201E797F004780FD /* Sources */,
 				076F5880201E797F004780FD /* Frameworks */,
 				076F5881201E797F004780FD /* Headers */,
@@ -1521,7 +1739,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0738914B20EBBF77009056FD /* machine in Resources */,
+				076563CA20F9DF62002C330B /* node_modules in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1529,10 +1747,162 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0765640F20FBBECC002C330B /* Resources in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		072E6CA320FCF5CD00B80349 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../deps/node-8.9.3/src/node_provider.d",
+			);
+			outputPaths = (
+				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/node/node_provider.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node/config.gypi .\ndtrace -h -xnolibs -s ${SCRIPT_INPUT_FILE_0} -o ${SCRIPT_OUTPUT_FILE_0}\n";
+		};
+		076563C220F8A30C002C330B /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/bootstrap_node.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/async_hooks.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/assert.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/buffer.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/child_process.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/console.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/constants.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/crypto.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/cluster.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/dgram.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/dns.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/domain.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/events.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/fs.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/http.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/http2.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_http_agent.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_http_client.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_http_common.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_http_incoming.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_http_outgoing.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_http_server.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/https.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/inspector.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/module.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/net.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/os.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/path.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/perf_hooks.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/process.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/punycode.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/querystring.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/readline.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/repl.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/stream.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_stream_readable.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_stream_writable.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_stream_duplex.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_stream_transform.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_stream_passthrough.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_stream_wrap.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/string_decoder.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/sys.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/timers.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/tls.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_tls_common.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_tls_legacy.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/_tls_wrap.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/tty.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/url.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/util.js",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/v8.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/vm.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/zlib.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/buffer.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/child_process.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/cluster/child.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/cluster/master.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/cluster/round_robin_handle.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/cluster/shared_handle.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/cluster/utils.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/cluster/worker.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/encoding.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/errors.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/freelist.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/fs.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/http.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/inspector_async_hook.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/linkedlist.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/loader/Loader.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/loader/ModuleMap.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/loader/ModuleJob.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/loader/ModuleWrap.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/loader/ModuleRequest.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/loader/search.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/safe_globals.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/net.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/module.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/os.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/process/next_tick.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/process/promises.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/process/stdio.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/process/warning.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/process.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/querystring.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/process/write-coverage.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/readline.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/repl.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/socket_list.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/test/unicode.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/url.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/util.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/util/types.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/http2/core.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/http2/compat.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/http2/util.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/v8_prof_polyfill.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/v8_prof_processor.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/streams/lazy_transform.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/streams/BufferList.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/streams/legacy.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/streams/destroy.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/lib/internal/wrap_js_stream.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/splaytree.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/codemap.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/consarray.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/csvparser.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/profile.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/profile_view.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/logreader.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/tickprocessor.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/SourceMap.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/v8/tools/tickprocessor-driver.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/node-inspect/lib/_inspect.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/node-inspect/lib/internal/inspect_client.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/deps/node-inspect/lib/internal/inspect_repl.js ",
+				"$(SRCROOT)/../deps/node-8.9.3/config.gypi",
+				"$(SRCROOT)/../deps/node-8.9.3/src/nolttng_macros.py",
+				"$(SRCROOT)/../deps/node-8.9.3/src/noperfctr_macros.py",
+			);
+			outputPaths = (
+				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/node/node_javascript.cc",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node/config.gypi .\nSCRIPT_INPUT_FILES=''\nSCRIPT_INPUT_FILE_COUNT=\nFILTER=\"$SRCROOT/../deps/node-8.9.3/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n    INF=${!INFILE}\n    FILTERED=${INF#$FILTER}\n    SCRIPT_INPUT_FILES=\"$SCRIPT_INPUT_FILES ${FILTERED}\"\ndone\nexec tools/js2c.py ${SCRIPT_OUTPUT_FILE_0} ${SCRIPT_INPUT_FILES}\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		076F587F201E797F004780FD /* Sources */ = {
@@ -1561,12 +1931,14 @@
 				0738919420EE07AC009056FD /* tty.c in Sources */,
 				073891F220EE0CEE009056FD /* ares_getnameinfo.c in Sources */,
 				0738917820EE07AC009056FD /* dl.c in Sources */,
+				072E6C8B20FCE17800B80349 /* node_crypto_clienthello.cc in Sources */,
 				07F804FA202DD85D00FDFC27 /* TryCatch.cpp in Sources */,
 				07F804B320298A7F00FDFC27 /* PrimitiveObjects.cpp in Sources */,
 				0738922020EE0CEE009056FD /* ares_parse_ns_reply.c in Sources */,
 				07FE85792075F52F0013E1B4 /* assert-scope.cc in Sources */,
 				073892D320EE5E29009056FD /* node_constants.cc in Sources */,
 				07FE85992075F6D40013E1B4 /* trace-writer.cc in Sources */,
+				076563C820F8B47A002C330B /* node_javascript.cc in Sources */,
 				0738919B20EE07AC009056FD /* threadpool.c in Sources */,
 				073891F120EE0CEE009056FD /* ares__get_hostent.c in Sources */,
 				073892EA20EE5E29009056FD /* node_url.cc in Sources */,
@@ -1594,6 +1966,7 @@
 				07F804E2202D8E2900FDFC27 /* RegExp.cpp in Sources */,
 				073892B920EE5E29009056FD /* connection_wrap.cc in Sources */,
 				07FE85A72075F7A90013E1B4 /* ieee754.cc in Sources */,
+				076563DA20F9E50E002C330B /* database.cc in Sources */,
 				0738938120EFFF0F009056FD /* NodeInstance.cpp in Sources */,
 				0738922A20EE0CEE009056FD /* ares_parse_a_reply.c in Sources */,
 				073892C020EE5E29009056FD /* stream_base.cc in Sources */,
@@ -1610,6 +1983,7 @@
 				0738913F20E631E6009056FD /* V82JSC.cpp in Sources */,
 				0738922E20EE0CEE009056FD /* ares_free_hostent.c in Sources */,
 				0738919020EE07AC009056FD /* signal.c in Sources */,
+				072E6C8C20FCE17800B80349 /* node_crypto.cc in Sources */,
 				07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */,
 				073892A420EE5E29009056FD /* spawn_sync.cc in Sources */,
 				0738921620EE0CEE009056FD /* ares_strdup.c in Sources */,
@@ -1630,6 +2004,7 @@
 				0738920E20EE0CEE009056FD /* ares_process.c in Sources */,
 				0738917C20EE07AC009056FD /* core.c in Sources */,
 				0738937320EFF976009056FD /* backtrace_posix.cc in Sources */,
+				072E6C8A20FCE17800B80349 /* node_crypto_bio.cc in Sources */,
 				073892B820EE5E29009056FD /* node_trace_writer.cc in Sources */,
 				073892BA20EE5E29009056FD /* env.cc in Sources */,
 				073892F420EE5E29009056FD /* node_serdes.cc in Sources */,
@@ -1637,7 +2012,6 @@
 				0738919920EE07AC009056FD /* version.c in Sources */,
 				0738935F20EE64C5009056FD /* nghttp2_hd_huffman.c in Sources */,
 				0738936020EE64C5009056FD /* nghttp2_hd_huffman_data.c in Sources */,
-				0738937120EFF820009056FD /* javascript_cc.cc in Sources */,
 				0738930420EE5F42009056FD /* node_http_parser.cc in Sources */,
 				07F804BE202C2D7500FDFC27 /* Map.cpp in Sources */,
 				07F804BB202B81FC00FDFC27 /* HeapStatistics.cpp in Sources */,
@@ -1659,6 +2033,7 @@
 				075AEA1620C6A608002B1098 /* Message.cpp in Sources */,
 				073892CC20EE5E29009056FD /* async-wrap.cc in Sources */,
 				07F804D6202D8B8E00FDFC27 /* Promise.cpp in Sources */,
+				076563D920F9E50E002C330B /* statement.cc in Sources */,
 				07FE85AE2075F7A90013E1B4 /* sys-info.cc in Sources */,
 				0738934720EE64C5009056FD /* nghttp2_callbacks.c in Sources */,
 				0738921F20EE0CEE009056FD /* ares_parse_mx_reply.c in Sources */,
@@ -1691,6 +2066,7 @@
 				07FE85862075F6730013E1B4 /* platform-macos.cc in Sources */,
 				07E9ADCB20BD359A002F2002 /* TrackedObject.cpp in Sources */,
 				0738921320EE0CEE009056FD /* ares_strerror.c in Sources */,
+				072E6C9D20FCF1F800B80349 /* tls_wrap.cc in Sources */,
 				073892A120EE5E29009056FD /* node_buffer.cc in Sources */,
 				0738918520EE07AC009056FD /* process.c in Sources */,
 				0738921C20EE0CEE009056FD /* ares_llist.c in Sources */,
@@ -1725,6 +2101,8 @@
 				076F58E6201E7F2F004780FD /* ResourceConstraints.cpp in Sources */,
 				07F804A320277DC700FDFC27 /* TypedArray.cpp in Sources */,
 				07F804EE202D9F5300FDFC27 /* ObjectTemplate.cpp in Sources */,
+				072E6CA120FCF37300B80349 /* node_dtrace.cc in Sources */,
+				0765640B20F9F1F9002C330B /* MicroService.m in Sources */,
 				07F804B720298D3000FDFC27 /* Symbol.cpp in Sources */,
 				0738919C20EE07AC009056FD /* stream.c in Sources */,
 				07F804F2202DA7AF00FDFC27 /* Extension.cpp in Sources */,
@@ -1762,6 +2140,7 @@
 				073892DC20EE5E29009056FD /* util.cc in Sources */,
 				073892F520EE5E29009056FD /* pipe_wrap.cc in Sources */,
 				0738920320EE0CEE009056FD /* inet_net_pton.c in Sources */,
+				076563DD20F9E50E002C330B /* node_sqlite3.cc in Sources */,
 				07FE85AA2075F7A90013E1B4 /* bits.cc in Sources */,
 				0738918020EE07AC009056FD /* loop-watcher.c in Sources */,
 				076F58F0201E7FCD004780FD /* Script.cpp in Sources */,
@@ -1775,9 +2154,11 @@
 				07AA616420CFDBD700EA6B43 /* gc-extension.cc in Sources */,
 				07F8053C20304B6F00FDFC27 /* cctest.cc in Sources */,
 				07F8053E203055BA00FDFC27 /* flags.cc in Sources */,
-				076F5893201E797F004780FD /* LiquidCoreiOSTests.m in Sources */,
+				076F5893201E797F004780FD /* V8Tests.m in Sources */,
+				076563C120F7A85D002C330B /* FileSystemTests.m in Sources */,
 				07F8049820260E3F00FDFC27 /* test-api.cc in Sources */,
 				07F8053A202F925300FDFC27 /* shim.cpp in Sources */,
+				0765640D20FBBD96002C330B /* MicroServiceTests.m in Sources */,
 				07A7CF09209220C000352ABF /* print-extension.cc in Sources */,
 				07CA454A20F5244E00862266 /* ProcessTests.m in Sources */,
 				07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */,
@@ -1915,10 +2296,11 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				HEADER_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../deps/openssl-1.0.2o/include-ios";
 				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/openssl-1.0.2o/lib-ios";
 				OTHER_CFLAGS = (
 					"-D_DARWIN_USE_64_BIT_INODE=1",
 					"-D_DARWIN_UNLIMITED_SELECT=1",
@@ -1939,6 +2321,28 @@
 					"-DV8_DEPRECATION_WARNINGS=1",
 					"-D__POSIX__",
 					"-DBUILDING_NGHTTP2",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DHAVE_INSPECTOR=0",
+					"-DV8_INSPECTOR_USE_STL=1",
+					"-DV8_INSPECTOR_USE_OLD_STL=1",
+					"-DHAVE_OPENSSL=1",
+					"-D__POSIX__",
+					"-DHTTP_PARSER_STRICT=0",
+					"-D_LARGEFILE_SOURCE",
+					"-D_GLIBCXX_USE_C99_MATH",
+					"-D_REENTRANT=1",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DHAVE_INSPECTOR=0",
+					"-DV8_INSPECTOR_USE_STL=1",
+					"-DV8_INSPECTOR_USE_OLD_STL=1",
+					"-DHAVE_OPENSSL=1",
+					"-DHTTP_PARSER_STRICT=0",
+					"-D_LARGEFILE_SOURCE",
+					"-D_GLIBCXX_USE_C99_MATH",
+					"-D_REENTRANT=1",
+					"-DHAVE_DTRACE=1",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -1958,10 +2362,11 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				HEADER_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../deps/openssl-1.0.2o/include-ios";
 				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/openssl-1.0.2o/lib-ios";
 				OTHER_CFLAGS = (
 					"-D_DARWIN_USE_64_BIT_INODE=1",
 					"-D_DARWIN_UNLIMITED_SELECT=1",
@@ -1982,6 +2387,28 @@
 					"-DV8_DEPRECATION_WARNINGS=1",
 					"-D__POSIX__",
 					"-DBUILDING_NGHTTP2",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DHAVE_INSPECTOR=0",
+					"-DV8_INSPECTOR_USE_STL=1",
+					"-DV8_INSPECTOR_USE_OLD_STL=1",
+					"-DHAVE_OPENSSL=1",
+					"-D__POSIX__",
+					"-DHTTP_PARSER_STRICT=0",
+					"-D_LARGEFILE_SOURCE",
+					"-D_GLIBCXX_USE_C99_MATH",
+					"-D_REENTRANT=1",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DNODE_USE_V8_PLATFORM=1",
+					"-DHAVE_INSPECTOR=0",
+					"-DV8_INSPECTOR_USE_STL=1",
+					"-DV8_INSPECTOR_USE_OLD_STL=1",
+					"-DHAVE_OPENSSL=1",
+					"-DHTTP_PARSER_STRICT=0",
+					"-D_LARGEFILE_SOURCE",
+					"-D_GLIBCXX_USE_C99_MATH",
+					"-D_REENTRANT=1",
+					"-DHAVE_DTRACE=1",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";

@@ -146,6 +146,7 @@ static void onNodeExit(void *data, int code)
             JSValue *o = [JSValue valueWithNewObjectInContext:self.context];
             o[@"fs"] = fs_;
             process_set_filesystem([self.context JSGlobalContextRef], (JSObjectRef)[o[@"fs"] JSValueRef]);
+            _modulePath = fs_.modulePath;
             
             // set the exit handler
             self.context[@"__tmp"] = [JSValue valueWithObject:^(int code) {

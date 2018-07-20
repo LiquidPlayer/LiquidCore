@@ -42,7 +42,7 @@
     return fs;
 }
 
-+ (void)uninstallLocal:(NSString *)uniqueID {}
++ (void)uninstallLocal:(NSString *)uniqueID { [FileSystemImpl uninstallLocal:uniqueID]; }
 - (void)cleanUp {}
 @end
 
@@ -53,7 +53,7 @@
 - (void) alias:(NSString*)alias ios:(NSString*)ios mask:(MediaAccessMask)mask;
 - (void) mkdir:(NSString*)alias ios:(NSString*)ios mask:(MediaAccessMask)mask;
 - (void) symlink:(NSString*)alias target:(NSString*)target linkpath:(NSString*)linkpath mask:(MediaAccessMask)mask;
-- (void) symlinkRealTarget:(NSString*)alias target:(NSString*)target linkpath:(NSString*)linkpath mask:(MediaAccessMask)mask;
+- (void) mkdirAndSymlink:(NSString*)alias target:(NSString*)target linkpath:(NSString*)linkpath mask:(MediaAccessMask)mask;
 @end
 
 @implementation JSBuilder
@@ -228,7 +228,9 @@ static NSString* alias_code =
     NSString* sessionPath = [NSString stringWithFormat:@"%@/tmp%@", homedir, sessionSuffix];
     NSString* path = [NSString stringWithFormat:@"%@/Library/Caches/%@", homedir, suffix];
     NSString* localPath = [NSString stringWithFormat:@"%@/Library/%@", homedir, suffix];
-    NSString* node_modules = [NSString stringWithFormat:@"%@Library/__org.liquidplayer.node__/node_modules", homedir];
+    NSBundle* bundle = [NSBundle bundleForClass:[self class]];
+    NSString* node_modules = [bundle pathForResource:@"node_modules" ofType:nil];
+    NSString* public_data = [NSString stringWithFormat:@"%@/Documents/%@", homedir, suffix];
  
     JSBuilder* js = [[JSBuilder alloc] init];
     
@@ -238,6 +240,7 @@ static NSString* alias_code =
     // Set up /home/module (read-only)
     NSError *error;
     NSString *module = [NSString stringWithFormat:@"%@/module", localPath];
+    self.modulePath = module;
     if (![[NSFileManager defaultManager] createDirectoryAtPath:module
                                    withIntermediateDirectories:YES
                                                     attributes:nil
@@ -275,6 +278,15 @@ static NSString* alias_code =
        linkpath:[NSString stringWithFormat:@"%@/home/node_modules", sessionPath]
            mask:PermissionsRead];
     
+    // Set up /home/public (read-only)
+    [js mkdir:@"/home/public" ios:[NSString stringWithFormat:@"%@/home/public", sessionPath] mask:PermissionsRead];
+    
+    // Set up /home/public/data
+    [js mkdirAndSymlink:@"/home/public/data"
+                 target:public_data
+               linkpath:[NSString stringWithFormat:@"%@/home/public/data", sessionPath]
+                   mask:mask];
+
     [js append:@"fs_.cwd='/home';"];
     
     context[@"fs_"] = self;
@@ -331,9 +343,13 @@ static NSString* alias_code =
     NSString* suffix = [NSString stringWithFormat:@"/__org.liquidplayer.node__/_%@", uniqueID];
     NSString* path = [NSString stringWithFormat:@"%@/Library/Caches/%@", homedir, suffix];
     NSString* localPath = [NSString stringWithFormat:@"%@/Library/%@", homedir, suffix];
+    NSString* public_data = [NSString stringWithFormat:@"%@/Documents/%@", homedir, suffix];
     [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
     if (!error) {
         [[NSFileManager defaultManager] removeItemAtPath:localPath error:&error];
+        if (!error) {
+            [[NSFileManager defaultManager] removeItemAtPath:public_data error:&error];
+        }
     }
     if (error) {
         NSLog(@"Delete directory error: %@", error);

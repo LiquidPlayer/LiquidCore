@@ -105,7 +105,7 @@ bool V8::Initialize()
  */
 void V8::SetEntropySource(EntropySource source)
 {
-    assert(0);
+    //assert(0);
 }
 
 /**

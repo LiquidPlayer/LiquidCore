@@ -64,7 +64,7 @@
             [context evaluateScript:
                                    @"(function() {"
                                    @"  var fs = require('fs');"
-                                   @"  fs.readdir('/home',dir_contents);"
+                                   @"  fs.readdir('/home/node_modules/sqlite3',dir_contents);"
                                    @"})();"];
         }];
         // ok, we're done here

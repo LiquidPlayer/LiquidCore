@@ -314,12 +314,17 @@ int String::WriteUtf8(char* buffer,
     if (length < 0) {
         length = (int) JSStringGetMaximumUTF8CStringSize(s);
     }
-    size_t chars = JSStringGetUTF8CString(s, buffer, length);
+    // FIXME: This is an annoying inefficiency.  JSC needs the null-terminator to be
+    // part of buffer length, but V8 does not.  So we allocate one additional byte and
+    // then copy back the correct number.
+    char temp[length + 1];
+    size_t chars = JSStringGetUTF8CString(s, temp, length+1);
+    memcpy(buffer, temp, length);
     if (nchars_ref) {
         *nchars_ref = (int) JSStringGetLength(s);
     }
     JSStringRelease(s);
-    return (int) chars;
+    return (int) chars - 1;
 }
 
 /**

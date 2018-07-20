@@ -24,6 +24,11 @@ public:
 
     void sync(ProcessThreadCallback callback, void *data)
     {
+        if (std::this_thread::get_id() == node_main_thread->get_id()) {
+            callback(data);
+            return;
+        }
+        
         struct Runnable *r = new struct Runnable;
         r->signaled = false;
         r->data = data;
@@ -48,6 +53,11 @@ public:
 
     void async(ProcessThreadCallback callback, void *data)
     {
+        if (std::this_thread::get_id() == node_main_thread->get_id()) {
+            callback(data);
+            return;
+        }
+
         struct Runnable *r = new struct Runnable;
         r->signaled = false;
         r->data = data;

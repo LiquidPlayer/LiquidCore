@@ -127,12 +127,12 @@ private:
     void NotifyStart(JSContextRef ctx, JSContextGroupRef group);
 #endif
 
-    std::thread* node_main_thread = nullptr;
     OnNodeStartedCallback on_start = nullptr;
     OnNodeExitCallback on_exit = nullptr;
     void * callback_data = nullptr;
 protected:
     uv_loop_t *m_loop;
+    std::thread* node_main_thread = nullptr;
 };
 
 #endif //NODEDROID_NODEINSTANCE_H

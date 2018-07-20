@@ -35,6 +35,8 @@ typedef enum _MediaAccessMask {
 @end
 
 @interface Process : NSObject
+@property (nonatomic, readonly, copy) NSString* modulePath;
+
 - (id) initWithDelegate:(id<ProcessDelegate>)delegate
                      id:(NSString*)uniqueID
         mediaAccessMask:(MediaAccessMask)mediaAccessMask;
