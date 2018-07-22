@@ -9,6 +9,8 @@
 #include "V82JSC.h"
 #include "JSContextRefPrivate.h"
 
+extern "C" const char* promise_polyfill;
+
 using namespace v8;
 
 #define H V82JSC_HeapObject
@@ -484,6 +486,45 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                      "Function = new Proxy(Function, handler);",
                      1, &FunctionCtor);
         
+        JSStringRef zGlobal = JSStringCreateWithUTF8CString("global");
+        JSStringRef zSetTimeout = JSStringCreateWithUTF8CString("setTimeout");
+        JSStringRef zPromise = JSStringCreateWithUTF8CString("Promise");
+        JSStringRef zPromisePolyfill = JSStringCreateWithUTF8CString(promise_polyfill);
+
+        JSObjectRef setTimeout = JSObjectMakeFunctionWithCallback
+        (context->m_ctxRef, zSetTimeout,
+         [](JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+            size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception) ->JSValueRef {
+             
+             IsolateImpl* iso;
+             {
+                 std::unique_lock<std::mutex> lk(IsolateImpl::s_isolate_mutex);
+                 iso = IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)];
+             }
+             Isolate *isolate = V82JSC::ToIsolate(V82JSC::ToIsolate(iso));
+             HandleScope scope(isolate);
+             Local<Context> ctxt = LocalContextImpl::New(isolate, ctx);
+             
+             isolate->EnqueueMicrotask(ValueImpl::New(V82JSC::ToContextImpl(ctxt), arguments[1]).As<Function>());
+             return JSValueMakeUndefined(ctx);
+         });
+        JSValueRef excp = 0;
+        JSObjectSetProperty(context->m_ctxRef, global_o, zSetTimeout, setTimeout, 0, &excp);
+        assert(excp == 0);
+        JSObjectSetProperty(context->m_ctxRef, global_o, zGlobal, global_o, 0, &excp);
+        assert(excp == 0);
+        JSObjectDeleteProperty(context->m_ctxRef, global_o, zPromise, &excp);
+        assert(excp == 0);
+        JSEvaluateScript(context->m_ctxRef, zPromisePolyfill, global_o, 0, 0, &excp);
+        assert(excp == 0);
+        JSObjectDeleteProperty(context->m_ctxRef, global_o, zSetTimeout, &excp);
+        assert(excp == 0);
+
+        JSStringRelease(zPromise);
+        JSStringRelease(zPromisePolyfill);
+        JSStringRelease(zSetTimeout);
+        JSStringRelease(zGlobal);
+
         std::map<std::string, bool> loaded_extensions;
 
         InstallAutoExtensions(ctx, loaded_extensions);

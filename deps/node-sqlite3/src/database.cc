@@ -159,10 +159,10 @@ NAN_METHOD(Database::New) {
         db->Wrap(info.This());
 
 
-        info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
-            Nan::New("filename").ToLocalChecked(), info[0].As<String>(), ReadOnly);
-        info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
-            Nan::New("mode").ToLocalChecked(), Nan::New(mode), ReadOnly);
+        CHECK(info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
+            Nan::New("filename").ToLocalChecked(), info[0].As<String>(), ReadOnly).ToChecked());
+        CHECK(info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
+            Nan::New("mode").ToLocalChecked(), Nan::New(mode), ReadOnly).ToChecked());
 
         // Start opening the database.
         OpenBaton* baton = new OpenBaton(db, callback, use_fn, mode, env->event_loop());

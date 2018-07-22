@@ -598,7 +598,7 @@ Local<Value> chdir_(Environment *env, Local<Value> path)
         Local<Value> fsVal;
         if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
           Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
-          fsObj->Set(env->context(), String::NewFromUtf8(env->isolate(), "cwd"), path);
+          CHECK(fsObj->Set(env->context(), String::NewFromUtf8(env->isolate(), "cwd"), path).ToChecked());
         }
       }
     }

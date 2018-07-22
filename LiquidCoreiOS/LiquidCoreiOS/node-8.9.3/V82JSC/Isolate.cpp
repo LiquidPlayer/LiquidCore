@@ -71,7 +71,7 @@ std::atomic<bool> IsolateImpl::s_isLockerActive(false);
 Isolate * Isolate::New(Isolate::CreateParams const&params)
 {
     IsolateImpl * impl = (IsolateImpl *) malloc(sizeof (IsolateImpl));
-    memset(impl, 0, sizeof(IsolateImpl));
+    memset((void*)impl, 0, sizeof(IsolateImpl));
     Isolate * isolate = V82JSC::ToIsolate(impl);
 
     reinterpret_cast<internal::Isolate*>(isolate)->Init((v8::internal::Deserializer *)&params);

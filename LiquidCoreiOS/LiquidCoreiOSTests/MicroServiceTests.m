@@ -39,8 +39,8 @@
     NSURL *client_js = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%ld/hello.js", port_]];
     
     // Next, start a MicroService that is served from the server
-    client_ = [[MicroService alloc] initWithURL:client_js delegate:self];
-    [client_ start];
+    //client_ = [[MicroService alloc] initWithURL:client_js delegate:self];
+    //[client_ start];
     
     volatile int finishCount = self.finishCount; while (finishCount>0) { finishCount = self.finishCount; }
     

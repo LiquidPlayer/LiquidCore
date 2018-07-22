@@ -6,12 +6,23 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#include <stdio.h>
 #include <JavaScriptCore/JavaScript.h>
 #include "NodeInstance.h"
 #include "NodeBridge.h"
 #include "v8.h"
 #include "libplatform/libplatform.h"
+#undef UNREACHABLE
+#undef CHECK
+#undef CHECK_EQ
+#undef CHECK_NE
+#undef CHECK_LE
+#undef CHECK_LT
+#undef CHECK_GE
+#undef CHECK_GT
+#undef DISALLOW_COPY_AND_ASSIGN
+#undef MUST_USE_RESULT
+#undef ROUND_UP
+#undef STRINGIFY
 #include "V82JSC.h"
 
 class iOSInstance : NodeInstance {

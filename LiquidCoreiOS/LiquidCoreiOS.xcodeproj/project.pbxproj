@@ -343,6 +343,9 @@
 		076F58EC201E7F97004780FD /* V8.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EB201E7F96004780FD /* V8.cpp */; };
 		076F58F0201E7FCD004780FD /* Script.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EE201E7FCD004780FD /* Script.cpp */; };
 		076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F5201E80A4004780FD /* StringImpl.cpp */; };
+		0791167B21034F6F001BBCCB /* promise-polyfill.c in Sources */ = {isa = PBXBuildFile; fileRef = 0791167A21034F6F001BBCCB /* promise-polyfill.c */; };
+		07A45BA321046E6700ADB4EE /* os_dependent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A45BA121046E6700ADB4EE /* os_dependent.cpp */; };
+		07A45BA421046E6700ADB4EE /* os_dependent.h in Headers */ = {isa = PBXBuildFile; fileRef = 07A45BA221046E6700ADB4EE /* os_dependent.h */; };
 		07A7CF09209220C000352ABF /* print-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF08209220BF00352ABF /* print-extension.cc */; };
 		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
 		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
@@ -778,6 +781,9 @@
 		076F58EB201E7F96004780FD /* V8.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = V8.cpp; sourceTree = "<group>"; };
 		076F58EE201E7FCD004780FD /* Script.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Script.cpp; sourceTree = "<group>"; };
 		076F58F5201E80A4004780FD /* StringImpl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StringImpl.cpp; sourceTree = "<group>"; };
+		0791167A21034F6F001BBCCB /* promise-polyfill.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "promise-polyfill.c"; sourceTree = "<group>"; };
+		07A45BA121046E6700ADB4EE /* os_dependent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = os_dependent.cpp; path = ../../LiquidCoreCommon/node/os_dependent.cpp; sourceTree = "<group>"; };
+		07A45BA221046E6700ADB4EE /* os_dependent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = os_dependent.h; path = ../../LiquidCoreCommon/node/os_dependent.h; sourceTree = "<group>"; };
 		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0A2092215F00352ABF /* profiler-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "profiler-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc"; sourceTree = "<group>"; };
 		07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CpuProfiler.cpp; sourceTree = "<group>"; };
@@ -1243,6 +1249,8 @@
 				0738937A20EFFF0F009056FD /* NodeInstance.cpp */,
 				0738937720EFFF0F009056FD /* NodeInstance.h */,
 				0738937920EFFF0F009056FD /* process_wrap.cc */,
+				07A45BA121046E6700ADB4EE /* os_dependent.cpp */,
+				07A45BA221046E6700ADB4EE /* os_dependent.h */,
 			);
 			name = Common;
 			sourceTree = "<group>";
@@ -1355,6 +1363,7 @@
 				0738913E20E631E6009056FD /* V82JSC.cpp */,
 				076F58E7201E7F5A004780FD /* ArrayBuffer.cpp */,
 				076F58D7201E7EF9004780FD /* Context.cpp */,
+				0791167A21034F6F001BBCCB /* promise-polyfill.c */,
 				076F58D9201E7EF9004780FD /* Scopes.cpp */,
 				07E9ADC420BB3F02002F2002 /* HeapObjects.h */,
 				07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */,
@@ -1621,6 +1630,7 @@
 				0738930520EE5F42009056FD /* req-wrap.h in Headers */,
 				0765640720F9E611002C330B /* nan_weak.h in Headers */,
 				0765640320F9E611002C330B /* nan_converters_43_inl.h in Headers */,
+				07A45BA421046E6700ADB4EE /* os_dependent.h in Headers */,
 				0738920120EE0CEE009056FD /* ares_getenv.h in Headers */,
 				072E6C8920FCE17800B80349 /* node_crypto_clienthello.h in Headers */,
 				073891A220EE08A6009056FD /* tree.h in Headers */,
@@ -2034,6 +2044,7 @@
 				073892CC20EE5E29009056FD /* async-wrap.cc in Sources */,
 				07F804D6202D8B8E00FDFC27 /* Promise.cpp in Sources */,
 				076563D920F9E50E002C330B /* statement.cc in Sources */,
+				07A45BA321046E6700ADB4EE /* os_dependent.cpp in Sources */,
 				07FE85AE2075F7A90013E1B4 /* sys-info.cc in Sources */,
 				0738934720EE64C5009056FD /* nghttp2_callbacks.c in Sources */,
 				0738921F20EE0CEE009056FD /* ares_parse_mx_reply.c in Sources */,
@@ -2119,6 +2130,7 @@
 				0738919F20EE07AC009056FD /* uv-common.c in Sources */,
 				07F804AB2028380800FDFC27 /* PropertyDescriptor.cpp in Sources */,
 				073892B420EE5E29009056FD /* trace_event.cc in Sources */,
+				0791167B21034F6F001BBCCB /* promise-polyfill.c in Sources */,
 				076F58E8201E7F5A004780FD /* ArrayBuffer.cpp in Sources */,
 				0738918C20EE07AC009056FD /* pipe.c in Sources */,
 				073892BD20EE5E29009056FD /* node_platform.cc in Sources */,
@@ -2289,13 +2301,19 @@
 		076F5899201E7980004780FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CLANG_WARN_UNREACHABLE_CODE = NO;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/../deps/openssl-1.0.2o/include-ios";
 				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -2343,6 +2361,8 @@
 					"-D_GLIBCXX_USE_C99_MATH",
 					"-D_REENTRANT=1",
 					"-DHAVE_DTRACE=1",
+					"-D_FILE_OFFSET_BITS=64",
+					"-D_DARWIN_USE_64BIT_INODE=1",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -2355,13 +2375,19 @@
 		076F589A201E7980004780FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CLANG_WARN_UNREACHABLE_CODE = NO;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/../deps/openssl-1.0.2o/include-ios";
 				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -2409,6 +2435,8 @@
 					"-D_GLIBCXX_USE_C99_MATH",
 					"-D_REENTRANT=1",
 					"-DHAVE_DTRACE=1",
+					"-D_FILE_OFFSET_BITS=64",
+					"-D_DARWIN_USE_64BIT_INODE=1",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";

@@ -102,8 +102,8 @@ NAN_METHOD(Statement::New) {
     /*
     info.This()->ForceSet(Nan::New("sql").ToLocalChecked(), sql, ReadOnly);
     */
-    info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
-        Nan::New("sql").ToLocalChecked(), sql, ReadOnly);
+    CHECK(info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
+        Nan::New("sql").ToLocalChecked(), sql, ReadOnly).ToChecked());
 
     Statement* stmt = new Statement(db);
     stmt->Wrap(info.This());

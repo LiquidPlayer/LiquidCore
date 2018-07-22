@@ -69,19 +69,24 @@ try {
     console.error(e)
 }
 
+try {
+    fs.writeFileSync('/home/local/favicon.ico', '', 'utf-8')
+} catch (e) {
+    console.error(e)
+}
+
 var server = http.createServer(function (request, response) {
    try {
      var requestUrl = url.parse(request.url)
-     console.log(requestUrl)
+     //console.log(requestUrl)
 
      var fsPath = baseDirectory+path.normalize(requestUrl.pathname)
      console.log(fsPath)
-     console.log(String(fs.readFileSync(fsPath)))
 
      response.writeHead(200)
-                               console.log(response)
-                               var fileStream = fs.createReadStream(fsPath)
-                               console.log(fileStream)
+                               //console.log(response)
+     var fileStream = fs.createReadStream(fsPath)
+                               //console.log(fileStream)
      fileStream.pipe(response)
                                console.log('pipin')
      fileStream.on('error',function(e) {

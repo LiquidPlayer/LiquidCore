@@ -36,6 +36,7 @@
 #endif
 #include "NodeInstance.h"
 #include "nodedroid_file.h"
+#include "os_dependent.h"
 
 #include "node_buffer.h"
 #include "node_constants.h"
@@ -591,39 +592,17 @@ void NodeInstance::NotifyStart(JSContextRef ctx, JSContextGroupRef group)
 }
 #endif
 
-#ifdef __APPLE__
-#include "V82JSC.h"
-#endif
-
 inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
                  int argc, const char* const* argv,
                  int exec_argc, const char* const* exec_argv) {
   /* ===Start */
-#ifdef __ANDROID__
-  OpaqueJSContextGroup *group = reinterpret_cast<OpaqueJSContextGroup *>(group_);
-  Isolate *isolate = group->isolate();
-#else
-  Isolate *isolate = node_isolate;
+  Isolate* isolate = node_isolate;
   JSContextGroupRef group = (JSContextGroupRef)group_;
-#endif
+    
   HandleScope handle_scope(isolate);
   JSGlobalContextRef ctxRef = nullptr;
-    
-#ifdef __ANDROID__
-  JSClassRef globalClass = nullptr;
-  {
-    JSClassDefinition definition = kJSClassDefinitionEmpty;
-    definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
-    globalClass = JSClassCreate(&definition);
-    ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
-  }
-  JSClassRelease(globalClass);
-  auto java_node_context = ctxRef->Context();
-  Local<Context> context = java_node_context->Value();
-#else
-    Local<Context> context = Context::New(isolate);
-    ctxRef = (JSGlobalContextRef) V82JSC::ToContextRef(context);
-#endif
+
+  Local<Context> context = os_newContext(isolate, group, &ctxRef);
   /* ===End */
 
   Context::Scope context_scope(context);
@@ -639,7 +618,7 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   env.SetMethod(process, "cwd", Cwd);
 
   // Remove process.dlopen().  Nothing good can come of it in this environment.
-  process->Delete(env.context(), String::NewFromUtf8(isolate, "dlopen"));
+  CHECK(process->Delete(env.context(), String::NewFromUtf8(isolate, "dlopen")).ToChecked());
 
   // Override exit() and abort() so they don't nuke the app
   env.SetMethod(process, "reallyExit", Exit);
@@ -705,11 +684,7 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   RunAtExit(&env);
 
   /* ===Start */
-#ifdef __ANDROID__
-  JSGlobalContextRelease(ctxRef);
-  JSContextGroupRelease(group);
-  group->Dispose();
-#endif
+  os_Dispose(group, ctxRef);
   /* ===End */
 
   uv_key_delete(&thread_local_env);
@@ -756,11 +731,7 @@ inline int NodeInstance::StartInstance(uv_loop_t* event_loop,
     node_isolate = isolate;
   }
 
-#ifdef __ANDROID__
-  JSContextGroupRef group = &* OpaqueJSContextGroup::New(isolate, event_loop);
-#else
-  JSContextGroupRef group = V82JSC::ToIsolateImpl(isolate)->m_group;
-#endif
+  JSContextGroupRef group = os_groupFromIsolate(isolate, event_loop);
 
   int exit_code;
   {
