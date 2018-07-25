@@ -39,8 +39,8 @@
     NSURL *client_js = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%ld/hello.js", port_]];
     
     // Next, start a MicroService that is served from the server
-    //client_ = [[MicroService alloc] initWithURL:client_js delegate:self];
-    //[client_ start];
+    client_ = [[MicroService alloc] initWithURL:client_js delegate:self];
+    [client_ start];
     
     volatile int finishCount = self.finishCount; while (finishCount>0) { finishCount = self.finishCount; }
     
@@ -80,7 +80,6 @@
     // Server
     if ([event isEqualToString:@"listening"]) {
         XCTAssertEqualObjects(service, server_);
-        XCTAssertTrue([[payload class] isKindOfClass:[NSDictionary class]]);
         NSNumber *p = payload[@"port"];
         port_ = [p integerValue];
         self.serverReady = true;
@@ -90,7 +89,7 @@
     // Client
     XCTAssertEqualObjects(service, client_);
     if ([event isEqualToString:@"msg"]) {
-        XCTAssertEqualObjects(@"Hello, World", payload[@"string"]);
+        XCTAssertEqualObjects(@"Hello, World!", payload[@"msg"]);
         [service emitObject:@"js_msg" object:@{ @"msg" : @"Hallo die Weld!" }];
     } else if ([event isEqualToString:@"null"]) {
         XCTAssertNil(payload);

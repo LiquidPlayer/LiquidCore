@@ -104,7 +104,7 @@
     }
     else
     {
-        NSLog(@"mkdir: Created directory %@", ios);
+        //NSLog(@"mkdir: Created directory %@", ios);
     }
 
     [self alias:alias ios:ios mask:mask];
@@ -134,7 +134,7 @@
     }
     else
     {
-        NSLog(@"mkdir: Created directory %@", target);
+        //NSLog(@"mkdir: Created directory %@", target);
     }
     [self symlink:alias target:target linkpath:linkpath mask:mask];
 }
@@ -250,7 +250,7 @@ static NSString* alias_code =
     }
     else
     {
-        NSLog(@"mkdir: Created directory %@", module);
+        //NSLog(@"mkdir: Created directory %@", module);
     }
     [js symlink:@"/home/module"
          target:module

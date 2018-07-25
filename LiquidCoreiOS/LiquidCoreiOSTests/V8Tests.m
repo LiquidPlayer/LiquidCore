@@ -50,6 +50,7 @@ V(ExternalStringWithDisposeHandling)
 V(ExternalStringCollectedAtTearDown)
 V(ExternalInternalizedStringCollectedAtTearDown)
 V(StringConcat)
+V(StringWrite)
 V(GlobalProperties)
 V(ExternalWrap)
 V(TinyInteger)
@@ -604,6 +605,9 @@ V(PersistentHandleInNewSpaceVisitor)
 V(CorrectEnteredContext)
 // Garbage collection
 V(ExternalInternalizedStringCollectedAtGC)
+// Promise lifecycle hooking
+V(PromiseRejectCallback)
+V(PromiseHook)
 
 #undef V
 #define V(tst) \
@@ -677,12 +681,7 @@ V(ExtrasBindingObject)
 V(ExperimentalExtras)
 V(ExtrasUtilsObject)
 
-// Promise lifecycle hooking is not supported in JSC
-V(PromiseRejectCallback)
-V(PromiseHook)
-
 // JSC just handles utf16 edge cases differently than V8
-V(StringWrite)
 V(Utf16)
 V(Utf16Symbol)
 

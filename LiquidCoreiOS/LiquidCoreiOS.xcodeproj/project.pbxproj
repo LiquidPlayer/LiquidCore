@@ -343,7 +343,6 @@
 		076F58EC201E7F97004780FD /* V8.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EB201E7F96004780FD /* V8.cpp */; };
 		076F58F0201E7FCD004780FD /* Script.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58EE201E7FCD004780FD /* Script.cpp */; };
 		076F58F7201E80A4004780FD /* StringImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58F5201E80A4004780FD /* StringImpl.cpp */; };
-		0791167B21034F6F001BBCCB /* promise-polyfill.c in Sources */ = {isa = PBXBuildFile; fileRef = 0791167A21034F6F001BBCCB /* promise-polyfill.c */; };
 		07A45BA321046E6700ADB4EE /* os_dependent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A45BA121046E6700ADB4EE /* os_dependent.cpp */; };
 		07A45BA421046E6700ADB4EE /* os_dependent.h in Headers */ = {isa = PBXBuildFile; fileRef = 07A45BA221046E6700ADB4EE /* os_dependent.h */; };
 		07A7CF09209220C000352ABF /* print-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF08209220BF00352ABF /* print-extension.cc */; };
@@ -354,6 +353,7 @@
 		07CA454320F10F4700862266 /* NodeBridge.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454220F10F4700862266 /* NodeBridge.cpp */; };
 		07CA454820F4C3F800862266 /* FileSystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454720F4C3F800862266 /* FileSystem.m */; };
 		07CA454A20F5244E00862266 /* ProcessTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454920F5244E00862266 /* ProcessTests.m */; };
+		07D2B34D2107834B003989F0 /* polyfill.c in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B34C2107834B003989F0 /* polyfill.c */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */; };
 		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
@@ -781,7 +781,6 @@
 		076F58EB201E7F96004780FD /* V8.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = V8.cpp; sourceTree = "<group>"; };
 		076F58EE201E7FCD004780FD /* Script.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Script.cpp; sourceTree = "<group>"; };
 		076F58F5201E80A4004780FD /* StringImpl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StringImpl.cpp; sourceTree = "<group>"; };
-		0791167A21034F6F001BBCCB /* promise-polyfill.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "promise-polyfill.c"; sourceTree = "<group>"; };
 		07A45BA121046E6700ADB4EE /* os_dependent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = os_dependent.cpp; path = ../../LiquidCoreCommon/node/os_dependent.cpp; sourceTree = "<group>"; };
 		07A45BA221046E6700ADB4EE /* os_dependent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = os_dependent.h; path = ../../LiquidCoreCommon/node/os_dependent.h; sourceTree = "<group>"; };
 		07A7CF08209220BF00352ABF /* print-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "print-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc"; sourceTree = "<group>"; };
@@ -799,6 +798,7 @@
 		07CA454620F4C37E00862266 /* FileSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
 		07CA454720F4C3F800862266 /* FileSystem.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FileSystem.m; sourceTree = "<group>"; };
 		07CA454920F5244E00862266 /* ProcessTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProcessTests.m; sourceTree = "<group>"; };
+		07D2B34C2107834B003989F0 /* polyfill.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = polyfill.c; path = polyfill/polyfill.c; sourceTree = "<group>"; };
 		07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exec.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
@@ -1355,15 +1355,16 @@
 		076F589E201E79F0004780FD /* V82JSC */ = {
 			isa = PBXGroup;
 			children = (
+				07D2B34B21077A21003989F0 /* polyfill */,
 				0738914620EBBD8D009056FD /* System */,
 				07FE857E2075F5BB0013E1B4 /* platform */,
 				07FE857B2075F53C0013E1B4 /* utils */,
 				07FE85762075F4E80013E1B4 /* v8 */,
+				07D2B346210487D0003989F0 /* JavaScriptCorePrivate */,
 				0717F0FF205EA81D00AA75A7 /* V82JSC.h */,
 				0738913E20E631E6009056FD /* V82JSC.cpp */,
 				076F58E7201E7F5A004780FD /* ArrayBuffer.cpp */,
 				076F58D7201E7EF9004780FD /* Context.cpp */,
-				0791167A21034F6F001BBCCB /* promise-polyfill.c */,
 				076F58D9201E7EF9004780FD /* Scopes.cpp */,
 				07E9ADC420BB3F02002F2002 /* HeapObjects.h */,
 				07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */,
@@ -1404,13 +1405,6 @@
 				07F804FC202DDA4400FDFC27 /* Locker.cpp */,
 				07F8054320395FA700FDFC27 /* internals.cpp */,
 				07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */,
-				07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */,
-				07EE4ACC20C7E59200088E7D /* JSContextRefPrivate.h */,
-				07EE4ACD20C95CDC00088E7D /* JSScriptRefPrivate.h */,
-				07AA615F20CD68DF00EA6B43 /* JSHeapFinalizerPrivate.h */,
-				07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */,
-				07AA616120CEE7F600EA6B43 /* JSWeakRefPrivate.h */,
-				07AA616220CFA5ED00EA6B43 /* JSStringRefPrivate.h */,
 				0738914220E8C0B3009056FD /* JSCPrivate.cpp */,
 				0738914320E8C0B3009056FD /* JSCPrivate.h */,
 				0738936E20EE6ED4009056FD /* Deprecated.cpp */,
@@ -1451,6 +1445,28 @@
 				0765640A20F9F1F9002C330B /* MicroService.m */,
 			);
 			path = API;
+			sourceTree = "<group>";
+		};
+		07D2B346210487D0003989F0 /* JavaScriptCorePrivate */ = {
+			isa = PBXGroup;
+			children = (
+				07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */,
+				07EE4ACC20C7E59200088E7D /* JSContextRefPrivate.h */,
+				07EE4ACD20C95CDC00088E7D /* JSScriptRefPrivate.h */,
+				07AA615F20CD68DF00EA6B43 /* JSHeapFinalizerPrivate.h */,
+				07AA616020CD836400EA6B43 /* JSMarkingConstraintPrivate.h */,
+				07AA616120CEE7F600EA6B43 /* JSWeakRefPrivate.h */,
+				07AA616220CFA5ED00EA6B43 /* JSStringRefPrivate.h */,
+			);
+			name = JavaScriptCorePrivate;
+			sourceTree = "<group>";
+		};
+		07D2B34B21077A21003989F0 /* polyfill */ = {
+			isa = PBXGroup;
+			children = (
+				07D2B34C2107834B003989F0 /* polyfill.c */,
+			);
+			name = polyfill;
 			sourceTree = "<group>";
 		};
 		07FE85762075F4E80013E1B4 /* v8 */ = {
@@ -1675,6 +1691,7 @@
 			buildPhases = (
 				076563C220F8A30C002C330B /* ShellScript */,
 				072E6CA320FCF5CD00B80349 /* ShellScript */,
+				07D2B34721077699003989F0 /* ShellScript */,
 				076F587F201E797F004780FD /* Sources */,
 				076F5880201E797F004780FD /* Frameworks */,
 				076F5881201E797F004780FD /* Headers */,
@@ -1713,7 +1730,7 @@
 		076F587B201E797F004780FD /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0920;
+				LastUpgradeCheck = 0940;
 				ORGANIZATIONNAME = LiquidPlayer;
 				TargetAttributes = {
 					076F5883201E797F004780FD = {
@@ -1912,6 +1929,22 @@
 			shellPath = /bin/sh;
 			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node/config.gypi .\nSCRIPT_INPUT_FILES=''\nSCRIPT_INPUT_FILE_COUNT=\nFILTER=\"$SRCROOT/../deps/node-8.9.3/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n    INF=${!INFILE}\n    FILTERED=${INF#$FILTER}\n    SCRIPT_INPUT_FILES=\"$SCRIPT_INPUT_FILES ${FILTERED}\"\ndone\nexec tools/js2c.py ${SCRIPT_OUTPUT_FILE_0} ${SCRIPT_INPUT_FILES}\n";
 		};
+		07D2B34721077699003989F0 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/promise-polyfill.js",
+				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/typedarray.js",
+			);
+			outputPaths = (
+				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/polyfill.c",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd ${SRCROOT}/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill\nunset SCRIPT_INPUT_FILE_COUNT\nprintf \"/* Autogenerated.  Do not edit. */\\n\" > ${SCRIPT_OUTPUT_FILE_0}\nFILTER=\"$SRCROOT/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n   INF=${!INFILE}\n   FILTERED=${INF#$FILTER}\n   xxd -i ${FILTERED} >> ${SCRIPT_OUTPUT_FILE_0}\n   printf \"\\n/*-------*/\\n\" >> ${SCRIPT_OUTPUT_FILE_0}\ndone\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -2088,6 +2121,7 @@
 				0738938220EFFF0F009056FD /* nodedroid_file.cc in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
 				073891F920EE0CEE009056FD /* ares_free_string.c in Sources */,
+				07D2B34D2107834B003989F0 /* polyfill.c in Sources */,
 				073891F520EE0CEE009056FD /* ares_init.c in Sources */,
 				0738922620EE0CEE009056FD /* ares_send.c in Sources */,
 				0738929F20EE5E29009056FD /* agent.cc in Sources */,
@@ -2130,7 +2164,6 @@
 				0738919F20EE07AC009056FD /* uv-common.c in Sources */,
 				07F804AB2028380800FDFC27 /* PropertyDescriptor.cpp in Sources */,
 				073892B420EE5E29009056FD /* trace_event.cc in Sources */,
-				0791167B21034F6F001BBCCB /* promise-polyfill.c in Sources */,
 				076F58E8201E7F5A004780FD /* ArrayBuffer.cpp in Sources */,
 				0738918C20EE07AC009056FD /* pipe.c in Sources */,
 				073892BD20EE5E29009056FD /* node_platform.cc in Sources */,
@@ -2202,6 +2235,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -2209,6 +2243,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -2260,6 +2295,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -2267,6 +2303,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;

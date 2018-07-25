@@ -52,10 +52,10 @@ v8::Local<v8::Context> os_newContext(v8::Isolate *isolate, JSContextGroupRef gro
         JSClassDefinition definition = kJSClassDefinitionEmpty;
         definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
         globalClass = JSClassCreate(&definition);
-        ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
+        *ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
     }
     JSClassRelease(globalClass);
-    auto java_node_context = ctxRef->Context();
+    auto java_node_context = (*ctxRef)->Context();
     Local<Context> context = java_node_context->Value();
     return scope.Escape(context);
 }

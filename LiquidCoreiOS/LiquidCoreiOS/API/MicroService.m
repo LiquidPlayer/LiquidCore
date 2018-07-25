@@ -135,8 +135,12 @@ static NSMutableDictionary* _serviceMap = nil;
     
     if ([serviceURI_ isFileURL]) {
         // Symlink file for speed
-        [fileManager removeItemAtPath:localPath error:&error];
-        [fileManager createSymbolicLinkAtURL:[NSURL fileURLWithPath:localPath] withDestinationURL:serviceURI_ error:&error];
+        if ([fileManager fileExistsAtPath:localPath]) {
+            [fileManager removeItemAtPath:localPath error:&error];
+        }
+        if (error == nil) {
+            [fileManager createSymbolicLinkAtURL:[NSURL fileURLWithPath:localPath] withDestinationURL:serviceURI_ error:&error];
+        }
         self.fetched = true;
     } else {
         NSDate* lastModified = nil;
@@ -146,6 +150,7 @@ static NSMutableDictionary* _serviceMap = nil;
         }
 
         NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:serviceURI_];
+        [request setHTTPMethod:@"GET"];
         if (lastModified) {
             NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
             [dateFormatter setDateFormat:@"EEE, d MMM yyyy HH:mm:ss"];
@@ -154,7 +159,8 @@ static NSMutableDictionary* _serviceMap = nil;
             [request setValue:formatted forHTTPHeaderField:@"If-Modified-Since"];
         }
         [request setValue:@"gzip" forHTTPHeaderField:@"Accept-Encoding"];
-        
+        [request setValue:@"application/javascript" forHTTPHeaderField:@"Accept"];
+
         NSString *version = @"1"; // FIXME
         NSString *info = [NSString stringWithFormat:@"iOS; API=%@", [[UIDevice currentDevice] systemVersion]];
 
@@ -185,22 +191,26 @@ static NSMutableDictionary* _serviceMap = nil;
         NSString *userAgent = [NSString stringWithFormat:@"LiquidCore/%@ (%@)%@%@", version, info, surfaces, bindings];
         NSLog(@"MicroService User-Agent : %@", userAgent);
         [request setValue:userAgent forHTTPHeaderField:@"User-Agent"];
-     
-        NSURLSession *session = [NSURLSession sharedSession];
-        NSURLSessionDataTask *dataTask =
-        [session dataTaskWithRequest:request
-                   completionHandler:^(NSData *data, NSURLResponse *response, NSError *e)
+        [request setHTTPMethod:@"GET"];
+        
+        NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+        NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration delegate:nil delegateQueue:nil];
+        NSURLSessionDownloadTask *downloadTask =
+        [session downloadTaskWithRequest:request
+                   completionHandler:^(NSURL *location, NSURLResponse *response, NSError *e)
         {
             NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
             error = nil;
             if (http.statusCode == 200) {
-                [fileManager createFileAtPath:localPath contents:data attributes:nil];
+                [[NSFileManager defaultManager] moveItemAtURL:location
+                                                        toURL:[NSURL fileURLWithPath:localPath]
+                                                        error:nil];
             } else if (http.statusCode != 304) { // 304 just means the file has not changed
                 error = e;
             }
             self.fetched = true;
         }];
-        [dataTask resume];
+        [downloadTask resume];
     }
     
     // This needs to be synchronous
@@ -308,6 +318,10 @@ static NSMutableDictionary* _serviceMap = nil;
                     [listener onEvent:self event:event payload:[value toString]];
                 } else if ([value isObject]) {
                     [listener onEvent:self event:event payload:[value toObject]];
+                } else if ([value isNull] || [value isUndefined]) {
+                    [listener onEvent:self event:event payload:nil];
+                } else {
+                    assert(0);
                 }
             } inContext:context];
             [self.emitter invokeMethod:@"on" withArguments:@[event, jsListener]];
@@ -336,7 +350,7 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     if (self.emitter) {
         [self.process async:^(JSContext* context) {
-            [self.emitter invokeMethod:@"emit" withArguments:@[]];
+            [self.emitter invokeMethod:@"emit" withArguments:@[event]];
         }];
     }
 }
@@ -345,7 +359,7 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     if (self.emitter) {
         [self.process async:^(JSContext* context) {
-            [self.emitter invokeMethod:@"emit" withArguments:@[object]];
+            [self.emitter invokeMethod:@"emit" withArguments:@[event, object]];
         }];
     }
 }
@@ -354,7 +368,7 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     if (self.emitter) {
         [self.process async:^(JSContext* context) {
-            [self.emitter invokeMethod:@"emit" withArguments:@[number]];
+            [self.emitter invokeMethod:@"emit" withArguments:@[event, number]];
         }];
     }
 }
@@ -363,7 +377,7 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     if (self.emitter) {
         [self.process async:^(JSContext* context) {
-            [self.emitter invokeMethod:@"emit" withArguments:@[string]];
+            [self.emitter invokeMethod:@"emit" withArguments:@[event, string]];
         }];
     }
 }
@@ -372,8 +386,8 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     if (self.emitter) {
         [self.process async:^(JSContext* context) {
-            [self.emitter invokeMethod:@"emit" withArguments:@[[JSValue valueWithBool:boolean
-                                                                inContext:context]]];
+            [self.emitter invokeMethod:@"emit" withArguments:@[event, [JSValue valueWithBool:boolean
+                                                                                   inContext:context]]];
         }];
     }
 }

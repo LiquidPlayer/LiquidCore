@@ -161,18 +161,11 @@ Local<Value> Promise::Result()
     
     //enum PromiseState { kPending, kFulfilled, kRejected };
     Local<Context> context = V82JSC::ToCurrentContext(this);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
-    JSValueRef args[] = {
-        V82JSC::ToJSValueRef(this, context),
-        JSObjectMake(ctx, 0, 0)
-    };
-    V82JSC::exec(ctx,
-                 "_1.then(v => { _2.r = v; }, v => { _2.r = v; });",
-                 2, args);
-    JSValueRef value = V82JSC::exec(ctx,
-                                    "return _2.r;", 2, args);
     
-    return scope.Escape(ValueImpl::New(V82JSC::ToContextImpl(context), value));
+    Local<Value> result = Get(context,
+                             String::NewFromUtf8(isolate, "_value", NewStringType::kNormal).ToLocalChecked())
+    .ToLocalChecked();
+    return scope.Escape(result);
 }
 
 /**
@@ -185,19 +178,12 @@ Promise::PromiseState Promise::State()
 
     //enum PromiseState { kPending, kFulfilled, kRejected };
     Local<Context> context = V82JSC::ToCurrentContext(this);
-    JSContextRef ctx = V82JSC::ToContextRef(context);
-    JSValueRef args[] = {
-        V82JSC::ToJSValueRef(this, context),
-        JSObjectMake(ctx, 0, 0)
-    };
-    V82JSC::exec(ctx,
-                 "const t = {};"
-                 "Promise.race([_1, t])"
-                 "    .then(v => (v === t)? 0 : 1, () => 2)"
-                 "    .then(v => { _2.r = v; });",
-                 2, args);
-    JSValueRef state = V82JSC::exec(ctx,
-                                    "return _2.r;", 2, args);
-
-    return static_cast<PromiseState>(JSValueToNumber(ctx, state, nullptr));
+    
+    Local<Value> state = Get(context,
+                             String::NewFromUtf8(isolate, "_state", NewStringType::kNormal).ToLocalChecked())
+    .ToLocalChecked();
+    
+    int _state = state->Int32Value(context).ToChecked();
+    if (_state == 3) _state = 0;
+    return static_cast<PromiseState>(_state);
 }

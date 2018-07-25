@@ -219,8 +219,11 @@ struct IsolateImpl {
     struct EnqueuedMicrotask {
         EnqueuedMicrotask(v8::Isolate* isolate, Local<Function> callback) {
             m_callback.Reset(isolate, callback);
+            m_native_callback = nullptr;
+            m_data = nullptr;
         }
         EnqueuedMicrotask(MicrotaskCallback callback, void* data) {
+            m_callback.Reset();
             m_native_callback = callback;
             m_data = data;
         }

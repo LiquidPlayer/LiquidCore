@@ -52,10 +52,9 @@
     }
     preserver = NULL;
 }
-- (void)finalize
+- (void)dealloc
 {
     [self letDie];
-    [super finalize];
 }
 @end
 
@@ -142,11 +141,11 @@ static void onNodeExit(void *data, int code)
             [[self.context globalObject] deleteProperty:@"__nodedroid_onLoad"];
             
             // set the filesystem
-            fs_ = [FileSystem createInContext:self.context uniqueID:uniqueID_ mediaAccessMask:mediaAccessMask_];
+            self->fs_ = [FileSystem createInContext:self.context uniqueID:self->uniqueID_ mediaAccessMask:self->mediaAccessMask_];
             JSValue *o = [JSValue valueWithNewObjectInContext:self.context];
-            o[@"fs"] = fs_;
+            o[@"fs"] = self->fs_;
             process_set_filesystem([self.context JSGlobalContextRef], (JSObjectRef)[o[@"fs"] JSValueRef]);
-            _modulePath = fs_.modulePath;
+            self->_modulePath = self->fs_.modulePath;
             
             // set the exit handler
             self.context[@"__tmp"] = [JSValue valueWithObject:^(int code) {
@@ -185,7 +184,7 @@ static void onNodeExit(void *data, int code)
     [self setContext:nil];
     [self eventOnExit:code];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        process_dispose(processRef_);
+        process_dispose(self->processRef_);
     });
 }
 

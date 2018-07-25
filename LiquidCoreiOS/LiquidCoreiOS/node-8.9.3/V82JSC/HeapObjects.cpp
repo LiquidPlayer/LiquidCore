@@ -363,9 +363,11 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     }
 
     assert(second_pass_callbacks.empty());
-    
+
+/*
     printf ("V82JSC Garbage Collector: Freed %d bytes; Deallocated %d / %d kB chunks; %d kB in use\n",
             freed, freed_chunks * 512, (freed_chunks+used_chunks) * 512, used_chunks * 512);
+*/
     
     return true;
 }

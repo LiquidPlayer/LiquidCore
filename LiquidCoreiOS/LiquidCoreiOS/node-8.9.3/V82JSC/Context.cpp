@@ -9,7 +9,8 @@
 #include "V82JSC.h"
 #include "JSContextRefPrivate.h"
 
-extern "C" const char* promise_polyfill;
+extern "C" unsigned char promise_polyfill_js[];
+extern "C" unsigned char typedarray_js[];
 
 using namespace v8;
 
@@ -489,7 +490,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSStringRef zGlobal = JSStringCreateWithUTF8CString("global");
         JSStringRef zSetTimeout = JSStringCreateWithUTF8CString("setTimeout");
         JSStringRef zPromise = JSStringCreateWithUTF8CString("Promise");
-        JSStringRef zPromisePolyfill = JSStringCreateWithUTF8CString(promise_polyfill);
+        JSStringRef zPromisePolyfill = JSStringCreateWithUTF8CString((const char*)promise_polyfill_js);
 
         JSObjectRef setTimeout = JSObjectMakeFunctionWithCallback
         (context->m_ctxRef, zSetTimeout,
@@ -505,7 +506,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
              HandleScope scope(isolate);
              Local<Context> ctxt = LocalContextImpl::New(isolate, ctx);
              
-             isolate->EnqueueMicrotask(ValueImpl::New(V82JSC::ToContextImpl(ctxt), arguments[1]).As<Function>());
+             isolate->EnqueueMicrotask(ValueImpl::New(V82JSC::ToContextImpl(ctxt), arguments[0]).As<Function>());
              return JSValueMakeUndefined(ctx);
          });
         JSValueRef excp = 0;
@@ -517,14 +518,21 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         assert(excp == 0);
         JSEvaluateScript(context->m_ctxRef, zPromisePolyfill, global_o, 0, 0, &excp);
         assert(excp == 0);
+
+        JSStringRef zTypedArrayPolyfill = JSStringCreateWithUTF8CString((const char*)typedarray_js);
+        JSEvaluateScript(context->m_ctxRef, zTypedArrayPolyfill, global_o, 0, 0, &excp);
+        assert(excp == 0);
+
         JSObjectDeleteProperty(context->m_ctxRef, global_o, zSetTimeout, &excp);
         assert(excp == 0);
 
         JSStringRelease(zPromise);
         JSStringRelease(zPromisePolyfill);
+        JSStringRelease(zTypedArrayPolyfill);
         JSStringRelease(zSetTimeout);
         JSStringRelease(zGlobal);
-
+        
+        
         std::map<std::string, bool> loaded_extensions;
 
         InstallAutoExtensions(ctx, loaded_extensions);

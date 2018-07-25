@@ -24372,8 +24372,6 @@ TEST(Promises) {
   CHECK(r->IsPromise());
 }
 
-// NOTE: In JSC, promises do not run in microtasks.  They execute as soon as script
-// execution is done.  So, isolate->RunMicrotasks() has no effect here.
 TEST(PromiseThen) {
   LocalContext context;
   v8::Isolate* isolate = context->GetIsolate();
@@ -24408,12 +24406,11 @@ TEST(PromiseThen) {
 
   // Then
   CompileRun("x1 = x2 = 0;");
-//  q->Then(context.local(), f1).ToLocalChecked();
+  q->Then(context.local(), f1).ToLocalChecked();
   CHECK_EQ(0, global->Get(context.local(), v8_str("x1"))
                   .ToLocalChecked()
                   ->Int32Value(context.local())
                   .FromJust());
-  q->Then(context.local(), f1).ToLocalChecked();
   isolate->RunMicrotasks();
   CHECK_EQ(1, global->Get(context.local(), v8_str("x1"))
                   .ToLocalChecked()
@@ -24451,7 +24448,6 @@ TEST(PromiseThen) {
                   .FromJust());
 
   pr->Resolve(context.local(), v8::Integer::New(isolate, 3)).FromJust();
-  /*
   CHECK_EQ(0, global->Get(context.local(), v8_str("x1"))
                   .ToLocalChecked()
                   ->Int32Value(context.local())
@@ -24460,7 +24456,6 @@ TEST(PromiseThen) {
                   .ToLocalChecked()
                   ->Int32Value(context.local())
                   .FromJust());
-  */
   isolate->RunMicrotasks();
   CHECK_EQ(3, global->Get(context.local(), v8_str("x1"))
                   .ToLocalChecked()

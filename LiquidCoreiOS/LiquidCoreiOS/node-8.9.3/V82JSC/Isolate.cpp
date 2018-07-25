@@ -1159,7 +1159,8 @@ void Isolate::RunMicrotasks()
         TryCatch try_catch(this);
         bool running = iso->m_running_microtasks;
         iso->m_running_microtasks = true;
-        for (auto i=iso->m_microtask_queue.begin(); i!=iso->m_microtask_queue.end(); ) {
+        while (!iso->m_microtask_queue.empty()) {
+            auto i = iso->m_microtask_queue.begin();
             IsolateImpl::EnqueuedMicrotask& microtask = *i;
             if (!microtask.m_callback.IsEmpty()) {
                 Local<Function> task = microtask.m_callback.Get(this);
@@ -1167,7 +1168,7 @@ void Isolate::RunMicrotasks()
             } else {
                 microtask.m_native_callback(microtask.m_data);
             }
-            iso->m_microtask_queue.erase(i);
+            iso->m_microtask_queue.erase(iso->m_microtask_queue.begin());
         }
         iso->m_running_microtasks = running;
         if (!running) {
