@@ -12,12 +12,12 @@
 @interface ConsoleSession : NSObject <ProcessDelegate>
 @property (nonatomic) LCConsoleSurfaceView *currentView;
 
-- (id) initWithMicroService:(MicroService*)service onAttached:(OnAttachedHandler)onAttached;
+- (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttached;
 - (void) processCommand:(NSString*)cmd;
 @end
 
 @implementation ConsoleSession {
-    OnAttachedHandler onAttached_;
+    LCOnAttachedHandler onAttached_;
     Process* process_;
     NSString* uuid_;
     NSInteger rows_;
@@ -25,7 +25,7 @@
     BOOL processedException_;
 }
 
-- (id) initWithMicroService:(MicroService*)service onAttached:(OnAttachedHandler)onAttached
+- (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttached
 {
     self = [super init];
     if (self) {
@@ -187,12 +187,12 @@
 
 #pragma - LCSurface
 
-- (void) bind:(MicroService*)service synchronizer:(Synchronizer*)synchronizer
+- (void) bind:(LCMicroService*)service synchronizer:(LCSynchronizer*)synchronizer
 {
     // Nothing to do -- everything happens during attach:onAttached:
 }
 
-- (UIView*) attach:(MicroService*)service onAttached:(OnAttachedHandler)onAttachedHandler
+- (UIView*) attach:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttachedHandler
 {
     session_ = [[ConsoleSession alloc] initWithMicroService:service onAttached:onAttachedHandler];
     session_.currentView = self;

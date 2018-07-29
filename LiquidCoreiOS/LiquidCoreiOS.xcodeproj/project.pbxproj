@@ -327,7 +327,7 @@
 		0765640620F9E611002C330B /* nan_implementation_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F320F9E611002C330B /* nan_implementation_12_inl.h */; };
 		0765640720F9E611002C330B /* nan_weak.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F420F9E611002C330B /* nan_weak.h */; };
 		0765640820F9E611002C330B /* nan_persistent_12_inl.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563F520F9E611002C330B /* nan_persistent_12_inl.h */; };
-		0765640B20F9F1F9002C330B /* MicroService.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640A20F9F1F9002C330B /* MicroService.m */; };
+		0765640B20F9F1F9002C330B /* LCMicroService.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640A20F9F1F9002C330B /* LCMicroService.m */; };
 		0765640D20FBBD96002C330B /* MicroServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640C20FBBD96002C330B /* MicroServiceTests.m */; };
 		0765640F20FBBECC002C330B /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = 0765640E20FBBECC002C330B /* Resources */; };
 		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
@@ -377,7 +377,7 @@
 		07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */; };
 		07D2B3A1210C705A003989F0 /* LCConsoleSurfaceView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */; };
 		07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A2210C70DB003989F0 /* LCSurface.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		07D2B3A4210CB38B003989F0 /* MicroService.h in Headers */ = {isa = PBXBuildFile; fileRef = 0765640920F9EB70002C330B /* MicroService.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B3A4210CB38B003989F0 /* LCMicroService.h in Headers */ = {isa = PBXBuildFile; fileRef = 0765640920F9EB70002C330B /* LCMicroService.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		07D2B3A6210CB50D003989F0 /* console.js in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B3A5210CB50D003989F0 /* console.js */; };
 		07D2B3A9210DAD17003989F0 /* LCLiquidView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A7210DAD17003989F0 /* LCLiquidView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		07D2B3AA210DAD17003989F0 /* LCLiquidView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3A8210DAD17003989F0 /* LCLiquidView.m */; };
@@ -802,8 +802,8 @@
 		076563F320F9E611002C330B /* nan_implementation_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_implementation_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_implementation_12_inl.h"; sourceTree = "<group>"; };
 		076563F420F9E611002C330B /* nan_weak.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_weak.h; path = "../../../../deps/nan-2.5.1/nan_weak.h"; sourceTree = "<group>"; };
 		076563F520F9E611002C330B /* nan_persistent_12_inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nan_persistent_12_inl.h; path = "../../../../deps/nan-2.5.1/nan_persistent_12_inl.h"; sourceTree = "<group>"; };
-		0765640920F9EB70002C330B /* MicroService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MicroService.h; sourceTree = "<group>"; };
-		0765640A20F9F1F9002C330B /* MicroService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MicroService.m; sourceTree = "<group>"; };
+		0765640920F9EB70002C330B /* LCMicroService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCMicroService.h; sourceTree = "<group>"; };
+		0765640A20F9F1F9002C330B /* LCMicroService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCMicroService.m; sourceTree = "<group>"; };
 		0765640C20FBBD96002C330B /* MicroServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MicroServiceTests.m; sourceTree = "<group>"; };
 		0765640E20FBBECC002C330B /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Resources; path = LiquidCoreiOSTests/Resources; sourceTree = "<group>"; };
 		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1546,8 +1546,8 @@
 				07CA454220F10F4700862266 /* NodeBridge.cpp */,
 				07CA454620F4C37E00862266 /* FileSystem.h */,
 				07CA454720F4C3F800862266 /* FileSystem.m */,
-				0765640920F9EB70002C330B /* MicroService.h */,
-				0765640A20F9F1F9002C330B /* MicroService.m */,
+				0765640920F9EB70002C330B /* LCMicroService.h */,
+				0765640A20F9F1F9002C330B /* LCMicroService.m */,
 				07D2B3A2210C70DB003989F0 /* LCSurface.h */,
 				07D2B3A7210DAD17003989F0 /* LCLiquidView.h */,
 				07D2B3A8210DAD17003989F0 /* LCLiquidView.m */,
@@ -1692,7 +1692,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0738918120EE07AC009056FD /* spinlock.h in Headers */,
-				07D2B3A4210CB38B003989F0 /* MicroService.h in Headers */,
+				07D2B3A4210CB38B003989F0 /* LCMicroService.h in Headers */,
 				07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */,
 				07D2B3A9210DAD17003989F0 /* LCLiquidView.h in Headers */,
 				073892D520EE5E29009056FD /* string_bytes.h in Headers */,
@@ -2425,7 +2425,7 @@
 				07F804A320277DC700FDFC27 /* TypedArray.cpp in Sources */,
 				07F804EE202D9F5300FDFC27 /* ObjectTemplate.cpp in Sources */,
 				072E6CA120FCF37300B80349 /* node_dtrace.cc in Sources */,
-				0765640B20F9F1F9002C330B /* MicroService.m in Sources */,
+				0765640B20F9F1F9002C330B /* LCMicroService.m in Sources */,
 				07F804B720298D3000FDFC27 /* Symbol.cpp in Sources */,
 				0738919C20EE07AC009056FD /* stream.c in Sources */,
 				07F804F2202DA7AF00FDFC27 /* Extension.cpp in Sources */,

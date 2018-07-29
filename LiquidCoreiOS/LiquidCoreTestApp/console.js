@@ -1,8 +1,9 @@
+const CONSOLE = 'org.liquidplayer.surface.console.ConsoleSurface';
 
 /* Request a console surface to be attached to our Node.js process.  Once this is
  * done, process.stdout and process.stderr will be streamed to the LCLiquidView.
  */
-LiquidCore.attach('org.liquidplayer.surface.console.ConsoleSurface', main);
+LiquidCore.attach(CONSOLE, main);
 
 /* The 'main' function will be called once the console surface is attached
  * to the process.

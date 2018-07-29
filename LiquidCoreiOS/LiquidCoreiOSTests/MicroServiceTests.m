@@ -8,11 +8,11 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
-#import "MicroService.h"
+#import "LCMicroService.h"
 #import "Process.h"
 
 @interface MicroServiceTest : XCTestCase <MicroServiceDelegate, MicroServiceEventListener>
-- (void) onStart:(MicroService *)service synchronizer:(Synchronizer *)synchronizer;
+- (void) onStart:(LCMicroService *)service synchronizer:(Synchronizer *)synchronizer;
 
 @property (atomic, assign) bool serverReady;
 @property (atomic, assign) int finishCount;
@@ -20,8 +20,8 @@
 
 @implementation MicroServiceTest {
     NSInteger port_;
-    MicroService *server_;
-    MicroService *client_;
+    LCMicroService *server_;
+    LCMicroService *client_;
 }
 - (void) testMicroService
 {
@@ -32,23 +32,23 @@
     NSURL *server_js = [testBundle URLForResource:@"Resources/server" withExtension:@"js"];
     
     // First, start a MicroService from a file.  This service creates a small HTTP file server
-    server_ = [[MicroService alloc] initWithURL:server_js delegate:self];
+    server_ = [[LCMicroService alloc] initWithURL:server_js delegate:self];
     [server_ start];
     volatile bool serverReady = self.serverReady; while (!serverReady) { serverReady = self.serverReady; }
     
     NSURL *client_js = [NSURL URLWithString:[NSString stringWithFormat:@"http://localhost:%ld/hello.js", port_]];
     
     // Next, start a MicroService that is served from the server
-    client_ = [[MicroService alloc] initWithURL:client_js delegate:self];
+    client_ = [[LCMicroService alloc] initWithURL:client_js delegate:self];
     [client_ start];
     
     volatile int finishCount = self.finishCount; while (finishCount>0) { finishCount = self.finishCount; }
     
-    [MicroService uninstall:server_js];
-    [MicroService uninstall:client_js];
+    [LCMicroService uninstall:server_js];
+    [LCMicroService uninstall:client_js];
 }
 
-- (void) onStart:(MicroService *)service synchronizer:(Synchronizer *)synchronizer
+- (void) onStart:(LCMicroService *)service synchronizer:(Synchronizer *)synchronizer
 {
     if ([service isEqual:server_]) {
         [service addEventListener:@"listening" listener:self];
@@ -62,11 +62,11 @@
         [service addEventListener:@"array" listener:self];
     }
 }
-- (void) onError:(MicroService *)service exception:(NSException *)exception
+- (void) onError:(LCMicroService *)service exception:(NSException *)exception
 {
     XCTAssertTrue(false);
 }
-- (void) onExit:(MicroService *)service exitCode:(int)exitCode
+- (void) onExit:(LCMicroService *)service exitCode:(int)exitCode
 {
     XCTAssertEqual(exitCode, 0);
     self.finishCount --;
@@ -75,7 +75,7 @@
     }
 }
 
-- (void) onEvent:(MicroService *)service event:(NSString *)event payload:(id)payload
+- (void) onEvent:(LCMicroService *)service event:(NSString *)event payload:(id)payload
 {
     // Server
     if ([event isEqualToString:@"listening"]) {

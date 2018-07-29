@@ -9,10 +9,10 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import "LiquidCoreiOS.h"
-#import "MicroService.h"
+#import "LCMicroService.h"
 #import "Process.h"
 
-@interface MicroService() <ProcessDelegate>
+@interface LCMicroService() <ProcessDelegate>
 @property (atomic, assign, readonly, class) NSMutableDictionary *serviceMap;
 @property (nonatomic) JSValue *emitter;
 @property (atomic, readwrite) Process *process;
@@ -21,13 +21,13 @@
 - (NSError*) fetchService;
 @end
 
-@interface Synchronizer()
+@interface LCSynchronizer()
 - (id) init;
 - (void) blockUntilReady;
 @property (atomic) int count;
 @end
 
-@implementation Synchronizer
+@implementation LCSynchronizer
 - (id) init
 {
     self = [super init];
@@ -61,10 +61,10 @@
 }
 @end
 
-@implementation MicroService {
+@implementation LCMicroService {
     NSURL* serviceURI_;
     NSString* serviceId_;
-    id<MicroServiceDelegate> delegate_;
+    id<LCMicroServiceDelegate> delegate_;
     bool started_;
     NSArray* argv_;
     NSString* module_;
@@ -73,7 +73,7 @@ static NSMutableDictionary* _serviceMap = nil;
 + (NSMutableDictionary *)serviceMap { return _serviceMap; }
 + (id) serviceFromInstanceId:(NSString*)instanceId
 {
-    return [MicroService.serviceMap objectForKey:instanceId];
+    return [LCMicroService.serviceMap objectForKey:instanceId];
 }
 + (void) uninstall:(NSURL *)serviceURI
 {
@@ -95,7 +95,7 @@ static NSMutableDictionary* _serviceMap = nil;
     return [self initWithURL:nil];
 }
 
-- (id) initWithURL:(NSURL*)serviceURI delegate:(id<MicroServiceDelegate>)delegate
+- (id) initWithURL:(NSURL*)serviceURI delegate:(id<LCMicroServiceDelegate>)delegate
 {
     self = [super init];
     if (self) {
@@ -123,7 +123,7 @@ static NSMutableDictionary* _serviceMap = nil;
         _process = nil;
         _fetched = false;
         _eventListeners = [[NSMutableArray alloc] init];
-        [MicroService.serviceMap setObject:self forKey:self.instanceId];
+        [LCMicroService.serviceMap setObject:self forKey:self.instanceId];
     }
     return self;
 }
@@ -246,9 +246,9 @@ static NSMutableDictionary* _serviceMap = nil;
         NSError* error = [self fetchService];
         if (error) @throw error;
         
-        Synchronizer *synchronizer = nil;
+        LCSynchronizer *synchronizer = nil;
         if( delegate_ && [delegate_ respondsToSelector:@selector(onStart:synchronizer:)]) {
-            synchronizer = [[Synchronizer alloc] init];
+            synchronizer = [[LCSynchronizer alloc] init];
             [delegate_ onStart:self synchronizer:synchronizer];
         }
         
@@ -288,7 +288,7 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     delegate_ = nil;
     self.emitter = nil;
-    [MicroService.serviceMap removeObjectForKey:serviceId_];
+    [LCMicroService.serviceMap removeObjectForKey:serviceId_];
     self.process = nil;
 }
 
@@ -317,7 +317,7 @@ static NSMutableDictionary* _serviceMap = nil;
 }
 
 - (void) addEventListener:(NSString*)event
-                 listener:(id<MicroServiceEventListener>)listener
+                 listener:(id<LCMicroServiceEventListener>)listener
 {
     if (self.emitter != nil) {
         [self.process sync:^(JSContext *context) {
@@ -344,7 +344,7 @@ static NSMutableDictionary* _serviceMap = nil;
 }
 
 - (void) removeEventListener:(NSString*)event
-                    listener:(id<MicroServiceEventListener>)listener
+                    listener:(id<LCMicroServiceEventListener>)listener
 {
     if (self.emitter != nil) {
         [self.process sync:^(JSContext* context) {

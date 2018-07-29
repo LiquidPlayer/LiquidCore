@@ -24,14 +24,14 @@ static NSMutableArray* registeredSurfaces;
 }
 @end
 
-@interface LCLiquidView() <MicroServiceDelegate>
+@interface LCLiquidView() <LCMicroServiceDelegate>
 @property (nonatomic, strong) UIView<LCSurface> *surfaceView;
 @end
 
 @implementation LCLiquidView {
     NSMutableArray *availableSurfaces_;
     BOOL customSurfaces_;
-    MicroService *service_;
+    LCMicroService *service_;
     NSDictionary *boundSurfaces_;
     id<LoopPreserver> preserver_;
 }
@@ -102,10 +102,10 @@ static NSMutableArray* registeredSurfaces;
     }
 }
 
-- (MicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...
+- (LCMicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...
 {
     if (uri != nil) {
-        service_ = [[MicroService alloc] initWithURL:uri delegate:self];
+        service_ = [[LCMicroService alloc] initWithURL:uri delegate:self];
         [service_ setAvailableSurfaces:availableSurfaces_];
         if (argv == nil) {
             [service_ start];
@@ -125,7 +125,7 @@ static NSMutableArray* registeredSurfaces;
     return nil;
 }
 
-- (MicroService *) start:(NSURL*)uri
+- (LCMicroService *) start:(NSURL*)uri
 {
     return [self start:uri arguments:nil];
 }
@@ -208,7 +208,7 @@ static NSMutableArray* registeredSurfaces;
 
 #pragma - MicroServiceDelegate
 
-- (void) onStart:(MicroService*)service synchronizer:(Synchronizer*)synchronizer
+- (void) onStart:(LCMicroService*)service synchronizer:(LCSynchronizer*)synchronizer
 {
     [service.process sync:^(JSContext* context) {
         JSValue *liquidcore = context[@"LiquidCore"];
@@ -248,12 +248,12 @@ static NSMutableArray* registeredSurfaces;
     }];
 }
 
-- (void) onExit:(MicroService*)service exitCode:(int)exitCode
+- (void) onExit:(LCMicroService*)service exitCode:(int)exitCode
 {
     boundSurfaces_ = nil;
 }
 
-- (void) onError:(MicroService*)service exception:(NSException*)exception
+- (void) onError:(LCMicroService*)service exception:(NSException*)exception
 {
     boundSurfaces_ = nil;
     NSLog(@"error: %@", exception);

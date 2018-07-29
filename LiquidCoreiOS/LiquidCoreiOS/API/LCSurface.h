@@ -7,16 +7,16 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MicroService.h"
+#import <LiquidCoreiOS/LCMicroService.h>
 
-typedef void (^OnAttachedHandler)(void);
+typedef void (^LCOnAttachedHandler)(void);
 
 @protocol LCSurface <NSObject>
 @property (class, readonly, copy) NSString* SURFACE_CANONICAL_NAME;
 @property (class, readonly, copy) NSString* SURFACE_VERSION;
 
-- (void) bind:(MicroService*)service synchronizer:(Synchronizer*)synchronizer;
-- (UIView<LCSurface>*) attach:(MicroService*)service onAttached:(OnAttachedHandler)onAttachedHandler;
+- (void) bind:(LCMicroService*)service synchronizer:(LCSynchronizer*)synchronizer;
+- (UIView<LCSurface>*) attach:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttachedHandler;
 - (void) detach;
 - (void) reset;
 

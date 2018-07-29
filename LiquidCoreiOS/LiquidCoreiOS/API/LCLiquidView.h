@@ -7,12 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MicroService.h"
-#import "LCSurface.h"
+#import <LiquidCoreiOS/LCMicroService.h>
 
 @interface LCLiquidView : UIView
 - (void) enableSurface:(NSString*)canonicalName, ...;
-- (MicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...;
-- (MicroService *) start:(NSURL*)uri;
+- (LCMicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...;
+- (LCMicroService *) start:(NSURL*)uri;
 
 @end
