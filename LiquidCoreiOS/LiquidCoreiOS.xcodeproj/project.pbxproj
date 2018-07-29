@@ -358,12 +358,12 @@
 		07D2B3542109DBF2003989F0 /* HtmlAnsiOutputStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3532109DBF2003989F0 /* HtmlAnsiOutputStream.m */; };
 		07D2B3572109F855003989F0 /* AnsiConsoleOutputStream.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3552109F855003989F0 /* AnsiConsoleOutputStream.h */; };
 		07D2B3582109F855003989F0 /* AnsiConsoleOutputStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3562109F855003989F0 /* AnsiConsoleOutputStream.m */; };
-		07D2B35B210AFF62003989F0 /* AnsiConsoleTextView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B359210AFF62003989F0 /* AnsiConsoleTextView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B35B210AFF62003989F0 /* AnsiConsoleTextView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B359210AFF62003989F0 /* AnsiConsoleTextView.h */; };
 		07D2B35C210AFF62003989F0 /* AnsiConsoleTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B35A210AFF62003989F0 /* AnsiConsoleTextView.m */; };
 		07D2B35E210B074D003989F0 /* ConsoleView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B35D210B074D003989F0 /* ConsoleView.xib */; };
-		07D2B361210B077E003989F0 /* ConsoleView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B35F210B077E003989F0 /* ConsoleView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B361210B077E003989F0 /* ConsoleView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B35F210B077E003989F0 /* ConsoleView.h */; };
 		07D2B362210B077E003989F0 /* ConsoleView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B360210B077E003989F0 /* ConsoleView.m */; };
-		07D2B365210B1426003989F0 /* CommandTextField.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B363210B1426003989F0 /* CommandTextField.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B365210B1426003989F0 /* CommandTextField.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B363210B1426003989F0 /* CommandTextField.h */; };
 		07D2B366210B1426003989F0 /* CommandTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B364210B1426003989F0 /* CommandTextField.m */; };
 		07D2B36F210B21A2003989F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B36E210B21A2003989F0 /* AppDelegate.m */; };
 		07D2B372210B21A2003989F0 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B371210B21A2003989F0 /* ViewController.m */; };
@@ -374,11 +374,13 @@
 		07D2B387210B21A4003989F0 /* LiquidCoreTestAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */; };
 		07D2B392210B21A4003989F0 /* LiquidCoreTestAppUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */; };
 		07D2B39D210B21C1003989F0 /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
-		07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */; };
 		07D2B3A1210C705A003989F0 /* LCConsoleSurfaceView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */; };
 		07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A2210C70DB003989F0 /* LCSurface.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		07D2B3A4210CB38B003989F0 /* MicroService.h in Headers */ = {isa = PBXBuildFile; fileRef = 0765640920F9EB70002C330B /* MicroService.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		07D2B3A6210CB50D003989F0 /* console.js in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B3A5210CB50D003989F0 /* console.js */; };
+		07D2B3A9210DAD17003989F0 /* LCLiquidView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A7210DAD17003989F0 /* LCLiquidView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B3AA210DAD17003989F0 /* LCLiquidView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3A8210DAD17003989F0 /* LCLiquidView.m */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */; };
 		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
@@ -871,6 +873,8 @@
 		07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCConsoleSurfaceView.m; sourceTree = "<group>"; };
 		07D2B3A2210C70DB003989F0 /* LCSurface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCSurface.h; sourceTree = "<group>"; };
 		07D2B3A5210CB50D003989F0 /* console.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = console.js; sourceTree = "<group>"; };
+		07D2B3A7210DAD17003989F0 /* LCLiquidView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCLiquidView.h; sourceTree = "<group>"; };
+		07D2B3A8210DAD17003989F0 /* LCLiquidView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCLiquidView.m; sourceTree = "<group>"; };
 		07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exec.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
@@ -1545,6 +1549,8 @@
 				0765640920F9EB70002C330B /* MicroService.h */,
 				0765640A20F9F1F9002C330B /* MicroService.m */,
 				07D2B3A2210C70DB003989F0 /* LCSurface.h */,
+				07D2B3A7210DAD17003989F0 /* LCLiquidView.h */,
+				07D2B3A8210DAD17003989F0 /* LCLiquidView.m */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1686,18 +1692,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				0738918120EE07AC009056FD /* spinlock.h in Headers */,
-				07D2B35B210AFF62003989F0 /* AnsiConsoleTextView.h in Headers */,
-				07D2B361210B077E003989F0 /* ConsoleView.h in Headers */,
 				07D2B3A4210CB38B003989F0 /* MicroService.h in Headers */,
 				07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */,
-				07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */,
-				07D2B365210B1426003989F0 /* CommandTextField.h in Headers */,
+				07D2B3A9210DAD17003989F0 /* LCLiquidView.h in Headers */,
 				073892D520EE5E29009056FD /* string_bytes.h in Headers */,
 				072E6CA220FCF37300B80349 /* node_dtrace.h in Headers */,
 				0738936A20EE661C009056FD /* nghttp2.h in Headers */,
 				0765640620F9E611002C330B /* nan_implementation_12_inl.h in Headers */,
 				0738930620EE5F42009056FD /* node_revert.h in Headers */,
+				07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */,
 				0738936220EE64C5009056FD /* nghttp2_debug.h in Headers */,
+				07D2B35B210AFF62003989F0 /* AnsiConsoleTextView.h in Headers */,
+				07D2B361210B077E003989F0 /* ConsoleView.h in Headers */,
+				07D2B365210B1426003989F0 /* CommandTextField.h in Headers */,
 				076563D820F9E50E002C330B /* async.h in Headers */,
 				0738936720EE65D0009056FD /* config.h in Headers */,
 				0738934120EE64C5009056FD /* nghttp2_hd.h in Headers */,
@@ -2390,6 +2397,7 @@
 				0738938220EFFF0F009056FD /* nodedroid_file.cc in Sources */,
 				07D2B366210B1426003989F0 /* CommandTextField.m in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
+				07D2B3AA210DAD17003989F0 /* LCLiquidView.m in Sources */,
 				073891F920EE0CEE009056FD /* ares_free_string.c in Sources */,
 				07D2B34D2107834B003989F0 /* polyfill.c in Sources */,
 				073891F520EE0CEE009056FD /* ares_init.c in Sources */,

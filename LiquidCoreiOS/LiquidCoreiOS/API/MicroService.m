@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import "LiquidCoreiOS.h"
 #import "MicroService.h"
 #import "Process.h"
 
@@ -161,7 +162,7 @@ static NSMutableDictionary* _serviceMap = nil;
         [request setValue:@"gzip" forHTTPHeaderField:@"Accept-Encoding"];
         [request setValue:@"application/javascript" forHTTPHeaderField:@"Accept"];
 
-        NSString *version = @"1"; // FIXME
+        NSString *version = [NSString stringWithCString:(const char*)LiquidCoreiOSVersionString encoding:NSUTF8StringEncoding];
         NSString *info = [NSString stringWithFormat:@"iOS; API=%@", [[UIDevice currentDevice] systemVersion]];
 
         NSString *bindings = nil;
@@ -184,7 +185,18 @@ static NSMutableDictionary* _serviceMap = nil;
         else bindings = @"";
         
         NSString *surfaces = nil;
-        // FIXME!
+        if (self.availableSurfaces != nil) {
+            for (Class<LCSurface> surface in self.availableSurfaces) {
+                NSString *sfc = [NSString stringWithFormat:@"%@/%@",
+                                 [[surface class] SURFACE_CANONICAL_NAME],
+                                 [[surface class] SURFACE_VERSION]];
+                if (surfaces != nil) {
+                    surfaces = [NSString stringWithFormat:@"%@; %@", surfaces, sfc];
+                } else {
+                    surfaces = sfc;
+                }
+            }
+        }
         if (surfaces) surfaces = [NSString stringWithFormat:@" Surface (%@)", surfaces];
         else surfaces = @"";
 

@@ -30,6 +30,7 @@
 @interface MicroService : NSObject
 @property (nonatomic, readonly, copy) NSString* instanceId;
 @property (atomic, readonly) Process* process;
+@property (nonatomic, readwrite, copy) NSArray* availableSurfaces;
 
 + (id) serviceFromInstanceId:(NSString*)instanceId;
 + (void) uninstall:(NSURL *)serviceURI;

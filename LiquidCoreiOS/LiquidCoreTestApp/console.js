@@ -1,4 +1,21 @@
-/* Just loop */
-setInterval(function() {}, 1000)
 
-console.log("Welcome to LiquidCore!");
+/* Request a console surface to be attached to our Node.js process.  Once this is
+ * done, process.stdout and process.stderr will be streamed to the LCLiquidView.
+ */
+LiquidCore.attach('org.liquidplayer.surface.console.ConsoleSurface', main);
+
+/* The 'main' function will be called once the console surface is attached
+ * to the process.
+ */
+function main(error)
+{
+    if (error) {
+        /* ruh roh, something went wrong */
+        LiquidCore.detach();
+        return;
+    }
+    
+    console.error("Welcome to LiquidCore!");
+    console.log("Enter javascript code to run it in the console.")
+    console.log("");
+}

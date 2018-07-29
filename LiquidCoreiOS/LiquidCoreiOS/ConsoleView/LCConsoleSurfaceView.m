@@ -153,6 +153,17 @@
     NSString *uuid_;
 }
 
++ (NSString*) SURFACE_CANONICAL_NAME
+{
+    return @"org.liquidplayer.surface.console.ConsoleSurface";
+}
+
++ (NSString*) SURFACE_VERSION
+{
+    return [NSString stringWithCString:(const char*)LiquidCoreiOSVersionString
+                              encoding:NSUTF8StringEncoding];
+}
+
 - (id) initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
@@ -213,3 +224,9 @@
 }
 
 @end
+
+__attribute__((constructor))
+void myStaticInitMethod()
+{
+    [LCSurfaceRegistration registerSurface:LCConsoleSurfaceView.class];
+}

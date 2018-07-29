@@ -14,14 +14,14 @@
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController title="LiquidCoreTestApp" id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="yf0-hX-h7r" customClass="LCConsoleSurfaceView">
+                    <view key="view" contentMode="scaleToFill" id="yf0-hX-h7r" customClass="LCLiquidView">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <viewLayoutGuide key="safeArea" id="uV2-Qi-cLh"/>
                     </view>
                     <connections>
-                        <outlet property="consoleSurface" destination="yf0-hX-h7r" id="6ZL-kW-DW4"/>
+                        <outlet property="liquidView" destination="yf0-hX-h7r" id="knD-jz-Brf"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
