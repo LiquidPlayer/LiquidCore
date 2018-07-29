@@ -354,6 +354,31 @@
 		07CA454820F4C3F800862266 /* FileSystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454720F4C3F800862266 /* FileSystem.m */; };
 		07CA454A20F5244E00862266 /* ProcessTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454920F5244E00862266 /* ProcessTests.m */; };
 		07D2B34D2107834B003989F0 /* polyfill.c in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B34C2107834B003989F0 /* polyfill.c */; };
+		07D2B3512109BF2A003989F0 /* AnsiOutputStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3502109BF2A003989F0 /* AnsiOutputStream.m */; };
+		07D2B3542109DBF2003989F0 /* HtmlAnsiOutputStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3532109DBF2003989F0 /* HtmlAnsiOutputStream.m */; };
+		07D2B3572109F855003989F0 /* AnsiConsoleOutputStream.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3552109F855003989F0 /* AnsiConsoleOutputStream.h */; };
+		07D2B3582109F855003989F0 /* AnsiConsoleOutputStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3562109F855003989F0 /* AnsiConsoleOutputStream.m */; };
+		07D2B35B210AFF62003989F0 /* AnsiConsoleTextView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B359210AFF62003989F0 /* AnsiConsoleTextView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B35C210AFF62003989F0 /* AnsiConsoleTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B35A210AFF62003989F0 /* AnsiConsoleTextView.m */; };
+		07D2B35E210B074D003989F0 /* ConsoleView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B35D210B074D003989F0 /* ConsoleView.xib */; };
+		07D2B361210B077E003989F0 /* ConsoleView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B35F210B077E003989F0 /* ConsoleView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B362210B077E003989F0 /* ConsoleView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B360210B077E003989F0 /* ConsoleView.m */; };
+		07D2B365210B1426003989F0 /* CommandTextField.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B363210B1426003989F0 /* CommandTextField.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B366210B1426003989F0 /* CommandTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B364210B1426003989F0 /* CommandTextField.m */; };
+		07D2B36F210B21A2003989F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B36E210B21A2003989F0 /* AppDelegate.m */; };
+		07D2B372210B21A2003989F0 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B371210B21A2003989F0 /* ViewController.m */; };
+		07D2B375210B21A2003989F0 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B373210B21A2003989F0 /* Main.storyboard */; };
+		07D2B377210B21A4003989F0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B376210B21A4003989F0 /* Assets.xcassets */; };
+		07D2B37A210B21A4003989F0 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B378210B21A4003989F0 /* LaunchScreen.storyboard */; };
+		07D2B37D210B21A4003989F0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B37C210B21A4003989F0 /* main.m */; };
+		07D2B387210B21A4003989F0 /* LiquidCoreTestAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */; };
+		07D2B392210B21A4003989F0 /* LiquidCoreTestAppUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */; };
+		07D2B39D210B21C1003989F0 /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
+		07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B3A1210C705A003989F0 /* LCConsoleSurfaceView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */; };
+		07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A2210C70DB003989F0 /* LCSurface.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B3A4210CB38B003989F0 /* MicroService.h in Headers */ = {isa = PBXBuildFile; fileRef = 0765640920F9EB70002C330B /* MicroService.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		07D2B3A6210CB50D003989F0 /* console.js in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B3A5210CB50D003989F0 /* console.js */; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */; };
 		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
@@ -426,6 +451,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 076F5883201E797F004780FD;
 			remoteInfo = LiquidCoreiOS;
+		};
+		07D2B383210B21A4003989F0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 076F587B201E797F004780FD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 07D2B36A210B21A1003989F0;
+			remoteInfo = LiquidCoreTestApp;
+		};
+		07D2B38E210B21A4003989F0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 076F587B201E797F004780FD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 07D2B36A210B21A1003989F0;
+			remoteInfo = LiquidCoreTestApp;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -799,6 +838,39 @@
 		07CA454720F4C3F800862266 /* FileSystem.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FileSystem.m; sourceTree = "<group>"; };
 		07CA454920F5244E00862266 /* ProcessTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ProcessTests.m; sourceTree = "<group>"; };
 		07D2B34C2107834B003989F0 /* polyfill.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = polyfill.c; path = polyfill/polyfill.c; sourceTree = "<group>"; };
+		07D2B34F2109BED0003989F0 /* AnsiOutputStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AnsiOutputStream.h; sourceTree = "<group>"; };
+		07D2B3502109BF2A003989F0 /* AnsiOutputStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AnsiOutputStream.m; sourceTree = "<group>"; };
+		07D2B3522109DBC0003989F0 /* HtmlAnsiOutputStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HtmlAnsiOutputStream.h; sourceTree = "<group>"; };
+		07D2B3532109DBF2003989F0 /* HtmlAnsiOutputStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HtmlAnsiOutputStream.m; sourceTree = "<group>"; };
+		07D2B3552109F855003989F0 /* AnsiConsoleOutputStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AnsiConsoleOutputStream.h; sourceTree = "<group>"; };
+		07D2B3562109F855003989F0 /* AnsiConsoleOutputStream.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AnsiConsoleOutputStream.m; sourceTree = "<group>"; };
+		07D2B359210AFF62003989F0 /* AnsiConsoleTextView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AnsiConsoleTextView.h; sourceTree = "<group>"; };
+		07D2B35A210AFF62003989F0 /* AnsiConsoleTextView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AnsiConsoleTextView.m; sourceTree = "<group>"; };
+		07D2B35D210B074D003989F0 /* ConsoleView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ConsoleView.xib; sourceTree = "<group>"; };
+		07D2B35F210B077E003989F0 /* ConsoleView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConsoleView.h; sourceTree = "<group>"; };
+		07D2B360210B077E003989F0 /* ConsoleView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ConsoleView.m; sourceTree = "<group>"; };
+		07D2B363210B1426003989F0 /* CommandTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommandTextField.h; sourceTree = "<group>"; };
+		07D2B364210B1426003989F0 /* CommandTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CommandTextField.m; sourceTree = "<group>"; };
+		07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiquidCoreTestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		07D2B36D210B21A2003989F0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		07D2B36E210B21A2003989F0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		07D2B370210B21A2003989F0 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		07D2B371210B21A2003989F0 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		07D2B374210B21A2003989F0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		07D2B376210B21A4003989F0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		07D2B379210B21A4003989F0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		07D2B37B210B21A4003989F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		07D2B37C210B21A4003989F0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreTestAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiquidCoreTestAppTests.m; sourceTree = "<group>"; };
+		07D2B388210B21A4003989F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreTestAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiquidCoreTestAppUITests.m; sourceTree = "<group>"; };
+		07D2B393210B21A4003989F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCConsoleSurfaceView.h; sourceTree = "<group>"; };
+		07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCConsoleSurfaceView.m; sourceTree = "<group>"; };
+		07D2B3A2210C70DB003989F0 /* LCSurface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCSurface.h; sourceTree = "<group>"; };
+		07D2B3A5210CB50D003989F0 /* console.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = console.js; sourceTree = "<group>"; };
 		07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Exec.cpp; sourceTree = "<group>"; };
 		07E9ADC320BAD2A9002F2002 /* JSObjectRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSObjectRefPrivate.h; sourceTree = "<group>"; };
 		07E9ADC420BB3F02002F2002 /* HeapObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HeapObjects.h; sourceTree = "<group>"; };
@@ -887,6 +959,28 @@
 			files = (
 				07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */,
 				076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B368210B21A1003989F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07D2B39D210B21C1003989F0 /* LiquidCoreiOS.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B37F210B21A4003989F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B38A210B21A4003989F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1313,6 +1407,9 @@
 				076563C920F9DF62002C330B /* node_modules */,
 				076F5886201E797F004780FD /* LiquidCoreiOS */,
 				076F5891201E797F004780FD /* LiquidCoreiOSTests */,
+				07D2B36C210B21A2003989F0 /* LiquidCoreTestApp */,
+				07D2B385210B21A4003989F0 /* LiquidCoreTestAppTests */,
+				07D2B390210B21A4003989F0 /* LiquidCoreTestAppUITests */,
 				076F5885201E797F004780FD /* Products */,
 				076F58C5201E7B5E004780FD /* Frameworks */,
 			);
@@ -1323,6 +1420,9 @@
 			children = (
 				076F5884201E797F004780FD /* LiquidCoreiOS.framework */,
 				076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */,
+				07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */,
+				07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */,
+				07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1330,6 +1430,7 @@
 		076F5886201E797F004780FD /* LiquidCoreiOS */ = {
 			isa = PBXGroup;
 			children = (
+				07D2B34E21099D0D003989F0 /* ConsoleView */,
 				07CA453E20F0BA1A00862266 /* API */,
 				0738937520EFFEBA009056FD /* Common */,
 				0738937420EFFE8A009056FD /* node-8.9.3 */,
@@ -1443,6 +1544,7 @@
 				07CA454720F4C3F800862266 /* FileSystem.m */,
 				0765640920F9EB70002C330B /* MicroService.h */,
 				0765640A20F9F1F9002C330B /* MicroService.m */,
+				07D2B3A2210C70DB003989F0 /* LCSurface.h */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1467,6 +1569,63 @@
 				07D2B34C2107834B003989F0 /* polyfill.c */,
 			);
 			name = polyfill;
+			sourceTree = "<group>";
+		};
+		07D2B34E21099D0D003989F0 /* ConsoleView */ = {
+			isa = PBXGroup;
+			children = (
+				07D2B34F2109BED0003989F0 /* AnsiOutputStream.h */,
+				07D2B3502109BF2A003989F0 /* AnsiOutputStream.m */,
+				07D2B3522109DBC0003989F0 /* HtmlAnsiOutputStream.h */,
+				07D2B3532109DBF2003989F0 /* HtmlAnsiOutputStream.m */,
+				07D2B3552109F855003989F0 /* AnsiConsoleOutputStream.h */,
+				07D2B3562109F855003989F0 /* AnsiConsoleOutputStream.m */,
+				07D2B359210AFF62003989F0 /* AnsiConsoleTextView.h */,
+				07D2B35A210AFF62003989F0 /* AnsiConsoleTextView.m */,
+				07D2B35D210B074D003989F0 /* ConsoleView.xib */,
+				07D2B35F210B077E003989F0 /* ConsoleView.h */,
+				07D2B360210B077E003989F0 /* ConsoleView.m */,
+				07D2B363210B1426003989F0 /* CommandTextField.h */,
+				07D2B364210B1426003989F0 /* CommandTextField.m */,
+				07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */,
+				07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */,
+			);
+			path = ConsoleView;
+			sourceTree = "<group>";
+		};
+		07D2B36C210B21A2003989F0 /* LiquidCoreTestApp */ = {
+			isa = PBXGroup;
+			children = (
+				07D2B36D210B21A2003989F0 /* AppDelegate.h */,
+				07D2B36E210B21A2003989F0 /* AppDelegate.m */,
+				07D2B370210B21A2003989F0 /* ViewController.h */,
+				07D2B371210B21A2003989F0 /* ViewController.m */,
+				07D2B373210B21A2003989F0 /* Main.storyboard */,
+				07D2B376210B21A4003989F0 /* Assets.xcassets */,
+				07D2B378210B21A4003989F0 /* LaunchScreen.storyboard */,
+				07D2B37B210B21A4003989F0 /* Info.plist */,
+				07D2B37C210B21A4003989F0 /* main.m */,
+				07D2B3A5210CB50D003989F0 /* console.js */,
+			);
+			path = LiquidCoreTestApp;
+			sourceTree = "<group>";
+		};
+		07D2B385210B21A4003989F0 /* LiquidCoreTestAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */,
+				07D2B388210B21A4003989F0 /* Info.plist */,
+			);
+			path = LiquidCoreTestAppTests;
+			sourceTree = "<group>";
+		};
+		07D2B390210B21A4003989F0 /* LiquidCoreTestAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */,
+				07D2B393210B21A4003989F0 /* Info.plist */,
+			);
+			path = LiquidCoreTestAppUITests;
 			sourceTree = "<group>";
 		};
 		07FE85762075F4E80013E1B4 /* v8 */ = {
@@ -1527,6 +1686,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				0738918120EE07AC009056FD /* spinlock.h in Headers */,
+				07D2B35B210AFF62003989F0 /* AnsiConsoleTextView.h in Headers */,
+				07D2B361210B077E003989F0 /* ConsoleView.h in Headers */,
+				07D2B3A4210CB38B003989F0 /* MicroService.h in Headers */,
+				07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */,
+				07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */,
+				07D2B365210B1426003989F0 /* CommandTextField.h in Headers */,
 				073892D520EE5E29009056FD /* string_bytes.h in Headers */,
 				072E6CA220FCF37300B80349 /* node_dtrace.h in Headers */,
 				0738936A20EE661C009056FD /* nghttp2.h in Headers */,
@@ -1585,6 +1750,7 @@
 				076563F620F9E611002C330B /* nan_typedarray_contents.h in Headers */,
 				073892D920EE5E29009056FD /* node_trace_buffer.h in Headers */,
 				073892C320EE5E29009056FD /* node_javascript.h in Headers */,
+				07D2B3572109F855003989F0 /* AnsiConsoleOutputStream.h in Headers */,
 				073891F020EE0CEE009056FD /* ares_dns.h in Headers */,
 				0738935020EE64C5009056FD /* nghttp2_option.h in Headers */,
 				073892DD20EE5E29009056FD /* node_trace_writer.h in Headers */,
@@ -1724,6 +1890,59 @@
 			productReference = 076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07D2B394210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestApp" */;
+			buildPhases = (
+				07D2B367210B21A1003989F0 /* Sources */,
+				07D2B368210B21A1003989F0 /* Frameworks */,
+				07D2B369210B21A1003989F0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiquidCoreTestApp;
+			productName = LiquidCoreTestApp;
+			productReference = 07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		07D2B381210B21A4003989F0 /* LiquidCoreTestAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07D2B397210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppTests" */;
+			buildPhases = (
+				07D2B37E210B21A4003989F0 /* Sources */,
+				07D2B37F210B21A4003989F0 /* Frameworks */,
+				07D2B380210B21A4003989F0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				07D2B384210B21A4003989F0 /* PBXTargetDependency */,
+			);
+			name = LiquidCoreTestAppTests;
+			productName = LiquidCoreTestAppTests;
+			productReference = 07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		07D2B38C210B21A4003989F0 /* LiquidCoreTestAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07D2B39A210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppUITests" */;
+			buildPhases = (
+				07D2B389210B21A4003989F0 /* Sources */,
+				07D2B38A210B21A4003989F0 /* Frameworks */,
+				07D2B38B210B21A4003989F0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				07D2B38F210B21A4003989F0 /* PBXTargetDependency */,
+			);
+			name = LiquidCoreTestAppUITests;
+			productName = LiquidCoreTestAppUITests;
+			productReference = 07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1741,6 +1960,20 @@
 						CreatedOnToolsVersion = 9.2;
 						ProvisioningStyle = Automatic;
 					};
+					07D2B36A210B21A1003989F0 = {
+						CreatedOnToolsVersion = 9.4.1;
+						ProvisioningStyle = Automatic;
+					};
+					07D2B381210B21A4003989F0 = {
+						CreatedOnToolsVersion = 9.4.1;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 07D2B36A210B21A1003989F0;
+					};
+					07D2B38C210B21A4003989F0 = {
+						CreatedOnToolsVersion = 9.4.1;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 07D2B36A210B21A1003989F0;
+					};
 				};
 			};
 			buildConfigurationList = 076F587E201E797F004780FD /* Build configuration list for PBXProject "LiquidCoreiOS" */;
@@ -1749,6 +1982,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = 076F587A201E797F004780FD;
 			productRefGroup = 076F5885201E797F004780FD /* Products */;
@@ -1757,6 +1991,9 @@
 			targets = (
 				076F5883201E797F004780FD /* LiquidCoreiOS */,
 				076F588C201E797F004780FD /* LiquidCoreiOSTests */,
+				07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */,
+				07D2B381210B21A4003989F0 /* LiquidCoreTestAppTests */,
+				07D2B38C210B21A4003989F0 /* LiquidCoreTestAppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -1766,6 +2003,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				07D2B35E210B074D003989F0 /* ConsoleView.xib in Resources */,
 				076563CA20F9DF62002C330B /* node_modules in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1775,6 +2013,31 @@
 			buildActionMask = 2147483647;
 			files = (
 				0765640F20FBBECC002C330B /* Resources in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B369210B21A1003989F0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07D2B3A6210CB50D003989F0 /* console.js in Resources */,
+				07D2B37A210B21A4003989F0 /* LaunchScreen.storyboard in Resources */,
+				07D2B377210B21A4003989F0 /* Assets.xcassets in Resources */,
+				07D2B375210B21A2003989F0 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B380210B21A4003989F0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B38B210B21A4003989F0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1958,6 +2221,7 @@
 				0738919320EE07AC009056FD /* udp.c in Sources */,
 				073892BF20EE5E29009056FD /* uv.cc in Sources */,
 				0738935120EE64C5009056FD /* nghttp2_outbound_item.c in Sources */,
+				07D2B3542109DBF2003989F0 /* HtmlAnsiOutputStream.m in Sources */,
 				073892F820EE5E29009056FD /* node_contextify.cc in Sources */,
 				0738922520EE0CEE009056FD /* ares_data.c in Sources */,
 				0738920A20EE0CEE009056FD /* ares_parse_naptr_reply.c in Sources */,
@@ -1986,6 +2250,7 @@
 				073891F120EE0CEE009056FD /* ares__get_hostent.c in Sources */,
 				073892EA20EE5E29009056FD /* node_url.cc in Sources */,
 				0738920720EE0CEE009056FD /* ares_expand_name.c in Sources */,
+				07D2B35C210AFF62003989F0 /* AnsiConsoleTextView.m in Sources */,
 				0738922320EE0CEE009056FD /* ares__close_sockets.c in Sources */,
 				076F58E0201E7EF9004780FD /* Scopes.cpp in Sources */,
 				076563BB20F66CA8002C330B /* module_wrap.cc in Sources */,
@@ -2007,6 +2272,7 @@
 				0738921720EE0CEE009056FD /* ares_destroy.c in Sources */,
 				0738922D20EE0CEE009056FD /* ares_version.c in Sources */,
 				07F804E2202D8E2900FDFC27 /* RegExp.cpp in Sources */,
+				07D2B3512109BF2A003989F0 /* AnsiOutputStream.m in Sources */,
 				073892B920EE5E29009056FD /* connection_wrap.cc in Sources */,
 				07FE85A72075F7A90013E1B4 /* ieee754.cc in Sources */,
 				076563DA20F9E50E002C330B /* database.cc in Sources */,
@@ -2024,6 +2290,7 @@
 				0738922120EE0CEE009056FD /* ares_query.c in Sources */,
 				0738935B20EE64C5009056FD /* nghttp2_helper.c in Sources */,
 				0738913F20E631E6009056FD /* V82JSC.cpp in Sources */,
+				07D2B3A1210C705A003989F0 /* LCConsoleSurfaceView.m in Sources */,
 				0738922E20EE0CEE009056FD /* ares_free_hostent.c in Sources */,
 				0738919020EE07AC009056FD /* signal.c in Sources */,
 				072E6C8C20FCE17800B80349 /* node_crypto.cc in Sources */,
@@ -2071,6 +2338,7 @@
 				07FE859C2075F6D40013E1B4 /* tracing-controller.cc in Sources */,
 				073892A920EE5E29009056FD /* node_util.cc in Sources */,
 				07F804DE202D8DF800FDFC27 /* Date.cpp in Sources */,
+				07D2B362210B077E003989F0 /* ConsoleView.m in Sources */,
 				0738918720EE07AC009056FD /* async.c in Sources */,
 				0738917A20EE07AC009056FD /* fs-poll.c in Sources */,
 				075AEA1620C6A608002B1098 /* Message.cpp in Sources */,
@@ -2092,6 +2360,7 @@
 				0738921A20EE0CEE009056FD /* ares_mkquery.c in Sources */,
 				076563BF20F66DF2002C330B /* Module.cpp in Sources */,
 				0738919E20EE07AC009056FD /* kqueue.c in Sources */,
+				07D2B3582109F855003989F0 /* AnsiConsoleOutputStream.m in Sources */,
 				0738922C20EE0CEE009056FD /* ares_writev.c in Sources */,
 				073892BB20EE5E29009056FD /* string_bytes.cc in Sources */,
 				07F804F6202DD5AD00FDFC27 /* Exception.cpp in Sources */,
@@ -2119,6 +2388,7 @@
 				073892E520EE5E29009056FD /* node_stat_watcher.cc in Sources */,
 				0738918B20EE07AC009056FD /* thread.c in Sources */,
 				0738938220EFFF0F009056FD /* nodedroid_file.cc in Sources */,
+				07D2B366210B1426003989F0 /* CommandTextField.m in Sources */,
 				07F8054420395FA700FDFC27 /* internals.cpp in Sources */,
 				073891F920EE0CEE009056FD /* ares_free_string.c in Sources */,
 				07D2B34D2107834B003989F0 /* polyfill.c in Sources */,
@@ -2210,6 +2480,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		07D2B367210B21A1003989F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07D2B372210B21A2003989F0 /* ViewController.m in Sources */,
+				07D2B37D210B21A4003989F0 /* main.m in Sources */,
+				07D2B36F210B21A2003989F0 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B37E210B21A4003989F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07D2B387210B21A4003989F0 /* LiquidCoreTestAppTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07D2B389210B21A4003989F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07D2B392210B21A4003989F0 /* LiquidCoreTestAppUITests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -2218,7 +2514,36 @@
 			target = 076F5883201E797F004780FD /* LiquidCoreiOS */;
 			targetProxy = 076F588F201E797F004780FD /* PBXContainerItemProxy */;
 		};
+		07D2B384210B21A4003989F0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */;
+			targetProxy = 07D2B383210B21A4003989F0 /* PBXContainerItemProxy */;
+		};
+		07D2B38F210B21A4003989F0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */;
+			targetProxy = 07D2B38E210B21A4003989F0 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		07D2B373210B21A2003989F0 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				07D2B374210B21A2003989F0 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		07D2B378210B21A4003989F0 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				07D2B379210B21A4003989F0 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		076F5896201E7980004780FD /* Debug */ = {
@@ -2517,6 +2842,98 @@
 			};
 			name = Release;
 		};
+		07D2B395210B21A4003989F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = LiquidCoreTestApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		07D2B396210B21A4003989F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = LiquidCoreTestApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		07D2B398210B21A4003989F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = LiquidCoreTestAppTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LiquidCoreTestApp.app/LiquidCoreTestApp";
+			};
+			name = Debug;
+		};
+		07D2B399210B21A4003989F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = LiquidCoreTestAppTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LiquidCoreTestApp.app/LiquidCoreTestApp";
+			};
+			name = Release;
+		};
+		07D2B39B210B21A4003989F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = LiquidCoreTestAppUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = LiquidCoreTestApp;
+			};
+			name = Debug;
+		};
+		07D2B39C210B21A4003989F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = LiquidCoreTestAppUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = LiquidCoreTestApp;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2543,6 +2960,33 @@
 			buildConfigurations = (
 				076F589C201E7980004780FD /* Debug */,
 				076F589D201E7980004780FD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		07D2B394210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07D2B395210B21A4003989F0 /* Debug */,
+				07D2B396210B21A4003989F0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		07D2B397210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07D2B398210B21A4003989F0 /* Debug */,
+				07D2B399210B21A4003989F0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		07D2B39A210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07D2B39B210B21A4003989F0 /* Debug */,
+				07D2B39C210B21A4003989F0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

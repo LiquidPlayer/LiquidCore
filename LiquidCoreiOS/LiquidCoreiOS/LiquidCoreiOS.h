@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "LCConsoleSurfaceView.h"
 
 //! Project version number for LiquidCoreiOS.
 FOUNDATION_EXPORT double LiquidCoreiOSVersionNumber;
