@@ -7,7 +7,7 @@
 //
 
 #import "ViewController.h"
-#import "LiquidCoreiOS.h"
+#import <LiquidCore/LiquidCore.h>
 
 @implementation ViewController
 

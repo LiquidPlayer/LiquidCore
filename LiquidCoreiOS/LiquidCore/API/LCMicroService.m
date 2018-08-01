@@ -8,8 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "LiquidCoreiOS.h"
-#import "LCMicroService.h"
+#import <LiquidCore/LiquidCore.h>
 #import "Process.h"
 
 @interface LCMicroService() <ProcessDelegate>

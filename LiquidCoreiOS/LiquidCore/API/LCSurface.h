@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <LiquidCoreiOS/LCMicroService.h>
+#import <LiquidCore/LCMicroService.h>
 
 typedef void (^LCOnAttachedHandler)(void);
 

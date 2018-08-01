@@ -6,9 +6,8 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#import <LiquidCoreiOS/LiquidCoreiOS.h>
+#import <LiquidCore/LiquidCore.h>
 #import "ConsoleView.h"
-#import "LCSurface.h"
 
 @interface LCConsoleSurfaceView : ConsoleView <LCSurface>
 

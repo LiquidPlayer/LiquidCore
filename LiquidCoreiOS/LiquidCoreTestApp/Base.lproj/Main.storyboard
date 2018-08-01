@@ -14,11 +14,11 @@
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController title="LiquidCoreTestApp" id="BYZ-38-t0r" customClass="ViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="phn-Mi-Vvc" customClass="LCLiquidView">
+                    <view key="view" contentMode="scaleToFill" id="LoT-Q9-Z5L" customClass="LCLiquidView">
                         <rect key="frame" x="0.0" y="0.0" width="1366" height="1024"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                        <viewLayoutGuide key="safeArea" id="16c-uo-1dg"/>
+                        <viewLayoutGuide key="safeArea" id="CM3-bs-oAc"/>
                         <userDefinedRuntimeAttributes>
                             <userDefinedRuntimeAttribute type="string" keyPath="jsResource" value="console"/>
                         </userDefinedRuntimeAttributes>

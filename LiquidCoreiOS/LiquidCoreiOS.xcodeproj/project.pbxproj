@@ -291,7 +291,8 @@
 		0738938020EFFF0F009056FD /* process_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738937920EFFF0F009056FD /* process_wrap.cc */; };
 		0738938120EFFF0F009056FD /* NodeInstance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0738937A20EFFF0F009056FD /* NodeInstance.cpp */; };
 		0738938220EFFF0F009056FD /* nodedroid_file.cc in Sources */ = {isa = PBXBuildFile; fileRef = 0738937B20EFFF0F009056FD /* nodedroid_file.cc */; };
-		074429A12111A51A00EB0372 /* LiquidCoreiOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		074429A521123E4300EB0372 /* LiquidCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCore.framework */; };
+		074429A621123E4300EB0372 /* LiquidCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		075AEA1620C6A608002B1098 /* Message.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 075AEA1520C6A608002B1098 /* Message.cpp */; };
 		076563BA20F66CA8002C330B /* module_wrap.h in Headers */ = {isa = PBXBuildFile; fileRef = 076563B820F66CA8002C330B /* module_wrap.h */; };
 		076563BB20F66CA8002C330B /* module_wrap.cc in Sources */ = {isa = PBXBuildFile; fileRef = 076563B920F66CA8002C330B /* module_wrap.cc */; };
@@ -331,9 +332,9 @@
 		0765640B20F9F1F9002C330B /* LCMicroService.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640A20F9F1F9002C330B /* LCMicroService.m */; };
 		0765640D20FBBD96002C330B /* MicroServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0765640C20FBBD96002C330B /* MicroServiceTests.m */; };
 		0765640F20FBBECC002C330B /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = 0765640E20FBBECC002C330B /* Resources */; };
-		076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
+		076F588E201E797F004780FD /* LiquidCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCore.framework */; };
 		076F5893201E797F004780FD /* V8Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 076F5892201E797F004780FD /* V8Tests.m */; };
-		076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCoreiOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		076F5895201E797F004780FD /* LiquidCore.h in Headers */ = {isa = PBXBuildFile; fileRef = 076F5887201E797F004780FD /* LiquidCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		076F58C8201E7B9C004780FD /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		076F58DE201E7EF9004780FD /* Context.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58D7201E7EF9004780FD /* Context.cpp */; };
 		076F58DF201E7EF9004780FD /* Isolate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 076F58D8201E7EF9004780FD /* Isolate.cpp */; };
@@ -374,7 +375,6 @@
 		07D2B37D210B21A4003989F0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B37C210B21A4003989F0 /* main.m */; };
 		07D2B387210B21A4003989F0 /* LiquidCoreTestAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */; };
 		07D2B392210B21A4003989F0 /* LiquidCoreTestAppUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */; };
-		07D2B39D210B21C1003989F0 /* LiquidCoreiOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */; };
 		07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */; };
 		07D2B3A1210C705A003989F0 /* LCConsoleSurfaceView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */; };
 		07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A2210C70DB003989F0 /* LCSurface.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -448,12 +448,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		074429A22111A51A00EB0372 /* PBXContainerItemProxy */ = {
+		074429A721123E4300EB0372 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 076F587B201E797F004780FD /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 076F5883201E797F004780FD;
-			remoteInfo = LiquidCoreiOS;
+			remoteInfo = LiquidCore;
 		};
 		076F588F201E797F004780FD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -479,13 +479,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		074429A42111A51A00EB0372 /* Embed Frameworks */ = {
+		074429A921123E4400EB0372 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				074429A12111A51A00EB0372 /* LiquidCoreiOS.framework in Embed Frameworks */,
+				074429A621123E4300EB0372 /* LiquidCore.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -828,8 +828,8 @@
 		0765640A20F9F1F9002C330B /* LCMicroService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCMicroService.m; sourceTree = "<group>"; };
 		0765640C20FBBD96002C330B /* MicroServiceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MicroServiceTests.m; sourceTree = "<group>"; };
 		0765640E20FBBECC002C330B /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
-		076F5884201E797F004780FD /* LiquidCoreiOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCoreiOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		076F5887201E797F004780FD /* LiquidCoreiOS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCoreiOS.h; sourceTree = "<group>"; };
+		076F5884201E797F004780FD /* LiquidCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		076F5887201E797F004780FD /* LiquidCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCore.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5892201E797F004780FD /* V8Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = V8Tests.m; sourceTree = "<group>"; };
@@ -984,7 +984,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */,
-				076F588E201E797F004780FD /* LiquidCoreiOS.framework in Frameworks */,
+				076F588E201E797F004780FD /* LiquidCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -992,7 +992,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				07D2B39D210B21C1003989F0 /* LiquidCoreiOS.framework in Frameworks */,
+				074429A521123E4300EB0372 /* LiquidCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1429,7 +1429,7 @@
 		076F587A201E797F004780FD = {
 			isa = PBXGroup;
 			children = (
-				076F5886201E797F004780FD /* LiquidCoreiOS */,
+				076F5886201E797F004780FD /* LiquidCore */,
 				076F5891201E797F004780FD /* LiquidCoreiOSTests */,
 				07D2B36C210B21A2003989F0 /* LiquidCoreTestApp */,
 				07D2B385210B21A4003989F0 /* LiquidCoreTestAppTests */,
@@ -1442,7 +1442,7 @@
 		076F5885201E797F004780FD /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				076F5884201E797F004780FD /* LiquidCoreiOS.framework */,
+				076F5884201E797F004780FD /* LiquidCore.framework */,
 				076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */,
 				07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */,
 				07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */,
@@ -1451,7 +1451,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		076F5886201E797F004780FD /* LiquidCoreiOS */ = {
+		076F5886201E797F004780FD /* LiquidCore */ = {
 			isa = PBXGroup;
 			children = (
 				076563C920F9DF62002C330B /* node_modules */,
@@ -1459,10 +1459,10 @@
 				07CA453E20F0BA1A00862266 /* API */,
 				0738937520EFFEBA009056FD /* Common */,
 				0738937420EFFE8A009056FD /* node-8.9.3 */,
-				076F5887201E797F004780FD /* LiquidCoreiOS.h */,
+				076F5887201E797F004780FD /* LiquidCore.h */,
 				076F5888201E797F004780FD /* Info.plist */,
 			);
-			path = LiquidCoreiOS;
+			path = LiquidCore;
 			sourceTree = "<group>";
 		};
 		076F5891201E797F004780FD /* LiquidCoreiOSTests */ = {
@@ -1744,7 +1744,7 @@
 				072E6CA520FCF6FC00B80349 /* node_provider.h in Headers */,
 				072E6C8720FCE17800B80349 /* node_crypto_clienthello-inl.h in Headers */,
 				076563F920F9E611002C330B /* nan_private.h in Headers */,
-				076F5895201E797F004780FD /* LiquidCoreiOS.h in Headers */,
+				076F5895201E797F004780FD /* LiquidCore.h in Headers */,
 				073891ED20EE0CEE009056FD /* bitncmp.h in Headers */,
 				0738935720EE64C5009056FD /* nghttp2_session.h in Headers */,
 				076563D720F9E50E002C330B /* gcc-preinclude.h in Headers */,
@@ -1880,9 +1880,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		076F5883201E797F004780FD /* LiquidCoreiOS */ = {
+		076F5883201E797F004780FD /* LiquidCore */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 076F5898201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreiOS" */;
+			buildConfigurationList = 076F5898201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCore" */;
 			buildPhases = (
 				076563C220F8A30C002C330B /* ShellScript */,
 				072E6CA320FCF5CD00B80349 /* ShellScript */,
@@ -1896,9 +1896,9 @@
 			);
 			dependencies = (
 			);
-			name = LiquidCoreiOS;
+			name = LiquidCore;
 			productName = LiquidCoreiOS;
-			productReference = 076F5884201E797F004780FD /* LiquidCoreiOS.framework */;
+			productReference = 076F5884201E797F004780FD /* LiquidCore.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		076F588C201E797F004780FD /* LiquidCoreiOSTests */ = {
@@ -1926,12 +1926,12 @@
 				07D2B367210B21A1003989F0 /* Sources */,
 				07D2B368210B21A1003989F0 /* Frameworks */,
 				07D2B369210B21A1003989F0 /* Resources */,
-				074429A42111A51A00EB0372 /* Embed Frameworks */,
+				074429A921123E4400EB0372 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				074429A32111A51A00EB0372 /* PBXTargetDependency */,
+				074429A821123E4300EB0372 /* PBXTargetDependency */,
 			);
 			name = LiquidCoreTestApp;
 			productName = LiquidCoreTestApp;
@@ -2020,7 +2020,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				076F5883201E797F004780FD /* LiquidCoreiOS */,
+				076F5883201E797F004780FD /* LiquidCore */,
 				076F588C201E797F004780FD /* LiquidCoreiOSTests */,
 				07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */,
 				07D2B381210B21A4003989F0 /* LiquidCoreTestAppTests */,
@@ -2084,11 +2084,11 @@
 				"$(SRCROOT)/../deps/node-8.9.3/src/node_provider.d",
 			);
 			outputPaths = (
-				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/node/node_provider.h",
+				"$(SRCROOT)/LiquidCore/node-8.9.3/node/node_provider.h",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node/config.gypi .\ndtrace -h -xnolibs -s ${SCRIPT_INPUT_FILE_0} -o ${SCRIPT_OUTPUT_FILE_0}\n";
+			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCore/node-8.9.3/node/config.gypi .\ndtrace -h -xnolibs -s ${SCRIPT_INPUT_FILE_0} -o ${SCRIPT_OUTPUT_FILE_0}\n";
 		};
 		076563C220F8A30C002C330B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2217,11 +2217,11 @@
 				"$(SRCROOT)/../deps/node-8.9.3/src/noperfctr_macros.py",
 			);
 			outputPaths = (
-				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/node/node_javascript.cc",
+				"$(SRCROOT)/LiquidCore/node-8.9.3/node/node_javascript.cc",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node/config.gypi .\nSCRIPT_INPUT_FILES=''\nSCRIPT_INPUT_FILE_COUNT=\nFILTER=\"$SRCROOT/../deps/node-8.9.3/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n    INF=${!INFILE}\n    FILTERED=${INF#$FILTER}\n    SCRIPT_INPUT_FILES=\"$SCRIPT_INPUT_FILES ${FILTERED}\"\ndone\nexec tools/js2c.py ${SCRIPT_OUTPUT_FILE_0} ${SCRIPT_INPUT_FILES}\n";
+			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCore/node-8.9.3/node/config.gypi .\nSCRIPT_INPUT_FILES=''\nSCRIPT_INPUT_FILE_COUNT=\nFILTER=\"$SRCROOT/../deps/node-8.9.3/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n    INF=${!INFILE}\n    FILTERED=${INF#$FILTER}\n    SCRIPT_INPUT_FILES=\"$SCRIPT_INPUT_FILES ${FILTERED}\"\ndone\nexec tools/js2c.py ${SCRIPT_OUTPUT_FILE_0} ${SCRIPT_INPUT_FILES}\n";
 		};
 		07D2B34721077699003989F0 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2229,15 +2229,15 @@
 			files = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/promise-polyfill.js",
-				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/typedarray.js",
+				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/promise-polyfill.js",
+				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/typedarray.js",
 			);
 			outputPaths = (
-				"$(SRCROOT)/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/polyfill.c",
+				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/polyfill.c",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ${SRCROOT}/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill\nunset SCRIPT_INPUT_FILE_COUNT\nprintf \"/* Autogenerated.  Do not edit. */\\n\" > ${SCRIPT_OUTPUT_FILE_0}\nFILTER=\"$SRCROOT/LiquidCoreiOS/node-8.9.3/V82JSC/polyfill/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n   INF=${!INFILE}\n   FILTERED=${INF#$FILTER}\n   xxd -i ${FILTERED} >> ${SCRIPT_OUTPUT_FILE_0}\n   printf \"\\n/*-------*/\\n\" >> ${SCRIPT_OUTPUT_FILE_0}\ndone\n";
+			shellScript = "cd ${SRCROOT}/LiquidCore/node-8.9.3/V82JSC/polyfill\nunset SCRIPT_INPUT_FILE_COUNT\nprintf \"/* Autogenerated.  Do not edit. */\\n\" > ${SCRIPT_OUTPUT_FILE_0}\nFILTER=\"$SRCROOT/LiquidCore/node-8.9.3/V82JSC/polyfill/\"\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n   INF=${!INFILE}\n   FILTERED=${INF#$FILTER}\n   xxd -i ${FILTERED} >> ${SCRIPT_OUTPUT_FILE_0}\n   printf \"\\n/*-------*/\\n\" >> ${SCRIPT_OUTPUT_FILE_0}\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -2541,14 +2541,14 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		074429A32111A51A00EB0372 /* PBXTargetDependency */ = {
+		074429A821123E4300EB0372 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 076F5883201E797F004780FD /* LiquidCoreiOS */;
-			targetProxy = 074429A22111A51A00EB0372 /* PBXContainerItemProxy */;
+			target = 076F5883201E797F004780FD /* LiquidCore */;
+			targetProxy = 074429A721123E4300EB0372 /* PBXContainerItemProxy */;
 		};
 		076F5890201E797F004780FD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 076F5883201E797F004780FD /* LiquidCoreiOS */;
+			target = 076F5883201E797F004780FD /* LiquidCore */;
 			targetProxy = 076F588F201E797F004780FD /* PBXContainerItemProxy */;
 		};
 		07D2B384210B21A4003989F0 /* PBXTargetDependency */ = {
@@ -2715,7 +2715,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/../deps/openssl-1.0.2o/include-ios";
-				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
+				INFOPLIST_FILE = "$(SRCROOT)/LiquidCore/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/openssl-1.0.2o/lib-ios";
@@ -2764,10 +2764,10 @@
 					"-D_FILE_OFFSET_BITS=64",
 					"-D_DARWIN_USE_64BIT_INODE=1",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SYSTEM_HEADER_SEARCH_PATHS = "${SRCROOT}/../deps/node-8.9.3/src $(SRCROOT)/../deps/node-8.9.3/deps/nghttp2/lib/includes ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node";
+				SYSTEM_HEADER_SEARCH_PATHS = "${SRCROOT}/../deps/node-8.9.3/src $(SRCROOT)/../deps/node-8.9.3/deps/nghttp2/lib/includes ${SRCROOT}/LiquidCore/node-8.9.3/node";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -2790,7 +2790,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/../deps/openssl-1.0.2o/include-ios";
-				INFOPLIST_FILE = LiquidCoreiOS/Info.plist;
+				INFOPLIST_FILE = "$(SRCROOT)/LiquidCore/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/openssl-1.0.2o/lib-ios";
@@ -2839,10 +2839,10 @@
 					"-D_FILE_OFFSET_BITS=64",
 					"-D_DARWIN_USE_64BIT_INODE=1",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOS;
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SYSTEM_HEADER_SEARCH_PATHS = "${SRCROOT}/../deps/node-8.9.3/src $(SRCROOT)/../deps/node-8.9.3/deps/nghttp2/lib/includes ${SRCROOT}/LiquidCoreiOS/node-8.9.3/node";
+				SYSTEM_HEADER_SEARCH_PATHS = "${SRCROOT}/../deps/node-8.9.3/src $(SRCROOT)/../deps/node-8.9.3/deps/nghttp2/lib/includes ${SRCROOT}/LiquidCore/node-8.9.3/node";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -2987,7 +2987,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		076F5898201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreiOS" */ = {
+		076F5898201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				076F5899201E7980004780FD /* Debug */,
