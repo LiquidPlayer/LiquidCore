@@ -162,7 +162,8 @@ static NSMutableDictionary* _serviceMap = nil;
         [request setValue:@"gzip" forHTTPHeaderField:@"Accept-Encoding"];
         [request setValue:@"application/javascript" forHTTPHeaderField:@"Accept"];
 
-        NSString *version = [NSString stringWithCString:(const char*)LiquidCoreiOSVersionString encoding:NSUTF8StringEncoding];
+        NSDictionary *infoDictionary = [[NSBundle bundleForClass:self.class]infoDictionary];        
+        NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
         NSString *info = [NSString stringWithFormat:@"iOS; API=%@", [[UIDevice currentDevice] systemVersion]];
 
         NSString *bindings = nil;

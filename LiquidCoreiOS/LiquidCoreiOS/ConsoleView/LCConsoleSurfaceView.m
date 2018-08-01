@@ -14,6 +14,7 @@
 
 - (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttached;
 - (void) processCommand:(NSString*)cmd;
+- (void) resize:(int)rows columns:(int)cols;
 @end
 
 @implementation ConsoleSession {
@@ -75,6 +76,20 @@
             if (!self->processedException_) {
                 [context[@"console"] invokeMethod:@"log" withArguments:@[output]];
             }
+        }];
+    }
+}
+
+- (void) resize:(int)rows columns:(int)cols
+{
+    if (process_ != nil && (rows != rows_ || columns_ != cols)) {
+        [process_ async:^(JSContext *context) {
+            self->rows_ = rows;
+            self->columns_ = cols;
+            context[@"process"][@"stdout"][@"rows"] = @(rows);
+            context[@"process"][@"stderr"][@"rows"] = @(rows);
+            context[@"process"][@"stdout"][@"columns"] = @(cols);
+            context[@"process"][@"stderr"][@"columns"] = @(cols);
         }];
     }
 }
@@ -160,8 +175,10 @@
 
 + (NSString*) SURFACE_VERSION
 {
-    return [NSString stringWithCString:(const char*)LiquidCoreiOSVersionString
-                              encoding:NSUTF8StringEncoding];
+    NSDictionary *infoDictionary = [[NSBundle mainBundle]infoDictionary];
+    NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
+
+    return version;
 }
 
 - (id) initWithFrame:(CGRect)frame
@@ -216,6 +233,12 @@
 - (void) processCommand:(NSString *)cmd
 {
     [session_ processCommand:cmd];
+}
+
+// override
+- (void) resize:(int)rows columns:(int)cols
+{
+    [session_ resize:rows columns:cols];
 }
 
 - (void) reset

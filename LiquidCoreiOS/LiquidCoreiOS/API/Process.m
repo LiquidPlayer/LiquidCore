@@ -172,6 +172,28 @@ static void onNodeExit(void *data, int code)
                 NSLog(@"stderr: %@", msg);
             };
             
+            // Remove global.v8 --> V8 doesn't actually exist on this platform
+            [[self.context globalObject] deleteProperty:@"v8"];
+            
+            // Set correct 'process.config' values
+
+#if TARGET_OS_SIMULATOR
+            const NSString *arch = @"x64";
+#else
+#if __LP64__
+            const NSString *arch = @"arm64";
+#else
+            const NSString *arch = @"arm";
+            [self context][@"process"][@"config"][@"variables"][@"arm_float_abi"] = @"default";
+            [self context][@"process"][@"config"][@"variables"][@"arm_fpu"] = @"vfpv3";
+            [self context][@"process"][@"config"][@"variables"][@"arm_thumb"] = @(0);
+            [self context][@"process"][@"config"][@"variables"][@"arm_version"] = @"7";
+
+#endif
+#endif
+            [self context][@"process"][@"config"][@"variables"][@"host_arch"] = arch;
+            [self context][@"process"][@"config"][@"variables"][@"target_arch"] = arch;
+
             [self eventOnStart:[self context]];
             [self setHold_:nil];
         }

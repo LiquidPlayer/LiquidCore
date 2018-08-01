@@ -7,12 +7,8 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "LiquidCoreiOS.h"
-#import "LCLiquidView.h"
 
 @interface ViewController : UIViewController
-
-@property (strong, nonatomic) IBOutlet LCLiquidView *liquidView;
 
 @end
 

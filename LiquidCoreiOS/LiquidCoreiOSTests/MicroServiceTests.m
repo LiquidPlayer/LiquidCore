@@ -11,8 +11,8 @@
 #import "LCMicroService.h"
 #import "Process.h"
 
-@interface MicroServiceTest : XCTestCase <MicroServiceDelegate, MicroServiceEventListener>
-- (void) onStart:(LCMicroService *)service synchronizer:(Synchronizer *)synchronizer;
+@interface MicroServiceTest : XCTestCase <LCMicroServiceDelegate, LCMicroServiceEventListener>
+- (void) onStart:(LCMicroService *)service synchronizer:(LCSynchronizer *)synchronizer;
 
 @property (atomic, assign) bool serverReady;
 @property (atomic, assign) int finishCount;
@@ -48,7 +48,7 @@
     [LCMicroService uninstall:client_js];
 }
 
-- (void) onStart:(LCMicroService *)service synchronizer:(Synchronizer *)synchronizer
+- (void) onStart:(LCMicroService *)service synchronizer:(LCSynchronizer *)synchronizer
 {
     if ([service isEqual:server_]) {
         [service addEventListener:@"listening" listener:self];

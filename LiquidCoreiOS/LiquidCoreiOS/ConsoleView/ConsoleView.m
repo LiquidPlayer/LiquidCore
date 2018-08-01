@@ -62,6 +62,32 @@
     [self.command becomeFirstResponder];
     [self.console setDelegate:self];
     self.command.smartQuotesType = UITextSmartQuotesTypeNo;
+    self.command.autocorrectionType = UITextAutocorrectionTypeNo;
+    
+    UITextInputAssistantItem* item = [self.command inputAssistantItem];
+    item.leadingBarButtonGroups = @[];
+    item.trailingBarButtonGroups = @[];
+    
+    NSString *someString = @"1234567890\n1234567890";
+    UIFont *font = [UIFont fontWithName:@"Menlo" size:12.f];
+    CGSize stringBoundingBox = [someString sizeWithAttributes:@{ NSFontAttributeName : font }];
+
+    // FIXME: This doesn't quite work right.  It always seems off by a character or two.
+    double heightChar = stringBoundingBox.height / 2;
+    double widthChar = stringBoundingBox.width / 10;
+    
+    double heightBox = self.console.bounds.size.height - self.console.layoutMargins.bottom - self.console.layoutMargins.top;
+    double widthBox = self.console.bounds.size.width - self.console.layoutMargins.left - self.console.layoutMargins.right;
+
+    int numCols = floor(widthBox / widthChar);
+    int numLines = floor(heightBox / heightChar);
+    [self resize:numLines columns:numCols];
+}
+
+// override me
+- (void) resize:(int)rows columns:(int)columns
+{
+    
 }
 
 - (void) textViewDidChangeSelection:(UITextView *)textView

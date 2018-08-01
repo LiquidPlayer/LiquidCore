@@ -21,4 +21,5 @@
 @property (nonatomic) NSInteger item;
 
 - (void) processCommand:(NSString *)cmd;
+- (void) resize:(int)rows columns:(int)cols;
 @end

@@ -6,9 +6,9 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#import "LCLiquidView.h"
+#import <LiquidCoreiOS/LCLiquidView.h>
 #import "Process.h"
-#import "LCConsoleSurfaceView.h"
+#import <LiquidCoreiOS/LCSurface.h>
 
 static NSMutableArray* registeredSurfaces;
 
@@ -34,14 +34,8 @@ static NSMutableArray* registeredSurfaces;
     LCMicroService *service_;
     NSDictionary *boundSurfaces_;
     id<LoopPreserver> preserver_;
+    NSArray *argv_;
 }
-
-/*
-+ (void) initialize
-{
-    @[ LCConsoleSurfaceView.class ];
-}
-*/
 
 - (id) initWithFrame:(CGRect)frame
 {
@@ -61,6 +55,45 @@ static NSMutableArray* registeredSurfaces;
         customSurfaces_ = NO;
     }
     return self;
+}
+
+- (void) awakeFromNib
+{
+    [super awakeFromNib];
+    NSMutableArray *array = [[NSMutableArray alloc] init];
+
+    if (self.arguments != nil) {
+        NSScanner *scanner = [NSScanner scannerWithString:self.arguments];
+        NSString *substring;
+        
+        while (scanner.scanLocation < self.arguments.length) {
+            unichar character = [self.arguments characterAtIndex:scanner.scanLocation];
+            if (character == '"') {
+                [scanner setScanLocation:(scanner.scanLocation + 1)];
+                [scanner scanUpToString:@"\"" intoString:&substring];
+                [scanner setScanLocation:(scanner.scanLocation + 1)];
+            }
+            else {
+                [scanner scanUpToString:@" " intoString:&substring];
+            }
+            [array addObject:substring];
+            
+            if (scanner.scanLocation < self.arguments.length) [scanner setScanLocation:(scanner.scanLocation + 1)];
+        }
+    }
+    
+    if (self.jsResource != nil) {
+        self.URL = [[[NSBundle mainBundle] URLForResource:_jsResource withExtension:@"js"] absoluteString];
+    }
+
+    if (self.URL != nil) {
+        if (array.count > 0) {
+            [self start:[NSURL URLWithString:self.URL] argv:argv_];
+        } else {
+            [self start:[NSURL URLWithString:self.URL]];
+        }
+        
+    }
 }
 
 - (void) layoutSubviews
@@ -100,6 +133,21 @@ static NSMutableArray* registeredSurfaces;
         }
         va_end(args);
     }
+}
+
+- (LCMicroService *) start:(NSURL*)uri argv:(NSArray*)argv
+{
+    if (uri != nil) {
+        service_ = [[LCMicroService alloc] initWithURL:uri delegate:self];
+        [service_ setAvailableSurfaces:availableSurfaces_];
+        if (argv == nil) {
+            [service_ start];
+        } else {
+            [service_ startWithArguments:argv];
+        }
+        return service_;
+    }
+    return nil;
 }
 
 - (LCMicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...

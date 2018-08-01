@@ -78,7 +78,7 @@ static V8_INLINE void __cpuid(int cpu_info[4], int info_type) {
 #elif V8_HOST_ARCH_ARM || V8_HOST_ARCH_ARM64 \
     || V8_HOST_ARCH_MIPS || V8_HOST_ARCH_MIPS64
 
-#if V8_OS_LINUX || V8_OS_MACOSX
+#if V8_OS_LINUX
 
 #if V8_HOST_ARCH_ARM
 

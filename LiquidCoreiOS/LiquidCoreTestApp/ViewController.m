@@ -14,10 +14,6 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    NSBundle *testBundle = [NSBundle bundleForClass:[self class]];
-    NSURL *console_js = [testBundle URLForResource:@"console" withExtension:@"js"];
-
-    [self.liquidView start:console_js];
 }
 
 - (void)didReceiveMemoryWarning {
