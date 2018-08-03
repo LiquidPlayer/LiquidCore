@@ -532,7 +532,6 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSStringRelease(zSetTimeout);
         JSStringRelease(zGlobal);
         
-        
         std::map<std::string, bool> loaded_extensions;
 
         InstallAutoExtensions(ctx, loaded_extensions);

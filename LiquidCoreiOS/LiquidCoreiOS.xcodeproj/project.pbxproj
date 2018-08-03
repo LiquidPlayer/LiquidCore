@@ -831,7 +831,7 @@
 		076F5884201E797F004780FD /* LiquidCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LiquidCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5887201E797F004780FD /* LiquidCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LiquidCore.h; sourceTree = "<group>"; };
 		076F5888201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		076F588D201E797F004780FD /* LiquidCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		076F5892201E797F004780FD /* V8Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = V8Tests.m; sourceTree = "<group>"; };
 		076F5894201E797F004780FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		076F58C6201E7B5F004780FD /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -1430,7 +1430,7 @@
 			isa = PBXGroup;
 			children = (
 				076F5886201E797F004780FD /* LiquidCore */,
-				076F5891201E797F004780FD /* LiquidCoreiOSTests */,
+				076F5891201E797F004780FD /* LiquidCoreTests */,
 				07D2B36C210B21A2003989F0 /* LiquidCoreTestApp */,
 				07D2B385210B21A4003989F0 /* LiquidCoreTestAppTests */,
 				07D2B390210B21A4003989F0 /* LiquidCoreTestAppUITests */,
@@ -1443,7 +1443,7 @@
 			isa = PBXGroup;
 			children = (
 				076F5884201E797F004780FD /* LiquidCore.framework */,
-				076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */,
+				076F588D201E797F004780FD /* LiquidCoreTests.xctest */,
 				07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */,
 				07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */,
 				07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */,
@@ -1465,7 +1465,7 @@
 			path = LiquidCore;
 			sourceTree = "<group>";
 		};
-		076F5891201E797F004780FD /* LiquidCoreiOSTests */ = {
+		076F5891201E797F004780FD /* LiquidCoreTests */ = {
 			isa = PBXGroup;
 			children = (
 				0765640E20FBBECC002C330B /* Resources */,
@@ -1476,7 +1476,7 @@
 				076563C020F7A85D002C330B /* FileSystemTests.m */,
 				0765640C20FBBD96002C330B /* MicroServiceTests.m */,
 			);
-			path = LiquidCoreiOSTests;
+			path = LiquidCoreTests;
 			sourceTree = "<group>";
 		};
 		076F589E201E79F0004780FD /* V82JSC */ = {
@@ -1901,9 +1901,9 @@
 			productReference = 076F5884201E797F004780FD /* LiquidCore.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		076F588C201E797F004780FD /* LiquidCoreiOSTests */ = {
+		076F588C201E797F004780FD /* LiquidCoreTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 076F589B201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreiOSTests" */;
+			buildConfigurationList = 076F589B201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreTests" */;
 			buildPhases = (
 				076F5889201E797F004780FD /* Sources */,
 				076F588A201E797F004780FD /* Frameworks */,
@@ -1914,9 +1914,9 @@
 			dependencies = (
 				076F5890201E797F004780FD /* PBXTargetDependency */,
 			);
-			name = LiquidCoreiOSTests;
+			name = LiquidCoreTests;
 			productName = LiquidCoreiOSTests;
-			productReference = 076F588D201E797F004780FD /* LiquidCoreiOSTests.xctest */;
+			productReference = 076F588D201E797F004780FD /* LiquidCoreTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */ = {
@@ -2021,7 +2021,7 @@
 			projectRoot = "";
 			targets = (
 				076F5883201E797F004780FD /* LiquidCore */,
-				076F588C201E797F004780FD /* LiquidCoreiOSTests */,
+				076F588C201E797F004780FD /* LiquidCoreTests */,
 				07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */,
 				07D2B381210B21A4003989F0 /* LiquidCoreTestAppTests */,
 				07D2B38C210B21A4003989F0 /* LiquidCoreTestAppUITests */,
@@ -2852,13 +2852,13 @@
 			buildSettings = {
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = LiquidCoreiOSTests/Info.plist;
+				INFOPLIST_FILE = LiquidCoreTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				OTHER_CPLUSPLUSFLAGS = (
 					"-I../deps/node-8.9.3/deps/v8/include",
 					"-I../deps/node-8.9.3/deps/v8",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOSTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2869,13 +2869,13 @@
 			buildSettings = {
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = LiquidCoreiOSTests/Info.plist;
+				INFOPLIST_FILE = LiquidCoreTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				OTHER_CPLUSPLUSFLAGS = (
 					"-I../deps/node-8.9.3/deps/v8/include",
 					"-I../deps/node-8.9.3/deps/v8",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreiOSTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2996,7 +2996,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		076F589B201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreiOSTests" */ = {
+		076F589B201E7980004780FD /* Build configuration list for PBXNativeTarget "LiquidCoreTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				076F589C201E7980004780FD /* Debug */,

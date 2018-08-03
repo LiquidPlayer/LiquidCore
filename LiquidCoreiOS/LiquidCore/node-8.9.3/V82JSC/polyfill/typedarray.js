@@ -11,6 +11,7 @@
         construct(target, args, newTarget) {
             if (typeof args[0] === 'object' &&
                 args[0] instanceof ArrayBuffer &&
+                args.length >= 3 &&
                 (args[1] === undefined || args[1] === null) &&
                 (args[2] === undefined || args[2] === null)) {
 

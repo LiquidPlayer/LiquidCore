@@ -7,9 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <LiquidCoreiOS/LCMicroService.h>
-#import <LiquidCoreiOS/LCSurface.h>
-#import <LiquidCoreiOS/LCLiquidView.h>
+#import <LiquidCore/LCMicroService.h>
+#import <LiquidCore/LCSurface.h>
+#import <LiquidCore/LCLiquidView.h>
 
 //! Project version number for LiquidCoreiOS.
 FOUNDATION_EXPORT double LiquidCoreiOSVersionNumber;

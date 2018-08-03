@@ -6,9 +6,8 @@
 //  Copyright © 2018 LiquidPlayer. All rights reserved.
 //
 
-#import <LiquidCoreiOS/LCLiquidView.h>
+#import <LiquidCore/LiquidCore.h>
 #import "Process.h"
-#import <LiquidCoreiOS/LCSurface.h>
 
 static NSMutableArray* registeredSurfaces;
 

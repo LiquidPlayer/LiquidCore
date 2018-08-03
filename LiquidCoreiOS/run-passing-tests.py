@@ -9,7 +9,7 @@ import sys
 
 SCHEME = 'LiquidCoreiOS'
 WORKSPACE = 'LiquidCoreiOS.xcodeproj/project.xcworkspace'
-TEST_SCHEME = 'LiquidCoreiOSTests'
+TEST_SCHEME = 'V8Tests'
 
 def get_test_list(prefix = 'test'):
     args = [
@@ -26,7 +26,7 @@ def get_test_list(prefix = 'test'):
 q = Queue()
 
 def run_test(test, verbose):
-    test_scheme = TEST_SCHEME + ':' + TEST_SCHEME + '/' + test
+    test_scheme = 'LiquidCoreTests' + ':' + TEST_SCHEME + '/' + test
     args = [
         "xctool",
         "-workspace", WORKSPACE,
