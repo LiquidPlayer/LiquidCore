@@ -4,7 +4,7 @@
 #include "database.h"
 #include "statement.h"
 
-#include "node/nodedroid_file.h"
+#include "nodedroid_file.h"
 #include "env.h"
 #include "env-inl.h"
 
@@ -116,7 +116,6 @@ void Database::Schedule(Work_Callback callback, Baton* baton, bool exclusive) {
     }
 }
 
-#include <android/log.h>
 NAN_METHOD(Database::New) {
     Environment* env = Environment::GetCurrent(info.GetIsolate());
     if (!info.IsConstructCall()) {
@@ -160,10 +159,10 @@ NAN_METHOD(Database::New) {
         db->Wrap(info.This());
 
 
-        info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
-            Nan::New("filename").ToLocalChecked(), info[0].As<String>(), ReadOnly);
-        info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
-            Nan::New("mode").ToLocalChecked(), Nan::New(mode), ReadOnly);
+        CHECK(info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
+            Nan::New("filename").ToLocalChecked(), info[0].As<String>(), ReadOnly).ToChecked());
+        CHECK(info.This()->DefineOwnProperty(info.GetIsolate()->GetCurrentContext(),
+            Nan::New("mode").ToLocalChecked(), Nan::New(mode), ReadOnly).ToChecked());
 
         // Start opening the database.
         OpenBaton* baton = new OpenBaton(db, callback, use_fn, mode, env->event_loop());
@@ -183,8 +182,6 @@ void Database::Work_Open(uv_work_t* req) {
     OpenBaton* baton = static_cast<OpenBaton*>(req->data);
     Database* db = baton->db;
 
-    __android_log_print(ANDROID_LOG_DEBUG,"Work_Open","attempting to open: %s", baton->filename.c_str());
-
     baton->status = sqlite3_open_v2(
         baton->filename.c_str(),
         &db->_handle,
@@ -194,7 +191,6 @@ void Database::Work_Open(uv_work_t* req) {
 
     if (baton->status != SQLITE_OK) {
         baton->message = std::string(sqlite3_errmsg(db->_handle));
-    __android_log_print(ANDROID_LOG_DEBUG,"Work_Open","failed: %s", baton->message.c_str());
         sqlite3_close(db->_handle);
         db->_handle = NULL;
     }
@@ -680,6 +676,7 @@ void Database::Work_BeginLoadExtension(Baton* baton) {
 }
 
 void Database::Work_LoadExtension(uv_work_t* req) {
+/*
     LoadExtensionBaton* baton = static_cast<LoadExtensionBaton*>(req->data);
 
     sqlite3_enable_load_extension(baton->db->_handle, 1);
@@ -698,11 +695,12 @@ void Database::Work_LoadExtension(uv_work_t* req) {
         baton->message = std::string(message);
         sqlite3_free(message);
     }
+*/
 }
 
 void Database::Work_AfterLoadExtension(uv_work_t* req) {
     Nan::HandleScope scope;
-
+/*
     LoadExtensionBaton* baton = static_cast<LoadExtensionBaton*>(req->data);
     Database* db = baton->db;
     Local<Function> cb = Nan::New(baton->callback);
@@ -727,6 +725,7 @@ void Database::Work_AfterLoadExtension(uv_work_t* req) {
     db->Process();
 
     delete baton;
+*/
 }
 
 void Database::RemoveCallbacks() {

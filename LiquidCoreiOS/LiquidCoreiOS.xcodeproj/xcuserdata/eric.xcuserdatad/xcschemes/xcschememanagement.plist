@@ -4,10 +4,28 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>LiquidCoreTestApp.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>LiquidCoreiOS.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>076F5883201E797F004780FD</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>076F588C201E797F004780FD</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
