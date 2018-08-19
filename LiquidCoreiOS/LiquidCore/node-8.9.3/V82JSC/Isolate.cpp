@@ -43,9 +43,11 @@ v8::internal::Object ** V;
 struct Roots {
     STRONG_ROOT_LIST(DEF)
 };
+#ifdef DEBUG
 #define DECLARE_FIELDS(type,name,v) \
 const intptr_t v8::internal::Isolate::name##_debug_offset_ = (reinterpret_cast<intptr_t>(&(reinterpret_cast<v8::internal::Isolate*>(16)->name##_)) - 16);
 ISOLATE_INIT_LIST(DECLARE_FIELDS);
+#endif
 
 std::mutex IsolateImpl::s_isolate_mutex;
 std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map;
