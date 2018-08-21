@@ -5,7 +5,7 @@ LiquidCore provides an environment for developers to create native mobile micro 
 
 LiquidCore also provides a convenient way for Android developers to execute raw JavaScript inside of their apps, as iOS developers can already do natively with JavaScriptCore.
 
-LiquidCore is currently only available on Android, but will be ported to iOS.
+LiquidCore is currently only available on Android, but will be ported to iOS.  **EDIT**: LiquidCore now works on iOS, but is still experimental.  You can build the framework using Carthage.  From the `LiquidCoreiOS` directory, run `carthage build --no-skip-current`.  Of course you can also build inside of XCode.  Documentation is forthcoming and will be official in version 0.5.0.
 
 Version
 -------
