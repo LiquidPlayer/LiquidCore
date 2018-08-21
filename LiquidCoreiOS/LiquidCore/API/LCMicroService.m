@@ -112,7 +112,7 @@ static NSMutableDictionary* _serviceMap = nil;
 
 - (id) initWithURL:(NSURL*)serviceURI
 {
-    return [self initWithURL:nil];
+    return [self initWithURL:serviceURI delegate:nil];
 }
 
 - (id) initWithURL:(NSURL*)serviceURI delegate:(id<LCMicroServiceDelegate>)delegate
