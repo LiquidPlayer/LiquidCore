@@ -1,0 +1,14 @@
+clean: true
+objc: true
+umbrella_header: LiquidCore/LiquidCore/LiquidCore.h
+framework_root: LiquidCore 
+sdk: iphonesimulator
+module: LiquidCore
+module_version: 0.5.0
+author: LiquidPlayer
+author_url: https://github.com/LiquidPlayer
+github_url: https://github.com/LiquidPlayer/LiquidCore
+copyright: © 2018 LiquidPlayer
+hide_documentation_coverage: true
+output: ../../LiquidPlayer.github.io/LiquidCoreiOS/0.5.0
+root_url: https://liquidplayer.github.io/LiquidCoreiOS/0.5.0

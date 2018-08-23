@@ -1027,6 +1027,17 @@
 			path = cctest;
 			sourceTree = "<group>";
 		};
+		072FDB14212EE19100557264 /* LiquidCore */ = {
+			isa = PBXGroup;
+			children = (
+				076F5887201E797F004780FD /* LiquidCore.h */,
+				0765640920F9EB70002C330B /* LCMicroService.h */,
+				07D2B3A2210C70DB003989F0 /* LCSurface.h */,
+				07D2B3A7210DAD17003989F0 /* LCLiquidView.h */,
+			);
+			path = LiquidCore;
+			sourceTree = "<group>";
+		};
 		0738914620EBBD8D009056FD /* System */ = {
 			isa = PBXGroup;
 			children = (
@@ -1459,7 +1470,7 @@
 				07CA453E20F0BA1A00862266 /* API */,
 				0738937520EFFEBA009056FD /* Common */,
 				0738937420EFFE8A009056FD /* node-8.9.3 */,
-				076F5887201E797F004780FD /* LiquidCore.h */,
+				072FDB14212EE19100557264 /* LiquidCore */,
 				076F5888201E797F004780FD /* Info.plist */,
 			);
 			path = LiquidCore;
@@ -1568,10 +1579,7 @@
 				07CA454220F10F4700862266 /* NodeBridge.cpp */,
 				07CA454620F4C37E00862266 /* FileSystem.h */,
 				07CA454720F4C3F800862266 /* FileSystem.m */,
-				0765640920F9EB70002C330B /* LCMicroService.h */,
 				0765640A20F9F1F9002C330B /* LCMicroService.m */,
-				07D2B3A2210C70DB003989F0 /* LCSurface.h */,
-				07D2B3A7210DAD17003989F0 /* LCLiquidView.h */,
 				07D2B3A8210DAD17003989F0 /* LCLiquidView.m */,
 			);
 			path = API;

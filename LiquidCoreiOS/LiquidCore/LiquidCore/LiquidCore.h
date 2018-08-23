@@ -31,9 +31,3 @@
 #import <LiquidCore/LCMicroService.h>
 #import <LiquidCore/LCSurface.h>
 #import <LiquidCore/LCLiquidView.h>
-
-//! Project version number for LiquidCoreiOS.
-FOUNDATION_EXPORT double LiquidCoreiOSVersionNumber;
-
-//! Project version string for LiquidCoreiOS.
-FOUNDATION_EXPORT const unsigned char LiquidCoreiOSVersionString[];
