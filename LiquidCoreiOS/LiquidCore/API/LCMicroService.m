@@ -235,7 +235,7 @@ static NSMutableDictionary* _serviceMap = nil;
             NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
             error = nil;
             if (http.statusCode == 200) {
-                if ([NSFileManager defaultManager] fileExistsAtPath:localPath) {
+                if ([[NSFileManager defaultManager] fileExistsAtPath:localPath]) {
                     [[NSFileManager defaultManager] removeItemAtPath:localPath error:nil];
                 }
                 [[NSFileManager defaultManager] moveItemAtURL:location
