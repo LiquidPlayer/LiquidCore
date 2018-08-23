@@ -449,7 +449,7 @@ You will need to clear the server cache, so simply delete the `.lib` directory:
 And then restart the server.  Now when you navigate to `http://localhost:8080/bn.js`, you will see that the code has been minified in order to save space.  The manifest file can do a bunch of things, but we'll save that for later as it is still in its infancy.
 
 
-Building the LiquidCore iOS framwork
+Building the LiquidCore iOS framework
 ------------------------------------
 
 If you are interested in building the library directly and possibly contributing, you must
