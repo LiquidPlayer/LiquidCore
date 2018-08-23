@@ -105,6 +105,19 @@ static NSMutableArray* registeredSurfaces;
     if (self.jsResource != nil) {
         self.URL = [[[NSBundle mainBundle] URLForResource:_jsResource withExtension:@"js"] absoluteString];
     }
+    
+    if (self.availableSurfaces != nil) {
+        NSScanner *scanner = [NSScanner scannerWithString:self.arguments];
+        NSString *substring;
+        
+        while (scanner.scanLocation < self.arguments.length) {
+            unichar character = [self.arguments characterAtIndex:scanner.scanLocation];
+            [scanner scanUpToString:@" " intoString:&substring];
+            [self enableSurface:substring];
+            
+            if (scanner.scanLocation < self.arguments.length) [scanner setScanLocation:(scanner.scanLocation + 1)];
+        }
+    }
 
     if (self.URL != nil) {
         if (array.count > 0) {
