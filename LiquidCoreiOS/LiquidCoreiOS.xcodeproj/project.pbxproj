@@ -1985,6 +1985,7 @@
 				TargetAttributes = {
 					076F5883201E797F004780FD = {
 						CreatedOnToolsVersion = 9.2;
+						LastSwiftMigration = 0940;
 						ProvisioningStyle = Automatic;
 					};
 					076F588C201E797F004780FD = {
@@ -2700,6 +2701,7 @@
 		076F5899201E7980004780FD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CLANG_WARN_UNREACHABLE_CODE = NO;
@@ -2767,6 +2769,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 				SYSTEM_HEADER_SEARCH_PATHS = "${SRCROOT}/../deps/node-8.9.3/src $(SRCROOT)/../deps/node-8.9.3/deps/nghttp2/lib/includes ${SRCROOT}/LiquidCore/node-8.9.3/node";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2775,6 +2780,7 @@
 		076F589A201E7980004780FD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CLANG_WARN_UNREACHABLE_CODE = NO;
@@ -2842,6 +2848,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_VERSION = 3.0;
 				SYSTEM_HEADER_SEARCH_PATHS = "${SRCROOT}/../deps/node-8.9.3/src $(SRCROOT)/../deps/node-8.9.3/deps/nghttp2/lib/includes ${SRCROOT}/LiquidCore/node-8.9.3/node";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
