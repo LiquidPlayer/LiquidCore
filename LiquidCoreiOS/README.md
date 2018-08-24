@@ -459,7 +459,7 @@ do the following:
     % cd LiquidCore/LiquidCoreiOS
     % carthage build --no-skip-current
 
-Your framework now sits in `LiquidCoreiOS/Build/iOS/LiquidCore.framework`.  You can also build it inside of XCode without issue.
+Your framework now sits in `LiquidCoreiOS/Carthage/Build/iOS/LiquidCore.framework`.  You can also build it inside of XCode without issue.
 
 License
 -------
