@@ -184,7 +184,7 @@ public class LiquidView extends RelativeLayout {
                     } catch (Exception e) {
                         e.printStackTrace();
                         android.util.Log.d("exception", e.toString());
-                        ((LiquidViewService)service).m_preserver.release();
+                        service.m_preserver.release();
                     }
                 }
             });

@@ -33,6 +33,7 @@
 package org.liquidplayer.surface.console;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcel;
@@ -110,9 +111,8 @@ public class ConsoleSurface extends ConsoleView implements Surface {
      */
     @Override
     public View attach(MicroService service, Runnable onAttached) {
-        session = ConsoleSession.newSession(service, onAttached);
-        session.setCurrentView(this);
         uuid = service.getId();
+        session = ConsoleSession.newSession(service, this, onAttached);
         return this;
     }
 
@@ -137,6 +137,31 @@ public class ConsoleSurface extends ConsoleView implements Surface {
     protected void processCommand(final String cmd) {
         if (session != null) {
             session.processCommand(cmd);
+        }
+    }
+
+    private String temp = "";
+    void print(String str) {
+        if (consoleTextView == null) {
+            temp = temp + str;
+        } else {
+            if (temp.length() > 0) {
+                consoleTextView.print(temp);
+                temp = "";
+            }
+            consoleTextView.print(str);
+        }
+    }
+    void println(String str) {
+        print(str + "\n");
+    }
+
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (temp.length() > 0) {
+            consoleTextView.print(temp);
+            temp = "";
         }
     }
 
@@ -196,8 +221,8 @@ public class ConsoleSurface extends ConsoleView implements Surface {
     private static class ConsoleSession implements Process.EventListener,
             JSContext.IJSExceptionHandler {
 
-        static ConsoleSession newSession(MicroService service, Runnable onAttached) {
-            ConsoleSession session = new ConsoleSession(service,onAttached);
+        static ConsoleSession newSession(MicroService service, ConsoleSurface view, Runnable onAttached) {
+            ConsoleSession session = new ConsoleSession(service,view,onAttached);
             sessionMap.put(service.getId(), session);
             return session;
         }
@@ -208,8 +233,9 @@ public class ConsoleSurface extends ConsoleView implements Surface {
 
         private static HashMap<String,ConsoleSession> sessionMap = new HashMap<>();
 
-        private ConsoleSession(MicroService service, Runnable onAttached) {
+        private ConsoleSession(MicroService service, ConsoleSurface view, Runnable onAttached) {
             this.onAttached = onAttached;
+            this.currentView = view;
             if (service != null) {
                 process = service.getProcess();
                 process.addEventListener(this);
@@ -311,7 +337,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
                 @Override
                 public void callback(String string) {
                     if (currentView != null) {
-                        currentView.consoleTextView.print(string);
+                        currentView.print(string);
                     }
                 }
             });
@@ -321,7 +347,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
                     // Make it red!
                     string = "\u001b[31m" + string;
                     if (currentView != null) {
-                        currentView.consoleTextView.print(string);
+                        currentView.print(string);
                     }
                     android.util.Log.e("stderr", string);
                 }
@@ -335,7 +361,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
         @Override
         public void onProcessAboutToExit(Process process, int exitCode) {
             if (currentView != null) {
-                currentView.consoleTextView.println(
+                currentView.println(
                         "\u001B[31mProcess about to exit with code " + exitCode);
             }
             android.util.Log.i("onProcessAboutToExit", "Process about to exit with code "+exitCode);
@@ -346,7 +372,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
         public void onProcessExit(Process process, int exitCode) {
             android.util.Log.i("onProcessExit", "exiting");
             if (currentView != null) {
-                currentView.consoleTextView.println("\u001B[31mProcess exited with code "+exitCode);
+                currentView.println("\u001B[31mProcess exited with code "+exitCode);
             }
             this.process = null;
         }
@@ -360,7 +386,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
         public void handle(final JSException e) {
             processedException = true;
             if (currentView != null) {
-                currentView.consoleTextView.println("\u001b[31m" + e.stack());
+                currentView.println("\u001b[31m" + e.stack());
             }
         }
 
