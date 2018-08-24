@@ -192,7 +192,6 @@ NATIVE(JNIJSValue,jboolean,isEqual) (PARAMS, jlong a_, jlong b_)
     if (!a->IsDefunct()) {
         V8_ISOLATE_CTX(a->Context(), isolate, context)
             auto b = SharedWrap<JSValue>::Shared(a->Context(), b_);
-            Local<Value> value = a->Value();
 
             TryCatch trycatch(isolate);
 

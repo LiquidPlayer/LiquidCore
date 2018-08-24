@@ -73,7 +73,7 @@ v8::Local<v8::Context> os_newContext(v8::Isolate *isolate, JSContextGroupRef gro
         JSClassDefinition definition = kJSClassDefinitionEmpty;
         definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
         globalClass = JSClassCreate(&definition);
-        *ctxRef = JSGlobalContextCreateInGroup(group, globalClass);
+        *ctxRef = JSGlobalContextCreateInGroup(groupRef, globalClass);
     }
     JSClassRelease(globalClass);
     auto java_node_context = (*ctxRef)->Context();
@@ -85,7 +85,7 @@ void os_Dispose(JSContextGroupRef group, JSGlobalContextRef ctxRef)
 {
     JSGlobalContextRelease(ctxRef);
     JSContextGroupRelease(group);
-    group->Dispose();
+    const_cast<OpaqueJSContextGroup*>(group)->Dispose();
 }
 
 #endif

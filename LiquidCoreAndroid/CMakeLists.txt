@@ -38,11 +38,14 @@ set( SOURCES
      src/main/cpp/JSC/OpaqueJSString.cpp
      src/main/cpp/JSC/OpaqueJSValue.cpp
 
+     # Common Node.js between Android & iOS
+     ../LiquidCoreCommon/node/NodeInstance.cpp
+     ../LiquidCoreCommon/node/nodedroid_file.cc
+     ../LiquidCoreCommon/node/os_dependent.cpp
+     ../LiquidCoreCommon/node/process_wrap.cc
+
      # Node.js
      src/main/cpp/node/JNI_Process.cpp
-     src/main/cpp/node/nodedroid_file.cc
-     src/main/cpp/node/NodeInstance.cpp
-     src/main/cpp/node/process_wrap.cc
      src/main/cpp/node/sqlite3_shim.cpp
 )
 
@@ -120,6 +123,7 @@ include_directories(
              src/../../deps/sqlite-autoconf-3150000
              src/../../deps/nan-2.5.1
              src/../../deps/boost_1_66_0
+             src/../../LiquidCoreCommon/node
              )
 
 find_library( # Sets the name of the path variable.

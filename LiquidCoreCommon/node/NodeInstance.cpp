@@ -85,7 +85,7 @@ NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
 
     node_main_thread = new std::thread(node_main_task,reinterpret_cast<void*>(this));
     on_start = nullptr;
-    on_node_started_data = nullptr;
+    callback_data = nullptr;
 }
 #endif
 
@@ -547,7 +547,7 @@ void NodeInstance::StartInspector(Environment* env, const char* path,
 #define JSC "Lorg/liquidplayer/javascript/JNIJSContext;"
 
 #ifdef __ANDROID__
-void NodeInstance::NotifyStart(boost::shared_ptr<JSContext> java_node_context, JSContextRef ctxRef) {
+void NodeInstance::NotifyStart(JSContextRef ctxRef, JSContextGroupRef groupRef) {
     JNIEnv *jenv;
     int getEnvStat = m_jvm->GetEnv((void**)&jenv, JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED) {
@@ -572,9 +572,11 @@ void NodeInstance::NotifyStart(boost::shared_ptr<JSContext> java_node_context, J
         cls = super;
     } while (true);
     jenv->DeleteLocalRef(cls);
-    
+
+    auto group = const_cast<OpaqueJSContextGroup*>(groupRef);
+
     jenv->CallVoidMethod(m_JavaThis, mid,
-                         SharedWrap<JSContext>::New(java_node_context),
+                         SharedWrap<JSContext>::New(ctxRef->Context()),
                          SharedWrap<ContextGroup>::New(group->ContextGroup::shared_from_this()),
                          reinterpret_cast<jlong>(ctxRef)
                          );
@@ -624,14 +626,8 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   env.SetMethod(process, "reallyExit", Exit);
   env.SetMethod(process, "abort", Abort);
   env.SetMethod(process, "_kill", Kill);
+  NotifyStart(ctxRef, group);
 
-#ifdef __ANDROID__
-  if (m_jvm) {
-    NotifyStart(java_node_context, ctxRef);
-  }
-#else
-    NotifyStart(ctxRef, group);
-#endif
   /* ===End */
 
   const char* path = argc > 1 ? argv[1] : nullptr;

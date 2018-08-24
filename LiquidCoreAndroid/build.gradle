@@ -3,31 +3,32 @@ apply plugin: 'jacoco'
 apply plugin: 'com.github.dcendents.android-maven'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     buildToolsVersion '26.0.3'
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 4
-        versionName "0.4.6"
+        versionName "0.5.0"
         setProperty("archivesBaseName", "LiquidCore")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         //multiDexEnabled true
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++11 -fexceptions"
-                abiFilters "x86", "armeabi-v7a" //, "x86_64", "arm64-v8a"
+                abiFilters "x86", "armeabi-v7a", "x86_64", "arm64-v8a"
+                arguments "-DANDROID_TOOLCHAIN=gcc", "-DANDROID_STL=gnustl_static","-DANDROID_CPP_FEATURES=rtti exceptions"
             }
         }
         sourceSets {
             main {
                 jni.srcDirs = []
-                release.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/nosymbols'
-                                   //, '../deps/node-8.9.3/prebuilt/64bit/nosymbols'
+                release.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/nosymbols',
+                                           '../deps/node-8.9.3/prebuilt/64bit/nosymbols'
                 ]
-                debug.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/symbols'
-                                           //, '../deps/node-8.9.3/prebuilt/64bit/symbols'
+                debug.jniLibs.srcDirs = ['../deps/node-8.9.3/prebuilt/32bit/symbols',
+                                         '../deps/node-8.9.3/prebuilt/64bit/symbols'
                 ]
             }
         }
@@ -50,7 +51,7 @@ android {
         abi {
             enable true
             reset()
-            include 'x86', 'armeabi-v7a' //, 'x86_64', 'arm64-v8a'
+            include 'x86', 'armeabi-v7a', 'x86_64', 'arm64-v8a'
             universalApk true
         }
     }
@@ -65,9 +66,9 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     debugImplementation 'junit:junit:4.12'
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    androidTestImplementation 'com.android.support:support-annotations:27.0.2'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test:rules:1.0.1'
+    androidTestImplementation 'com.android.support:support-annotations:27.1.1'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
     androidTestImplementation 'org.hamcrest:hamcrest-library:1.3'
 }
 

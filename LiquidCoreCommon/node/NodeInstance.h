@@ -59,6 +59,7 @@
 
 #ifdef __ANDROID__
 # include "Common/Common.h"
+# include <JavaScriptCore/JavaScript.h>
 #endif
 
 using namespace node;
@@ -121,11 +122,7 @@ private:
 #endif
     uv_key_t thread_local_env;
 
-#ifdef __ANDROID__
-    void NotifyStart(boost::shared_ptr<JSContext> java_node_context, JSContextRef ctxRef);
-#else
     void NotifyStart(JSContextRef ctx, JSContextGroupRef group);
-#endif
 
     OnNodeStartedCallback on_start = nullptr;
     OnNodeExitCallback on_exit = nullptr;
