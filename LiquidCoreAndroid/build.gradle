@@ -9,7 +9,7 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 27
-        versionCode 4
+        versionCode 5
         versionName "0.5.0"
         setProperty("archivesBaseName", "LiquidCore")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

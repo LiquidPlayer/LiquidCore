@@ -22,6 +22,7 @@ import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.node.R;
+import org.liquidplayer.surface.console.ConsoleSurface;
 
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -82,12 +83,7 @@ public class LiquidView extends RelativeLayout {
                 }
                 for (String surface : surfaces) {
                     if (surface.startsWith(".")) surface = "org.liquidplayer.surface" + surface;
-                    try {
-                        enableSurface((Class<? extends Surface>)
-                                getClass().getClassLoader().loadClass(surface));
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
+                    enableSurface(surface);
                 }
             }
         } finally {
@@ -378,20 +374,33 @@ public class LiquidView extends RelativeLayout {
      * Makes a Surface available to the MicroService.  Must be called prior to start().  In XML
      * layout, an array of available surfaces can be provided using the "custom:liquidcore.surface"
      * attribute.
-     * @param cls The Surface class to enable
+     * @param canonicalName The canonical name of the surface to enable for this view
      */
-    public void enableSurface(Class<? extends Surface> cls) {
+    public void enableSurface(String canonicalName) {
+        if (surfaces == registeredSurfaces) {
+            surfaces = new ArrayList<>();
+        }
+        for (MicroService.AvailableSurface surface : registeredSurfaces) {
+            if (surface.cls.getCanonicalName().equalsIgnoreCase(canonicalName)) {
+                surfaces.add(surface);
+                return;
+            }
+        }
+    }
+
+    public static void registerSurface(Class<? extends Surface> cls) {
         try {
             Field f = cls.getDeclaredField("SURFACE_VERSION");
             MicroService.AvailableSurface as =
                     new MicroService.AvailableSurface(cls,f.get(null).toString());
-            surfaces.add(as);
+            registeredSurfaces.add(as);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private ArrayList<MicroService.AvailableSurface> surfaces = new ArrayList<>();
+    private static ArrayList<MicroService.AvailableSurface> registeredSurfaces = new ArrayList<>();
+    private ArrayList<MicroService.AvailableSurface> surfaces = registeredSurfaces;
 
     private MicroService.AvailableSurface[] availableSurfaces() {
         return surfaces.toArray(new MicroService.AvailableSurface[surfaces.size()]);
@@ -449,12 +458,7 @@ public class LiquidView extends RelativeLayout {
             surfaceVersions = new ArrayList<>(ss.surfaceVersions);
         }
         for (String surface : surfaceNames) {
-            try {
-                enableSurface((Class<? extends Surface>)
-                        getClass().getClassLoader().loadClass(surface));
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+            enableSurface(surface);
         }
 
         serviceId = ss.serviceId;
@@ -537,5 +541,9 @@ public class LiquidView extends RelativeLayout {
                 return new SavedState[size];
             }
         };
+    }
+
+    static {
+        registerSurface(ConsoleSurface.class);
     }
 }
