@@ -97,7 +97,7 @@ IB_DESIGNABLE
  @note Starts an `LCMicroService` asynchronously.  In Inteface Builder, this can be auto-started using
  the `URL` or `jsResource` and `arguments` properties.
  @param uri  The micro service URI
- @param arguments Optional arguments loaded into `process.argv[2:]`
+ @param argv Optional arguments loaded into `process.argv[2:]`
  @return the `LCMicroService`
  */
 - (LCMicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...;

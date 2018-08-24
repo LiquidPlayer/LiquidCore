@@ -69,7 +69,7 @@ typedef void (^LCOnAttachedHandler)(void);
  @method
  @note Attaches an `LCMicroService` to the UI.
  @param service  The `LCMicroService` to attach.
- @param onAttached An execution block to be called after the UI is active
+ @param onAttachedHandler An execution block to be called after the UI is active
  @return The UIView of the newly attached surface.
  */
 - (UIView<LCSurface>*) attach:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttachedHandler;
