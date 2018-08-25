@@ -174,7 +174,7 @@ There are many uses for micro services.  They are really useful for taking advan
 
 There are two surfaces so far:
 
-1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  The `ConsoleSurface` is included in the LiquidCore framework.  Run the [`NodeConsole`] app (https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreiOS/NodeConsole) to see it in action.
+1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  The `ConsoleSurface` is included in the LiquidCore framework.  Run the [`NodeConsole`](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreiOS/NodeConsole) app to see it in action.
 2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/react-native).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.  This is a fork of the React Native project that has modifications to allow it to run on LiquidCore.  It is very experimental at this point and I haven't written any documentation yet.  But it does work.  **Edit: This is an old build of RN and only works(ed?) on Android.  I will be updating for both Android and iOS shortly.**
 
 There are other surfaces under consideration, including:
