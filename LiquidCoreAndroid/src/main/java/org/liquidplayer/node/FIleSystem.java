@@ -183,13 +183,11 @@ class FileSystem extends JSObject {
             alias(alias, target, mask);
         }
 
-        private void symlinkRealTarget(final String alias, final String target, final String linkpath, final int mask) {
-            js.append("(function(){fs.symlinkSync(");
-            realDir(target);
-            js.append(",'");
-            js.append(linkpath);
-            js.append("');})();");
-            alias(alias, target, mask);
+        private void mkdirAndSymlink(final String alias, final String target, final String linkpath, final int mask) {
+            if (new File(target).mkdirs()) {
+                android.util.Log.i("mkdir", "Created directory " + target);
+            }
+            symlink(alias, target, linkpath, mask);
         }
 
         private void linkMedia(final String type, final String alias, final String linkpath, int mask) {
@@ -275,14 +273,17 @@ class FileSystem extends JSObject {
         if (new File(localPath + "/module").mkdirs()) {
             android.util.Log.i("FileSystem", "Created directory " + path + "/module" );
         }
-        js.symlinkRealTarget("/home/module", localPath + "/module",
+        js.symlink("/home/module", localPath + "/module",
                 sessionPath + "/home/module", Process.kMediaAccessPermissionsRead);
         // Set up /home/temp (read/write)
-        js.mkdir("/home/temp", sessionPath + "/temp", Process.kMediaAccessPermissionsRW);
+        js.mkdirAndSymlink("/home/temp", sessionPath + "/temp",
+                sessionPath + "/home/temp", Process.kMediaAccessPermissionsRW);
         // Set up /home/cache (read/write)
-        js.mkdir("/home/cache", path + "/cache", Process.kMediaAccessPermissionsRW);
+        js.mkdirAndSymlink("/home/cache", path + "/cache",
+                sessionPath + "/home/cache", Process.kMediaAccessPermissionsRW);
         // Set up /home/local (read/write)
-        js.mkdir("/home/local", localPath + "/local", Process.kMediaAccessPermissionsRW);
+        js.mkdirAndSymlink("/home/local", localPath + "/local",
+                sessionPath + "/home/local", Process.kMediaAccessPermissionsRW);
         // Permit access to node_modules
         js.symlink("/home/node_modules", node_modules,
                 sessionPath + "/home/node_modules", Process.kMediaAccessPermissionsRead);
@@ -311,7 +312,7 @@ class FileSystem extends JSObject {
                 if (new File(externalPersistent).mkdirs()) {
                     android.util.Log.i("FileSystem", "Created external directory " + externalPersistent);
                 }
-                js.symlinkRealTarget("/home/public/data", externalPersistent,
+                js.symlink("/home/public/data", externalPersistent,
                         sessionPath + "/home/public/data", Process.kMediaAccessPermissionsRW);
             }
 
