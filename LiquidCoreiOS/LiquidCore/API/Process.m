@@ -31,11 +31,6 @@
 #import "Process.h"
 #import "NodeBridge.h"
 #import "FileSystem.h"
-#import <mach-o/dyld.h>
-
-extern int jsc_get_major_version (void);
-extern int jsc_get_minor_version (void);
-extern int jsc_get_micro_version (void);
 
 @interface BlockWrap : NSObject
 @property (readonly) Process* process;

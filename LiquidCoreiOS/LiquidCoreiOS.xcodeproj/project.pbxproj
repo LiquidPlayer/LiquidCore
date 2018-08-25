@@ -373,8 +373,6 @@
 		07D2B377210B21A4003989F0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B376210B21A4003989F0 /* Assets.xcassets */; };
 		07D2B37A210B21A4003989F0 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B378210B21A4003989F0 /* LaunchScreen.storyboard */; };
 		07D2B37D210B21A4003989F0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B37C210B21A4003989F0 /* main.m */; };
-		07D2B387210B21A4003989F0 /* LiquidCoreTestAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */; };
-		07D2B392210B21A4003989F0 /* LiquidCoreTestAppUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */; };
 		07D2B3A0210C705A003989F0 /* LCConsoleSurfaceView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */; };
 		07D2B3A1210C705A003989F0 /* LCConsoleSurfaceView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */; };
 		07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A2210C70DB003989F0 /* LCSurface.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -461,20 +459,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 076F5883201E797F004780FD;
 			remoteInfo = LiquidCoreiOS;
-		};
-		07D2B383210B21A4003989F0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 076F587B201E797F004780FD /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 07D2B36A210B21A1003989F0;
-			remoteInfo = LiquidCoreTestApp;
-		};
-		07D2B38E210B21A4003989F0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 076F587B201E797F004780FD /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 07D2B36A210B21A1003989F0;
-			remoteInfo = LiquidCoreTestApp;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -875,7 +859,7 @@
 		07D2B360210B077E003989F0 /* ConsoleView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ConsoleView.m; sourceTree = "<group>"; };
 		07D2B363210B1426003989F0 /* CommandTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommandTextField.h; sourceTree = "<group>"; };
 		07D2B364210B1426003989F0 /* CommandTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CommandTextField.m; sourceTree = "<group>"; };
-		07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiquidCoreTestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		07D2B36B210B21A1003989F0 /* NodeConsole.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NodeConsole.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07D2B36D210B21A2003989F0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		07D2B36E210B21A2003989F0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		07D2B370210B21A2003989F0 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
@@ -885,12 +869,6 @@
 		07D2B379210B21A4003989F0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		07D2B37B210B21A4003989F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		07D2B37C210B21A4003989F0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreTestAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiquidCoreTestAppTests.m; sourceTree = "<group>"; };
-		07D2B388210B21A4003989F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LiquidCoreTestAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LiquidCoreTestAppUITests.m; sourceTree = "<group>"; };
-		07D2B393210B21A4003989F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		07D2B39E210C705A003989F0 /* LCConsoleSurfaceView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCConsoleSurfaceView.h; sourceTree = "<group>"; };
 		07D2B39F210C705A003989F0 /* LCConsoleSurfaceView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCConsoleSurfaceView.m; sourceTree = "<group>"; };
 		07D2B3A2210C70DB003989F0 /* LCSurface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCSurface.h; sourceTree = "<group>"; };
@@ -993,20 +971,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				074429A521123E4300EB0372 /* LiquidCore.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		07D2B37F210B21A4003989F0 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		07D2B38A210B21A4003989F0 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1442,9 +1406,7 @@
 			children = (
 				076F5886201E797F004780FD /* LiquidCore */,
 				076F5891201E797F004780FD /* LiquidCoreTests */,
-				07D2B36C210B21A2003989F0 /* LiquidCoreTestApp */,
-				07D2B385210B21A4003989F0 /* LiquidCoreTestAppTests */,
-				07D2B390210B21A4003989F0 /* LiquidCoreTestAppUITests */,
+				07D2B36C210B21A2003989F0 /* NodeConsole */,
 				076F5885201E797F004780FD /* Products */,
 				076F58C5201E7B5E004780FD /* Frameworks */,
 			);
@@ -1455,9 +1417,7 @@
 			children = (
 				076F5884201E797F004780FD /* LiquidCore.framework */,
 				076F588D201E797F004780FD /* LiquidCoreTests.xctest */,
-				07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */,
-				07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */,
-				07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */,
+				07D2B36B210B21A1003989F0 /* NodeConsole.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1629,7 +1589,7 @@
 			path = ConsoleView;
 			sourceTree = "<group>";
 		};
-		07D2B36C210B21A2003989F0 /* LiquidCoreTestApp */ = {
+		07D2B36C210B21A2003989F0 /* NodeConsole */ = {
 			isa = PBXGroup;
 			children = (
 				07D2B36D210B21A2003989F0 /* AppDelegate.h */,
@@ -1643,25 +1603,7 @@
 				07D2B37C210B21A4003989F0 /* main.m */,
 				07D2B3A5210CB50D003989F0 /* console.js */,
 			);
-			path = LiquidCoreTestApp;
-			sourceTree = "<group>";
-		};
-		07D2B385210B21A4003989F0 /* LiquidCoreTestAppTests */ = {
-			isa = PBXGroup;
-			children = (
-				07D2B386210B21A4003989F0 /* LiquidCoreTestAppTests.m */,
-				07D2B388210B21A4003989F0 /* Info.plist */,
-			);
-			path = LiquidCoreTestAppTests;
-			sourceTree = "<group>";
-		};
-		07D2B390210B21A4003989F0 /* LiquidCoreTestAppUITests */ = {
-			isa = PBXGroup;
-			children = (
-				07D2B391210B21A4003989F0 /* LiquidCoreTestAppUITests.m */,
-				07D2B393210B21A4003989F0 /* Info.plist */,
-			);
-			path = LiquidCoreTestAppUITests;
+			path = NodeConsole;
 			sourceTree = "<group>";
 		};
 		07FE85762075F4E80013E1B4 /* v8 */ = {
@@ -1927,9 +1869,9 @@
 			productReference = 076F588D201E797F004780FD /* LiquidCoreTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */ = {
+		07D2B36A210B21A1003989F0 /* NodeConsole */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 07D2B394210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestApp" */;
+			buildConfigurationList = 07D2B394210B21A4003989F0 /* Build configuration list for PBXNativeTarget "NodeConsole" */;
 			buildPhases = (
 				07D2B367210B21A1003989F0 /* Sources */,
 				07D2B368210B21A1003989F0 /* Frameworks */,
@@ -1941,46 +1883,10 @@
 			dependencies = (
 				074429A821123E4300EB0372 /* PBXTargetDependency */,
 			);
-			name = LiquidCoreTestApp;
+			name = NodeConsole;
 			productName = LiquidCoreTestApp;
-			productReference = 07D2B36B210B21A1003989F0 /* LiquidCoreTestApp.app */;
+			productReference = 07D2B36B210B21A1003989F0 /* NodeConsole.app */;
 			productType = "com.apple.product-type.application";
-		};
-		07D2B381210B21A4003989F0 /* LiquidCoreTestAppTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 07D2B397210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppTests" */;
-			buildPhases = (
-				07D2B37E210B21A4003989F0 /* Sources */,
-				07D2B37F210B21A4003989F0 /* Frameworks */,
-				07D2B380210B21A4003989F0 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				07D2B384210B21A4003989F0 /* PBXTargetDependency */,
-			);
-			name = LiquidCoreTestAppTests;
-			productName = LiquidCoreTestAppTests;
-			productReference = 07D2B382210B21A4003989F0 /* LiquidCoreTestAppTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		07D2B38C210B21A4003989F0 /* LiquidCoreTestAppUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 07D2B39A210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppUITests" */;
-			buildPhases = (
-				07D2B389210B21A4003989F0 /* Sources */,
-				07D2B38A210B21A4003989F0 /* Frameworks */,
-				07D2B38B210B21A4003989F0 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				07D2B38F210B21A4003989F0 /* PBXTargetDependency */,
-			);
-			name = LiquidCoreTestAppUITests;
-			productName = LiquidCoreTestAppUITests;
-			productReference = 07D2B38D210B21A4003989F0 /* LiquidCoreTestAppUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -2004,16 +1910,6 @@
 						CreatedOnToolsVersion = 9.4.1;
 						ProvisioningStyle = Automatic;
 					};
-					07D2B381210B21A4003989F0 = {
-						CreatedOnToolsVersion = 9.4.1;
-						ProvisioningStyle = Automatic;
-						TestTargetID = 07D2B36A210B21A1003989F0;
-					};
-					07D2B38C210B21A4003989F0 = {
-						CreatedOnToolsVersion = 9.4.1;
-						ProvisioningStyle = Automatic;
-						TestTargetID = 07D2B36A210B21A1003989F0;
-					};
 				};
 			};
 			buildConfigurationList = 076F587E201E797F004780FD /* Build configuration list for PBXProject "LiquidCoreiOS" */;
@@ -2031,9 +1927,7 @@
 			targets = (
 				076F5883201E797F004780FD /* LiquidCore */,
 				076F588C201E797F004780FD /* LiquidCoreTests */,
-				07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */,
-				07D2B381210B21A4003989F0 /* LiquidCoreTestAppTests */,
-				07D2B38C210B21A4003989F0 /* LiquidCoreTestAppUITests */,
+				07D2B36A210B21A1003989F0 /* NodeConsole */,
 			);
 		};
 /* End PBXProject section */
@@ -2064,20 +1958,6 @@
 				07D2B37A210B21A4003989F0 /* LaunchScreen.storyboard in Resources */,
 				07D2B377210B21A4003989F0 /* Assets.xcassets in Resources */,
 				07D2B375210B21A2003989F0 /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		07D2B380210B21A4003989F0 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		07D2B38B210B21A4003989F0 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2531,22 +2411,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		07D2B37E210B21A4003989F0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				07D2B387210B21A4003989F0 /* LiquidCoreTestAppTests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		07D2B389210B21A4003989F0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				07D2B392210B21A4003989F0 /* LiquidCoreTestAppUITests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -2559,16 +2423,6 @@
 			isa = PBXTargetDependency;
 			target = 076F5883201E797F004780FD /* LiquidCore */;
 			targetProxy = 076F588F201E797F004780FD /* PBXContainerItemProxy */;
-		};
-		07D2B384210B21A4003989F0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */;
-			targetProxy = 07D2B383210B21A4003989F0 /* PBXContainerItemProxy */;
-		};
-		07D2B38F210B21A4003989F0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 07D2B36A210B21A1003989F0 /* LiquidCoreTestApp */;
-			targetProxy = 07D2B38E210B21A4003989F0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2904,10 +2758,10 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = CXSA8L9LJ3;
-				INFOPLIST_FILE = LiquidCoreTestApp/Info.plist;
+				INFOPLIST_FILE = NodeConsole/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestApp;
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.NodeConsole;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2920,74 +2774,12 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = CXSA8L9LJ3;
-				INFOPLIST_FILE = LiquidCoreTestApp/Info.plist;
+				INFOPLIST_FILE = NodeConsole/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestApp;
+				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.NodeConsole;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		07D2B398210B21A4003989F0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = LiquidCoreTestAppTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LiquidCoreTestApp.app/LiquidCoreTestApp";
-			};
-			name = Debug;
-		};
-		07D2B399210B21A4003989F0 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = LiquidCoreTestAppTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LiquidCoreTestApp.app/LiquidCoreTestApp";
-			};
-			name = Release;
-		};
-		07D2B39B210B21A4003989F0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = LiquidCoreTestAppUITests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = LiquidCoreTestApp;
-			};
-			name = Debug;
-		};
-		07D2B39C210B21A4003989F0 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = LiquidCoreTestAppUITests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.liquidplayer.LiquidCoreTestAppUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = LiquidCoreTestApp;
 			};
 			name = Release;
 		};
@@ -3021,29 +2813,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		07D2B394210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestApp" */ = {
+		07D2B394210B21A4003989F0 /* Build configuration list for PBXNativeTarget "NodeConsole" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				07D2B395210B21A4003989F0 /* Debug */,
 				07D2B396210B21A4003989F0 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		07D2B397210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				07D2B398210B21A4003989F0 /* Debug */,
-				07D2B399210B21A4003989F0 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		07D2B39A210B21A4003989F0 /* Build configuration list for PBXNativeTarget "LiquidCoreTestAppUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				07D2B39B210B21A4003989F0 /* Debug */,
-				07D2B39C210B21A4003989F0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -143,7 +143,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
     private String temp = "";
     void print(String str) {
         if (consoleTextView == null) {
-            temp = temp + str;
+            temp = temp + "\u001b[m" + str;
         } else {
             if (temp.length() > 0) {
                 consoleTextView.print(temp);

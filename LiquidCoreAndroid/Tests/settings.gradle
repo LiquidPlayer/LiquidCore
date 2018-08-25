@@ -1,4 +1,4 @@
-include ':app'
+include ':NodeConsole'
 include ':LiquidCoreAndroid'
 
 project(':LiquidCoreAndroid').projectDir = new File(
