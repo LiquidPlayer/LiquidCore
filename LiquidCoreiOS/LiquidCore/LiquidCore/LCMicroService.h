@@ -31,22 +31,19 @@
 @class Process;
 
 /**
-@interface
-@note The `LCSynchronizer` object is used during micro service initialization to
+ The `LCSynchronizer` object is used during micro service initialization to
  synchronize asynchronous initialization.  This object is only needed if you require some
  asynchronous initialization and can be ignored otherwise.
  */
 @interface LCSynchronizer : NSObject
 
 /**
-@method
-@note Notify initializer that you are about to enter an asynchronous process.
+Notify initializer that you are about to enter an asynchronous process.
  */
 - (void) enter;
 
 /**
- @method
- @note Notify initializer that async init is complete.  Calls to `-enter` and `-exit` must
+ Notify initializer that async init is complete.  Calls to `-enter` and `-exit` must
  be balanced.
  */
 - (void) exit;
@@ -54,16 +51,14 @@
 @end
 
 /**
- @protocol
- @note An `LCMicroService` may have an optional delegate to listen for events on start,
+ An `LCMicroService` may have an optional delegate to listen for events on start,
  exit and error conditions.
  */
 @protocol LCMicroServiceDelegate <NSObject>
 
 @optional
 /**
- @method
- @note Optional listener for when the `LCMicroService` has successfully started.
+ Optional listener for when the `LCMicroService` has successfully started.
  
  Listens for when the `LCMicroService` has been inititialized and the environment is ready
  to receive event listeners.  This is called after the Node.js environment has been set
@@ -79,8 +74,7 @@
 
 @optional
 /**
- @method
- @note Optional listener for when the `LCMicroService` has successfully exited.
+ Optional listener for when the `LCMicroService` has successfully exited.
  
  Listens for when the `LCMicroService` has exited gracefully.  The `LCMicroService` is no longer
  available and is shutting down.
@@ -95,8 +89,7 @@
 
 @optional
 /**
- @method
- @note Optional listener for when the `LCMicroService` has exited unexpectedly.
+ Optional listener for when the `LCMicroService` has exited unexpectedly.
  
  Listens for any errors that may cause the `LCMicroService` to shut down unexpectedly.  The
  `LCMicroService` is no longer available and may have already crashed.
@@ -112,8 +105,7 @@
 @end
 
 /**
- @protocol
- @note Clients of an `LCMicroService` communicate with the JavaScript service through an
+ Clients of an `LCMicroService` communicate with the JavaScript service through an
  event emitter interface.  To listen for specific events, call
  `LCMicroService.-addEventListener:listener:`.  The delegates will be called through
  this protocol.
@@ -125,8 +117,7 @@
 @protocol LCMicroServiceEventListener <NSObject>
 
 /**
- @method
- @note Called when an event registered with `-addEventListener:listener:`
+ Called when an event registered with `-addEventListener:listener:`
  is triggered from JavaScript.
  @param service The micro service that emitted the event.
  @param event The emitted event.
@@ -137,8 +128,7 @@
 @end
 
 /**
- @interface
- @note  An `LCMicroService` is the basic building block of LiquidCore.  It encapsulates the runtime
+ An `LCMicroService` is the basic building block of LiquidCore.  It encapsulates the runtime
  environment for a client-side micro app.  An `LCMicroService` is a complete virtual machine
  whose operation is defined by the code referenced by the service URI.  When an `LCMicroService`
  is instantiated, its Node.js environment is set up, its code downloaded (or fetched from cache)
@@ -148,29 +138,26 @@
 @interface LCMicroService : NSObject
 
 /**
- @property
- @note Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
+ Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
  in UIs and the instance retrieved by a call to `+serviceFromInstanceId:`
  */
 @property (nonatomic, readonly, copy) NSString* instanceId;
 
 /**
- @property
- @note The Node.js Process object.  This is only intended to be used by surfaces, and
+ The Node.js Process object.
+ @note This is only intended to be used by surfaces, and
  directly accessing the `Process` is not recommended.
  */
 @property (atomic, readonly) Process* process;
 
 /**
- @property
- @note An array of strings with the canonical names of `LCSurface` UIs available to the
+ An array of strings with the canonical names of `LCSurface` UIs available to the
  micro service.
  */
 @property (nonatomic, readwrite, copy) NSArray* availableSurfaces;
 
 /**
- @method
- @note Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
+ Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
  in UIs and the instance retrieved by a call to this method.
  @param instanceId  An id returned by the `instanceId` property
  @return  The associated `LCMicroService` or `nil` if no such service is active.
@@ -178,24 +165,21 @@
 + (id) serviceFromInstanceId:(NSString*)instanceId;
 
 /**
- @method
- @note Uninstalls the `LCMicroService` from this host, and removes any global data associated with the
+ Uninstalls the `LCMicroService` from this host, and removes any global data associated with the
  service.
  @param serviceURI The URI of the service (should be the same URI that the service was started with).
  */
 + (void) uninstall:(NSURL *)serviceURI;
 
 /**
- @method
- @note Creates a new instance of the micro service referenced by `serviceURI`.
+ Creates a new instance of the micro service referenced by `serviceURI`.
  @param serviceURI  The URI (can be a network URL or local file/resource) of the micro service
  code
  */
 - (id) initWithURL:(NSURL*)serviceURI;
 
 /**
- @method
- @note Creates a new instance of the micro service referenced by `serviceURI`
+ Creates a new instance of the micro service referenced by `serviceURI`
  @param serviceURI  The URI (can be a network URL or local file/resource) of the MicroService
  code
  @param delegate The `LCMicroServiceDelegate` for this service
@@ -203,12 +187,11 @@
 - (id) initWithURL:(NSURL*)serviceURI delegate:(id<LCMicroServiceDelegate>)delegate;
 
 /**
- @method
- @note Adds an event listener for an event triggered by 'LiquidCore.emit(event, payload)' in
- JavaScript.  Example:<br/>
- <code>
-      LiquidCore.emit('my_event', { stringData: 'foo', bar : 6 });<br/>
- </code>
+ Adds an event listener for an event triggered by 'LiquidCore.emit(event, payload)' in
+ JavaScript.  Example:
+ ```javascript
+      LiquidCore.emit('my_event', { stringData: 'foo', bar : 6 });
+ ```
  This will trigger the `listener` added here, with the JavaScript object as a Swift/Objective-C
  dictionary
  @param event  The String event id
@@ -217,17 +200,15 @@
 - (void) addEventListener:(NSString*)event listener:(id<LCMicroServiceEventListener>)listener;
 
 /**
- @method
- @note Removes an EventListener previously added with `-addEventListener:listener:`.
+ Removes an EventListener previously added with `-addEventListener:listener:`.
  @param event  The event for which to unregister the listener
  @param listener  The listener to unregister
 */
 - (void) removeEventListener:(NSString*)event listener:(id<LCMicroServiceEventListener>)listener;
 
 /**
- @method
- @note Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
- registered a listener.  Example:<br/>
+ Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
+ registered a listener.  Example:
  
  ```javascript
  LiquidCore.on('my_event', function() {
@@ -245,8 +226,7 @@
 - (void) emit:(NSString*)event;
 
 /**
- @method
- @note Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
+ Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
  registered a listener.  Example:
  
  ```javascript
@@ -268,8 +248,7 @@
 - (void) emitObject:(NSString*)event object:(id)object;
 
 /**
- @method
- @note Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
+ Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
  registered a listener.  Example:
  
  ```javascript
@@ -290,8 +269,7 @@
 - (void) emitNumber:(NSString*)event number:(NSNumber*)number;
 
 /**
- @method
- @note Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
+ Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
  registered a listener.  Example:
  
  ```javascript
@@ -312,8 +290,7 @@
 - (void) emitString:(NSString*)event string:(NSString*)string;
 
 /**
- @method
- @note Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
+ Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
  registered a listener.  Example:
  
  ```javascript
@@ -334,16 +311,14 @@
 - (void) emitBoolean:(NSString*)event boolean:(BOOL)boolean;
 
 /**
- @method
- @note Starts the `LCMicroService`.  This method will return immediately and initialization and
+ Starts the `LCMicroService`.  This method will return immediately and initialization and
  startup will occur asynchronously in a separate thread.  It will download the code from
  the service URI (if not cached), set the arguments in `process.argv` and execute the script.
  */
 - (void) start;
 
 /**
- @method
- @note Starts the `LCMicroService`.  This method will return immediately and initialization and
+ Starts the `LCMicroService`.  This method will return immediately and initialization and
  startup will occur asynchronously in a separate thread.  It will download the code from
  the service URI (if not cached), set the arguments in `process.argv` and execute the script.
  @param argv  The list of arguments to sent to the `LCMicroService`.  This is similar to running

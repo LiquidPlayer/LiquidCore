@@ -32,8 +32,7 @@
 
 IB_DESIGNABLE
 /**
- @interface
- @note  `LCLiquidView` exposes an `LCMicroService` through a UI.  An `LCMicroService` attaches to a UI
+ `LCLiquidView` exposes an `LCMicroService` through a UI.  An `LCMicroService` attaches to a UI
  in JavaScript by calling `LiquidCore.attach(surface, callback)` where
  `surface` is a string representing the `LCSurface` class canonical name
  (e.g. `org.liquidplayer.surfaces.console.ConsoleSurface`) and `callback` is a
@@ -44,35 +43,31 @@ IB_DESIGNABLE
 @interface LCLiquidView : UIView
 
 /**
- @property
- @note The URL of the micro service.  The `URL` is mutually exclusive with the `jsResource`.  Use only
+ The URL of the micro service.  The `URL` is mutually exclusive with the `jsResource`.  Use only
  one or the other.
- The property is exposed through the Interface Builder in XCode and should not
+ @note The property is exposed through the Interface Builder in XCode and should not
  used programmatically.
  */
 @property (nonatomic, strong) IBInspectable NSString* URL;
 
 /**
- @property
- @note The path to a JavaScript resource file.  The `jsResource` is mutually exclusive with the `URL`.  Use only
+ The path to a JavaScript resource file.  The `jsResource` is mutually exclusive with the `URL`.  Use only
  one or the other.
- The property is exposed through the Interface Builder in XCode and is not
+ @note The property is exposed through the Interface Builder in XCode and is not
  used programmatically.
  */
 @property (nonatomic, strong) IBInspectable NSString* jsResource;
 
 /**
- @property
- @note An array of space-delimited arguments to start the micro service with.
- The property is exposed through the Interface Builder in XCode and is not
+ An array of space-delimited arguments to start the micro service with.
+ @note The property is exposed through the Interface Builder in XCode and is not
  used programmatically.
  */
 @property (nonatomic, strong) IBInspectable NSString* arguments;
 
 /**
- @property
- @note An array of space-delimited canonical surface names.
- The property is exposed through the Interface Builder in XCode and is not
+ An array of space-delimited canonical surface names.
+ @note The property is exposed through the Interface Builder in XCode and is not
  used programmatically.
  
  If neither the `availableSurfaces` property is set, nor `-enableSurface:` called, then all
@@ -82,8 +77,7 @@ IB_DESIGNABLE
 @property (nonatomic, strong) IBInspectable NSString* availableSurfaces;
 
 /**
- @method
- @note Makes a surfaces available to the `LCMicroService`.  Must be called prior to `-start:`.  In
+ Makes a surface available to the `LCMicroService`.  Must be called prior to `-start:`.  In
  Interface Builder, an array of available surfaces can be provided using the `availableSurfaces` property.
  
  If neither the `availableSurfaces` property is set, nor `-enableSurface:` called, then all
@@ -93,8 +87,7 @@ IB_DESIGNABLE
 - (void) enableSurface:(NSString*)canonicalName, ...;
 
 /**
- @method
- @note Starts an `LCMicroService` asynchronously.  In Inteface Builder, this can be auto-started using
+ Starts an `LCMicroService` asynchronously.  In Inteface Builder, this can be auto-started using
  the `URL` or `jsResource` and `arguments` properties.
  @param uri  The micro service URI
  @param argv Optional arguments loaded into `process.argv[2:]`
@@ -103,8 +96,7 @@ IB_DESIGNABLE
 - (LCMicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...;
 
 /**
- @method
- @note Starts an `LCMicroService` asynchronously.  In Inteface Builder, this can be auto-started using
+ Starts an `LCMicroService` asynchronously.  In Inteface Builder, this can be auto-started using
  the `URL` or `jsResource` properties.
  @param uri  The micro service URI
  @return the `LCMicroService`
