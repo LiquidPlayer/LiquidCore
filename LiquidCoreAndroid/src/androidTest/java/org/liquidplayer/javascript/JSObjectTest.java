@@ -168,13 +168,13 @@ public class JSObjectTest {
     public void testJSObjectConstructors(JSContext context) throws Exception {
         context.evaluateScript(functionObjectScript);
 
-        /**
+        /*
          * new JSObject(context)
          */
         JSObject empty = new JSObject(context);
         assertEquals(empty.toJSON(),context.property("empty").toJSON());
 
-        /**
+        /*
          * new JSObject(context, interface)
          */
         JSObject functionObject = new FunctionObject(context);
@@ -188,7 +188,7 @@ public class JSObjectTest {
         for (int i=0; i<array1.length; i++)
             assertEquals(array1[i],array2[i]);
 
-        /**
+        /*
          * new JSObject(context, map)
          */
         Map<String,Integer> map = new HashMap<>();

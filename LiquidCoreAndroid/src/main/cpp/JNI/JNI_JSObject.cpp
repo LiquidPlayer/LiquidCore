@@ -487,12 +487,10 @@ NATIVE(JNIJSObject,jlong,callAsFunction) (PARAMS, jlong objRef, jlong thisObject
 
 NATIVE(JNIJSObject,jboolean,isConstructor) (PARAMS, jlong objRef)
 {
-    // All functions can be constructors, yeah?  This is left over legacy from
-    // JavaScriptCore.
     bool v;
 
     VALUE_ISOLATE(objRef,object,isolate,context,value)
-        v = value->IsFunction();
+        v = value->IsFunction() && value.As<Function>()->IsConstructor();
     V8_UNLOCK()
 
     return (jboolean)v;

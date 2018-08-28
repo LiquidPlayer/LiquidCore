@@ -42,7 +42,7 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
     if (val->IsObject()) {
         Local<Private> privateKey = v8::Private::ForApi(context->isolate(),
             String::NewFromUtf8(context->isolate(), "__JSValue_ptr"));
-        Local<Object> obj = val->ToObject(context->Value()).ToLocalChecked();
+        Local<Object> obj = val.As<Object>();
         Local<v8::Value> identifier;
         Maybe<bool> result = obj->HasPrivate(context->Value(), privateKey);
         bool hasPrivate = false;
@@ -60,79 +60,35 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
 
             obj->SetPrivate(context->Value(), privateKey, Wrap(&* value));
         }
-        value->m_reference = TOOBJPTR(&*value);
     } else {
         value = boost::make_shared<JSValue>(context,val);
-        value->m_reference =
-                (value->m_isUndefined) ? ODDBALL_UNDEFINED :
-                (value->m_isNull) ? ODDBALL_NULL :
-                (val->IsBoolean() && val->IsTrue()) ? ODDBALL_TRUE :
-                (val->IsBoolean()) ? ODDBALL_FALSE : -1;
-        if (value->m_reference == -1 && val->IsNumber()) {
-            double v = val->ToNumber(context->isolate())->Value();
-            jlong *pv = (jlong *) &v;
-            if (CANPRIMITIVE(*pv)) {
-                value->m_reference = *pv;
-            } else {
-                value->m_reference = TOPTR(&*value);
-            }
-        } else {
-            value->m_reference = TOPTR(&*value);
-        }
     }
 
     context->Group()->Manage(value);
     return value;
 }
 
-boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, jlong thiz)
+JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val) :
+    m_context(context),
+    m_isUndefined(val->IsUndefined()),
+    m_isNull(val->IsNull()),
+    m_wrapped(false),
+    m_isObject(val->IsObject()),
+    m_isNumber(val->IsNumber()),
+    m_isBoolean(val->IsBoolean()),
+    m_isDefunct(false)
 {
-    if (ISPOINTER(thiz)) {
-        JSValue *ptr = TOJSVALUE(thiz);
-        return ptr->javaReference();
+    if (!m_isUndefined && !m_isNull) {
+        m_value.Reset(context->isolate(), val);
     }
-
-    Isolate::Scope isolate_scope_(Isolate::GetCurrent());
-    HandleScope handle_scope_(Isolate::GetCurrent());
-
-    Local<v8::Value> value;
-
-    if (ISODDBALL(thiz)) {
-        switch (thiz) {
-            case ODDBALL_FALSE:     value = False(Isolate::GetCurrent()); break;
-            case ODDBALL_TRUE:      value = True (Isolate::GetCurrent()); break;
-            case ODDBALL_UNDEFINED: value = Undefined(Isolate::GetCurrent()); break;
-            case ODDBALL_NULL:      value = Null(Isolate::GetCurrent());; break;
-            default: break;
-        }
-    } else {
-        double dval = * (double *) &thiz;
-        value = Number::New(Isolate::GetCurrent(), dval);
+    if (m_isBoolean) {
+        m_booleanValue = val->IsTrue();
+    } else if (m_isNumber) {
+        m_numberValue = val->NumberValue();
     }
-
-    return New(context, value);
 }
 
-JSValue::JSValue(boost::shared_ptr<JSContext> context, Local<v8::Value> val)
-{
-    if (val->IsUndefined()) {
-        m_isUndefined = true;
-        m_isNull = false;
-    } else if (val->IsNull()) {
-        m_isUndefined = false;
-        m_isNull = true;
-    } else {
-        m_value = Persistent<v8::Value,CopyablePersistentTraits<v8::Value>>(context->isolate(), val);
-        m_isUndefined = false;
-        m_isNull = false;
-    }
-    m_context = context;
-    m_wrapped = false;
-    m_isDefunct = false;
-    m_count = 0;
-}
-
-JSValue::JSValue() : m_wrapped(false), m_isDefunct(false)
+JSValue::JSValue() : m_isDefunct(false)
 {
 }
 
@@ -148,20 +104,26 @@ void JSValue::Dispose()
 
         boost::shared_ptr<JSContext> context = m_context;
         if (context && !m_isUndefined && !m_isNull) {
-            V8_ISOLATE(context->Group(), isolate)
-            if (m_wrapped) {
-                Local<Object> obj = Value()->ToObject(context->Value()).ToLocalChecked();
-                // Clear wrapper pointer if it exists, in case this object is still held by JS
-                Local<Private> privateKey = v8::Private::ForApi(isolate,
-                    String::NewFromUtf8(isolate, "__JSValue_ptr"));
-                obj->SetPrivate(context->Value(), privateKey,
-                    Local<v8::Value>::New(isolate,Undefined(isolate)));
-            }
-            m_value.Reset();
-            context.reset();
+            V8_ISOLATE(context->Group(), iso)
+                if (m_wrapped) {
+                    Local<v8::Value> local = m_value.Get(iso);
+                    Local<Object> obj = local->ToObject(context->Value()).ToLocalChecked();
+                    // Clear wrapper pointer if it exists, in case this object is still held by JS
+                    Local<Private> privateKey = v8::Private::ForApi(iso,
+                        String::NewFromUtf8(iso, "__JSValue_ptr"));
+                    obj->SetPrivate(context->Value(), privateKey,
+                        Local<v8::Value>::New(iso,Undefined(iso)));
+                }
+                m_value.Reset();
+                context.reset();
             V8_UNLOCK()
         }
 
         m_isUndefined = true;
+        m_isNull = false;
+        m_wrapped = false;
+        m_isObject = false;
+        m_isNumber = false;
+        m_isBoolean = false;
     }
 }

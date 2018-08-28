@@ -35,14 +35,10 @@
 */
 package org.liquidplayer.javascript;
 
-class JNIJSFunction extends JNIJSObject  {
-    private JNIJSFunction(long ref) {
-        super(ref);
-    }
-
-    static JNIJSFunction fromRef(long valueRef)
+class JNIJSFunction {
+    static JNIJSObject fromRef(long valueRef)
     {
-        return new JNIJSFunction(valueRef);
+        return (JNIJSObject) JNIJSValue.fromRef(valueRef);
     }
 
     static native long makeFunctionWithCallback(JSFunction thiz, long ctxRef, String name);

@@ -44,8 +44,10 @@ struct OpaqueJSValue {
 
         inline Local<Value> L() const
         {
+            EscapableHandleScope scope(Isolate::GetCurrent());
             boost::shared_ptr<JSValue> value = m_value;
-            return value ? value->Value() : Local<Value>::New(m_ctx->Context()->isolate(), weak);
+            return value ? scope.Escape(value->Value()) :
+                   scope.Escape(Local<Value>::New(m_ctx->Context()->isolate(), weak));
         }
         void Clean(bool fromGC=false) const;
         int Retain();

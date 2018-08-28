@@ -23,6 +23,7 @@ set( SOURCES
      src/main/cpp/JNI/JNI_OnLoad.cpp
      src/main/cpp/JNI/JNIJSException.cpp
      src/main/cpp/JNI/JSFunction.cpp
+     src/main/cpp/JNI/SharedWrap.cpp
 
      # JavaScriptCore -> V8 bridge
      src/main/cpp/JSC/JSC_JSBase.cpp

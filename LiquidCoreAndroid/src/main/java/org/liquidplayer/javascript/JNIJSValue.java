@@ -35,6 +35,13 @@
 */
 package org.liquidplayer.javascript;
 
+import android.support.v4.util.LongSparseArray;
+import android.util.SparseArray;
+
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.WeakHashMap;
+
 class JNIJSValue extends JNIObject {
     protected JNIJSValue(long ref) { super(ref); }
 
@@ -54,7 +61,7 @@ class JNIJSValue extends JNIObject {
      * 1010 (0xa) = False
      * 1110 (0xe) = True
      *
-     * See src/main/cpp/Common/JSValue.h for native mirror
+     * See src/main/cpp/JNI/SharedWrap.h for native mirror
      */
     static final long ODDBALL_UNDEFINED = 0x2;
     static final long ODDBALL_NULL = 0x6;
@@ -131,10 +138,28 @@ class JNIJSValue extends JNIObject {
                     (valueRef == ODDBALL_UNDEFINED) ? new JNIJSUndefined(valueRef) :
                         new JNIJSNumber(valueRef);
         }
-        if (isReferenceObject(valueRef)) {
-            return new JNIJSObject(valueRef);
+        WeakReference<JNIJSValue> wr = objectsHash.get(valueRef);
+        if (wr != null) {
+            JNIJSValue v = wr.get();
+            if (v != null) {
+                return v;
+            }
         }
-        return new JNIJSValue(valueRef);
+
+        JNIJSValue v;
+        if (isReferenceObject(valueRef)) {
+            v = new JNIJSObject(valueRef);
+        } else {
+            v = new JNIJSValue(valueRef);
+        }
+        objectsHash.put(valueRef, new WeakReference<>(v));
+        return v;
+    }
+    static private LongSparseArray<WeakReference<JNIJSValue>> objectsHash = new LongSparseArray<>();
+
+    long canonicalReference()
+    {
+        return canonicalReference(reference);
     }
 
     /* Natives */
@@ -177,5 +202,6 @@ class JNIJSValue extends JNIObject {
     private static native String toStringCopy(long valueRef) throws JNIJSException;
     private static native long toObject(long valueRef) throws JNIJSException;
 
+    private static native long canonicalReference(long valueRef);
     private native void Finalize(long valueRef);
 }

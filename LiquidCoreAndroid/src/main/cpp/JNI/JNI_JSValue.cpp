@@ -304,7 +304,7 @@ NATIVE(JNIJSValue,jlong,makeString) (PARAMS, jlong ctxRef, jstring string)
         }
 
         value = SharedWrap<JSValue>::New(
-            JSValue::New(context_,rval)
+            std::move(JSValue::New(context_,rval))
         );
     V8_UNLOCK()
     env->ReleaseStringUTFChars(string, c_string);
@@ -461,6 +461,10 @@ NATIVE(JNIJSValue,jlong,toObject) (PARAMS, jlong valueRef) {
         JNIJSException(env, SharedWrap<JSValue>::New(exception)).Throw();
     }
     return out;
+}
+
+NATIVE(JNIJSValue,jlong,canonicalReference) (PARAMS, jlong valueRef) {
+    return SharedWrap<JSValue>::CanonicalReference(valueRef);
 }
 
 NATIVE(JNIJSValue,void,Finalize) (PARAMS, jlong reference)

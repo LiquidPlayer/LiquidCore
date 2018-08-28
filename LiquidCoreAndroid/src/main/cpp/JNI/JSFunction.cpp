@@ -42,10 +42,17 @@ using namespace v8;
 
 JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> ctx, jstring name_)
 {
+    m_context = ctx;
+    m_isUndefined = false;
+    m_isNull = false;
+    m_wrapped = true;
+    m_isObject = true;
+    m_isNumber = false;
+    m_isBoolean = false;
+
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewWeakGlobalRef(thiz);
 
-    Persistent<v8::Value, CopyablePersistentTraits<v8::Value>> value;
     auto getMid = [&](const char* cb, const char *signature) -> jmethodID {
         jmethodID mid;
         jclass cls = env->GetObjectClass(thiz);
@@ -84,22 +91,15 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> c
         Local<Private> privateKey = v8::Private::ForApi(isolate,
             String::NewFromUtf8(isolate, "__JSValue_ptr"));
         function->SetPrivate(context, privateKey, data);
-        m_wrapped = true;
-        m_reference = TOOBJPTR(this);
 
-        value = Persistent<v8::Value,CopyablePersistentTraits<v8::Value>>(isolate, function);
+        m_value.Reset(isolate, function);
     V8_UNLOCK()
 
     env->ReleaseStringUTFChars(name_, c_string);
-
-    m_isNull = false;
-    m_isUndefined = false;
-    m_value = value;
-    m_context = ctx;
-    m_count = 0;
 }
 
-boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz, jlong javaContext, jstring name_)
+boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz,
+                                           jlong javaContext, jstring name_)
 {
     auto ctx = SharedWrap<JSContext>::Shared(javaContext);
     auto p = boost::make_shared<JSFunction>(env, thiz, ctx, name_);
@@ -134,8 +134,9 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
     if (getEnvStat == JNI_EDETACHED) {
         m_jvm->AttachCurrentThread(&env, NULL);
     }
-    Isolate *isolate = info.GetIsolate();
 
+    Isolate *isolate = info.GetIsolate();
+    HandleScope handle_scope(isolate);
     boost::shared_ptr<JSContext> ctxt = m_context;
     Local<v8::Context> context = ctxt->Value();
     Context::Scope context_scope_(context);

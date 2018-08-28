@@ -106,7 +106,7 @@ class JNIJSObject extends JNIJSValue {
 
     static JNIJSObject fromRef(long valueRef)
     {
-        return new JNIJSObject(valueRef);
+        return (JNIJSObject) JNIJSValue.fromRef(valueRef);
     }
 
     /* Native Methods */

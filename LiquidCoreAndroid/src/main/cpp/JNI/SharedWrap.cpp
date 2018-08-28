@@ -1,5 +1,5 @@
 //
-// LoopPreserver.cpp
+// SharedWrap.h
 //
 // LiquidPlayer project
 // https://github.com/LiquidPlayer
@@ -30,39 +30,17 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <boost/make_shared.hpp>
-#include "Common/LoopPreserver.h"
-#include "Common/ContextGroup.h"
+#include "SharedWrap.h"
 
-boost::shared_ptr<LoopPreserver> LoopPreserver::New(boost::shared_ptr<ContextGroup> group)
-{
-    auto preserver = boost::make_shared<LoopPreserver>(group);
-    return preserver;
-}
+Queue<SharedWrapBase*> SharedWrapBase::s_zombies;
+static volatile bool stop = false;
 
-LoopPreserver::LoopPreserver(boost::shared_ptr<ContextGroup> group) :
-        m_isDefunct(false), m_group(group)//, m_count(0)
+void SharedWrapBase::FreeZombiesThread()
 {
-    auto done = [](uv_async_t* handle) {
-        uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
-            delete (uv_async_t*)h;
-        });
+    while(!stop) {
+        auto wrap = s_zombies.pop();
+        delete wrap;
     };
-
-    m_async_handle = new uv_async_t();
-    uv_async_init(group->Loop(), m_async_handle, done);
 }
 
-LoopPreserver::~LoopPreserver()
-{
-    Dispose();
-}
-
-void LoopPreserver::Dispose()
-{
-    if (!m_isDefunct) {
-        m_isDefunct = true;
-
-        uv_async_send(m_async_handle);
-    }
-}
+std::thread FreeZombies(SharedWrapBase::FreeZombiesThread);

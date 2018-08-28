@@ -93,9 +93,8 @@ NATIVE(JNIJSContext,jlong,evaluateScript) (PARAMS, jlong ctxRef, jstring script_
 
     V8_ISOLATE(ctx->Group(), isolate)
         TryCatch trycatch(isolate);
-        Local<Context> context;
 
-        context = ctx->Value();
+        Local<Context> context = ctx->Value();
         Context::Scope context_scope_(context);
 
         ScriptOrigin script_origin(

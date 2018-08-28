@@ -47,7 +47,10 @@ public:
 
     boost::shared_ptr<JSValue>      Global();
 
-    inline Local<Context> Value() { return Local<Context>::New(isolate(), m_context); }
+    inline Local<Context> Value() {
+        EscapableHandleScope scope(Isolate::GetCurrent());
+        return scope.Escape(Local<Context>::New(isolate(), m_context));
+    }
     inline Isolate* isolate() {
         boost::shared_ptr<ContextGroup> sp = m_isolate;
         return sp->isolate();
@@ -56,23 +59,6 @@ public:
         boost::shared_ptr<ContextGroup> sp = m_isolate;
         return sp;
     }
-    inline void retainJavaReference()
-    {
-        m_count++;
-        m_self = shared_from_this();
-    }
-    inline void releaseJavaReference()
-    {
-        if (--m_count==0) {
-            boost::shared_ptr<JSContext> self = m_self;
-            self.reset();
-        }
-    }
-    inline boost::shared_ptr<JSContext> javaReference()
-    {
-        return m_self;
-    }
-
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
 
@@ -84,8 +70,6 @@ private:
     bool m_isDefunct;
     std::vector<boost::shared_ptr<JSValue>> m_value_set;
     std::recursive_mutex m_set_mutex;
-    boost::atomic_shared_ptr<JSContext> m_self;
-    boost::atomic<int> m_count;
 };
 
 #endif //LIQUIDCORE_JSCONTEXT_H

@@ -39,6 +39,7 @@
 Local<Value> ObjectData::New(const JSClassDefinition *def, JSContextRef ctx, JSClassRef cls)
 {
     Isolate *isolate = Isolate::GetCurrent();
+    EscapableHandleScope scope(isolate);
 
     ObjectData *od = new ObjectData(def, ctx, cls);
     char ptr[32];
@@ -54,7 +55,7 @@ Local<Value> ObjectData::New(const JSClassDefinition *def, JSContextRef ctx, JSC
         delete info.GetParameter();
     }, v8::WeakCallbackType::kParameter);
 
-    return data;
+    return scope.Escape(data);
 }
 
 ObjectData* ObjectData::Get(Local<Value> value)

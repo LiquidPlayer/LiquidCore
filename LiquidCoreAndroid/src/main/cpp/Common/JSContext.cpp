@@ -44,9 +44,8 @@ boost::shared_ptr<JSContext> JSContext::New(boost::shared_ptr<ContextGroup> isol
 
 JSContext::JSContext(boost::shared_ptr<ContextGroup> isolate, Local<Context> val) {
     m_isolate = isolate;
-    m_context = Persistent<Context,CopyablePersistentTraits<Context>>(isolate->isolate(), val);
+    m_context.Reset(isolate->isolate(), val);
     m_isDefunct = false;
-    m_count = 0;
 }
 
 JSContext::~JSContext() {

@@ -437,7 +437,7 @@ public class JSObject extends JSValue {
 
     @Override
     protected void finalize() throws Throwable {
-        if (context != null) {
+        if (context != null && persisted) {
             context.finalizeObject(this);
         }
         super.finalize();
@@ -458,11 +458,17 @@ public class JSObject extends JSValue {
 
     private JSObject thiz = null;
 
-    private JNIJSObject jnijsObject = null;
     protected JNIJSObject JNI() {
-        if (jnijsObject == null) {
-            jnijsObject = new JNIJSObject(valueRef().reference);
-        }
-        return jnijsObject;
+        return (JNIJSObject) valueRef();
     }
+
+    private long canon = 0;
+    boolean persisted = false;
+    long canonical() {
+        if (canon == 0) {
+            canon = valueRef().canonicalReference();
+        }
+        return canon;
+    }
+
 }

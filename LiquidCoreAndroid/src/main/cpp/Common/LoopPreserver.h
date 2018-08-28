@@ -53,29 +53,11 @@ public:
     void Dispose();
     inline bool IsDefunct() { return m_isDefunct; }
     inline boost::shared_ptr<ContextGroup> Group() { return m_group; }
-    inline void retainJavaReference()
-    {
-        m_count++;
-        m_self = shared_from_this();
-    }
-    inline void releaseJavaReference()
-    {
-        if (--m_count==0) {
-            boost::shared_ptr<LoopPreserver> self = m_self;
-            self.reset();
-        }
-    }
-    inline boost::shared_ptr<LoopPreserver> javaReference()
-    {
-        return m_self;
-    }
 
 private:
     bool m_isDefunct;
     uv_async_t * m_async_handle;
     boost::atomic_shared_ptr<ContextGroup> m_group;
-    boost::atomic_shared_ptr<LoopPreserver> m_self;
-    boost::atomic<int> m_count;
 };
 
 #endif //LIQUIDCORE_LOOPPRESERVER_H

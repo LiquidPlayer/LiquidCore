@@ -126,13 +126,13 @@ class JNIJSContext extends JNIObject {
     {
         return JNIJSObject.fromRef(JNIJSObject.makeRegExp(reference, pattern, flags));
     }
-    JNIJSFunction makeFunction(@NonNull String name, @NonNull String func,
+    JNIJSObject makeFunction(@NonNull String name, @NonNull String func,
                                @NonNull String sourceURL, int startingLineNumber) throws JNIJSException
     {
         return JNIJSFunction.fromRef(JNIJSObject.makeFunction(reference, name, func, sourceURL,
                 startingLineNumber));
     }
-    JNIJSFunction makeFunctionWithCallback(JSFunction thiz, String name)
+    JNIJSObject makeFunctionWithCallback(JSFunction thiz, String name)
     {
         return JNIJSFunction.fromRef(JNIJSFunction.makeFunctionWithCallback(thiz, reference, name));
     }

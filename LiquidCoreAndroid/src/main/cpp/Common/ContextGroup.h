@@ -76,23 +76,6 @@ public:
             sync_(runnable);
         }
     }
-    inline void retainJavaReference()
-    {
-        m_count++;
-        m_self = shared_from_this();
-    }
-    inline void releaseJavaReference()
-    {
-        if (--m_count==0) {
-            boost::shared_ptr<ContextGroup> self = m_self;
-            self.reset();
-        }
-    }
-    inline boost::shared_ptr<ContextGroup> javaReference()
-    {
-        return m_self;
-    }
-
     void RegisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags, void*), void *);
     void UnregisterGCCallback(void (*cb)(GCType type, GCCallbackFlags flags,void*), void *);
     void Manage(boost::shared_ptr<JSValue> obj);
@@ -143,8 +126,6 @@ private:
         void *data;
     };
     std::list<std::unique_ptr<struct GCCallback>> m_gc_callbacks;
-    boost::atomic_shared_ptr<ContextGroup> m_self;
-    boost::atomic<int> m_count;
 
     uv_async_t *m_async_handle;
     std::vector<void *> m_runnables;

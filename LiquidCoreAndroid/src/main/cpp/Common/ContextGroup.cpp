@@ -130,7 +130,6 @@ ContextGroup::ContextGroup()
     m_isDefunct = false;
     m_startup_data.data = nullptr;
     m_startup_data.raw_size = 0;
-    m_count = 0;
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
@@ -147,7 +146,6 @@ ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
     m_isDefunct = false;
     m_startup_data.data = nullptr;
     m_startup_data.raw_size = 0;
-    m_count = 0;
 
     s_mutex.lock();
     s_isolate_map[m_isolate] = this;
@@ -172,7 +170,6 @@ ContextGroup::ContextGroup(char *snapshot, int size)
     m_thread_id = std::this_thread::get_id();
     m_async_handle = nullptr;
     m_isDefunct = false;
-    m_count = 0;
 
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
@@ -185,6 +182,15 @@ void ContextGroup::MarkZombie(boost::shared_ptr<JSValue> obj)
         m_zombie_mutex.lock();
         m_value_zombies.push_back(obj);
         m_zombie_mutex.unlock();
+
+        std::unique_lock<std::mutex> lk(m_async_mutex);
+
+        if (!m_async_handle) {
+            m_async_handle = new uv_async_t();
+            m_async_handle->data = new ContextGroupData(shared_from_this());
+            uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
+            uv_async_send(m_async_handle);
+        }
     }
 }
 
@@ -194,17 +200,25 @@ void ContextGroup::MarkZombie(boost::shared_ptr<JSContext> obj)
         m_zombie_mutex.lock();
         m_context_zombies.push_back(obj);
         m_zombie_mutex.unlock();
+
+        std::unique_lock<std::mutex> lk(m_async_mutex);
+
+        if (!m_async_handle) {
+            m_async_handle = new uv_async_t();
+            m_async_handle->data = new ContextGroupData(shared_from_this());
+            uv_async_init(Loop(), m_async_handle, ContextGroup::callback);
+            uv_async_send(m_async_handle);
+        }
     }
 }
 
 void ContextGroup::FreeZombies()
 {
     m_zombie_mutex.lock();
-    auto vit = m_value_zombies.begin();
-    while (vit != m_value_zombies.end()) {
-        auto value = boost::atomic_load(&(*vit));
+    for (auto vit=m_value_zombies.begin(); vit!=m_value_zombies.end(); ) {
+        boost::shared_ptr<JSValue> value = *vit;
+        vit = m_value_zombies.erase(vit);
         value.reset();
-        ++vit;
     }
     m_value_zombies.clear();
 
@@ -460,7 +474,7 @@ void ContextGroup::schedule_java_runnable(JNIEnv *env, jobject thiz, jobject run
 boost::shared_ptr<ContextGroup> ContextGroup::New(const char *snapshotFile)
 {
     char *data = nullptr;
-    int size;
+    long size;
 
     FILE *fp = fopen(snapshotFile, "rb");
     if (fp) {
@@ -468,8 +482,8 @@ boost::shared_ptr<ContextGroup> ContextGroup::New(const char *snapshotFile)
         size = ftell(fp);
         rewind(fp);
         data = new char[size];
-        int read = fread((void*)data, sizeof (char), size, fp);
-        if (read != size) {
+        size_t read = fread((void*)data, sizeof (char), (size_t)size, fp);
+        if (read != (size_t)size) {
             delete[] data;
             data = nullptr;
         }
