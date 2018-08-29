@@ -1,31 +1,14 @@
 # NodeConsole
-A Node.js console app for LiquidCore Android
+A Node.js console app for LiquidCore iOS
 
-This simple app exposes a [`ConsoleSurface`](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreAndroid/src/main/java/org/liquidplayer/surface/console) which provides an interactive
-ANSI console to Node.js.  Note that it does not contain any Kotlin/Java code outside of
-what is generated for a single-view app from Android Studio.  All of the magic happens
-in the layout file, `activity_main.xml`:
+This simple app exposes an [`LCConsoleSurfaceView`](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreiOS/LiquidCore/ConsoleView) which provides an interactive
+ANSI console to Node.js.  Note that it does not contain any code outside of
+what is generated for an empty app from XCode.  All of the magic happens in the Interface Builder storyboard.
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+The `main.storyboard` has a single `UIView` placed on the view controller.  Its custom class (in the Identity inspector) is
+set to `LCLiquidView` and the "Js Resource" field is set to `console` in the "Liquid View" section of the Attributes inspector.
 
-    <org.liquidplayer.service.LiquidView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/liquidview"
-        app:liquidcore.URI="android.resource://org.liquidplayer.LiquidCoreTestApp/raw/console"
-        />
-
-```
-
-It exposes a `LiquidView` which points to a local resource file using the `app:liquidcore.URI`
-attribute.  That file, `console.js` contains the following:
+That resource file, `console.js`, contains the following:
 
 ```javascript
 const CONSOLE = 'org.liquidplayer.surface.console.ConsoleSurface';
@@ -52,7 +35,7 @@ function main(error)
 }
 ```
 
-The `LiquidView` starts a LiquidCore micro service and executes the code in this file.  The
+The `LCLiquidView` starts a LiquidCore micro service and executes the code in this file.  The
 javascript code simply requests to be attached to `ConsoleSurface` UI, which is an ANSI
 console view included in LiquidCore.  It prints a welcome message and then acts as a
 (mostly) full-featured node console.
