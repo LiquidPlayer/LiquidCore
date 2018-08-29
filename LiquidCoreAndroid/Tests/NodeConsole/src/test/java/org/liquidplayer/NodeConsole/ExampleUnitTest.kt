@@ -1,4 +1,4 @@
-package org.liquidplayer.LiquidCoreTestApp
+package org.liquidplayer.NodeConsole
 
 import org.junit.Test
 
