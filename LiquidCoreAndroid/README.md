@@ -3,7 +3,7 @@ The LiquidCore Project
 
 LiquidCore provides an environment for developers to create native mobile micro apps in Javascript that can in turn be embedded into _other_ apps.  Think: native `<iframe>` for mobile apps.  A LiquidCore micro app is simply a [Node.js] module that can be served from the cloud, and therefore, like in a webpage, it can be modified server-side and instantly updated on all mobile devices.
 
-LiquidCore also provides a convenient way for Android developers to execute raw JavaScript inside of their apps, as iOS developers can already do natively with JavaScriptCore.
+LiquidCore also provides a convenient way for Android developers to [execute raw JavaScript](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine) inside of their apps, as iOS developers can already do natively with JavaScriptCore.
 
 Version
 -------
