@@ -19,7 +19,7 @@ in the layout file, `activity_main.xml`:
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/liquidview"
-        app:liquidcore.URI="android.resource://org.liquidplayer.LiquidCoreTestApp/raw/console"
+        app:liquidcore.URI="android.resource://org.liquidplayer.NodeConsole/raw/console"
         />
 
 ```
