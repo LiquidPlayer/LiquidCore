@@ -457,7 +457,7 @@ If you are interested in building the library directly and possibly contributing
 do the following:
 
     % git clone https://github.com/liquidplayer/LiquidCore.git
-    % cd LiquidCore/LiquidCoreAndroid
+    % cd LiquidCore
     % echo ndk.dir=$ANDROID_NDK > local.properties
     % echo sdk.dir=$ANDROID_SDK >> local.properties
     % ./gradlew assembleRelease
