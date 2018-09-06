@@ -39,7 +39,7 @@ API Documentation
 # Table of Contents
 
 1. [Use Cases](#use-cases)
-2. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
+2. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
 3. [License](#license)
 
 # Use Cases
