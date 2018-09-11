@@ -31,7 +31,7 @@ attribute.  That file, `console.js` contains the following:
 const CONSOLE = 'org.liquidplayer.surface.console.ConsoleSurface';
 
 /* Request a console surface to be attached to our Node.js process.  Once this is
- * done, process.stdout and process.stderr will be streamed to the LCLiquidView.
+ * done, process.stdout and process.stderr will be streamed to the LiquidView.
  */
 LiquidCore.attach(CONSOLE, main);
 
