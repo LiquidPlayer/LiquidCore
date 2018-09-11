@@ -650,6 +650,14 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   }
 
   env.set_trace_sync_io(trace_sync_io);
+    
+#ifdef __APPLE__
+  // Set up a dummy runloop source to avoid spinning
+  CFRunLoopSourceContext noSpinCtx = {0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+  CFRunLoopSourceRef noSpinSource = CFRunLoopSourceCreate(NULL, 0, &noSpinCtx);
+  CFRunLoopAddSource(CFRunLoopGetCurrent(), noSpinSource, kCFRunLoopDefaultMode);
+  CFRelease(noSpinSource);
+#endif
 
   {
     SealHandleScope seal(isolate);
@@ -657,7 +665,12 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
     bool more;
     PERFORMANCE_MARK(&env, LOOP_START);
     do {
+#ifdef __ANDROID__
       uv_run(env.event_loop(), UV_RUN_DEFAULT);
+#else
+      uv_run(env.event_loop(), UV_RUN_NOWAIT);
+      CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, false);
+#endif
 
       v8_platform.DrainVMTasks();
 

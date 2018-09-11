@@ -29,9 +29,13 @@
 
 #include "V82JSC.h"
 #include "JSContextRefPrivate.h"
+#include "JSObjectRefPrivate.h"
 
 extern "C" unsigned char promise_polyfill_js[];
 extern "C" unsigned char typedarray_js[];
+extern "C" unsigned char error_polyfill_js[];
+
+#define CREATION_CONTEXT_PROP_NAME "__V82JSC__CreationContext"
 
 using namespace v8;
 
@@ -305,9 +309,18 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
     JSGlobalContextSetIncludesNativeCallStackWhenReportingExceptions((JSGlobalContextRef)context->m_ctxRef, false);
     
     JSObjectRef global_o = JSContextGetGlobalObject(context->m_ctxRef);
+
     // Set a reference back to our context so we can find our way back to the creation context
-    JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
-    assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
+    JSStringRef creationContext = JSStringCreateWithUTF8CString(CREATION_CONTEXT_PROP_NAME);
+    JSClassDefinition def = kJSClassDefinitionEmpty;
+    JSClassRef claz = JSClassCreate(&def);
+    JSObjectRef creation_context = JSObjectMake(context->m_ctxRef, claz, (void*)context->m_ctxRef);
+    JSObjectSetPrivateProperty(context->m_ctxRef, global_o, creationContext, creation_context);
+    JSStringRelease(creationContext);
+    JSClassRelease(claz);
+
+//    JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
+//    assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
 
     if (!global_object.IsEmpty()) {
         global_wrap->m_isDetached = false;
@@ -338,7 +351,13 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSValueRef o = V82JSC::ToJSValueRef(info[0], context);
 
                 if (JSValueIsObject(ctx, o)) {
-                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
+                    JSStringRef creationContext = JSStringCreateWithUTF8CString(CREATION_CONTEXT_PROP_NAME);
+                    JSValueRef cc = JSObjectGetPrivateProperty(ctx, (JSObjectRef)o, creationContext);
+                    JSGlobalContextRef gctx = 0;
+                    if (JSValueIsObject(ctx, cc)) gctx = (JSGlobalContextRef)JSObjectGetPrivate((JSObjectRef)cc);
+                    JSStringRelease(creationContext);
+//                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
+                    
                     if (gctx && V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
                         Local<Context> other = V82JSC::ToIsolateImpl(info.GetIsolate())->
                             m_global_contexts[gctx].Get(info.GetIsolate());
@@ -382,7 +401,13 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
                 JSValueRef o = V82JSC::ToJSValueRef(info[0], context);
                 
                 if (JSValueIsObject(ctx, o)) {
-                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
+                    JSStringRef creationContext = JSStringCreateWithUTF8CString(CREATION_CONTEXT_PROP_NAME);
+                    JSValueRef cc = JSObjectGetPrivateProperty(ctx, (JSObjectRef)o, creationContext);
+                    JSGlobalContextRef gctx = 0;
+                    if (JSValueIsObject(ctx, cc)) gctx = (JSGlobalContextRef)JSObjectGetPrivate((JSObjectRef)cc);
+                    JSStringRelease(creationContext);
+//                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
+
                     if (gctx && V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
                         Local<Context> other = V82JSC::ToIsolateImpl(info.GetIsolate())->m_global_contexts[gctx].Get(info.GetIsolate());
                         bool isGlobal = other->Global()->StrictEquals(info[0]);
@@ -544,12 +569,17 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSEvaluateScript(context->m_ctxRef, zTypedArrayPolyfill, global_o, 0, 0, &excp);
         assert(excp == 0);
 
+        JSStringRef zErrorPolyfill = JSStringCreateWithUTF8CString((const char*)error_polyfill_js);
+        JSEvaluateScript(context->m_ctxRef, zErrorPolyfill, global_o, 0, 0, &excp);
+        assert(excp == 0);
+
         JSObjectDeleteProperty(context->m_ctxRef, global_o, zSetTimeout, &excp);
         assert(excp == 0);
 
         JSStringRelease(zPromise);
         JSStringRelease(zPromisePolyfill);
         JSStringRelease(zTypedArrayPolyfill);
+        JSStringRelease(zErrorPolyfill);
         JSStringRelease(zSetTimeout);
         JSStringRelease(zGlobal);
         

@@ -128,6 +128,11 @@ static NSMutableDictionary* _serviceMap = nil;
             serviceId_ = [serviceURI absoluteString];
             module_ = serviceId_;
         }
+        comp = [module_ rangeOfString:@"?"];
+        if (comp.location != NSNotFound) {
+            module_ = [module_ substringToIndex:comp.location];
+        }
+
         serviceId_ = [serviceId_ stringByAddingPercentEncodingWithAllowedCharacters:
                       [NSCharacterSet URLHostAllowedCharacterSet]];
         if (module_.length < 3 || ![[module_ substringFromIndex:module_.length - 3] isEqualToString:@".js"]) {

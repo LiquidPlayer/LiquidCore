@@ -213,7 +213,9 @@ static void onNodeExit(void *data, int code)
 #endif
             [self context][@"process"][@"config"][@"variables"][@"host_arch"] = arch;
             [self context][@"process"][@"config"][@"variables"][@"target_arch"] = arch;
-            
+            [[self context][@"process"] deleteProperty:@"arch"];
+            [self context][@"process"][@"arch"] = arch;
+
             // Remove v8 version, since it is only the V8 API
             [[self context][@"process"][@"versions"] deleteProperty:@"v8"];
             

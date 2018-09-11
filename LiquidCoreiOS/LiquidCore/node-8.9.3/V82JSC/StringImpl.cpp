@@ -114,14 +114,16 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
         return MaybeLocal<String>();
     }
 
-    char str_[length>=0 ? length+1 : 0];
+    char *str_ = (char*) malloc(length>=0 ? length+1 : 0);
     if (length>0) {
         strncpy(str_, data, length);
         str_[length] = 0;
         data = str_;
-    }
-    
-    return scope.Escape(StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type));
+    }    
+    Local<String> out = StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type);
+    free(str_);
+
+    return scope.Escape(out);
 }
 
 String::Utf8Value::~Utf8Value()

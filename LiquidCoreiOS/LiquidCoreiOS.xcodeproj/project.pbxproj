@@ -2120,6 +2120,7 @@
 			inputPaths = (
 				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/promise-polyfill.js",
 				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/typedarray.js",
+				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/error-polyfill.js",
 			);
 			outputPaths = (
 				"$(SRCROOT)/LiquidCore/node-8.9.3/V82JSC/polyfill/polyfill.c",
