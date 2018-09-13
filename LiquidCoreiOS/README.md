@@ -7,6 +7,8 @@ Version
 -------
 [0.5.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.0)
 
+**Note:** Version 0.5.0 is the very first iOS release and required a significant amount of effort to simulate the V8 API on top of JavaScriptCore. As such, it is unstable and buggy. Use it at your own risk and ideally if you are willing to help me debug it.
+
 The framework is distributed through [Carthage](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application).
 
 1. Install Carthage as described [here](https://github.com/Carthage/Carthage/blob/master/README.md#installing-carthage).
