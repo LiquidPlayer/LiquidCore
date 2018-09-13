@@ -109,6 +109,7 @@ EmbedderDataImpl * get_embedder_data(const Context* cx)
 
 Local<Context> LocalContextImpl::New(Isolate *isolate, JSContextRef ctx)
 {
+    EscapableHandleScope scope(isolate);
     IsolateImpl * i = V82JSC::ToIsolateImpl(isolate);
     ContextImpl * context = static_cast<ContextImpl *>(H::HeapAllocator::Alloc(i, i->m_context_map));
     context->m_ctxRef = ctx;
@@ -125,7 +126,7 @@ Local<Context> LocalContextImpl::New(Isolate *isolate, JSContextRef ctx)
         WriteField<internal::Object*>(ctxi, embedder_data_offset, embedder_data);
     }
 
-    return V82JSC::CreateLocal<v8::Context>(&i->ii, context);
+    return scope.Escape(V82JSC::CreateLocal<v8::Context>(&i->ii, context));
 }
 
 static Local<Value> GetPrototypeSkipHidden(Local<Context> context, Local<Object> thiz)
@@ -528,10 +529,16 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSClassRef klass = JSClassCreate(&def);
         JSValueRef FunctionCtor = JSObjectMake(context->m_ctxRef, klass, 0);
         JSStringRelease(e);
+        /* FIXME: This is some esoteric functionality in V8.  The solution breaks React Native
+         * because (class A() {}).constructor !== Function, which it should be.  We should only
+         * do this if the isolate explicity requires it.
+         */
+        /*
         V82JSC::exec(context->m_ctxRef,
                      "const handler = { construct: _1 };"
                      "Function = new Proxy(Function, handler);",
                      1, &FunctionCtor);
+        */
         
         JSStringRef zGlobal = JSStringCreateWithUTF8CString("global");
         JSStringRef zSetTimeout = JSStringCreateWithUTF8CString("setTimeout");

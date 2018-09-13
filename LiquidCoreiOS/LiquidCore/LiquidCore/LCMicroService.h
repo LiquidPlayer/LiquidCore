@@ -157,6 +157,11 @@ Notify initializer that you are about to enter an asynchronous process.
 @property (nonatomic, readwrite, copy) NSArray* availableSurfaces;
 
 /**
+ The URI from which the service was started.
+ */
+@property (nonatomic, readonly) NSURL* serviceURI;
+
+/**
  Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
  in UIs and the instance retrieved by a call to this method.
  @param instanceId  An id returned by the `instanceId` property

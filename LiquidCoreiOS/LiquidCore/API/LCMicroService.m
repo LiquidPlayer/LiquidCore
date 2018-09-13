@@ -82,7 +82,6 @@
 @end
 
 @implementation LCMicroService {
-    NSURL* serviceURI_;
     NSString* serviceId_;
     id<LCMicroServiceDelegate> delegate_;
     bool started_;
@@ -119,7 +118,7 @@ static NSMutableDictionary* _serviceMap = nil;
 {
     self = [super init];
     if (self) {
-        serviceURI_ = serviceURI;
+        _serviceURI = serviceURI;
         NSRange comp = [[serviceURI absoluteString] rangeOfString:@"/" options:NSBackwardsSearch];
         if (comp.location != NSNotFound) {
             serviceId_ = [[serviceURI absoluteString] substringToIndex:comp.location];
@@ -159,13 +158,13 @@ static NSMutableDictionary* _serviceMap = nil;
     NSFileManager* fileManager = [NSFileManager defaultManager];
     NSError __block *error = nil;
     
-    if ([serviceURI_ isFileURL]) {
+    if ([self.serviceURI isFileURL]) {
         // Symlink file for speed
         if ([fileManager fileExistsAtPath:localPath]) {
             [fileManager removeItemAtPath:localPath error:&error];
         }
         if (error == nil) {
-            [fileManager createSymbolicLinkAtURL:[NSURL fileURLWithPath:localPath] withDestinationURL:serviceURI_ error:&error];
+            [fileManager createSymbolicLinkAtURL:[NSURL fileURLWithPath:localPath] withDestinationURL:self.serviceURI error:&error];
         }
         self.fetched = true;
     } else {
@@ -175,7 +174,7 @@ static NSMutableDictionary* _serviceMap = nil;
             lastModified = [attr objectForKey:NSFileModificationDate];
         }
 
-        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:serviceURI_];
+        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.serviceURI];
         [request setHTTPMethod:@"GET"];
         if (lastModified) {
             NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];

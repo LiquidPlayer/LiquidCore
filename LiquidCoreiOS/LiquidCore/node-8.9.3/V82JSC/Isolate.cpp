@@ -54,15 +54,10 @@ std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map
 
 static void triggerGarbageCollection(IsolateImpl* iso)
 {
-    if (!v8::Locker::IsLocked(V82JSC::ToIsolate(iso))) {
-        V82JSC::ToIsolate(iso)->RequestInterrupt([](Isolate* isolate, void* data) {
-            isolate->EnqueueMicrotask([](void *data){
-                reinterpret_cast<IsolateImpl*>(data)->CollectGarbage();
-            }, isolate);
-        }, nullptr);
-    } else {
-        iso->CollectGarbage();
-    }
+    Isolate* isolate = V82JSC::ToIsolate(iso);
+    isolate->EnqueueMicrotask([](void *data){
+        reinterpret_cast<IsolateImpl*>(data)->CollectGarbage();
+    }, iso);
 }
 
 static void MarkingConstraintCallback(JSMarkerRef marker, void *userData)
