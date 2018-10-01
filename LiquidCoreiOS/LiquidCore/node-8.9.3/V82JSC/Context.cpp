@@ -530,7 +530,7 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         JSValueRef FunctionCtor = JSObjectMake(context->m_ctxRef, klass, 0);
         JSStringRelease(e);
         /* FIXME: This is some esoteric functionality in V8.  The solution breaks React Native
-         * because (class A() {}).constructor !== Function, which it should be.  We should only
+         * because (class A {}).constructor !== Function, which it should be.  We should only
          * do this if the isolate explicity requires it.
          */
         /*
