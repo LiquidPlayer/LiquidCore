@@ -70,7 +70,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param synchronizer Used to synchronize asynchronous init.  Ignore if you have no
  async initialization.  Can be `nil` if the process cannot be managed asynchronously, so check first.
  */
-- (void) onStart:(LCMicroService*)service synchronizer:(LCSynchronizer* _Nullable)synchronizer;
+- (void) onStart:(LCMicroService*_Nonnull)service synchronizer:(LCSynchronizer* _Nullable)synchronizer;
 
 @optional
 /**
@@ -85,7 +85,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param service The micro service which is now exiting.
  @param exitCode The exit code emitted by the Node.js process.
  */
-- (void) onExit:(LCMicroService*)service exitCode:(int)exitCode;
+- (void) onExit:(LCMicroService*_Nonnull)service exitCode:(int)exitCode;
 
 @optional
 /**
@@ -100,7 +100,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param service The micro service which failed.
  @param exception The thrown error.
  */
-- (void) onError:(LCMicroService*)service exception:(NSException*)exception;
+- (void) onError:(LCMicroService*_Nonnull)service exception:(NSException*_Nonnull)exception;
 
 @end
 
@@ -124,7 +124,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param payload An optional data object emitted with the event.  The listener should know in advance
  the format emitted by the service.
  */
-- (void) onEvent:(LCMicroService*)service event:(NSString*)event payload:(id _Nullable)payload;
+- (void) onEvent:(LCMicroService*_Nonnull)service event:(NSString*_Nonnull)event payload:(id _Nullable)payload;
 @end
 
 /**
@@ -141,25 +141,25 @@ Notify initializer that you are about to enter an asynchronous process.
  Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
  in UIs and the instance retrieved by a call to `+serviceFromInstanceId:`
  */
-@property (nonatomic, readonly, copy) NSString* instanceId;
+@property (nonatomic, readonly, copy, nonnull) NSString* instanceId;
 
 /**
  The Node.js Process object.
  @note This is only intended to be used by surfaces, and
  directly accessing the `Process` is not recommended.
  */
-@property (atomic, readonly) Process* process;
+@property (atomic, readonly, nullable) Process* process;
 
 /**
  An array of strings with the canonical names of `LCSurface` UIs available to the
  micro service.
  */
-@property (nonatomic, readwrite, copy) NSArray* availableSurfaces;
+@property (nonatomic, readwrite, nullable, copy) NSArray* availableSurfaces;
 
 /**
  The URI from which the service was started.
  */
-@property (nonatomic, readonly) NSURL* serviceURI;
+@property (nonatomic, readonly, nonnull) NSURL* serviceURI;
 
 /**
  Each `LCMicroService` instance is mapped to a unique string id.  This id can be serialized
@@ -167,21 +167,21 @@ Notify initializer that you are about to enter an asynchronous process.
  @param instanceId  An id returned by the `instanceId` property
  @return  The associated `LCMicroService` or `nil` if no such service is active.
  */
-+ (id) serviceFromInstanceId:(NSString*)instanceId;
++ (id _Nullable) serviceFromInstanceId:(NSString* _Nonnull) instanceId;
 
 /**
  Uninstalls the `LCMicroService` from this host, and removes any global data associated with the
  service.
  @param serviceURI The URI of the service (should be the same URI that the service was started with).
  */
-+ (void) uninstall:(NSURL *)serviceURI;
++ (void) uninstall:(NSURL* _Nonnull)serviceURI;
 
 /**
  Creates a new instance of the micro service referenced by `serviceURI`.
  @param serviceURI  The URI (can be a network URL or local file/resource) of the micro service
  code
  */
-- (id) initWithURL:(NSURL*)serviceURI;
+- (id _Nullable) initWithURL:(NSURL* _Nonnull)serviceURI;
 
 /**
  Creates a new instance of the micro service referenced by `serviceURI`
@@ -189,7 +189,7 @@ Notify initializer that you are about to enter an asynchronous process.
  code
  @param delegate The `LCMicroServiceDelegate` for this service
  */
-- (id) initWithURL:(NSURL*)serviceURI delegate:(id<LCMicroServiceDelegate>)delegate;
+- (id _Nullable) initWithURL:(NSURL* _Nonnull)serviceURI delegate:(id<LCMicroServiceDelegate> _Nullable)delegate;
 
 /**
  Adds an event listener for an event triggered by 'LiquidCore.emit(event, payload)' in
@@ -202,14 +202,14 @@ Notify initializer that you are about to enter an asynchronous process.
  @param event  The String event id
  @param listener  The event listener
  */
-- (void) addEventListener:(NSString*)event listener:(id<LCMicroServiceEventListener>)listener;
+- (void) addEventListener:(NSString* _Nonnull)event listener:(id<LCMicroServiceEventListener> _Nonnull)listener;
 
 /**
  Removes an EventListener previously added with `-addEventListener:listener:`.
  @param event  The event for which to unregister the listener
  @param listener  The listener to unregister
 */
-- (void) removeEventListener:(NSString*)event listener:(id<LCMicroServiceEventListener>)listener;
+- (void) removeEventListener:(NSString* _Nonnull)event listener:(id<LCMicroServiceEventListener> _Nonnull)listener;
 
 /**
  Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
@@ -228,7 +228,7 @@ Notify initializer that you are about to enter an asynchronous process.
  ```
  @param event  The event to trigger
  */
-- (void) emit:(NSString*)event;
+- (void) emit:(NSString* _Nonnull)event;
 
 /**
  Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
@@ -250,7 +250,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param event  The event to trigger
  @param object  The Swift/Objective-C object to emit
  */
-- (void) emitObject:(NSString*)event object:(id)object;
+- (void) emitObject:(NSString* _Nonnull)event object:(id _Nullable)object;
 
 /**
  Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
@@ -271,7 +271,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param event  The event to trigger
  @param number  The number to emit
  */
-- (void) emitNumber:(NSString*)event number:(NSNumber*)number;
+- (void) emitNumber:(NSString* _Nonnull)event number:(NSNumber* _Nonnull)number;
 
 /**
  Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
@@ -292,7 +292,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param event  The event to trigger
  @param string  The string to emit
  */
-- (void) emitString:(NSString*)event string:(NSString*)string;
+- (void) emitString:(NSString* _Nonnull)event string:(NSString* _Nonnull)string;
 
 /**
  Emits an event that can be received by the JavaScript code, if the `LCMicroService` has
@@ -313,7 +313,7 @@ Notify initializer that you are about to enter an asynchronous process.
  @param event  The event to trigger
  @param boolean  The boolean to emit
  */
-- (void) emitBoolean:(NSString*)event boolean:(BOOL)boolean;
+- (void) emitBoolean:(NSString* _Nonnull)event boolean:(BOOL)boolean;
 
 /**
  Starts the `LCMicroService`.  This method will return immediately and initialization and
@@ -331,6 +331,6 @@ Notify initializer that you are about to enter an asynchronous process.
  followed by the local module code (`/home/module/[service.js`].  `argv` arguments
  will then be appended in `process.argv[2:]`
  */
-- (void) startWithArguments:(NSArray*)argv;
+- (void) startWithArguments:(NSArray* _Nullable)argv;
 
 @end

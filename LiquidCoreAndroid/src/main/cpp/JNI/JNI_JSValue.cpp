@@ -304,7 +304,7 @@ NATIVE(JNIJSValue,jlong,makeString) (PARAMS, jlong ctxRef, jstring string)
         }
 
         value = SharedWrap<JSValue>::New(
-            std::move(JSValue::New(context_,rval))
+            JSValue::New(context_,rval)
         );
     V8_UNLOCK()
     env->ReleaseStringUTFChars(string, c_string);

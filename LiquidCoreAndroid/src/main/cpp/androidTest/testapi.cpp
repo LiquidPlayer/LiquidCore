@@ -1782,7 +1782,7 @@ extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* en
             printf("FAIL: Test script returned unexpected value:\n");
             JSStringRef exceptionIString = JSValueToStringCopy(context, exception, NULL);
             char buffer[JSStringGetMaximumUTF8CStringSize(exceptionIString)];
-            JSStringGetUTF8CString(exceptionIString, buffer, sizeof(buffer));
+            JSStringGetUTF8CString(exceptionIString, buffer, JSStringGetMaximumUTF8CStringSize(exceptionIString));
             printf("%s\n", buffer);
             JSStringRelease(exceptionIString);
             failed = 1;

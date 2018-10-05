@@ -1894,7 +1894,7 @@
 		076F587B201E797F004780FD /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0940;
+				LastUpgradeCheck = 1000;
 				ORGANIZATIONNAME = LiquidPlayer;
 				TargetAttributes = {
 					076F5883201E797F004780FD = {
