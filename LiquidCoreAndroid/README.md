@@ -453,6 +453,10 @@ And then restart the server.  Now when you navigate to `http://localhost:8080/bn
 Building the LiquidCore Android library
 ---------------------------------------
 
+**IMPORTANT**: LiquidCore requires `gcc` because node.js version 8.9.3 requires it.  Building with
+`clang` won't work.  Unfortunately, Google has removed `gcc` support from the latest NDK (r18).  You will
+need to use r17c, which you can get [here](https://developer.android.com/ndk/downloads/older_releases).
+
 If you are interested in building the library directly and possibly contributing, you must
 do the following:
 
