@@ -970,7 +970,7 @@ public class JSArray<T> extends JSBaseArray<T> {
     public JSArray<T> filter(JSFunction callback) {
         return filter(callback,null);
     }
-    @SuppressWarnings("unchecked")
+
     /**
      * JavaScript Array.prototype.filter(), see:
      * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter
@@ -978,6 +978,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param callback the Java function to call on each element
      * @return a new filtered array
      */
+    @SuppressWarnings("unchecked")
     public JSArray<T> filter(final EachBooleanCallback<T> callback) {
         JSArray<T> filter = (JSArray<T>)(each(callback,"filter").toJSArray());
         filter.mType = mType;

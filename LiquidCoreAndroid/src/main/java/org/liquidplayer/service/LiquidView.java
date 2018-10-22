@@ -403,7 +403,7 @@ public class LiquidView extends RelativeLayout {
     private ArrayList<MicroService.AvailableSurface> surfaces = registeredSurfaces;
 
     private MicroService.AvailableSurface[] availableSurfaces() {
-        return surfaces.toArray(new MicroService.AvailableSurface[surfaces.size()]);
+        return surfaces.toArray(new MicroService.AvailableSurface[0]);
     }
 
     /* -- statics -- */

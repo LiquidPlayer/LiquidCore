@@ -279,7 +279,6 @@ class SQLite3Statement {
                     case FIELD_TYPE_STRING:  type = SQLITE_TEXT;    break;
                     case FIELD_TYPE_BLOB:    type = SQLITE_BLOB;    break;
                     case FIELD_TYPE_NULL:    type = SQLITE_NULL;    break;
-                    default: type = 0;
                 }
             }
             return type;

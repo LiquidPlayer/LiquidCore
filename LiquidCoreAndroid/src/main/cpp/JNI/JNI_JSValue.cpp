@@ -88,13 +88,6 @@ NATIVE(JNIJSValue,jboolean,isString) (PARAMS, jlong valueRef)
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isObject) (PARAMS, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsObject();
-    }, false);
-}
-
 NATIVE(JNIJSValue,jboolean,isArray) (PARAMS, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
@@ -230,48 +223,6 @@ NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jlong valueRef, jlong b)
 }
 
 /* Creating values */
-
-NATIVE(JNIJSValue,jlong,makeUndefined) (PARAMS, jlong ctxRef)
-{
-    jlong value;
-
-    auto context_ = SharedWrap<JSContext>::Shared(ctxRef);
-    V8_ISOLATE_CTX(context_,isolate,context)
-        value = SharedWrap<JSValue>::New(
-                JSValue::New(context_,Local<Value>::New(isolate,Undefined(isolate))));
-    V8_UNLOCK()
-
-    return value;
-}
-
-NATIVE(JNIJSValue,jlong,makeNull) (PARAMS, jlong ctxRef)
-{
-    jlong value = 0;
-
-    auto context_ = SharedWrap<JSContext>::Shared(ctxRef);
-    V8_ISOLATE_CTX(context_,isolate,context)
-        value = SharedWrap<JSValue>::New(
-            JSValue::New(context_,Local<Value>::New(isolate,Null(isolate))));
-    V8_UNLOCK()
-
-    return value;
-}
-
-NATIVE(JNIJSValue,jlong,makeBoolean) (PARAMS, jlong ctxRef, jboolean boolean)
-{
-    jlong value = 0;
-
-    auto context_ = SharedWrap<JSContext>::Shared(ctxRef);
-    V8_ISOLATE_CTX(context_,isolate,context)
-        value = SharedWrap<JSValue>::New(
-            JSValue::New(
-                context_,
-                Local<Value>::New(isolate,boolean ? v8::True(isolate):v8::False(isolate))
-            ));
-    V8_UNLOCK()
-
-    return value;
-}
 
 NATIVE(JNIJSValue,jlong,makeNumber) (PARAMS, jlong ctxRef, jdouble number)
 {

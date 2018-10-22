@@ -10,7 +10,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 27
         versionCode 5
-        versionName "0.5.0"
+        versionName "0.5.1"
         setProperty("archivesBaseName", "LiquidCore")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         //multiDexEnabled true
@@ -18,7 +18,7 @@ android {
             cmake {
                 cppFlags "-std=c++11 -fexceptions"
                 abiFilters "x86", "armeabi-v7a", "x86_64", "arm64-v8a"
-                arguments "-DANDROID_TOOLCHAIN=gcc", "-DANDROID_STL=gnustl_static","-DANDROID_CPP_FEATURES=rtti exceptions"
+                arguments "-DANDROID_CPP_FEATURES=rtti exceptions"
             }
         }
         sourceSets {
@@ -66,7 +66,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     debugImplementation 'junit:junit:4.12'
     implementation 'com.android.support:appcompat-v7:27.1.1'
-    androidTestImplementation 'com.android.support:support-annotations:27.1.1'
+    androidTestImplementation 'com.android.support:support-annotations:28.0.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
     androidTestImplementation 'org.hamcrest:hamcrest-library:1.3'

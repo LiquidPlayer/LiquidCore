@@ -48,11 +48,6 @@ class JNIJSContext extends JNIObject {
         Finalize(reference);
     }
 
-    @NonNull static JNIJSContext createContext()
-    {
-        return fromRef(create());
-    }
-
     @NonNull static JNIJSContext createContext(JNIJSContextGroup group)
     {
         return fromRef(createInGroup(group.reference));
@@ -149,7 +144,6 @@ class JNIJSContext extends JNIObject {
     }
 
     /* Natives */
-    private static native long create();
     private static native long createInGroup(long group);
     private static native long getGroup(long ctxRef);
     private static native long getGlobalObject(long ctxRef);

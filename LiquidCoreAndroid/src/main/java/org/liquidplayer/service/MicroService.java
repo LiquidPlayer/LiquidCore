@@ -418,7 +418,7 @@ public class MicroService implements Process.EventListener {
      */
     public void emit(String event, JSONObject payload) {
         if (emitter != null) {
-            JSValue o = null;
+            JSValue o;
             if (payload != null) {
                 o = JSON.parse(emitter.getContext(), payload.toString());
             } else {
@@ -584,7 +584,7 @@ public class MicroService implements Process.EventListener {
      */
     public void emit(String event, JSONArray v) {
         if (emitter != null) {
-            JSValue o = null;
+            JSValue o;
             if (v != null) {
                 o = JSON.parse(emitter.getContext(), v.toString());
             } else {
@@ -642,9 +642,6 @@ public class MicroService implements Process.EventListener {
     }
 
     private void fetchService() throws IOException {
-        // See if the file already exists
-        File modules = getModulePath();
-
         String path = serviceURI.getPath();
         module = path.substring(path.lastIndexOf('/') + 1);
         if (!module.endsWith(".js")) {

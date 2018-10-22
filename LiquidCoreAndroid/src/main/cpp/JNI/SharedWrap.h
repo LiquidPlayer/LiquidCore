@@ -61,25 +61,6 @@ class Queue
         return item;
     }
 
-    void pop(T& item)
-    {
-        std::unique_lock<std::mutex> mlock(mutex_);
-        while (queue_.empty())
-        {
-            cond_.wait(mlock);
-        }
-        item = queue_.front();
-        queue_.pop_front();
-    }
-
-    void push(const T& item)
-    {
-        std::unique_lock<std::mutex> mlock(mutex_);
-        queue_.push_front(item);
-        mlock.unlock();
-        cond_.notify_one();
-    }
-
     void push(T&& item)
     {
         std::unique_lock<std::mutex> mlock(mutex_);
@@ -205,9 +186,11 @@ inline jlong SharedWrap<JSValue>::New(boost::shared_ptr<JSValue> shared) {
             double v = shared->NumberValue();
             jlong *pv = (jlong *) &v;
             if (CANPRIMITIVE(*pv)) {
-                return *pv;
+                reference = *pv;
             }
         }
+        if (reference != -1) return reference;
+
         auto thiz = new SharedWrap<JSValue>(shared);
         return TOPTR(thiz);
     }

@@ -32,10 +32,13 @@
 */
 package org.liquidplayer.node;
 
+import android.Manifest;
 import android.content.Context;
 import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.rule.GrantPermissionRule;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.liquidplayer.javascript.JSBaseArray;
 import org.liquidplayer.javascript.JSContext;
@@ -53,6 +56,10 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 public class FSTest {
+
+    @Rule
+    public GrantPermissionRule mRuntimePermissionRule
+            = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
     private interface OnDone {
         void onDone(JSContext ctx);
@@ -295,6 +302,7 @@ public class FSTest {
 
     @Test
     public void testGlobalUninstall() throws Throwable {
+
         final String script = "" +
                 "var fs = require('fs');" +
                 "var external = true;" +

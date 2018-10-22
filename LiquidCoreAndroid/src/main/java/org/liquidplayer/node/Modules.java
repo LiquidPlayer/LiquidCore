@@ -88,7 +88,7 @@ public class Modules {
         }
     }
 
-    private String copyDirorfileFromAssetManager(String arg_assetDir, String arg_destinationDir)
+    private void copyDirorfileFromAssetManager(String arg_assetDir, String arg_destinationDir)
             throws IOException
     {
         File sd_path = context.getFilesDir();
@@ -101,13 +101,15 @@ public class Modules {
         AssetManager asset_manager = context.getAssets();
         String[] files = asset_manager.list(arg_assetDir);
 
+        if (files == null) return;
+
         for (String file: files)
         {
 
             String abs_asset_file_path = addTrailingSlash(arg_assetDir) + file;
             String sub_files[] = asset_manager.list(abs_asset_file_path);
 
-            if (sub_files.length == 0)
+            if (sub_files == null || sub_files.length == 0)
             {
                 // It is a file
                 String dest_file_path = addTrailingSlash(dest_dir_path) + file;
@@ -119,8 +121,6 @@ public class Modules {
                         addTrailingSlash(arg_destinationDir) + file);
             }
         }
-
-        return dest_dir_path;
     }
 
 
@@ -167,7 +167,9 @@ public class Modules {
             }
         } else
         {
-            dir.mkdirs();
+            if (dir.mkdirs()) {
+                android.util.Log.i("LiquidCore", "Created directory " + dir);
+            }
             if (!dir.isDirectory())
             {
                 throw new IOException("Unable to create directory");

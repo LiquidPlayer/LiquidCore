@@ -45,8 +45,8 @@ class JNIJSNull extends JNIJSPrimitive {
         return (b instanceof JNIJSNull);
     }
 
-    @Override JNIJSValue createJSONString() throws JNIJSException { /* FIXME! */ return this; }
+    @Override JNIJSValue createJSONString() { /* FIXME! */ return this; }
     @Override boolean toBoolean() { return false; }
-    @Override double toNumber() throws JNIJSException { return 0; }
-    @Override String toStringCopy() throws JNIJSException { return "null"; }
+    @Override double toNumber() { return 0; }
+    @Override String toStringCopy() { return "null"; }
 }

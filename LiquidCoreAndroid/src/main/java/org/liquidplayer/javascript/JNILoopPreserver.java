@@ -41,7 +41,7 @@ class JNILoopPreserver extends JNIObject {
     }
 
     @Override
-    protected void finalize() throws Throwable {
+    protected void finalize() {
         Finalize(reference);
     }
 

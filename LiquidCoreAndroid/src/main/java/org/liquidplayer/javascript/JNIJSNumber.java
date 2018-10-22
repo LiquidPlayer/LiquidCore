@@ -59,10 +59,10 @@ class JNIJSNumber extends JNIJSPrimitive {
         return (b instanceof JNIJSNumber) && ((JNIJSNumber) b).value == value;
     }
 
-    @Override JNIJSValue createJSONString() throws JNIJSException { /* FIXME! */ return this; }
+    @Override JNIJSValue createJSONString() { /* FIXME! */ return this; }
     @Override boolean toBoolean() { return value!=0; }
-    @Override double toNumber() throws JNIJSException { return value; }
-    @Override String toStringCopy() throws JNIJSException
+    @Override double toNumber() { return value; }
+    @Override String toStringCopy()
     {
         return df.format(value);
     }

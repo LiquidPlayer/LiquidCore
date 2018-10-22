@@ -47,8 +47,8 @@ class JNIJSUndefined extends JNIJSPrimitive {
         return (b instanceof JNIJSUndefined);
     }
 
-    @Override JNIJSValue createJSONString() throws JNIJSException { return this; }
+    @Override JNIJSValue createJSONString() { return this; }
     @Override boolean toBoolean() { return false; }
-    @Override double toNumber() throws JNIJSException { return NaN; }
-    @Override String toStringCopy() throws JNIJSException { return "undefined"; }
+    @Override double toNumber() { return NaN; }
+    @Override String toStringCopy() { return "undefined"; }
 }

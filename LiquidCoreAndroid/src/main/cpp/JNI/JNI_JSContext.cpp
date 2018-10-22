@@ -51,12 +51,6 @@ NATIVE(JNIJSContext,jlong,createInGroup) (PARAMS,jlong grp)
     return ctx;
 }
 
-NATIVE(JNIJSContext,jlong,create) (PARAMS)
-{
-    jlong jGroup = Java_org_liquidplayer_javascript_JNIJSContextGroup_create(env, thiz);
-    return Java_org_liquidplayer_javascript_JNIJSContext_createInGroup(env, thiz, jGroup);
-}
-
 NATIVE(JNIJSContext,void,Finalize) (PARAMS, jlong reference)
 {
     SharedWrap<JSContext>::Dispose(reference);

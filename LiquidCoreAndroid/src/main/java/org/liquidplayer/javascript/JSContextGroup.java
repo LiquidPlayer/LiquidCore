@@ -84,6 +84,7 @@ public class JSContextGroup {
         hasDedicatedThread = group.isManaged();
     }
 
+    @SuppressWarnings("unused") // This is used through Reflection outside this package
     JSContextGroup(long groupRef)
     {
         this(JNIJSContextGroup.fromRef(groupRef));
@@ -140,7 +141,7 @@ public class JSContextGroup {
     }
     public long groupHash() { return group.reference; }
 
-    boolean isOnThread() {
+    public boolean isOnThread() {
         return (!hasDedicatedThread() ||
                 android.os.Process.myTid() == mContextGroupThreadTid);
     }
@@ -152,7 +153,7 @@ public class JSContextGroup {
         runnable.run();
     }
 
-    void schedule(Runnable runnable) {
+    public void schedule(Runnable runnable) {
         group.runInContextGroup(this, runnable);
     }
 

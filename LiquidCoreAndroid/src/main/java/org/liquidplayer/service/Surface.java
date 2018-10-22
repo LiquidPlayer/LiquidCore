@@ -36,8 +36,6 @@ import android.view.View;
 
 import org.liquidplayer.javascript.JSContext;
 
-import java.util.concurrent.Semaphore;
-
 /**
  * A Surface is a UI interaction layer with a MicroService.
  */

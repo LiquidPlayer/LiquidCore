@@ -43,7 +43,7 @@ import java.util.ArrayList;
  */
 class AnsiOutputStream extends FilterOutputStream {
 
-    static final byte[] REST_CODE = resetCode();
+    static private final byte[] REST_CODE = resetCode();
 
     AnsiOutputStream(OutputStream os) {
         super(os);
@@ -323,7 +323,7 @@ class AnsiOutputStream extends FilterOutputStream {
         return false;
     }
 
-    private boolean processOperatingSystemCommand(ArrayList<Object> options) throws IOException {
+    private boolean processOperatingSystemCommand(ArrayList<Object> options) {
         int command = optionInt(options, 0);
         String label = (String) options.get(1);
         // for command > 2 label could be composed (i.e. contain ';'), but we'll leave
@@ -353,13 +353,13 @@ class AnsiOutputStream extends FilterOutputStream {
     protected void processRestoreCursorPosition() throws IOException {
     }
 
-    protected void processSaveCursorPosition() throws IOException {
+    protected void processSaveCursorPosition() {
     }
 
-    protected void processScrollDown(int optionInt) throws IOException {
+    protected void processScrollDown(int optionInt) {
     }
 
-    protected void processScrollUp(int optionInt) throws IOException {
+    protected void processScrollUp(int optionInt) {
     }
 
     static final int ERASE_SCREEN_TO_END = 0;
@@ -417,10 +417,10 @@ class AnsiOutputStream extends FilterOutputStream {
     protected void processSetBackgroundColor(int color, boolean bright) throws IOException {
     }
 
-    protected void processDefaultTextColor() throws IOException {
+    protected void processDefaultTextColor() {
     }
 
-    protected void processDefaultBackgroundColor() throws IOException {
+    protected void processDefaultBackgroundColor() {
     }
 
     protected void processAttributeRest() throws IOException {

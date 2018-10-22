@@ -79,6 +79,6 @@ abstract class JNIJSPrimitive extends JNIJSValue {
     @Override boolean toBoolean() { return false; }
     @Override double toNumber() throws JNIJSException { return 0; }
     @Override String toStringCopy() throws JNIJSException { return null; }
-    @Override JNIJSObject toObject() throws JNIJSException { return null; }
+    @Override JNIJSObject toObject() { return null; }
 
 }

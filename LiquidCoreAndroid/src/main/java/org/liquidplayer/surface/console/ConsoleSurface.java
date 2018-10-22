@@ -33,7 +33,6 @@
 package org.liquidplayer.surface.console;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcel;
@@ -393,8 +392,8 @@ public class ConsoleSurface extends ConsoleView implements Surface {
         private Process process = null;
         private JSContext js = null;
         private JSFunction console_log = null;
-        private Runnable onAttached = null;
-        private ConsoleSurface currentView = null;
+        private Runnable onAttached;
+        private ConsoleSurface currentView;
         private boolean processedException = false;
         private int columns = 0, rows = 0;
         private String uuid = null;

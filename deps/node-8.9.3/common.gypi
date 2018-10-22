@@ -356,20 +356,28 @@
       ['OS=="android"', {
         'target_conditions': [
           ['_toolset=="target" and android_target_arch=="arm64"', {
-            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=21' ],
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=21', 'ANDROID_STL=c++_static' ],
             'libraries': [ '-llog' ],
+            'cflags': [ '-Wno-null-pointer-arithmetic' ],
+            'ldflags': [ '-static-libstdc++' ],
           }],
           ['_toolset=="target" and android_target_arch=="x86_64"', {
-            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=21' ],
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=21', 'ANDROID_STL=c++_static' ],
             'libraries': [ '-llog' ],
+            'cflags': [ '-Wno-null-pointer-arithmetic' ],
+            'ldflags': [ '-static-libstdc++' ],
           }],
           ['_toolset=="target" and android_target_arch=="arm"', {
-            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=16' ],
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=16', 'ANDROID_STL=c++_static' ],
             'libraries': [ '-llog' ],
+            'cflags': [ '-Wno-null-pointer-arithmetic' ],
+            'ldflags': [ '-static-libstdc++' ],
           }],
           ['_toolset=="target" and android_target_arch=="x86"', {
-            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=16' ],
+            'defines': [ '_GLIBCXX_USE_C99_MATH', '__ANDROID_API__=16', 'ANDROID_STL=c++_static' ],
             'libraries': [ '-llog' ],
+            'cflags': [ '-Wno-null-pointer-arithmetic' ],
+            'ldflags': [ '-static-libstdc++' ],
           }],
         ],
       }],

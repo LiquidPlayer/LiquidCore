@@ -36,10 +36,10 @@
 package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
+import android.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -103,9 +103,7 @@ public class JSContext extends JSObject {
         context = this;
         contextGroup = group;
         ctxRef = JNIJSContext.fromRef(ctxHandle);
-        if (ctxRef != null) {
-            valueRef = ctxRef.getGlobalObject();
-        }
+        valueRef = ctxRef.getGlobalObject();
         addJSExports();
     }
 
@@ -216,13 +214,8 @@ public class JSContext extends JSObject {
         return ctxRef;
     }
 
-    private abstract class JNIReturnClass implements Runnable {
-        JNIJSValue value;
-        JNIJSValue exception;
-    }
-
     /**
-     * Executes a the JavaScript code in 'script' in this context
+     * Executes the JavaScript code in 'script' in this context
      * @param script  The code to execute
      * @param sourceURL  The URI of the source file, only used for reporting in stack trace (optional)
      * @param startingLineNumber  The beginning line number, only used for reporting in stack trace (optional)
@@ -242,7 +235,7 @@ public class JSContext extends JSObject {
     }
 
     /**
-     * Executes a the JavaScript code in 'script' in this context
+     * Executes the JavaScript code in 'script' in this context
      * @param script  The code to execute
      * @return  The return value returned by 'script'
      * @since 0.1.0
@@ -251,7 +244,7 @@ public class JSContext extends JSObject {
         return evaluateScript(script,null,0);
     }
 
-    private final HashMap<Long, WeakReference<JSObject>> objects = new HashMap<>();
+    private final LongSparseArray<WeakReference<JSObject>> objects = new LongSparseArray<>();
 
     /**
      * Keeps a reference to an object in this context.  This is used so that only one

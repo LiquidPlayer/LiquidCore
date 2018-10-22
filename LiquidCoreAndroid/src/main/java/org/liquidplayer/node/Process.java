@@ -46,7 +46,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-@SuppressWarnings("WeakerAccess,SameParameterValue")
+@SuppressWarnings({"WeakerAccess,SameParameterValue","unused"})
 public class Process {
 
     final public static int kMediaAccessPermissionsNone = 0;
@@ -227,18 +227,18 @@ public class Process {
     /** -- private methods -- **/
 
     private synchronized void eventOnStart(JSContext ctx) {
-        for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
+        for (EventListener listener : listeners.toArray(new EventListener[0])) {
             listener.onProcessStart(this, ctx);
         }
     }
     private synchronized void eventOnAboutToExit(long code) {
         exitCode = code;
-        for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
+        for (EventListener listener : listeners.toArray(new EventListener[0])) {
             listener.onProcessAboutToExit(this, Long.valueOf(code).intValue());
         }
     }
     private synchronized void eventOnProcessFailed(Exception e) {
-        for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
+        for (EventListener listener : listeners.toArray(new EventListener[0])) {
             listener.onProcessFailed(this, e);
         }
     }
@@ -248,7 +248,7 @@ public class Process {
         exitCode = code;
         if (!notifiedExit) {
             notifiedExit = true;
-            for (EventListener listener : listeners.toArray(new EventListener[listeners.size()])) {
+            for (EventListener listener : listeners.toArray(new EventListener[0])) {
                 listener.onProcessExit(this, Long.valueOf(code).intValue());
             }
             if (fs != null) fs.cleanUp();

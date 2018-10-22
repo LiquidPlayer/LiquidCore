@@ -46,10 +46,10 @@ class JNIJSBoolean extends JNIJSPrimitive {
         return (b instanceof JNIJSBoolean) && ((JNIJSBoolean) b).reference == reference;
     }
 
-    @Override JNIJSValue createJSONString() throws JNIJSException { /* FIXME! */ return this; }
+    @Override JNIJSValue createJSONString() { /* FIXME! */ return this; }
     @Override boolean toBoolean() { return reference==ODDBALL_TRUE; }
-    @Override double toNumber() throws JNIJSException { return (reference==ODDBALL_TRUE) ? 1 : 0; }
-    @Override String toStringCopy() throws JNIJSException
+    @Override double toNumber() { return (reference==ODDBALL_TRUE) ? 1 : 0; }
+    @Override String toStringCopy()
     {
         return (reference==ODDBALL_TRUE) ? "true" : "false";
     }

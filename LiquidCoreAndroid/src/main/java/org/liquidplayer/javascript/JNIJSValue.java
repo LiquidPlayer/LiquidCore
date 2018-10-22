@@ -36,11 +36,8 @@
 package org.liquidplayer.javascript;
 
 import android.support.v4.util.LongSparseArray;
-import android.util.SparseArray;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.WeakHashMap;
 
 class JNIJSValue extends JNIObject {
     protected JNIJSValue(long ref) { super(ref); }
@@ -163,13 +160,6 @@ class JNIJSValue extends JNIObject {
     }
 
     /* Natives */
-
-    /* Unused
-    static native long makeUndefined(long ctxRef);
-    static native long makeNull(long ctxRef);
-    static native long makeBoolean(long ctxRef, boolean bool);
-    private static native boolean isObject(long valueRef);
-    */
 
     static native long makeNumber(long ctxRef, double number);
     static native long makeString(long ctxRef, String string);

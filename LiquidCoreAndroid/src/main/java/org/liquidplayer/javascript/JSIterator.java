@@ -80,7 +80,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
         super(iterator);
         next = _jsnext();
     }
-    private Next next = null;
+    private Next next;
 
     private Next _jsnext() {
         return new Next(getJSObject().property("next").toFunction().call(getJSObject()).toObject());

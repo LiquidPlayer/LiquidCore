@@ -15,31 +15,31 @@ else
     ARCH="$2"
 fi
 
-CC_VER="clang"
+CC_VER="4.9"
 case $ARCH in
     arm)
         DEST_CPU="$ARCH"
         SUFFIX="$ARCH-linux-androideabi"
         TOOLCHAIN_NAME="$SUFFIX"
-        PLATFORM=android-16
+        API=16
         ;;
     x86)
         DEST_CPU="ia32"
         SUFFIX="i686-linux-android"
         TOOLCHAIN_NAME="$ARCH"
-        PLATFORM=android-16
+        API=16
         ;;
     x86_64)
         DEST_CPU="x64"
         SUFFIX="$ARCH-linux-android"
         TOOLCHAIN_NAME="$ARCH"
-        PLATFORM=android-21
+        API=21
         ;;
     arm64)
         DEST_CPU="$ARCH"
         SUFFIX="aarch64-linux-android"
         TOOLCHAIN_NAME="$SUFFIX"
-        PLATFORM=android-21
+        API=21
         ;;
     *)
         echo "Unsupported architecture provided: $ARCH"
@@ -49,14 +49,14 @@ esac
 
 NDK_PATH=$1
 function make_toolchain {
-    $NDK_PATH/build/tools/make-standalone-toolchain.sh \
-        --toolchain=$TOOLCHAIN_NAME-$CC_VER \
-        --arch=$ARCH \
-        --install-dir=$TOOLCHAIN \
-        --platform=$PLATFORM
+    $NDK_PATH/build/tools/make_standalone_toolchain.py \
+        --arch $ARCH \
+        --install-dir $TOOLCHAIN \
+        --api $API
 }
 
 export TOOLCHAIN=$PWD/android-toolchain
+
 if [ -d "$TOOLCHAIN" ]; then
     read -r -p "NDK toolchain already exists. Replace it?  [y/N]" response
     case "$response" in
@@ -67,11 +67,17 @@ if [ -d "$TOOLCHAIN" ]; then
 else
     make_toolchain
 fi
+
 export PATH=$TOOLCHAIN/bin:$PATH
-export AR=$TOOLCHAIN/bin/$SUFFIX-ar
-export CC=$TOOLCHAIN/bin/$SUFFIX-gcc
-export CXX=$TOOLCHAIN/bin/$SUFFIX-g++
-export LINK=$TOOLCHAIN/bin/$SUFFIX-g++
+
+target_host=$SUFFIX
+export AR=$target_host-ar
+export AS=$target_host-clang
+export CC=$target_host-clang
+export CXX=$target_host-clang++
+export LD=$target_host-ld
+export STRIP=$target_host-strip
+export LINK=$target_host-clang++
 
 GYP_DEFINES="target_arch=$ARCH"
 GYP_DEFINES+=" v8_target_arch=$DEST_CPU"
