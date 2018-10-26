@@ -46,6 +46,12 @@ NATIVE(Process,jlong,start) (PARAMS)
     return reinterpret_cast<jlong>(instance);
 }
 
+NATIVE(Process,void,runInThread) (PARAMS, jlong ref)
+{
+    NodeInstance *instance = reinterpret_cast<NodeInstance*>(ref);
+    instance->spawnedThread();
+}
+
 NATIVE(Process,void,dispose) (PARAMS, jlong ref)
 {
     delete reinterpret_cast<NodeInstance*>(ref);

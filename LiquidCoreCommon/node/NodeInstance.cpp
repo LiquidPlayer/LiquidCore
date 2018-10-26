@@ -83,7 +83,6 @@ NodeInstance::NodeInstance(JNIEnv* env, jobject thiz) {
     env->GetJavaVM(&m_jvm);
     m_JavaThis = env->NewGlobalRef(thiz);
 
-    node_main_thread = new std::thread(node_main_task,reinterpret_cast<void*>(this));
     on_start = nullptr;
     callback_data = nullptr;
 }
@@ -104,16 +103,19 @@ NodeInstance::NodeInstance(OnNodeStartedCallback onStart, OnNodeExitCallback onE
 #ifdef __ANDROID__
     m_jvm = nullptr;
     m_JavaThis = nullptr;
-#endif
+#else
     node_main_thread = new std::thread(node_main_task,reinterpret_cast<void*>(this));
+#endif
     on_start = onStart;
     on_exit = onExit;
     callback_data = data;
 }
 
 NodeInstance::~NodeInstance() {
+#ifndef __ANDROID__
     node_main_thread->join();
     delete node_main_thread;
+#endif
 }
 
 void NodeInstance::spawnedThread()

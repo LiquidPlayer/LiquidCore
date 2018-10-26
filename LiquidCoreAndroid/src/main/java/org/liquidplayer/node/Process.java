@@ -128,6 +128,14 @@ public class Process {
         new Modules(androidContext).setUpNodeModules();
 
         processRef = start();
+        Thread processThread = new Thread(null, new Runnable() {
+            @Override
+            public void run() {
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY);
+                runInThread(processRef);
+            }
+        }, "nodejs");
+        processThread.start();
         androidCtx = androidContext;
         this.uniqueID = uniqueID;
         this.mediaAccessMask = mediaAccessMask;
@@ -406,6 +414,7 @@ public class Process {
 
     /* Native JNI functions */
     private native long start();
+    private native void runInThread(long processRef);
     private native void dispose(long processRef);
     private native void setFileSystem(long contextRef, long fsObject);
 }

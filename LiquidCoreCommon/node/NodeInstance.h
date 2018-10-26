@@ -74,6 +74,7 @@ public:
     NodeInstance(JNIEnv* env, jobject thiz);
 #endif
     NodeInstance(OnNodeStartedCallback onStart, OnNodeExitCallback onExit, void* data);
+    void spawnedThread();
     virtual ~NodeInstance();
 
 private:
@@ -89,7 +90,6 @@ private:
     inline void PlatformInit();
 
     int StartInstance(int argc, char *argv[]);
-    void spawnedThread();
 
     static void WaitForInspectorDisconnect(Environment* env);
     static bool DomainHasErrorHandler(const Environment* env,
@@ -129,7 +129,9 @@ private:
     void * callback_data = nullptr;
 protected:
     uv_loop_t *m_loop;
+#ifdef __APPLE__
     std::thread* node_main_thread = nullptr;
+#endif
 };
 
 #endif //NODEDROID_NODEINSTANCE_H
