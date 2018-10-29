@@ -372,6 +372,12 @@ public class MicroService implements Process.EventListener {
     }
 
     /**
+     * Returns the URI from which the service was started.
+     * @return The URI of the service
+     */
+    public URI getServiceURI() { return serviceURI; }
+
+    /**
      * Removes an EventListener previously added with addEventListener.
      * @param event  The event for which to unregister the listener
      * @param listener  The listener to unregister
