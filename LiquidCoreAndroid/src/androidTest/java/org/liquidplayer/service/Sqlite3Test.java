@@ -27,7 +27,7 @@ public class Sqlite3Test {
         final MicroService test = new MicroService(InstrumentationRegistry.getContext(), testURI,
                 new MicroService.ServiceStartListener() {
                     @Override
-                    public void onStart(MicroService service, Synchronizer synchronizer) {
+                    public void onStart(MicroService service) {
                         service.addEventListener("count", new MicroService.EventListener() {
                             @Override
                             public void onEvent(MicroService service, String event, JSONObject row){

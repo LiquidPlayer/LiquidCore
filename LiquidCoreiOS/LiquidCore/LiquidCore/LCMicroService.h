@@ -31,26 +31,6 @@
 @class Process;
 
 /**
- The `LCSynchronizer` object is used during micro service initialization to
- synchronize asynchronous initialization.  This object is only needed if you require some
- asynchronous initialization and can be ignored otherwise.
- */
-@interface LCSynchronizer : NSObject
-
-/**
-Notify initializer that you are about to enter an asynchronous process.
- */
-- (void) enter;
-
-/**
- Notify initializer that async init is complete.  Calls to `-enter` and `-exit` must
- be balanced.
- */
-- (void) exit;
-
-@end
-
-/**
  An `LCMicroService` may have an optional delegate to listen for events on start,
  exit and error conditions.
  */
@@ -67,10 +47,8 @@ Notify initializer that you are about to enter an asynchronous process.
  has been run.  The JavaScript code should emit an event to let the host know that it is ready
  to receive events.
  @param service The micro service which has now started.
- @param synchronizer Used to synchronize asynchronous init.  Ignore if you have no
- async initialization.  Can be `nil` if the process cannot be managed asynchronously, so check first.
  */
-- (void) onStart:(LCMicroService*_Nonnull)service synchronizer:(LCSynchronizer* _Nullable)synchronizer;
+- (void) onStart:(LCMicroService*_Nonnull)service;
 
 @optional
 /**

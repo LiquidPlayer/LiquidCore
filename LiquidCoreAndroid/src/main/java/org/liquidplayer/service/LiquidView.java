@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -17,9 +18,9 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import org.liquidplayer.javascript.JSContext;
-import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
+import org.liquidplayer.javascript.JSValue;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.node.R;
 import org.liquidplayer.surface.console.ConsoleSurface;
@@ -29,7 +30,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -126,47 +126,155 @@ public class LiquidView extends RelativeLayout {
             }
         }
     }
+    private static final String createPromiseObject =
+            "(()=>{" +
+            "  var po = {}; var clock = true;" +
+            "  var timer = setInterval(()=>{if(!clock) clearTimeout(timer);}, 100); "+
+            "  po.promise = new Promise((resolve,reject)=>{po.resolve=resolve;po.reject=reject});" +
+            "  po.promise.then(()=>{clock=false}).catch(()=>{clock=false});" +
+            "  return po;" +
+            "})();";
 
-    private static class LiquidViewService extends MicroService {
-        LiquidViewService(Context ctx, URI serviceURI, ServiceStartListener start,
-                            ServiceErrorListener error) {
-            super(ctx, serviceURI, start, error);
-        }
-
-        JSContextGroup.LoopPreserver m_preserver;
-    }
-
-    private void attach(final String surface_, final JSFunction callback) {
-        final LiquidViewService service = (LiquidViewService) MicroService.getService(serviceId);
+    private JSObject bind(final JSContext context, final String surface_, final JSValue config) {
+        final MicroService service = MicroService.getService(serviceId);
+        final JSObject promiseObj = context.evaluateScript(createPromiseObject).toObject();
         try {
-            Surface surface = null;
+            if (boundCanonicalSurfaces.contains(surface_)) {
+                // This surface is already bound or in the process of binding.  Don't do it again.
+                // FIXME: The more elegant way to handle this is to resolve the promise if and when
+                // the original binding completes, but this would require some refactoring.  For now,
+                // just reject the promise.
+                throw new Error("Surface " + surface_ + " is already bound.");
+            }
+            boundCanonicalSurfaces.add(surface_);
             if (service == null)
                 throw new Exception("service not available");
-            android.util.Log.d("attach", "surface_: " + surface_);
-            for (Map.Entry<String,Surface> entry : surfaceHashMap.entrySet()) {
-                android.util.Log.d("attach", "canon: " + entry.getValue().getClass().getCanonicalName());
-                if (entry.getValue().getClass().getCanonicalName().equals(surface_)) {
-                    surface = entry.getValue();
+            android.util.Log.d("bind", "surface_: " + surface_);
+
+            boolean found = false;
+            for (MicroService.AvailableSurface sfc : availableSurfaces()) {
+                if (sfc.cls.getCanonicalName().equals(surface_)) {
+                    found = true;
+                    final Class<? extends Surface> cls = sfc.cls;
+                    final String boundSurfaceId = UUID.randomUUID().toString();
+                    final JSObject surfaceObject = new JSObject(context);
+                    surfaceObject.property("attach", new JSFunction(context,"attach_") {
+                        @SuppressWarnings("unused")
+                        public JSObject attach_() {
+                            Surface surface = surfaceHashMap.get(boundSurfaceId);
+                            return attach(context, getThis(), surface);
+                        }
+                    });
+                    surfaceObject.property("detach", new JSFunction(context,"detach_") {
+                        @SuppressWarnings("unused")
+                        public JSObject detach_(JSFunction cb) {
+                            return detach(context);
+                        }
+                    });
+
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Surface s = cls.getConstructor(Context.class)
+                                        .newInstance(LiquidView.this.getContext());
+                                surfaceHashMap.put(boundSurfaceId, s);
+                                boundSurfaces.add(boundSurfaceId);
+                                s.bind(service, context, surfaceObject, config, new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        context.getGroup().schedule(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                promiseObj.property("resolve").toFunction()
+                                                        .call(null, surfaceObject);
+                                            }
+                                        });
+                                    }
+                                }, new Surface.ReportErrorRunnable() {
+                                    @Override
+                                    public void run(final String errorMessage) {
+                                        context.getGroup().schedule(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                promiseObj.property("reject").toFunction()
+                                                        .call(null, errorMessage);
+                                            }
+                                        });
+                                    }
+                                });
+                            } catch (final Exception e) {
+                                e.printStackTrace();
+                                android.util.Log.d("exception", e.toString());
+                                context.getGroup().schedule(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        promiseObj.property("reject").toFunction()
+                                                .call(null, e.getMessage());
+                                    }
+                                });
+                            }
+                        }
+                    });
                     break;
                 }
             }
-            if (surface == null) {
-                throw new Exception("Invalid surface");
+            if (!found) {
+                throw new Exception("Surface " + surface_ + " is not available.");
             }
+
+        } catch (Exception e) {
+            android.util.Log.d("exception", e.toString());
+            promiseObj.property("reject").toFunction().call(null, e.getMessage());
+        }
+
+        return promiseObj.property("promise").toObject();
+    }
+
+    private JSObject attach(@Nullable final JSContext context, @Nullable final JSObject thiz,
+                            final Surface surface) {
+        final MicroService service = MicroService.getService(serviceId);
+        final JSObject promiseObj;
+        if (context != null) promiseObj = context.evaluateScript(createPromiseObject).toObject();
+        else promiseObj = null;
+        try {
+            if (service == null)
+                throw new Exception("service not available");
+            android.util.Log.d("attach", "surface_: " + surface.getClass().getCanonicalName());
             if (surfaceId == View.NO_ID)
                 surfaceId = generateViewIdCommon();
-            canonicalSurface = surface_;
-            final Surface s = surface;
+
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override @SuppressWarnings("unchecked")
                 public void run() {
                     try {
-                        surfaceView = s.attach(service, new Runnable() {
+                        surfaceView = surface.attach(service, new Runnable() {
                             @Override
                             public void run() {
-                                if (callback != null) {
-                                    callback.call(null);
+                                attachedSurface = null;
+                                for (String s : surfaceHashMap.keySet()) {
+                                    if (surfaceHashMap.get(s) == surface) {
+                                        attachedSurface = s;
+                                        break;
+                                    }
                                 }
+
+                                if (promiseObj != null) {
+                                    promiseObj.property("resolve").toFunction()
+                                            .call(null, thiz);
+                                }
+                            }
+                        }, new Surface.ReportErrorRunnable() {
+                            @Override
+                            public void run(final String errorMessage) {
+                                context.getGroup().schedule(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        promiseObj.property("reject").toFunction()
+                                                .call(null, errorMessage);
+                                    }
+                                });
+
                             }
                         });
                         surfaceView.setId(surfaceId);
@@ -184,7 +292,10 @@ public class LiquidView extends RelativeLayout {
                     } catch (Exception e) {
                         e.printStackTrace();
                         android.util.Log.d("exception", e.toString());
-                        service.m_preserver.release();
+                        if (promiseObj != null) {
+                            promiseObj.property("reject").toFunction()
+                                    .call(null, e.getMessage());
+                        }
                     }
                 }
             });
@@ -192,31 +303,39 @@ public class LiquidView extends RelativeLayout {
             service.getProcess().addEventListener(new Process.EventListener() {
                 public void onProcessStart(Process process, JSContext context) {}
                 public void onProcessAboutToExit(Process process, int exitCode) {
-                    detach(null);
+                    detach(context);
                     process.removeEventListener(this);
                 }
                 public void onProcessExit(Process process, int exitCode) {
-                    detach(null);
+                    detach(context);
                     process.removeEventListener(this);
                 }
                 public void onProcessFailed(Process process, Exception error) {
-                    detach(null);
+                    detach(context);
                     process.removeEventListener(this);
                 }
             });
         } catch (Exception e) {
             android.util.Log.d("exception", e.toString());
-            if (callback != null) {
-                callback.call(null, e.getMessage());
+            if (promiseObj != null) {
+                promiseObj.property("reject").toFunction()
+                        .call(null, e.getMessage());
             }
-            detach(null);
+            detach(context);
+        }
+        if (promiseObj != null) {
+            return promiseObj.property("promise").toObject();
+        } else {
+            return null;
         }
     }
 
-    private void detach(final JSFunction callback) {
+    private JSObject detach(@Nullable final JSContext context) {
+        final JSObject promiseObj;
+        if (context != null) promiseObj = context.evaluateScript(createPromiseObject).toObject();
+        else promiseObj = null;
         surfaceId = NO_ID;
-        canonicalSurface = null;
-        if (attachedSurface != null) {
+        if (attachedSurface != null && attachedSurface.length() > 0) {
             surfaceHashMap.get(attachedSurface).detach();
             attachedSurface = null;
         }
@@ -225,12 +344,21 @@ public class LiquidView extends RelativeLayout {
                 @Override
                 public void run() {
                     removeView(surfaceView);
-                    surfaceView = null;
+                    if (promiseObj != null) {
+                        promiseObj.property("resolve").toFunction()
+                                .call(null);
+                    }
                 }
             });
+        } else if (promiseObj != null) {
+            promiseObj.property("resolve").toFunction()
+                    .call(null);
         }
-        if(callback != null) {
-            callback.call();
+
+        if (promiseObj != null) {
+            return promiseObj.property("promise").toObject();
+        } else {
+            return null;
         }
     }
 
@@ -264,9 +392,9 @@ public class LiquidView extends RelativeLayout {
             }
 
             MicroService svc =
-                    new LiquidViewService(getContext(), uri, new MicroService.ServiceStartListener(){
+                    new MicroService(getContext(), uri, new MicroService.ServiceStartListener(){
                 @Override
-                public void onStart(final MicroService service, final Synchronizer synchronizer) {
+                public void onStart(final MicroService service) {
                     serviceId = service.getId();
                     service.getProcess().addEventListener(new Process.EventListener() {
                         @Override
@@ -279,48 +407,14 @@ public class LiquidView extends RelativeLayout {
                                         surfaceVersions.get(i));
                             }
                             liquidCore.property("availableSurfaces", availableSurfaces);
-                            liquidCore.property("attach", new JSFunction(context,"attach_") {
-                                @SuppressWarnings("unused")
-                                public void attach_(String s, JSFunction cb) {
-                                    attach(s,cb);
-                                }
+                            liquidCore.property("bind", new JSFunction(context, "bind_") {
+                               @SuppressWarnings("unused")
+                               public JSObject bind_(String s, JSValue config) {
+                                   return bind(context, s, config); }
                             });
-                            liquidCore.property("detach", new JSFunction(context,"detach_") {
-                                @SuppressWarnings("unused")
-                                public void detach_(JSFunction cb) {
-                                    detach(cb);
-                                }
-                            });
-
-                            // Bind surfaces
-                            ((LiquidViewService)service).m_preserver = service.getProcess().keepAlive();
-
-                            for (MicroService.AvailableSurface sfc : availableSurfaces()) {
-                                synchronizer.enter();
-                                final Class<? extends Surface> cls = sfc.cls;
-                                final String boundSurfaceId = UUID.randomUUID().toString();
-                                new Handler(Looper.getMainLooper()).post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            Surface s = cls.getConstructor(Context.class)
-                                                    .newInstance(LiquidView.this.getContext());
-                                            surfaceHashMap.put(boundSurfaceId, s);
-                                            boundSurfaces.add(boundSurfaceId);
-                                            s.bind(service, context, synchronizer);
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                            android.util.Log.d("exception", e.toString());
-                                            ((LiquidViewService)service).m_preserver.release();
-                                        } finally {
-                                            synchronizer.exit();
-                                        }
-                                    }
-                                });
-                            }
 
                             for (MicroService.ServiceStartListener listener : startListeners) {
-                                listener.onStart(service, synchronizer);
+                                listener.onStart(service);
                             }
                             startListeners.clear();
                         }
@@ -352,7 +446,6 @@ public class LiquidView extends RelativeLayout {
             new MicroService.ServiceErrorListener() {
                 @Override
                 public void onError(MicroService service, Exception e) {
-                    detach(null);
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
@@ -388,6 +481,10 @@ public class LiquidView extends RelativeLayout {
         }
     }
 
+    /**
+     * Registers a `Surface` class with LiquidCore.
+     * @param cls Must be an instantiable `View` subclass that implements the `Surface` interface.
+     */
     public static void registerSurface(Class<? extends Surface> cls) {
         try {
             Field f = cls.getDeclaredField("SURFACE_VERSION");
@@ -419,10 +516,10 @@ public class LiquidView extends RelativeLayout {
     private ArrayList<String> surfaceNames = null;
     private ArrayList<String> surfaceVersions = null;
     private String serviceId;
-    private String canonicalSurface;
     private SparseArray childrenStates;
     private ArrayList<String> boundSurfaces = new ArrayList<>();
     private String attachedSurface = null;
+    private ArrayList<String> boundCanonicalSurfaces = new ArrayList<>();
 
     @Override @SuppressWarnings("unchecked")
     public Parcelable onSaveInstanceState() {
@@ -432,13 +529,13 @@ public class LiquidView extends RelativeLayout {
         ss.surfaceNames = surfaceNames;
         ss.surfaceVersions = surfaceVersions;
         ss.serviceId = serviceId;
-        ss.canonicalSurface = canonicalSurface;
         ss.childrenStates = new SparseArray();
         for (int i = 0; i < getChildCount(); i++) {
             getChildAt(i).saveHierarchyState(ss.childrenStates);
         }
         ss.boundSurfaces = boundSurfaces;
         ss.attachedSurface = attachedSurface;
+        ss.boundCanonicalSurfaces = boundCanonicalSurfaces;
         return ss;
     }
 
@@ -462,10 +559,10 @@ public class LiquidView extends RelativeLayout {
         }
 
         serviceId = ss.serviceId;
-        canonicalSurface = ss.canonicalSurface;
         childrenStates = ss.childrenStates;
-        if (canonicalSurface != null) {
-            attach(canonicalSurface, null);
+        if (attachedSurface != null) {
+            Surface s = surfaceHashMap.get(attachedSurface);
+            attach(null, null, s);
         }
         if (ss.boundSurfaces == null) {
             boundSurfaces = new ArrayList<>();
@@ -473,6 +570,11 @@ public class LiquidView extends RelativeLayout {
             boundSurfaces = new ArrayList<>(ss.boundSurfaces);
         }
         attachedSurface = ss.attachedSurface;
+        if (ss.boundCanonicalSurfaces == null) {
+            boundCanonicalSurfaces = new ArrayList<>();
+        } else {
+            boundCanonicalSurfaces = new ArrayList<>(ss.boundSurfaces);
+        }
     }
 
     @Override
@@ -492,9 +594,9 @@ public class LiquidView extends RelativeLayout {
         private List<String> surfaceNames;
         private List<String> surfaceVersions;
         private String serviceId;
-        private String canonicalSurface;
         private List<String> boundSurfaces;
         private String attachedSurface;
+        private List<String> boundCanonicalSurfaces;
 
         SavedState(Parcelable superState) {
             super(superState);
@@ -506,10 +608,10 @@ public class LiquidView extends RelativeLayout {
             in.readStringList(surfaceNames);
             in.readStringList(surfaceVersions);
             serviceId = in.readString();
-            canonicalSurface = in.readString();
             childrenStates = in.readSparseArray(classLoader);
             in.readStringList(boundSurfaces);
             attachedSurface = in.readString();
+            in.readStringList(boundCanonicalSurfaces);
         }
 
         @Override @SuppressWarnings("unchecked")
@@ -519,10 +621,10 @@ public class LiquidView extends RelativeLayout {
             out.writeStringList(surfaceNames);
             out.writeStringList(surfaceVersions);
             out.writeString(serviceId);
-            out.writeString(canonicalSurface);
             out.writeSparseArray(childrenStates);
             out.writeStringList(boundSurfaces);
             out.writeString(attachedSurface);
+            out.writeStringList(boundCanonicalSurfaces);
         }
 
         public static final ClassLoaderCreator<SavedState> CREATOR

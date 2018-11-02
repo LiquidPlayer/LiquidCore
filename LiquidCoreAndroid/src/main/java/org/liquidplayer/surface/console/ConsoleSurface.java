@@ -49,7 +49,6 @@ import org.liquidplayer.node.BuildConfig;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.service.MicroService;
 import org.liquidplayer.service.Surface;
-import org.liquidplayer.service.Synchronizer;
 
 import java.util.HashMap;
 
@@ -96,8 +95,10 @@ public class ConsoleSurface extends ConsoleView implements Surface {
     }
 
     @Override
-    public void bind(MicroService service, JSContext context, Synchronizer synchronizer) {
+    public void bind(MicroService service, JSContext context, JSObject export, JSValue config,
+                     Runnable onBound, ReportErrorRunnable onError) {
         // Nothing to do -- everything happens during attach
+        onBound.run();
     }
 
     /**
@@ -109,7 +110,7 @@ public class ConsoleSurface extends ConsoleView implements Surface {
      * @param service  The MicroService to attach
      */
     @Override
-    public View attach(MicroService service, Runnable onAttached) {
+    public View attach(MicroService service, Runnable onAttached, ReportErrorRunnable onError) {
         uuid = service.getId();
         session = ConsoleSession.newSession(service, this, onAttached);
         return this;

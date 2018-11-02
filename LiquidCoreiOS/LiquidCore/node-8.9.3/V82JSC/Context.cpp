@@ -567,10 +567,12 @@ Local<Context> Context::New(Isolate* isolate, ExtensionConfiguration* extensions
         assert(excp == 0);
         JSObjectSetProperty(context->m_ctxRef, global_o, zGlobal, global_o, 0, &excp);
         assert(excp == 0);
+/*
         JSObjectDeleteProperty(context->m_ctxRef, global_o, zPromise, &excp);
         assert(excp == 0);
         JSEvaluateScript(context->m_ctxRef, zPromisePolyfill, global_o, 0, 0, &excp);
         assert(excp == 0);
+*/
 
         JSStringRef zTypedArrayPolyfill = JSStringCreateWithUTF8CString((const char*)typedarray_js);
         JSEvaluateScript(context->m_ctxRef, zTypedArrayPolyfill, global_o, 0, 0, &excp);

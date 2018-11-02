@@ -52,7 +52,7 @@ static NSMutableArray* registeredSurfaces;
     NSMutableArray *availableSurfaces_;
     BOOL customSurfaces_;
     LCMicroService *service_;
-    NSDictionary *boundSurfaces_;
+    NSMutableDictionary *boundSurfaces_;
     id<LoopPreserver> preserver_;
     NSArray *argv_;
 }
@@ -211,8 +211,89 @@ static NSMutableArray* registeredSurfaces;
     return [self start:uri arguments:nil];
 }
 
-- (void) attach:(NSString *)surface callback:(JSValue*)callback
+static NSString* createPromiseObject =
+    @"(()=>{"
+    @"  var po = {}; var clock = true;"
+    @"  var timer = setInterval(()=>{if(!clock) clearTimeout(timer);}, 100); "
+    @"  po.promise = new Promise((resolve,reject)=>{po.resolve=resolve;po.reject=reject});"
+    @"  po.promise.then(()=>{clock=false}).catch(()=>{clock=false});"
+    @"  return po;"
+    @"})();";
+
+- (JSValue*) bind:(JSContext*)context surface:(NSString*)canonicalSurface config:(JSValue*)config
 {
+    JSValue* promiseObj = [context evaluateScript:createPromiseObject];
+    context[@"GLOBAL"] = context[@"global"];
+    @try {
+        if (boundSurfaces_ && [[boundSurfaces_ allKeys] containsObject:canonicalSurface]) {
+            // This surface is already bound or in the process of binding.  Don't do it again.
+            // FIXME: The more elegant way to handle this is to resolve the promise if and when
+            // the original binding completes, but this would require some refactoring.  For now,
+            // just reject the promise.
+            @throw [[NSException alloc] initWithName:@"Surface already bound"
+                                              reason:@"Surface already bound" userInfo:nil];
+        }
+        if (service_ == nil) {
+            @throw [[NSException alloc] initWithName:@"Service not available"
+                                              reason:@"Service not available" userInfo:nil];
+        }
+        if (!boundSurfaces_) boundSurfaces_ = [[NSMutableDictionary alloc] init];
+        BOOL found = false;
+        for (Class<LCSurface> surface in self->availableSurfaces_) {
+            if ([[[surface class] SURFACE_CANONICAL_NAME] isEqualToString:canonicalSurface]) {
+                found = true;
+                JSValue *exportObject = [JSValue valueWithNewObjectInContext:context];
+                exportObject[@"attach"] = ^{
+                    id<LCSurface> surface = self->boundSurfaces_[canonicalSurface];
+                    return [self attach:[JSContext currentContext]
+                                   this:[JSContext currentThis]
+                                surface:surface];
+                };
+                exportObject[@"detach"]= ^{
+                    return [self detach:[JSContext currentContext]];
+                };
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    @try {
+                        UIView<LCSurface> *bindable = [[[surface class] alloc] initWithFrame:self.frame];
+                        [self->boundSurfaces_ setObject:bindable forKey:[[surface class] SURFACE_CANONICAL_NAME]];
+                        [bindable bind:self->service_
+                                export:exportObject
+                                config:config onBound:^{
+                            [[self->service_ process] async:^(JSContext *context) {
+                                [promiseObj[@"resolve"] callWithArguments:@[exportObject]];
+                            }];
+                        } onError:^(NSString *errorMessage) {
+                            [[self->service_ process] async:^(JSContext *context) {
+                                [promiseObj[@"reject"] callWithArguments:@[errorMessage]];
+                            }];
+                        }];
+                    } @catch (NSException *e) {
+                        NSLog(@"exception: %@", e);
+                        [[self->service_ process] async:^(JSContext *context) {
+                            [promiseObj[@"reject"] callWithArguments:@[e.description]];
+                        }];
+                    }
+                });
+                break;
+            }
+        }
+        if (!found) {
+            @throw [[NSException alloc] initWithName:@"Surface is not available"
+                                              reason:@"Surface is not avaliable" userInfo:nil];
+        }
+
+    } @catch (NSException *e) {
+        NSLog(@"exception: %@", e);
+        [promiseObj[@"reject"] callWithArguments:@[e.description]];
+    }
+    
+    return promiseObj[@"promise"];
+}
+
+- (JSValue*) attach:(JSContext*)context this:(JSValue*)this surface:(id<LCSurface>)surface
+{
+    JSValue* promiseObj = [context evaluateScript:createPromiseObject];
     @try {
         if (service_ == nil) {
             @throw [[NSException alloc] initWithName:@"Service not available"
@@ -225,19 +306,20 @@ static NSMutableArray* registeredSurfaces;
             @throw [[NSException alloc] initWithName:@"No surfaces have been bound"
                                               reason:@"No surfaces have been bound" userInfo:nil];
         }
-        UIView<LCSurface> *boundSurface = [boundSurfaces_ objectForKey:surface];
-        if (boundSurface == nil) {
+        if (surface == nil) {
             @throw [[NSException alloc] initWithName:@"Surface not available"
                                               reason:@"Cannot attach to non-existant surface" userInfo:nil];
         }
         
         dispatch_async(dispatch_get_main_queue(), ^{
             @try {
-                UIView<LCSurface> *view = [boundSurface attach:self->service_ onAttached:^{
+                UIView<LCSurface> *view = [surface attach:self->service_ onAttached:^{
                     [self->service_.process async:^(JSContext* context){
-                        if (callback != nil) {
-                            [callback callWithArguments:@[]];
-                        }
+                        [promiseObj[@"resolve"] callWithArguments:@[this]];
+                    }];
+                } onError:^(NSString *errorMessage) {
+                    [[self->service_ process] async:^(JSContext *context) {
+                        [promiseObj[@"reject"] callWithArguments:@[errorMessage]];
                     }];
                 }];
                 if (self.surfaceView != nil) {
@@ -256,40 +338,41 @@ static NSMutableArray* registeredSurfaces;
                 
             } @catch (NSException *e) {
                 NSLog(@"exception: %@", e);
-                [self->preserver_ letDie];
+                [[self->service_ process] async:^(JSContext *context) {
+                    [promiseObj[@"reject"] callWithArguments:@[e.description]];
+                }];
             }
         });
     } @catch (NSException *e) {
         NSLog(@"exception: %@", e);
-        [self->service_.process async:^(JSContext* context){
-            if (callback != nil) {
-                JSValue* err = [JSValue valueWithNewErrorFromMessage:e.name inContext:context];
-                [callback callWithArguments:@[err]];
-            }
-        }];
-        [self detach:nil];
+        [self detach:context];
+        [promiseObj[@"reject"] callWithArguments:@[e.description]];
     }
+    
+    return promiseObj[@"promise"];
 }
 
-- (void) detach:(JSValue*)callback
+- (JSValue*) detach:(JSContext*)context
 {
+    JSValue* promiseObj = [context evaluateScript:createPromiseObject];
     if (self.surfaceView != nil) {
         [self.surfaceView detach];
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.surfaceView removeFromSuperview];
             self.surfaceView = nil;
             [self->service_.process async:^(JSContext* context){
-                if (callback != nil) {
-                    [callback callWithArguments:@[]];
-                }
+                [promiseObj[@"resolve"] callWithArguments:@[]];
             }];
         });
+    } else {
+        [promiseObj[@"resolve"] callWithArguments:@[]];
     }
+    return promiseObj[@"promise"];
 }
 
 #pragma - MicroServiceDelegate
 
-- (void) onStart:(LCMicroService*)service synchronizer:(LCSynchronizer*)synchronizer
+- (void) onStart:(LCMicroService*)service
 {
     [service.process sync:^(JSContext* context) {
         JSValue *liquidcore = context[@"LiquidCore"];
@@ -299,33 +382,9 @@ static NSMutableArray* registeredSurfaces;
                                   forKey:[[surface class] SURFACE_CANONICAL_NAME]];
         }
         liquidcore[@"availableSurfaces"] = availableSurfaces;
-        liquidcore[@"attach"] = ^(NSString *sfc, JSValue* callback) {
-            [self attach:sfc callback:callback];
+        liquidcore[@"bind"] = ^(NSString* s, JSValue* config){
+            return [self bind:context surface:s config:config];
         };
-        liquidcore[@"detach"] = ^(JSValue* callback) {
-            [self detach:callback];
-        };
-
-        // Bind surfaces
-        self->preserver_ = [self->service_.process keepAlive];
-        
-        NSMutableDictionary *bound = [[NSMutableDictionary alloc] init];
-        for (Class<LCSurface> surface in self->availableSurfaces_) {
-            [synchronizer enter];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                @try {
-                    UIView<LCSurface> *bindable = [[[surface class] alloc] initWithFrame:self.frame];
-                    [bindable bind:service synchronizer:synchronizer];
-                    [bound setObject:bindable forKey:[[surface class] SURFACE_CANONICAL_NAME]];
-                } @catch (NSException *e) {
-                    NSLog(@"exception: %@", e);
-                    [self->preserver_ letDie];
-                } @finally {
-                    [synchronizer exit];
-                }
-            });
-        }
-        self->boundSurfaces_ = bound;
     }];
 }
 

@@ -83,48 +83,6 @@ import java.util.zip.GZIPInputStream;
  */
 public class MicroService implements Process.EventListener {
 
-    public class SynchronizerImpl extends CountDownLatch implements Synchronizer {
-        SynchronizerImpl() {
-            super(1);
-        }
-        private int count = 0;
-        private final Object mutex = new Object();
-
-        @Override
-        public void enter() {
-            synchronized (mutex) {
-                count++;
-            }
-        }
-
-        @Override
-        public void exit() {
-            int ncount;
-            synchronized (mutex) {
-                ncount = --count;
-            }
-            if (ncount == 0) {
-                countDown();
-            }
-        }
-
-        boolean isSynchronized() {
-            synchronized (mutex) {
-                return count==0;
-            }
-        }
-
-        void blockUntilReady() throws InterruptedException {
-            int ncount;
-            synchronized (mutex) {
-                ncount = count;
-            }
-            if (ncount > 0) {
-                await();
-            }
-        }
-    }
-
     /**
      * Listens for a specific event emitted by the MicroService
      */
@@ -151,11 +109,8 @@ public class MicroService implements Process.EventListener {
          * Called after the environment is set up, but before the MicroService javascript is
          * executed.
          * @param service  The MicroService which is now started
-         * @param synchronizer Used to synchronize asynchronous init.  Ignore if you have no
-         *                     async initialization.  Can be null if the process cannot be
-         *                     managed asynchronously, so check first.
          */
-        void onStart(MicroService service, Synchronizer synchronizer);
+        void onStart(MicroService service);
     }
 
     /**
@@ -744,13 +699,9 @@ public class MicroService implements Process.EventListener {
             fetchService();
 
             // Notify host that service is ready to accept event listeners
-            final SynchronizerImpl synchronizer;
             if (startListener != null) {
-                synchronizer = new SynchronizerImpl();
-                startListener.onStart(this, synchronizer);
+                startListener.onStart(this);
                 startListener = null;
-            } else {
-                synchronizer = null;
             }
 
             // Construct process.argv
@@ -764,28 +715,10 @@ public class MicroService implements Process.EventListener {
 
             // Execute code
             final String script =
-                    "eval(String(require('fs').readFileSync('/home/module/" + module + "')))";
+                    "new Function(require('fs').readFileSync('/home/module/" + module + "')).call(global); " +
+                    "";
 
-            if (synchronizer == null || synchronizer.isSynchronized()) {
-                context.evaluateScript(script);
-            } else {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            synchronizer.blockUntilReady();
-                            context.evaluateScript(script);
-                        } catch (InterruptedException e) {
-                            StringWriter sw = new StringWriter();
-                            PrintWriter pw = new PrintWriter(sw);
-                            e.printStackTrace(pw);
-                            String sStackTrace = sw.toString();
-                            android.util.Log.e("stacktrace", sStackTrace);
-                            onProcessFailed(null, e);
-                        }
-                    }
-                }.start();
-            }
+            context.evaluateScript(script);
 
         } catch (IOException e) {
             e.printStackTrace();

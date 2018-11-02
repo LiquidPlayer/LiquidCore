@@ -33,7 +33,7 @@
 #import "Process.h"
 
 @interface MicroServiceTest : XCTestCase <LCMicroServiceDelegate, LCMicroServiceEventListener>
-- (void) onStart:(LCMicroService *)service synchronizer:(LCSynchronizer *)synchronizer;
+- (void) onStart:(LCMicroService *)service;
 
 @property (atomic, assign) bool serverReady;
 @property (atomic, assign) int finishCount;
@@ -69,7 +69,7 @@
     [LCMicroService uninstall:client_js];
 }
 
-- (void) onStart:(LCMicroService *)service synchronizer:(LCSynchronizer *)synchronizer
+- (void) onStart:(LCMicroService *)service
 {
     if ([service isEqual:server_]) {
         [service addEventListener:@"listening" listener:self];

@@ -41,46 +41,6 @@
 - (NSError*) fetchService;
 @end
 
-@interface LCSynchronizer()
-- (id) init;
-- (void) blockUntilReady;
-@property (atomic) int count;
-@end
-
-@implementation LCSynchronizer
-- (id) init
-{
-    self = [super init];
-    if (self) {
-        _count = 0;
-    }
-    return self;
-}
-
-- (void) enter
-{
-    self.count ++;
-}
-
-- (void) exit
-{
-    -- self.count;
-}
-
-- (bool) isSyncrhonized
-{
-    return (self.count == 0);
-}
-
-- (void) blockUntilReady
-{
-    volatile int count = self.count;
-    while (count > 0) {
-        count = self.count;
-    }
-}
-@end
-
 @implementation LCMicroService {
     NSString* serviceId_;
     id<LCMicroServiceDelegate> delegate_;
@@ -274,10 +234,8 @@ static NSMutableDictionary* _serviceMap = nil;
         NSError* error = [self fetchService];
         if (error) @throw error;
         
-        LCSynchronizer *synchronizer = nil;
-        if( delegate_ && [delegate_ respondsToSelector:@selector(onStart:synchronizer:)]) {
-            synchronizer = [[LCSynchronizer alloc] init];
-            [delegate_ onStart:self synchronizer:synchronizer];
+        if( delegate_ && [delegate_ respondsToSelector:@selector(onStart:)]) {
+            [delegate_ onStart:self];
         }
         
         // Construct process.argv
@@ -293,22 +251,14 @@ static NSMutableDictionary* _serviceMap = nil;
         NSString *script =
         [NSString stringWithFormat:@"eval(String(require('fs').readFileSync('/home/module/%@')))", module_];
         
-        if (synchronizer && ![synchronizer isSyncrhonized]) {
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                [synchronizer blockUntilReady];
-                [process sync:^(JSContext* context) {
-                    [context evaluateScript:script];
-                }];
-            });
-        } else {
-            [context evaluateScript:script];
-        }
+        [context evaluateScript:script];
     }
     @catch (NSError* error)
     {
-        [self onProcessFailed:process exception:[NSException exceptionWithName:error.localizedDescription
-                                                                        reason:error.localizedFailureReason
-                                                                      userInfo:error.userInfo]];
+        [self onProcessFailed:process
+                    exception:[NSException exceptionWithName:error.localizedDescription
+                                                      reason:error.localizedFailureReason
+                                                    userInfo:error.userInfo]];
     }
 }
 

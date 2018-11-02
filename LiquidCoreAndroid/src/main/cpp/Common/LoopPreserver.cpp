@@ -41,15 +41,15 @@ boost::shared_ptr<LoopPreserver> LoopPreserver::New(boost::shared_ptr<ContextGro
 }
 
 LoopPreserver::LoopPreserver(boost::shared_ptr<ContextGroup> group) :
-        m_isDefunct(false), m_group(group)//, m_count(0)
+        m_isDefunct(false), m_group(group)
 {
     auto done = [](uv_async_t* handle) {
         uv_close((uv_handle_t*)handle, [](uv_handle_t *h){
-            delete (uv_async_t*)h;
+            free(h);
         });
     };
 
-    m_async_handle = new uv_async_t();
+    m_async_handle = (uv_async_t*) malloc (sizeof (uv_async_t));
     uv_async_init(group->Loop(), m_async_handle, done);
 }
 

@@ -33,13 +33,13 @@
 @interface ConsoleSession : NSObject <ProcessDelegate>
 @property (nonatomic) LCConsoleSurfaceView *currentView;
 
-- (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttached;
+- (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnSuccessHandler)onAttached;
 - (void) processCommand:(NSString*)cmd;
 - (void) resize:(int)rows columns:(int)cols;
 @end
 
 @implementation ConsoleSession {
-    LCOnAttachedHandler onAttached_;
+    LCOnSuccessHandler onAttached_;
     Process* process_;
     NSString* uuid_;
     NSInteger rows_;
@@ -47,7 +47,7 @@
     BOOL processedException_;
 }
 
-- (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttached
+- (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnSuccessHandler)onAttached
 {
     self = [super init];
     if (self) {
@@ -225,12 +225,19 @@
 
 #pragma - LCSurface
 
-- (void) bind:(LCMicroService*)service synchronizer:(LCSynchronizer*)synchronizer
+- (void) bind:(LCMicroService*)service
+       export:(JSValue *)exportObject
+       config:(JSValue *)config
+      onBound:(LCOnSuccessHandler)onBound
+      onError:(LCOnFailHandler)onError;
 {
-    // Nothing to do -- everything happens during attach:onAttached:
+    // Nothing to do -- everything happens during attach:onAttached:onError:
+    onBound();
 }
 
-- (UIView*) attach:(LCMicroService*)service onAttached:(LCOnAttachedHandler)onAttachedHandler
+- (UIView<LCSurface>*) attach:(LCMicroService*)service
+                   onAttached:(LCOnSuccessHandler)onAttachedHandler
+                      onError:(LCOnFailHandler)onError;
 {
     session_ = [[ConsoleSession alloc] initWithMicroService:service onAttached:onAttachedHandler];
     session_.currentView = self;

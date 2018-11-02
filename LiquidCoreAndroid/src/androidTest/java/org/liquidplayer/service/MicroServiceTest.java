@@ -34,7 +34,7 @@ public class MicroServiceTest {
         final MicroService server = new MicroService(InstrumentationRegistry.getContext(), serverURI,
                 new MicroService.ServiceStartListener() {
                     @Override
-                    public void onStart(MicroService service, Synchronizer synchronizer) {
+                    public void onStart(MicroService service) {
                         service.addEventListener("listening", new MicroService.EventListener() {
                             @Override
                             public void onEvent(MicroService service, String event, JSONObject payload) {
@@ -69,7 +69,7 @@ public class MicroServiceTest {
         MicroService client = new MicroService(InstrumentationRegistry.getContext(), clientURI,
             new MicroService.ServiceStartListener() {
                 @Override
-                public void onStart(MicroService service, Synchronizer synchronizer) {
+                public void onStart(MicroService service) {
                     service.addEventListener("msg", new MicroService.EventListener() {
                         @Override
                         public void onEvent(MicroService service, String event, JSONObject payload){
@@ -182,7 +182,7 @@ public class MicroServiceTest {
         final MicroService promise = new MicroService(InstrumentationRegistry.getContext(), serverURI,
                 new MicroService.ServiceStartListener() {
                     @Override
-                    public void onStart(MicroService service, Synchronizer synchronizer) {
+                    public void onStart(MicroService service) {
                         start = new Date();
                         service.addEventListener("promise", new MicroService.EventListener() {
                             @Override
