@@ -335,9 +335,11 @@ public class LiquidView extends RelativeLayout {
         if (context != null) promiseObj = context.evaluateScript(createPromiseObject).toObject();
         else promiseObj = null;
         surfaceId = NO_ID;
-        if (attachedSurface != null && attachedSurface.length() > 0) {
-            surfaceHashMap.get(attachedSurface).detach();
+        if (attachedSurface != null && attachedSurface.length() > 0 &&
+                surfaceHashMap.get(attachedSurface) != null) {
+            String s = attachedSurface;
             attachedSurface = null;
+            surfaceHashMap.get(s).detach();
         }
         if (surfaceView != null) {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
