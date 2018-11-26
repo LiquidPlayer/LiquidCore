@@ -23,15 +23,18 @@ import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
 import org.liquidplayer.node.Process;
 import org.liquidplayer.node.R;
-import org.liquidplayer.surface.console.ConsoleSurface;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import dalvik.system.DexFile;
 
 /**
  * LiquidView exposes a MicroService through a UI.  A MicroService attaches to a UI
@@ -55,6 +58,8 @@ public class LiquidView extends RelativeLayout {
     @SuppressWarnings("unchecked")
     public LiquidView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        registerSurfaces(context);
+
         setSaveEnabled(true);
 
         TypedArray a = context.getTheme().obtainStyledAttributes(
@@ -64,9 +69,11 @@ public class LiquidView extends RelativeLayout {
         try {
             if (a.hasValue(R.styleable.LiquidView_liquidcore_URI)) {
                 String uri_ = a.getString(R.styleable.LiquidView_liquidcore_URI);
-                if (uri_ != null) {
+                if (uri_ != null && uri_.length() != 0) {
                     uri = URI.create(uri_);
                 }
+            } else if (attrs != null) {
+                uri = MicroService.DevServer();
             }
             if (a.hasValue(R.styleable.LiquidView_liquidcore_argv))
                 argv = getResources()
@@ -139,6 +146,7 @@ public class LiquidView extends RelativeLayout {
         final MicroService service = MicroService.getService(serviceId);
         final JSObject promiseObj = context.evaluateScript(createPromiseObject).toObject();
         try {
+            /*
             if (boundCanonicalSurfaces.contains(surface_)) {
                 // This surface is already bound or in the process of binding.  Don't do it again.
                 // FIXME: The more elegant way to handle this is to resolve the promise if and when
@@ -146,6 +154,7 @@ public class LiquidView extends RelativeLayout {
                 // just reject the promise.
                 throw new Error("Surface " + surface_ + " is already bound.");
             }
+            */
             boundCanonicalSurfaces.add(surface_);
             if (service == null)
                 throw new Exception("service not available");
@@ -647,7 +656,44 @@ public class LiquidView extends RelativeLayout {
         };
     }
 
-    static {
-        registerSurface(ConsoleSurface.class);
+    private static String[] getClassesOfPackage(Context context) {
+        ArrayList<String> classes = new ArrayList<>();
+        final String packageName = "org.liquidplayer.surface";
+
+        try {
+            String packageCodePath = context.getPackageCodePath();
+            DexFile df = new DexFile(packageCodePath);
+            for (Enumeration<String> iter = df.entries(); iter.hasMoreElements(); ) {
+                String className = iter.nextElement();
+                if (className.contains(packageName)) {
+                    classes.add(className);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return classes.toArray(new String[0]);
+    }
+
+    private static boolean isInit = false;
+    @SuppressWarnings("unchecked")
+    private static void registerSurfaces(Context context) {
+        if (isInit) return;
+        isInit = true;
+
+        String [] classes = getClassesOfPackage(context);
+
+        for (String cls : classes) {
+            try {
+                Class<?> klass = context.getClassLoader().loadClass(cls);
+                if (Surface.class.isAssignableFrom(klass)) {
+                    Class<? extends Surface> surfaceClass = (Class<? extends Surface>)klass;
+                    registerSurface(surfaceClass);
+                }
+            } catch (ClassNotFoundException e) {
+                // Nothing to do, just ignore it
+            }
+        }
     }
 }

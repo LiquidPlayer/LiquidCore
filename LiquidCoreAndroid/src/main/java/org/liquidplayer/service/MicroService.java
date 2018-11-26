@@ -35,6 +35,7 @@ package org.liquidplayer.service;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -148,6 +149,38 @@ public class MicroService implements Process.EventListener {
      * has already been started.  A MicroService instance may be executed only once.
      */
     public class ServiceAlreadyStartedError extends RuntimeException {
+    }
+
+    /**
+     * Generates a URI for fetching from a development server on the loopback address (10.0.2.2).
+     * @param fileName The name of the bundled javascript file to fetch (default: liquid.js)
+     * @param port The server's port (default: 8082)
+     * @return A service URI for use in the MicroService constructor
+     */
+    public static URI DevServer(@Nullable String fileName, @Nullable Integer port) {
+        if (fileName == null) {
+            fileName = "liquid.js";
+        }
+        if (port == null) {
+            port = 8082;
+        }
+        if (fileName.endsWith(".js"))
+            fileName = fileName.substring(0,fileName.length()-3);
+        if (!fileName.endsWith((".bundle"))) {
+            fileName = fileName.concat(".bundle");
+        }
+        URI loopback = URI.create("http://10.0.2.2:" + port + "/" + fileName + "?platform=android&dev=true");
+        return loopback;
+    }
+
+    /**
+     * Generates a URI for fetching from a development server on the loopback address (10.0.2.2).
+     * Assumes the entry js file is 'liquid.js' and is served from port 8082 on the emulator's host
+     * machine.
+     * @return A service URI for use in the MicroService constructor
+     */
+    public static URI DevServer() {
+        return DevServer(null, null);
     }
 
     private ServiceStartListener startListener;

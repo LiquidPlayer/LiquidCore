@@ -69,6 +69,29 @@ static NSMutableDictionary* _serviceMap = nil;
     [Process uninstall:serviceId scope:GLOBAL];
 }
 
++ (NSURL *)devServer:(NSString *)fileName port:(NSNumber *)port
+{
+    if (fileName == nil) {
+        fileName = @"liquid.js";
+    }
+    if (port == nil) {
+        port = @(8082);
+    }
+    if (fileName.length >= 3 && [[fileName substringFromIndex:fileName.length-3] isEqualToString:@".js"])
+        fileName = [fileName substringToIndex:fileName.length-3];
+    if (fileName.length < 7 || ![[fileName substringFromIndex:fileName.length-7] isEqualToString:@".bundle"]) {
+        fileName = [NSString stringWithFormat:@"%@.bundle", fileName];
+    }
+    NSString* loopback = [NSString stringWithFormat:@"http://localhost:%@/%@?platform=ios&dev=true",
+                         port, fileName];
+    return [NSURL URLWithString:loopback];
+}
+
++ (NSURL *)devServer
+{
+    return [LCMicroService devServer:nil port:nil];
+}
+
 - (id) initWithURL:(NSURL*)serviceURI
 {
     return [self initWithURL:serviceURI delegate:nil];

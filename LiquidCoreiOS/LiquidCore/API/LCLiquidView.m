@@ -118,14 +118,16 @@ static NSMutableArray* registeredSurfaces;
             if (scanner.scanLocation < self.arguments.length) [scanner setScanLocation:(scanner.scanLocation + 1)];
         }
     }
+    
+    if (self.URL == nil) {
+        self.URL = [[LCMicroService devServer] absoluteString];
+    }
 
-    if (self.URL != nil) {
-        if (array.count > 0) {
-            [self start:[NSURL URLWithString:self.URL] argv:argv_];
-        } else {
-            [self start:[NSURL URLWithString:self.URL]];
-        }
-        
+    if (array.count > 0) {
+        [self start:[NSURL URLWithString:self.URL] argv:argv_];
+    } else {
+        NSLog(@"URL = %@", self.URL);
+        [self start:[NSURL URLWithString:self.URL]];
     }
 }
 
@@ -170,40 +172,44 @@ static NSMutableArray* registeredSurfaces;
 
 - (LCMicroService *) start:(NSURL*)uri argv:(NSArray*)argv
 {
-    if (uri != nil) {
-        service_ = [[LCMicroService alloc] initWithURL:uri delegate:self];
-        [service_ setAvailableSurfaces:availableSurfaces_];
-        if (argv == nil) {
-            [service_ start];
-        } else {
-            [service_ startWithArguments:argv];
-        }
-        return service_;
+    if (uri == nil) {
+        uri = [LCMicroService devServer];
     }
-    return nil;
+    self.URL = uri.absoluteString;
+
+    service_ = [[LCMicroService alloc] initWithURL:uri delegate:self];
+    [service_ setAvailableSurfaces:availableSurfaces_];
+    if (argv == nil) {
+        [service_ start];
+    } else {
+        [service_ startWithArguments:argv];
+    }
+    return service_;
 }
 
 - (LCMicroService *) start:(NSURL*)uri arguments:(NSString*)argv, ...
 {
-    if (uri != nil) {
-        service_ = [[LCMicroService alloc] initWithURL:uri delegate:self];
-        [service_ setAvailableSurfaces:availableSurfaces_];
-        if (argv == nil) {
-            [service_ start];
-        } else {
-            NSMutableArray *argz = [[NSMutableArray alloc] initWithObjects:argv, nil];
-            va_list args;
-            va_start(args,argv);
-            NSString *arg;
-            while(( arg = va_arg(args, id))){
-                [argz addObject:arg];
-            }
-            va_end(args);
-            [service_ startWithArguments:argz];
-        }
-        return service_;
+    if (uri == nil) {
+        uri = [LCMicroService devServer];
     }
-    return nil;
+    self.URL = uri.absoluteString;
+
+    service_ = [[LCMicroService alloc] initWithURL:uri delegate:self];
+    [service_ setAvailableSurfaces:availableSurfaces_];
+    if (argv == nil) {
+        [service_ start];
+    } else {
+        NSMutableArray *argz = [[NSMutableArray alloc] initWithObjects:argv, nil];
+        va_list args;
+        va_start(args,argv);
+        NSString *arg;
+        while(( arg = va_arg(args, id))){
+            [argz addObject:arg];
+        }
+        va_end(args);
+        [service_ startWithArguments:argz];
+    }
+    return service_;
 }
 
 - (LCMicroService *) start:(NSURL*)uri
@@ -223,7 +229,6 @@ static NSString* createPromiseObject =
 - (JSValue*) bind:(JSContext*)context surface:(NSString*)canonicalSurface config:(JSValue*)config
 {
     JSValue* promiseObj = [context evaluateScript:createPromiseObject];
-    context[@"GLOBAL"] = context[@"global"];
     @try {
         if (boundSurfaces_ && [[boundSurfaces_ allKeys] containsObject:canonicalSurface]) {
             // This surface is already bound or in the process of binding.  Don't do it again.

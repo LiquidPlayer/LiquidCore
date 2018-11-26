@@ -155,6 +155,22 @@
 + (void) uninstall:(NSURL* _Nonnull)serviceURI;
 
 /**
+ Generates a URL for fetching from a development server on the loopback address (localhost).
+ @param fileName The name of the bundled javascript file to fetch (default: liquid.js)
+ @param port The server's port (default: 8082)
+ @return A service URL for use in the `LCMicroService` constructor
+ */
++ (NSURL *) devServer:(NSString* _Nullable)fileName port:(NSNumber* _Nullable)port;
+
+/**
+ Generates a URL for fetching from a development server on the loopback address (localhost).
+ Assumes the entry js file is `liquid.js` and is served from port 8082 on the emulator's host
+ machine.
+ @return A service URL for use in the `LCMicroService` constructor
+ */
++ (NSURL *) devServer;
+
+/**
  Creates a new instance of the micro service referenced by `serviceURI`.
  @param serviceURI  The URI (can be a network URL or local file/resource) of the micro service
  code
