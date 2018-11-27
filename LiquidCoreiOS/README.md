@@ -238,7 +238,7 @@ LiquidCore.emit( 'ready' )
 Finally, you can now run your development server.
 
 ```
-$ npm start server
+$ npm run server
 ```
 
 This will fire off a server built on the [metro bundler](https://facebook.github.io/metro/en/).  Metro does everything we need and more, so if you've used the old `liquidserver` in the past, this replaces that.  Anyway, congratulations, you just created a micro service.  You can test that it is working correctly by navigating to
