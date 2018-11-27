@@ -1,18 +1,16 @@
 The LiquidCore Project (iOS)
 ----------------------------
 
-LiquidCore provides an environment for developers to create native mobile micro apps in Javascript that can in turn be embedded into _other_ apps.  Think: native `<iframe>` for mobile apps.  A LiquidCore micro app is simply a [Node.js] module that can be served from the cloud, and therefore, like in a webpage, it can be modified server-side and instantly updated on all mobile devices.
+LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system and native MySQL support.
 
 Version
 -------
-[0.5.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.0)
-
-**Note:** Version 0.5.0 is the very first iOS release and required a significant amount of effort to simulate the V8 API on top of JavaScriptCore. As such, it is unstable and buggy. Use it at your own risk and ideally if you are willing to help me debug it.
+[0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1)
 
 The framework is distributed through [Carthage](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application).
 
 1. Install Carthage as described [here](https://github.com/Carthage/Carthage/blob/master/README.md#installing-carthage).
-1. Create a [Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile) that includes the `LiquidCore` framework: ```git "git@github.com:LiquidPlayer/LiquidCore.git" ~> 0.5.0```
+1. Create a [Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile) that includes the `LiquidCore` framework: ```git "git@github.com:LiquidPlayer/LiquidCore.git" ~> 0.5.1```
 1. Run `carthage update`. This will fetch dependencies into a [Carthage/Checkouts](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#carthagecheckouts) folder, then build each one or download a pre-compiled framework.
 1. On your application targets’ _General_ settings tab, in the “Linked Frameworks and Libraries” section, drag and drop `LiquidCore.framework` from the [Carthage/Build](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#carthagebuild) folder on disk.
 1. On your application targets’ _Build Phases_ settings tab, click the _+_ icon and choose _New Run Script Phase_. Create a Run Script in which you specify your shell (ex: `/bin/sh`), add the following contents to the script area below the shell:
@@ -36,13 +34,14 @@ The framework is distributed through [Carthage](https://github.com/Carthage/Cart
 
 API Documentation
 -----------------
-[Version 0.5.0](https://liquidplayer.github.io/LiquidCoreiOS/0.5.0/index.html)
+[Version 0.5.1](https://liquidplayer.github.io/LiquidCoreiOS/0.5.1/index.html)
 
 # Table of Contents
 
 1. [Use Cases](#use-cases)
-2. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
-3. [License](#license)
+2. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
+3. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
+4. [License](#license)
 
 # Use Cases
 
@@ -76,9 +75,8 @@ LCMicroService *service = [[LCMicroService alloc] initWithURL:url];
 [service start];
 ```
 
-
-The service URI can either refer to a server URL or a local resource (`NSURL *url = [[NSBundle mainBundle]
-    URLForResource: @"somefile" withExtension:@"js"];`).  LiquidCore is designed to primarily use remote URLs, as dynamic updates are an important value proposition, but local resources are supported for both debugging and/or backup (e.g. as a factory preset if the network is not available).
+The service URI can either refer to a server URL or a local resource (e.g. `NSURL *url = [[NSBundle mainBundle]
+    URLForResource: @"somefile" withExtension:@"js"];`).  LiquidCore is designed to primarily use remote URLs, as dynamic updates are an important value proposition, but local resources are also supported.
 
 A micro service can communicate with the host app once the Node.js environment is set up.  This can be determined by specifying an `LCMicroServiceDelegate` in the `LCMicroService` constructor:
 
@@ -89,7 +87,7 @@ let service = LCMicroService(url: url!, delegate:self)
 service?.start()
 
 ...
-func onStart(_ service: LCMicroService!, synchronizer: LCSynchronizer?) {
+func onStart(_ service: LCMicroService!) {
     // .. The environment is live, but the startup JS code (from the URI)
     // has not been executed yet.
 }
@@ -103,7 +101,7 @@ LCMicroService *service = [[LCMicroService alloc] initWithURL:url delegate:self]
 
 ...
 
-- (void) onStart:(LCMicroService*)service synchronizer:(LCSynchronizer* _Nullable)synchronizer
+- (void) onStart:(LCMicroService*)service
 {
     // .. The environment is live, but the startup JS code (from the URI)
     // has not been executed yet.
@@ -172,12 +170,14 @@ LiquidCore creates a convenient virtual file system so that instances of micro s
 
 ## The Micro App
 
+**Important Notice:** The Micro App concept is being completely re-thought.  In version 0.6.0, `LiquidView` will disappear from LiquidCore and be reborn in a separate project built on top of LiquidCore.  The goal is to keep LiquidCore focused on just providing a fast, secure Node VM for mobile devices.  The UI will reappear in a project called **_caraml_**. Stay tuned.
+
 There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
 
 There are two surfaces so far:
 
-1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  The `ConsoleSurface` is included in the LiquidCore framework.  Run the [`NodeConsole`](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreiOS/NodeConsole) app to see it in action.
-2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/react-native).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.  This is a fork of the React Native project that has modifications to allow it to run on LiquidCore.  It is very experimental at this point and I haven't written any documentation yet.  But it does work.  **Edit: This is an old build of RN and only works(ed?) on Android.  I will be updating for both Android and iOS shortly.**
+1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  Run the [NodeConsole](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreAndroid/Tests/NodeConsole) app under the `Tests` directory to see it in action.
+2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/ReactNativeSurface).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.
 
 There are other surfaces under consideration, including:
 
@@ -187,7 +187,7 @@ There are other surfaces under consideration, including:
 
 Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
 
-### "Hallo, die Weld!" Micro Service Tutorial
+# "Hallo, die Weld!" Micro Service Tutorial
 
 #### Prerequisites
 
@@ -198,19 +198,22 @@ Eventually, we would like to have virtual/augmented reality surfaces, as well as
 
 To use a micro service, you need two things: the micro service code, and a host app.
 
-We will start by creating a very simple micro service, which does nothing more than send a welcome message to the host.  This will be served from a machine on our network.  Start by creating a working directory somewhere.
+We will start by creating a very simple micro service, which does nothing more than send a welcome message to the host.  This will be served from a machine on our network.  Start by installing the command-line interface:
 
 ```
-$ mkdir ~/helloworld
-$ cd ~/helloworld
+$ npm install -g liquidcore-cli
 ```
 
-Then, install the LiquidCore server (aptly named _LiquidServer_) from `npm`:
+Next, generate a project called `helloworld` using the tool:
+
 ```
-$ npm install -g liquidserver
+$ liquidcore init helloworld
+$ cd helloworld && npm install
 ```
 
-Now let's create a micro service.  Create a file in the `~/helloworld` directory called `service.js` and fill it with the following contents:
+This will generate a small Hello World project for you.  We are going to change it a bit, but the important thing is that this sets everything up correctly and provides you with some nice features like a development server and production bundler.
+
+Once installation has completed, edit the file `index.js` in your `helloworld` directory and replace its contents with the following:
 
 ```javascript
 /* Hello, World! Micro Service */
@@ -232,37 +235,14 @@ LiquidCore.on( 'ping', function() {
 LiquidCore.emit( 'ready' )
 ```
 
-Next, let's set up a manifest file.  Don't worry too much about this right
-now.  Basically, the manifest allows us to serve different versions based
-on the capabilities/permissions given by the host.  But for our simple example,
-we will serve the same file to any requestor.  Create a file in the same
-directory named `service.manifest`:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "service.js"
-       }
-   ]
-}
-```
-
-This tells LiquidServer that when a request comes in for `service.js`, it should
-serve our `service.js` file.  This may seem dumb, but there are other useful attributes
-which can be set.  For our purposes, though, they are not yet needed.
-
-You can now run your server.  Choose some port (say, 8080), or LiquidServer will create
-one for you:
+Finally, you can now run your development server.
 
 ```
-$ liquidserver 8080
+$ npm start server
 ```
 
-You should now see the message, `Listening on port 8080`.  Congratulations, you just
-created a micro service.  You can test that it is working correctly by navigating to
-`http://localhost:8080/service.js` in your browser.  You should see the contents of
-`service.js` that you just created with some wrapper code around it.  The wrapper is simply
+This will fire off a server built on the [metro bundler](https://facebook.github.io/metro/en/).  Metro does everything we need and more, so if you've used the old `liquidserver` in the past, this replaces that.  Anyway, congratulations, you just created a micro service.  You can test that it is working correctly by navigating to
+`http://localhost:8082/liquid.bundle?platform=ios` in your browser.  You should be able to find the contents of `index.js` that you just created with some additional wrapper code.  The wrapper is simply
 to allow multiple Node.js modules to be packed into a single file.  If you were to
 `require()` some other module, that module and its dependencies would get wrapped into this
 single file.
@@ -324,7 +304,7 @@ class ViewController: UIViewController {
 
 ```
 
-You now have a basic app that does very little.  Go ahead and run it in your emulator.
+You now have a basic app that does very little.  Go ahead and run it in your simulator.
 You should see a white background with a message that says "Hello World!" and a button below it that says "Sprechen Sie Deutsch".  This is just a simple Hello World app.  We are going to teach it to speak German by using our LiquidCore micro service.
 
 Now it is time to connect LiquidCore.  First, you must add the framework.  Follow the instructions at the top of the file for this.  The first time you run `carthage update`, it will take a long time as it needs to clone the entire repo.  But after the first time, it should be quicker.  Everything should continue working the same.  Once this is done, re-run your app.  It should continue working as before.
@@ -335,8 +315,6 @@ Now, let's connect our button to the micro service.  Edit `ViewController.swift`
 import UIKit
 import LiquidCore
 
-let serverAddr = "192.168.21.113:8080" // <-- CHANGE THIS TO YOUR SERVER'S ADDRESS!
-
 class ViewController: UIViewController, LCMicroServiceDelegate, LCMicroServiceEventListener {
 ```
 
@@ -346,12 +324,12 @@ Now, replace the `onTouch()` function with the following:
 
 ```swift
     @objc func onTouch(sender:UIButton!) {
-        let url = URL(string:"http://" + serverAddr + "/service.js")
+        let url = LCMicroService.devServer()
         let service = LCMicroService(url: url!, delegate: self)
         service?.start()
     }
     
-    func onStart(_ service: LCMicroService!, synchronizer: LCSynchronizer?) {
+    func onStart(_ service: LCMicroService!) {
         service.addEventListener("ready", listener: self)
         service.addEventListener("pong", listener: self)
     }
@@ -368,9 +346,9 @@ Now, replace the `onTouch()` function with the following:
     }
  ```
 
-Again, make sure you change `serverAddr` to your server's address.  Now, restart the app and then click the button.  The "Hello World" message should change to German.  You have successfully connected a micro service to a host app!
+Now, restart the app and then click the button.  The "Hello World" message should change to German.  You have successfully connected a micro service to a host app!
 
-To demonstrate the instant update feature, leave the app and server running.  Now, edit `service.js` on your server machine to respond with a different message and then save:
+To demonstrate the instant update feature, leave the app and server running.  Now, edit `index.js` on your server machine to respond with a different message and then save:
 
 ```javascript
 ...
@@ -380,76 +358,9 @@ To demonstrate the instant update feature, leave the app and server running.  No
 
 Go back to the app and press the button again.  Your message should update.
 
-That's it.  That's all there is to it.  Of course, this is an overly simplified example.  We can do other useful things, like utilizing existing Node.js modules.  To try this, create a new file named `bn.js`, and fill it with the following:
+That's it.  That's all there is to it.  Of course, this is an overly simplified example.  You have all of the capabilities of Node.js at your disposal.
 
-```javascript
-var BigNumber = require('bignumber.js')
-
-setInterval(function() {}, 1000)
-
-LiquidCore.on( 'ping', function() {
-    var x = new BigNumber(1011, 2)          // "11"
-    var y = new BigNumber('zz.9', 36)       // "1295.25"
-    var z = x.plus(y)                       // "1306.25"
-    LiquidCore.emit( 'pong', { message: '' + x + ' + ' + y + ' = ' + z } )
-    process.exit(0)
-})
-
-LiquidCore.emit( 'ready' )
-```
-
-We will now be using the [BigNumber] module.  Be sure to install it first:
-
-```
-% npm install bignumber.js
-```
-
-You will also need the manifest file, `bn.manifest` in the same directory:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "bn.js"
-       }
-   ]
-}
-```
-
-Now navigate to `http://localhost:8080/bn.js` in your browser and you should now see that the `bignumber.js` module has also been wrapped.
-
-In your Hallo, die Weld app, change the following line:
-```swift
-let url = URL(string:"http://" + serverAddr + "/service.js")
-```
-to:
-```swift
-let url = URL(string:"http://" + serverAddr + "/bn.js")
-```
-
-Then restart the app.  You should now see an equation that utilized the module when you click the button.
-
-Ok, one last little trick.  Let's modify the `bn.manifest` file to include a transform.  Replace with this:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "bn.js",
-           "transforms": [ "uglifyify" ]
-       }
-   ]
-}
-```
-
-You will need to clear the server cache, so simply delete the `.lib` directory:
-
-```
-% rm -rf ~/helloworld/.lib
-```
-
-And then restart the server.  Now when you navigate to `http://localhost:8080/bn.js`, you will see that the code has been minified in order to save space.  The manifest file can do a bunch of things, but we'll save that for later as it is still in its infancy.
-
+A quick note about the `LCMicroService.devServer()`: this generates convenience URL which points to the loopback address (`localhost`) on iOS, which is used to serve the simulator from the host machine.  This won't work on actual hardware.  You would need to replace this with an actual URL.  `LCMicroService.devServer()` assumes the entry file is named `liquid.js` and the server is running on port 8082.  Both of these assumptions can be changed by providing arguments, e.g. `LCMicroService.devServer(fileName:"another_file.bundle", port:8888)` would generate a URL to fetch a bundle with an entry point of `another_file.js` on port 8888. 
 
 Building the LiquidCore iOS framework
 ------------------------------------

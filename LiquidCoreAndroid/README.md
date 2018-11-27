@@ -1,25 +1,26 @@
 The LiquidCore Project
 ----------------------
 
-LiquidCore provides an environment for developers to create native mobile micro apps in Javascript that can in turn be embedded into _other_ apps.  Think: native `<iframe>` for mobile apps.  A LiquidCore micro app is simply a [Node.js] module that can be served from the cloud, and therefore, like in a webpage, it can be modified server-side and instantly updated on all mobile devices.
+LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system and native MySQL support.
 
 LiquidCore also provides a convenient way for Android developers to [execute raw JavaScript](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine) inside of their apps, as iOS developers can already do natively with JavaScriptCore.
 
 Version
 -------
-[0.5.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.5.0)
+[0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.5.1)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 Javadocs
 --------
-[Version 0.5.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.5.0/index.html)
+[Version 0.5.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.5.1/index.html)
 
 # Table of Contents
 
 1. [Use Cases](#use-cases)
-2. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
-3. [License](#license)
+2. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
+3. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
+4. [License](#license)
 
 # Use Cases
 
@@ -40,7 +41,7 @@ MicroService service = new MicroService(androidContext,
 service.start();
 ```
 
-The service URI can either refer to a server URL or a local Android resource (e.g. `android.resource://com.example.myapp/raw/some_js_file`, where `some_js_file.js` resides in `res/raw/some_js_file.js` -- note that the `.js` is omitted from the URI when using an Android resource).  LiquidCore is designed to primarily use remote URLs, as dynamic updates are an important value proposition, but local resources are supported for both debugging and/or backup (e.g. as a factory preset if the network is not available).
+The service URI can either refer to a server URL or a local Android resource. LiquidCore is designed to primarily use remote URLs, as dynamic updates are an important value proposition, but local resources are also supported.  For example, `android.resource://com.example.myapp/raw/some_js_file`, where `some_js_file.js` resides in `res/raw/some_js_file.js` (note that the `.js` is omitted from the URI when using an Android resource).
 
 A micro service can communicate with the host app once the Node.js environment is set up.  This can be determined by adding a `ServiceStartListener` in the `MicroService` constructor:
 
@@ -50,7 +51,7 @@ MicroService service = new MicroService(
     new URI("http://my.server.com/path/to/code.js"),
     new MicroService.StartServiceListener() {
         @Override
-        public void onStart(MicroService service, Synchronizer synchronizer) {
+        public void onStart(MicroService service) {
             // .. The environment is live, but the startup JS code (from the URI)
             // has not been executed yet.
         }
@@ -103,12 +104,14 @@ LiquidCore creates a convenient virtual file system so that instances of micro s
 
 ## The Micro App
 
+**Important Notice:** The Micro App concept is being completely re-thought.  In version 0.6.0, `LiquidView` will disappear from LiquidCore and be reborn in a separate project built on top of LiquidCore.  The goal is to keep LiquidCore focused on just providing a fast, secure Node VM for mobile devices.  The UI will reappear in a project called **_caraml_**. Stay tuned.
+
 There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
 
 There are two surfaces so far:
 
 1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  Run the [NodeConsole](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreAndroid/Tests/NodeConsole) app under the `Tests` directory to see it in action.
-2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/react-native).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.  This is a fork of the React Native project that has modifications to allow it to run on LiquidCore.  It is very experimental at this point and has likely atrophied.  But it will be working again soon.
+2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/ReactNativeSurface).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.
 
 There are other surfaces under consideration, including:
 
@@ -118,7 +121,7 @@ There are other surfaces under consideration, including:
 
 Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
 
-### "Hallo, die Weld!" Micro Service Tutorial
+# "Hallo, die Weld!" Micro Service Tutorial
 
 #### Prerequisites
 
@@ -129,19 +132,22 @@ Eventually, we would like to have virtual/augmented reality surfaces, as well as
 
 To use a micro service, you need two things: the micro service code, and a host app.
 
-We will start by creating a very simple micro service, which does nothing more than send a welcome message to the host.  This will be served from a machine on our network.  Start by creating a working directory somewhere.
+We will start by creating a very simple micro service, which does nothing more than send a welcome message to the host.  This will be served from a machine on our network.  Start by installing the command-line interface:
 
 ```
-$ mkdir ~/helloworld
-$ cd ~/helloworld
+$ npm install -g liquidcore-cli
 ```
 
-Then, install the LiquidCore server (aptly named _LiquidServer_) from `npm`:
+Next, generate a project called `helloworld` using the tool:
+
 ```
-$ npm install -g liquidserver
+$ liquidcore init helloworld
+$ cd helloworld && npm install
 ```
 
-Now let's create a micro service.  Create a file in the `~/helloworld` directory called `service.js` and fill it with the following contents:
+This will generate a small Hello World project for you.  We are going to change it a bit, but the important thing is that this sets everything up correctly and provides you with some nice features like a development server and production bundler.
+
+Once installation has completed, edit the file `index.js` in your `helloworld` directory and replace its contents with the following:
 
 ```javascript
 /* Hello, World! Micro Service */
@@ -163,37 +169,14 @@ LiquidCore.on( 'ping', function() {
 LiquidCore.emit( 'ready' )
 ```
 
-Next, let's set up a manifest file.  Don't worry too much about this right
-now.  Basically, the manifest allows us to serve different versions based
-on the capabilities/permissions given by the host.  But for our simple example,
-we will serve the same file to any requestor.  Create a file in the same
-directory named `service.manifest`:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "service.js"
-       }
-   ]
-}
-```
-
-This tells LiquidServer that when a request comes in for `service.js`, it should
-serve our `service.js` file.  This may seem dumb, but there are other useful attributes
-which can be set.  For our purposes, though, they are not yet needed.
-
-You can now run your server.  Choose some port (say, 8080), or LiquidServer will create
-one for you:
+Finally, you can now run your development server.
 
 ```
-$ liquidserver 8080
+$ npm start server
 ```
 
-You should now see the message, `Listening on port 8080`.  Congratulations, you just
-created a micro service.  You can test that it is working correctly by navigating to
-`http://localhost:8080/service.js` in your browser.  You should see the contents of
-`service.js` that you just created with some wrapper code around it.  The wrapper is simply
+This will fire off a server built on the [metro bundler](https://facebook.github.io/metro/en/).  Metro does everything we need and more, so if you've used the old `liquidserver` in the past, this replaces that.  Anyway, congratulations, you just created a micro service.  You can test that it is working correctly by navigating to
+`http://localhost:8082/liquid.bundle?platform=android` in your browser.  You should be able to find the contents of `index.js` that you just created with some additional wrapper code.  The wrapper is simply
 to allow multiple Node.js modules to be packed into a single file.  If you were to
 `require()` some other module, that module and its dependencies would get wrapped into this
 single file.
@@ -266,12 +249,10 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.5.0'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.5.1'
 }
 
 ```
-Note that `implementation` should be replaced with `compile` if you are using an older buildtools version.
-
 Go ahead and sync to make sure the library downloads and links properly.  Run the app again to ensure that all is good.
 
 Now, let's connect our button to the micro service.  Edit `MainActivity.java` in our app, and replace the contents with the following:
@@ -297,9 +278,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public class MainActivity extends AppCompatActivity {
-
-    // IMPORTANT: Replace this with YOUR server's address or name
-    private final String serverAddr = "192.168.1.152:8080";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -344,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
         // environment is set up
         final ServiceStartListener startListener = new ServiceStartListener() {
             @Override
-            public void onStart(MicroService service, Synchronizer synchronizer) {
+            public void onStart(MicroService service) {
                 service.addEventListener("ready", readyListener);
                 service.addEventListener("pong", pongListener);
             }
@@ -355,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
-                    URI uri = new URI("http://"+serverAddr+"/service.js");
+                    URI uri = MicroService.DevServer();
                     MicroService service = new MicroService(MainActivity.this, uri, startListener);
                     service.start();
                 } catch (URISyntaxException e) {
@@ -367,9 +345,9 @@ public class MainActivity extends AppCompatActivity {
 }
 ```
 
-Make sure you change `serverAddr` to your server's address.  Now, restart the app and then click the button.  The "Hello World" message should change to German.  You have successfully connected a micro service to a host app!
+Now, restart the app and then click the button.  The "Hello World" message should change to German.  You have successfully connected a micro service to a host app!
 
-To demonstrate the instant update feature, leave the app and server running.  Now, edit `service.js` on your server machine to respond with a different message and then save:
+To demonstrate the instant update feature, leave the app and server running.  Now, edit `index.js` on your server machine to respond with a different message and then save:
 
 ```javascript
 ...
@@ -379,83 +357,12 @@ To demonstrate the instant update feature, leave the app and server running.  No
 
 Go back to the app and press the button again.  Your message should update.
 
-That's it.  That's all there is to it.  Of course, this is an overly simplified example.  We can do other useful things, like utilizing existing Node.js modules.  To try this, create a new file named `bn.js`, and fill it with the following:
+That's it.  That's all there is to it.  Of course, this is an overly simplified example.  You have all of the capabilities of Node.js at your disposal.
 
-```javascript
-var BigNumber = require('bignumber.js')
-
-setInterval(function() {}, 1000)
-
-LiquidCore.on( 'ping', function() {
-    var x = new BigNumber(1011, 2)          // "11"
-    var y = new BigNumber('zz.9', 36)       // "1295.25"
-    var z = x.plus(y)                       // "1306.25"
-    LiquidCore.emit( 'pong', { message: '' + x + ' + ' + y + ' = ' + z } )
-    process.exit(0)
-})
-
-LiquidCore.emit( 'ready' )
-```
-
-We will now be using the [BigNumber] module.  Be sure to install it first:
-
-```
-% npm install bignumber.js
-```
-
-You will also need the manifest file, `bn.manifest` in the same directory:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "bn.js"
-       }
-   ]
-}
-```
-
-Now navigate to `http://localhost:8080/bn.js` in your browser and you should now see that the `bignumber.js` module has also been wrapped.
-
-In your Hallo, die Weld app, change the following line:
-```java
-URI uri = new URI("http://"+serverAddr+"/service.js");
-```
-to:
-```java
-URI uri = new URI("http://"+serverAddr+"/bn.js");
-```
-
-Then restart the app.  You should now see an equation that utilized the module when you click the button.
-
-Ok, one last little trick.  Let's modify the `bn.manifest` file to include a transform.  Replace with this:
-
-```javascript
-{
-   "configs": [
-       {
-           "file": "bn.js",
-           "transforms": [ "uglifyify" ]
-       }
-   ]
-}
-```
-
-You will need to clear the server cache, so simply delete the `.lib` directory:
-
-```
-% rm -rf ~/helloworld/.lib
-```
-
-And then restart the server.  Now when you navigate to `http://localhost:8080/bn.js`, you will see that the code has been minified in order to save space.  The manifest file can do a bunch of things, but we'll save that for later as it is still in its infancy.
-
+A quick note about the `MicroService.DevServer()`: this generates convenience URL which points to the loopback address (`10.0.2.2`) on Android, which is used to serve the emulator from the host machine.  This won't work on actual hardware.  You would need to replace this with an actual URL.  `MicroService.DevServer()` assumes the entry file is named `liquid.js` and the server is running on port 8082.  Both of these assumptions can be changed by providing arguments, e.g. `MicroService.DevServer("another_file.bundle", 8888)` would generate a URL to fetch a bundle with an entry point of `another_file.js` on port 8888. 
 
 Building the LiquidCore Android library
 ---------------------------------------
-
-**IMPORTANT**: LiquidCore requires `gcc` because node.js version 8.9.3 requires it.  Building with
-`clang` won't work.  Unfortunately, Google has removed `gcc` support from the latest NDK (r18).  You will
-need to use r17c, which you can get [here](https://developer.android.com/ndk/downloads/older_releases).
 
 If you are interested in building the library directly and possibly contributing, you must
 do the following:
@@ -476,7 +383,7 @@ add the following to your app's `build.gradle`:
     }
 
     dependencies {
-        implementation(name:'LiquidCore-release', ext:'aar') // 'compile' on older buildtools versions
+        implementation(name:'LiquidCore-release', ext:'aar')
     }
     
 ##### Note
