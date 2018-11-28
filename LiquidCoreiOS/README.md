@@ -87,7 +87,7 @@ let service = LCMicroService(url: url!, delegate:self)
 service?.start()
 
 ...
-func onStart(_ service: LCMicroService!) {
+func onStart(_ service: LCMicroService) {
     // .. The environment is live, but the startup JS code (from the URI)
     // has not been executed yet.
 }
@@ -122,7 +122,7 @@ On the iOS side, the host app can listen for events through the `LCMicroServiceE
 service.addEventListener("my_event", listener: self)
 
 ...
-func onEvent(_ service: LCMicroService!, event: String!, payload: Any?) {
+func onEvent(_ service: LCMicroService, event: String, payload: Any?) {
     var p = (payload as! Dictionary<String,AnyObject>)
     NSLog(format:"Event: %@: %@", args:event, p["foo"]);
     // logs: Event:my_event: hello, world
@@ -329,12 +329,12 @@ Now, replace the `onTouch()` function with the following:
         service?.start()
     }
     
-    func onStart(_ service: LCMicroService!) {
+    func onStart(_ service: LCMicroService) {
         service.addEventListener("ready", listener: self)
         service.addEventListener("pong", listener: self)
     }
     
-    func onEvent(_ service: LCMicroService!, event: String!, payload: Any?) {
+    func onEvent(_ service: LCMicroService, event: String, payload: Any?) {
         if event == "ready" {
             service.emit("ping")
         } else if event == "pong" {
