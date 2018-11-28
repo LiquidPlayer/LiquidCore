@@ -332,13 +332,9 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    URI uri = MicroService.DevServer();
-                    MicroService service = new MicroService(MainActivity.this, uri, startListener);
-                    service.start();
-                } catch (URISyntaxException e) {
-                    e.printStackTrace();
-                }
+                URI uri = MicroService.DevServer();
+                MicroService service = new MicroService(MainActivity.this, uri, startListener);
+                service.start();
             }
         });
     }
