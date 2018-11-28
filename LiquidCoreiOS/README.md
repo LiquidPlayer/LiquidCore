@@ -318,8 +318,6 @@ import LiquidCore
 class ViewController: UIViewController, LCMicroServiceDelegate, LCMicroServiceEventListener {
 ```
 
-Make sure you change the internet address to the correct IP address or name on your network.
-
 Now, replace the `onTouch()` function with the following:
 
 ```swift
