@@ -6,7 +6,7 @@ code generation that isn't done through its own JavaScript engine, JavaScriptCor
 attempts to use other engines will get your app declined in the App Store.  Unfortunately, Node.js is deeply 
 intertwined with V8, which creates a problem.
 
-There were are 3 options:
+There were 3 options:
 
 1. Port V8 to iOS anyway.  Given that it does build for OSX, presumably it wouldn't be too hard to get it to compile and
 run.  This would allow everything to work smoothly like it does for Android.  The downside is that it would only be suitable
