@@ -9,9 +9,10 @@ For a description of how to use LiquidCore, please see the appropriate README un
 
 Version
 -------
-[0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1) 
+[0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1)
+
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
-![Downloads](https://jitpack.io/v/LiquidPlayer/LiquidCore/week.svg)
+[![Downloads](https://jitpack.io/v/LiquidPlayer/LiquidCore/week.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 
 API Documentation
 -----------------
