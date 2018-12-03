@@ -10,6 +10,7 @@ Version
 [0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.5.1)
 
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
+![Downloads](https://jitpack.io/v/LiquidPlayer/LiquidCore/week.svg)
 
 Javadocs
 --------
