@@ -18,10 +18,15 @@ Javadocs
 
 # Table of Contents
 
-1. [Use Cases](#use-cases)
-2. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
-3. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
-4. [License](#license)
+1. [Architecture](#architecture)
+2. [Use Cases](#use-cases)
+3. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
+4. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
+5. [License](#license)
+
+# Architecture
+
+![Android Architecture Diagram](https://github.com/LiquidPlayer/LiquidCore/raw/master/doc/ArchitectureAndroid.png)
 
 # Use Cases
 
