@@ -16,7 +16,7 @@
  */
 /*
  * Edited by Eric Lange for LiquidPlayer
- * Copyright (C) 2016, Eric Lange.  All Rights Reserved.
+ * Copyright (C) 2016, Eric Lange.
  */
 
 package org.liquidplayer.surface.console;

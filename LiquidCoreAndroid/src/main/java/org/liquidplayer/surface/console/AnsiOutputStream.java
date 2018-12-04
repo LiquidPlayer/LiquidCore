@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009, Progress Software Corporation and/or its 
+ * Copyright (C) 2009, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 /*
  * Edited by Eric Lange for LiquidPlayer
- * Copyright (C) 2016, Eric Lange.  All Rights Reserved.
+ * Copyright (C) 2016, Eric Lange
  */
 package org.liquidplayer.surface.console;
 

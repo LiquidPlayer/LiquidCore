@@ -1,11 +1,9 @@
-//
-//  shim.cpp
-//  LiquidCoreiOSTests
-//
-//  Created by Eric Lange on 2/10/18.
-//  Copyright © 2018 LiquidPlayer. All rights reserved.
-//
-
+/*
+ * Copyright (c) 2018 Eric Lange
+ *
+ * Distributed under the MIT License.  See LICENSE.md at
+ * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
+ */
 #include "V82JSC.h"
 #include "JSObjectRefPrivate.h"
 
