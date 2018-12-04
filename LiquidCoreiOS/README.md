@@ -1,7 +1,7 @@
 The LiquidCore Project (iOS)
 ----------------------------
 
-LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system and native MySQL support.
+LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system and native SQLite3 support.
 
 Version
 -------
