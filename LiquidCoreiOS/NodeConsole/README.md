@@ -51,4 +51,4 @@ License
 
 Copyright (c) 2014 - 2018 LiquidPlayer
 
-Distributed under the MIT License.  See [LICENSE.md](LICENSE.md) for terms and conditions.
+Distributed under the MIT License.  See [LICENSE.md](https://github.com/LiquidPlayer/LiquidCore/blob/master/LICENSE.md) for terms and conditions.
