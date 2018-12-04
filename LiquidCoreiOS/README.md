@@ -7,6 +7,8 @@ Version
 -------
 [0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1)
 
+[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+
 The framework is distributed through [Carthage](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application).
 
 1. Install Carthage as described [here](https://github.com/Carthage/Carthage/blob/master/README.md#installing-carthage).
