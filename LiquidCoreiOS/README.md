@@ -21,13 +21,13 @@ The framework is distributed through [Carthage](https://github.com/Carthage/Cart
     /usr/local/bin/carthage copy-frameworks
     ```
 
-1. Add the paths to the framework under “Input Files":
+   Add the paths to the framework under “Input Files":
 
     ```
     $(SRCROOT)/Carthage/Build/iOS/LiquidCore.framework
     ```
 
-1. Add the paths to the copied framework to the “Output Files”:
+   Add the paths to the copied framework to the “Output Files”:
 
     ```
     $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/LiquidCore.framework
@@ -40,10 +40,15 @@ API Documentation
 
 # Table of Contents
 
-1. [Use Cases](#use-cases)
-2. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
-3. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
-4. [License](#license)
+1. [Architecture](#architecture)
+2. [Use Cases](#use-cases)
+3. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
+4. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
+5. [License](#license)
+
+# Architecture
+
+![iOS Architecture Diagram](https://github.com/LiquidPlayer/LiquidCore/raw/master/doc/ArchitectureiOS.png)
 
 # Use Cases
 
