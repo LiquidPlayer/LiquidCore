@@ -24,7 +24,7 @@
  */
 /*
  * Edits for https://github.com/LiquidPlayer
- * Copyright (c) 2016 Eric Lange.  All Rights Reserved.
+ * Copyright (c) 2016 Eric Lange.
  */
 
 #ifndef CustomGlobalObjectClassTest_h
