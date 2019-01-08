@@ -452,10 +452,12 @@ void Access(const FunctionCallbackInfo<Value>& args) {
 
   int mode = static_cast<int>(args[1]->Int32Value());
 
-  if (args[2]->IsObject()) {
-    ASYNC_CALL(access, args[2], UTF8, *path, mode);
-  } else {
-    SYNC_CALL(access, *path, *path, mode);
+  if (*path != nullptr) {
+    if (args[2]->IsObject()) {
+      ASYNC_CALL(access, args[2], UTF8, *path, mode);
+    } else {
+      SYNC_CALL(access, *path, *path, mode);
+    }
   }
 }
 
@@ -1706,6 +1708,20 @@ void GetStatValues(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(fields_array);
 }
 
+void Resolve(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+
+  if (args.Length() < 1)
+    return TYPE_ERROR("path required");
+
+  {
+    BufferValue path(env->isolate(), args[0]);
+    ASSERT_PATH(path)
+  }
+  Local<Value> resolved = fs_(env, args[0], _FS_ACCESS_RD);
+  args.GetReturnValue().Set(resolved);
+}
+
 void InitFs(Local<Object> target,
             Local<Value> unused,
             Local<Context> context,
@@ -1752,6 +1768,8 @@ void InitFs(Local<Object> target,
   env->SetMethod(target, "mkdtemp", Mkdtemp);
 
   env->SetMethod(target, "getStatValues", GetStatValues);
+
+  env->SetMethod(target, "resolve", Resolve);
 
   StatWatcher::Initialize(env, target);
 

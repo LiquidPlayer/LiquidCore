@@ -79,6 +79,7 @@ private:
     static void Abort(const FunctionCallbackInfo<Value>& args);
     static void Kill(const FunctionCallbackInfo<Value>& args);
     static void OnFatalError(const char* location, const char* message);
+    static void DLOpen(const FunctionCallbackInfo<Value>& args);
 
 private:
     Mutex node_isolate_mutex;

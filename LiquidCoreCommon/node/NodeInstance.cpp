@@ -590,6 +590,79 @@ void NodeInstance::NotifyStart(JSContextRef ctx, JSContextGroupRef group)
 }
 #endif
 
+namespace node {
+    extern node_module *modpending;
+    extern node_module *modlist_addon;
+}
+
+void NodeInstance::DLOpen(const FunctionCallbackInfo<Value>& args) {
+    Environment* env = Environment::GetCurrent(args);
+
+    if (args.Length() != 2) {
+        env->ThrowError("process.dlopen takes exactly 2 arguments.");
+        return;
+    }
+
+    Local<Object> module = args[0]->ToObject(env->isolate());  // Cast
+    node::Utf8Value filename(env->isolate(), args[1]);  // Cast
+
+    // Objects containing v14 or later modules will have registered themselves
+    // on the pending list.  Activate all of them now.  At present, only one
+    // module per object is supported.
+    node_module* const mp = modpending;
+    modpending = nullptr;
+
+    if (mp == nullptr) {
+        env->ThrowError("Module did not self-register.");
+        return;
+    }
+    if (mp->nm_version == -1) {
+        if (env->EmitNapiWarning()) {
+            ProcessEmitWarning(env, "N-API is an experimental feature and could "
+                                    "change at any time.");
+        }
+    } else if (mp->nm_version != NODE_MODULE_VERSION) {
+        char errmsg[1024];
+        snprintf(errmsg,
+                 sizeof(errmsg),
+                 "The module '%s'"
+                 "\nwas compiled against a different Node.js version using"
+                 "\nNODE_MODULE_VERSION %d. This version of Node.js requires"
+                 "\nNODE_MODULE_VERSION %d. Please try re-compiling or "
+                 "re-installing\nthe module (for instance, using `npm rebuild` "
+                 "or `npm install`).",
+                 *filename, mp->nm_version, NODE_MODULE_VERSION);
+
+        // NOTE: `mp` is allocated inside of the shared library's memory, calling
+        // `uv_dlclose` will deallocate it
+        env->ThrowError(errmsg);
+        return;
+    }
+    if (mp->nm_flags & NM_F_BUILTIN) {
+        env->ThrowError("Built-in module self-registered.");
+        return;
+    }
+
+    mp->nm_dso_handle = 0; //lib.handle;
+    mp->nm_link = modlist_addon;
+    modlist_addon = mp;
+
+    Local<String> exports_string = env->exports_string();
+    Local<Object> exports = module->Get(exports_string)->ToObject(env->isolate());
+
+    if (mp->nm_context_register_func != nullptr) {
+        mp->nm_context_register_func(exports, module, env->context(), mp->nm_priv);
+    } else if (mp->nm_register_func != nullptr) {
+        mp->nm_register_func(exports, module, mp->nm_priv);
+    } else {
+        env->ThrowError("Module has no declared entry point.");
+        return;
+    }
+
+    // Tell coverity that 'handle' should not be freed when we return.
+    // coverity[leaked_storage]
+}
+
 inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
                  int argc, const char* const* argv,
                  int exec_argc, const char* const* exec_argv) {
@@ -615,8 +688,8 @@ inline int NodeInstance::StartInstance(void* group_, IsolateData* isolate_data,
   env.SetMethod(process, "chdir", Chdir);
   env.SetMethod(process, "cwd", Cwd);
 
-  // Remove process.dlopen().  Nothing good can come of it in this environment.
-  CHECK(process->Delete(env.context(), String::NewFromUtf8(isolate, "dlopen")).ToChecked());
+  // Override DLOpen with our own implementation
+  env.SetMethod(process, "dlopen", DLOpen);
 
   // Override exit() and abort() so they don't nuke the app
   env.SetMethod(process, "reallyExit", Exit);

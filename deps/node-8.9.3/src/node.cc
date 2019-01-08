@@ -176,11 +176,11 @@ static int v8_thread_pool_size = v8_default_thread_pool_size;
 static bool prof_process = false;
 static bool v8_is_profiling = false;
 static bool node_is_initialized = false;
-static node_module* modpending;
+/*static*/ node_module* modpending;
 static node_module* modlist_builtin;
 static node_module* modlist_internal;
 static node_module* modlist_linked;
-static node_module* modlist_addon;
+/*static*/ node_module* modlist_addon;
 static bool trace_enabled = false;
 static std::string trace_enabled_categories;  // NOLINT(runtime/string)
 static bool abort_on_uncaught_exception = false;

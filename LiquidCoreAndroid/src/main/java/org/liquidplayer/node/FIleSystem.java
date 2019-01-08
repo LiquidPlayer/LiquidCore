@@ -366,15 +366,14 @@ class FileSystem extends JSObject {
         }
 
         JSBuilder js = new JSBuilder();
-        js.append("fs_.aliases_={};fs_.access_={};");
+        js.append("fs_.aliases_={};fs_.access_={};fs_.require=global.require;");
 
         setUp(js, mediaPermissionsMask);
-
         js.append("fs_.fs=function(file){");
         js.append(
                 "if (!file.startsWith('/')) { file = ''+this.cwd+'/'+file; }" +
-                "try { file = require('path').resolve(file); } catch (e) {console.log(e);}"+
-                "var access = 0;"+
+                "try { file = fs_.require('path').resolve(file); } catch (e) {console.log(e);}"+
+                "var access = 3;"+
                 "var keys = Object.keys(this.aliases_).sort().reverse();"+
                 "for (var p=0; p<keys.length; p++) {"+
                 "    if (file.startsWith(this.aliases_[keys[p]] + '/')) {"+

@@ -15,6 +15,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSContextGroup;
+import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSON;
 import org.liquidplayer.javascript.JSObject;
@@ -28,9 +30,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -40,13 +42,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.zip.GZIPInputStream;
+
+import dalvik.system.DexFile;
+import dalvik.system.PathClassLoader;
 
 /**
  * A MicroService is the basic building block of LiquidCore.  It encapsulates the runtime
@@ -693,14 +699,97 @@ public class MicroService implements Process.EventListener {
         }
     }
 
+    private static String canon(String name) {
+        name = name.replaceAll("[^a-zA-Z0-9]", "*");
+        StringBuilder canonical = new StringBuilder();
+        boolean nextCapital = true;
+        for (int i=0; i<name.length(); i++) {
+            if (name.substring(i,i+1).equals("*")) {
+                nextCapital = true;
+            } else {
+                char ch = name.charAt(i);
+                if (nextCapital && ch >= 'a' && ch <= 'z') {
+                    ch = (char)('A' + ch - 'a');
+                }
+                nextCapital = false;
+                canonical.append(ch);
+            }
+        }
+        return canonical.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private JSValue bindings(JSContext context, String module, JSFunction require) {
+        final int fndx = module.lastIndexOf('/');
+        final String fname = module.substring(fndx+1);
+        final int endx = fname.lastIndexOf('.');
+        final String ext = (endx >= 0) ? fname.substring(endx+1) : "";
+        final String moduleName = (endx<0) ? fname : fname.substring(0,endx);
+
+        if (!("node".equals(ext))) {
+            return require.call(null,module);
+        }
+
+        Class<? extends AddOn> addOnClass = AddOn.class;
+        try {
+            Class klass = context.getClass().getClassLoader()
+                    .loadClass("org.liquidplayer.addon." + canon(moduleName));
+
+            if (AddOn.class.isAssignableFrom(klass)) {
+                addOnClass = (Class<? extends AddOn>) klass;
+                AddOn addOn = addOnClass.getConstructor(Context.class).newInstance(androidCtx);
+                addOn.register(moduleName);
+
+                context.evaluateScript("fs.writeFileSync('/home/temp/" + fname + "', '')");
+                JSValue binding = require.call(null, "/home/temp/" + fname);
+                addOn.require(binding);
+                return binding;
+            } else {
+                android.util.Log.e("LiquidCore.bindings", "Class " +
+                        klass.getCanonicalName() +
+                        " does not implement org.liquidplayer.service.AddOn");
+            }
+        } catch (JSException e) {
+            android.util.Log.e("LiquidCore.bindings", e.stack());
+        } catch (ClassNotFoundException e) {
+            android.util.Log.e("bindings", "Class org.liquidplayer.addon." + moduleName +
+                    " not found.");
+        } catch (NoSuchMethodException e) {
+            android.util.Log.e("LiquidCore AddOn", "" + addOnClass.getCanonicalName() +
+                    " must have a default constructor.");
+        } catch (IllegalAccessException e) {
+            android.util.Log.e("LiquidCore AddOn", "" + addOnClass.getCanonicalName() +
+                    " must be public.");
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
+
+        return new JSValue(context);
+    }
+
     @Override
     public void onProcessStart(Process process, final JSContext context) {
         // Create LiquidCore EventEmitter
         context.evaluateScript(
-                "class LiquidCore_ extends require('events') {}\n" +
-                "var LiquidCore = new LiquidCore_();"
+                "(()=>{\n" +
+                "   class LiquidCore extends require('events') {}\n" +
+                "   global.LiquidCore = new LiquidCore();\n" +
+                "   return global.LiquidCore;" +
+                "})()"
         );
         emitter = context.property("LiquidCore").toObject();
+
+        // Override require() function to handle module binding
+        final JSValue require = context.property("require");
+        JSFunction bindings = new JSFunction(context,"bindings") {
+            @SuppressWarnings("unused") public JSValue bindings(String module) {
+                return MicroService.this.bindings(context, module, require.toFunction());
+            }
+        };
+        bindings.prototype(require);
+        context.property("require", bindings);
 
         try {
             fetchService();
@@ -722,10 +811,17 @@ public class MicroService implements Process.EventListener {
 
             // Execute code
             final String script =
-                    "new Function(require('fs').readFileSync('/home/module/" + module + "')).call(global); " +
-                    "";
-
-            context.evaluateScript(script);
+                    "(()=>{" +
+                    "  const fs = require('fs'), vm = require('vm'); " +
+                    "  (new vm.Script(fs.readFileSync('/home/module/" + module + "'), "+
+                    "     {filename: '" + module + "'} )).runInThisContext();" +
+                    "})()";
+            try {
+                context.evaluateScript(script);
+            } catch (JSException e) {
+                android.util.Log.e("JSEXCEPTION", "Unhandled exception: " + e.getError().toString());
+                android.util.Log.e("JSEXCEPTION", e.getError().stack());
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
