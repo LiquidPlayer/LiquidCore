@@ -8,6 +8,11 @@
 #import <UIKit/UIKit.h>
 #import <LiquidCore/LiquidCore.h>
 #import "Process.h"
+#import "LCAddOn.h"
+
+@interface LCAddOnFactory()
+@property (atomic, readonly, class) NSMutableDictionary *factories;
+@end
 
 @interface LCMicroService() <ProcessDelegate>
 @property (atomic, assign, readonly, class) NSMutableDictionary *serviceMap;
@@ -221,6 +226,33 @@ static NSMutableDictionary* _serviceMap = nil;
     return error;
 }
 
+- (JSValue*) bindings:(JSContext*)context
+               module:(NSString*)module
+              require:(JSValue*)require
+{
+    NSString* fname = [module lastPathComponent];
+    NSString* ext = [module pathExtension];
+    NSString* moduleName = [fname stringByDeletingPathExtension];
+    
+    if (![@"node" isEqualToString:ext]) {
+        return [require callWithArguments:@[module]];
+    }
+    
+    LCAddOnFactory *factory = LCAddOnFactory.factories[moduleName];
+    if (!factory) {
+        NSLog(@"%@ has no registered native binding.", moduleName);
+    } else {
+        id<LCAddOn> addOn = [factory createInstance];
+        [addOn register:moduleName];
+        [context evaluateScript:[NSString stringWithFormat:@"fs.writeFileSync('/home/temp/%@', '')", fname]];
+        JSValue* binding = [require callWithArguments:@[[NSString stringWithFormat:@"/home/temp/%@", fname]]];
+        [addOn require:binding];
+        return binding;
+    }
+    
+    return [JSValue valueWithUndefinedInContext:context];
+}
+
 - (void) onProcessStart:(Process*)process context:(JSContext*)context
 {
     // Create LiquidCore EventEmitter
@@ -228,6 +260,17 @@ static NSMutableDictionary* _serviceMap = nil;
      @"class LiquidCore_ extends require('events') {}\n"
      @"global.LiquidCore = new LiquidCore_();"];
     self.emitter = context[@"LiquidCore"];
+    
+    // Override require() function to handle module binding
+    JSValue* require = context[@"require"];
+    JSValue* bindings = [JSValue valueWithObject:^(NSString* module) {
+        return [self bindings:context module:module require:require];
+    } inContext:context];
+    
+    JSObjectSetPrototype([context JSGlobalContextRef],
+                         JSValueToObject([context JSGlobalContextRef], [bindings JSValueRef], 0),
+                         [require JSValueRef]);
+    context[@"require"] = bindings;
     
     @try
     {
@@ -248,8 +291,12 @@ static NSMutableDictionary* _serviceMap = nil;
         context[@"process"][@"argv"] = argv;
         
         // Execute code
-        NSString *script =
-        [NSString stringWithFormat:@"eval(String(require('fs').readFileSync('/home/module/%@')))", module_];
+        NSString *script = [NSString stringWithFormat:
+        @"(()=>{"
+        @"  const fs = require('fs'), vm = require('vm'); "
+        @"  (new vm.Script(fs.readFileSync('/home/module/%@'), "
+        @"     {filename: '%@'} )).runInThisContext();"
+        @"})()", module_, module_];
         
         [context evaluateScript:script];
     }
@@ -398,6 +445,31 @@ static NSMutableDictionary* _serviceMap = nil;
         argv_ = argv;
         self.process = [[Process alloc] initWithDelegate:self id:serviceId_ mediaAccessMask:PermissionsRW];
     }
+}
+
+@end
+
+@implementation LCAddOnFactory
+
+static NSMutableDictionary* _factories = nil;
++ (NSMutableDictionary *)factories {
+    if (_factories == nil) {
+        _factories = [[NSMutableDictionary alloc] init];
+    }
+    return _factories;
+}
+
++ (void) registerAddOnFactory:(NSString*)module factory:(LCAddOnFactory *)factory
+{
+    NSString *moduleName = [[module lastPathComponent] stringByDeletingPathExtension];
+    [LCAddOnFactory.factories setObject:factory forKey:moduleName];
+}
+
+- (id<LCAddOn>) createInstance
+{
+    @throw ([NSException exceptionWithName:@"This method must be overridden"
+                                    reason:@"Override this method to create an LCAddOn instance."
+                                  userInfo:nil]);
 }
 
 @end
