@@ -15,7 +15,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.liquidplayer.javascript.JSContext;
-import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSON;
@@ -32,7 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -42,17 +40,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-
-import dalvik.system.DexFile;
-import dalvik.system.PathClassLoader;
 
 /**
  * A MicroService is the basic building block of LiquidCore.  It encapsulates the runtime
@@ -298,7 +291,7 @@ public class MicroService implements Process.EventListener {
                             JSONArray a = new JSONArray(safeStringify.call(null, value).toString());
                             o = new JSONObject();
                             o.put("_", a);
-                        } else if (value.isObject()) {
+                        } else if (value.isObject() && !value.isDate()) {
                             o = new JSONObject(safeStringify.call(null,value).toString());
                         } else {
                             o = new JSONObject();
@@ -684,7 +677,12 @@ public class MicroService implements Process.EventListener {
             int loc = serviceURI.getPath().lastIndexOf("/");
             in = getClass().getClassLoader().getResourceAsStream(serviceURI.getPath().substring(loc+1));
         } else {
-            in = androidCtx.getContentResolver().openInputStream(Uri.parse(serviceURI.toString()));
+            if ("file".equals(scheme) && path.startsWith("/android_asset/")) {
+                // Open javascript file located in the android asset directory.
+                in = androidCtx.getAssets().open(path.substring(15));
+            } else {
+                in = androidCtx.getContentResolver().openInputStream(Uri.parse(serviceURI.toString()));
+            }
         }
         if (in != null) {
             // Write file to /home/module

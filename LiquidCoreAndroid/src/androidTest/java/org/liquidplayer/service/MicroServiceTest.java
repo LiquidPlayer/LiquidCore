@@ -14,7 +14,6 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import java.net.URI;
-import java.sql.Time;
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -221,6 +220,52 @@ public class MicroServiceTest {
         waitForService.await(10L, TimeUnit.SECONDS);
         assertEquals(123L, result);
         android.util.Log.d("Issue36Test", "Time to promise resolution is "
+                + (end.getTime() - start.getTime()) + " ms");
+        assertTrue(end.getTime() - start.getTime() < 4000);
+    }
+
+    @Test
+    public void testAndroidAssetPromise() throws Exception {
+        final CountDownLatch waitForService = new CountDownLatch(1);
+
+        final URI serverURI = URI.create("file:///android_asset/promise.js");
+
+        final MicroService promise = new MicroService(InstrumentationRegistry.getContext(), serverURI,
+                new MicroService.ServiceStartListener() {
+                    @Override
+                    public void onStart(MicroService service) {
+                        start = new Date();
+                        service.addEventListener("promise", new MicroService.EventListener() {
+                            @Override
+                            public void onEvent(MicroService service, String event, JSONObject payload) {
+                                try {
+                                    result = payload.getInt("_");
+                                    end = new Date();
+                                    service.getProcess().exit(1);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                    }
+                },
+                new MicroService.ServiceErrorListener() {
+                    @Override
+                    public void onError(MicroService service, Exception e) {
+                        android.util.Log.e("ServiceError", e.toString());
+                        waitForService.countDown();
+                    }
+                },
+                new MicroService.ServiceExitListener() {
+                    @Override
+                    public void onExit(MicroService service, Integer exitCode) {
+                        waitForService.countDown();
+                    }
+                });
+        promise.start();
+        waitForService.await(10L, TimeUnit.SECONDS);
+        assertEquals(123L, result);
+        android.util.Log.d("testAndroidAssetPromise", "Time to promise resolution is "
                 + (end.getTime() - start.getTime()) + " ms");
         assertTrue(end.getTime() - start.getTime() < 4000);
     }
