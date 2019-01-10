@@ -5,7 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 @class LCMicroService;
-@class Process;
+@class LCProcess;
 
 /**
  An `LCMicroService` may have an optional delegate to listen for events on start,
@@ -103,7 +103,7 @@
  @note This is only intended to be used by surfaces, and
  directly accessing the `Process` is not recommended.
  */
-@property (atomic, readonly, nullable) Process* process;
+@property (atomic, readonly, nullable) LCProcess* process;
 
 /**
  An array of strings with the canonical names of `LCSurface` UIs available to the

@@ -5,18 +5,18 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #import <Foundation/Foundation.h>
-#import "Process.h"
+#import "LCProcess.h"
 #import "NodeBridge.h"
 #import "FileSystem.h"
 
 @interface BlockWrap : NSObject
-@property (readonly) Process* process;
+@property (readonly) LCProcess* process;
 @property (readonly) ProcessThreadBlock block;
-- (id) init:(Process*) process block:(ProcessThreadBlock)block;
+- (id) init:(LCProcess*) process block:(ProcessThreadBlock)block;
 @end
 
 @implementation BlockWrap
-- (id) init:(Process *)process block:(ProcessThreadBlock)block
+- (id) init:(LCProcess *)process block:(ProcessThreadBlock)block
 {
     self = [super init];
     if (self) {
@@ -56,7 +56,7 @@
 }
 @end
 
-@interface Process()
+@interface LCProcess()
 @property(atomic) bool active;
 @property(atomic, weak) JSContext* context;
 @property(nonatomic, strong) JSContext* hold_;
@@ -70,18 +70,18 @@
 
 static void onNodeStarted(void *data, JSContextRef ctxRef, JSContextGroupRef ctxGroupRef)
 {
-    Process *process = (__bridge Process*) data;
+    LCProcess *process = (__bridge LCProcess*) data;
     [process onNodeStarted:[JSContext contextWithJSGlobalContextRef:JSContextGetGlobalContext(ctxRef)]
                      group:ctxGroupRef];
 }
 
 static void onNodeExit(void *data, int code)
 {
-    Process *process = (__bridge_transfer Process*) data;
+    LCProcess *process = (__bridge_transfer LCProcess*) data;
     [process onNodeExit:code];
 }
 
-@implementation Process {
+@implementation LCProcess {
     NSString* uniqueID_;
     MediaAccessMask mediaAccessMask_;
     NSMutableArray *delegates_;
@@ -90,7 +90,7 @@ static void onNodeExit(void *data, int code)
     FileSystem *fs_;
 }
 
-- (id) initWithDelegate:(id<ProcessDelegate>)delegate
+- (id) initWithDelegate:(id<LCProcessDelegate>)delegate
                      id:(NSString*)uniqueID
         mediaAccessMask:(MediaAccessMask)mediaAccessMask;
 {
@@ -109,7 +109,7 @@ static void onNodeExit(void *data, int code)
     return self;
 }
 
-- (void) addDelegate:(id<ProcessDelegate>)delegate
+- (void) addDelegate:(id<LCProcessDelegate>)delegate
 {
     if (![delegates_ containsObject:delegate]) {
         [delegates_ addObject:delegate];
@@ -121,7 +121,7 @@ static void onNodeExit(void *data, int code)
     }
 }
 
-- (void) removeDelegate:(id<ProcessDelegate>)delegate
+- (void) removeDelegate:(id<LCProcessDelegate>)delegate
 {
     [delegates_ removeObject:delegate];
 }
@@ -202,7 +202,7 @@ static void onNodeExit(void *data, int code)
             [self context][@"process"][@"versions"][@"jsc"] = version;
 
             // Expose LiquidCore version
-            NSString *lcversion = [[[NSBundle bundleForClass:Process.class] infoDictionary]
+            NSString *lcversion = [[[NSBundle bundleForClass:LCProcess.class] infoDictionary]
                                    objectForKey:@"CFBundleShortVersionString"];
             [self context][@"process"][@"versions"][@"liquidcore"] = lcversion;
 
@@ -224,14 +224,14 @@ static void onNodeExit(void *data, int code)
 
 - (void)eventOnStart:(JSContext *)context
 {
-    for (NSObject<ProcessDelegate>* delegate in delegates_) {
+    for (NSObject<LCProcessDelegate>* delegate in delegates_) {
         [delegate onProcessStart:self context:context];
     }
 }
 
 - (void)eventOnAboutToExit:(int)code
 {
-    for (NSObject<ProcessDelegate>* delegate in delegates_) {
+    for (NSObject<LCProcessDelegate>* delegate in delegates_) {
         [delegate onProcessAboutToExit:self exitCode:code];
     }
 }
@@ -240,7 +240,7 @@ static void onNodeExit(void *data, int code)
 {
     if (!notified_exit_) {
         notified_exit_ = true;
-        for (NSObject<ProcessDelegate>* delegate in delegates_) {
+        for (NSObject<LCProcessDelegate>* delegate in delegates_) {
             [delegate onProcessExit:self exitCode:code];
         }
         
@@ -254,7 +254,7 @@ static void onNodeExit(void *data, int code)
 
 - (void)eventOnProcessFailed:(JSValue *)exception
 {
-    for (NSObject<ProcessDelegate>* delegate in delegates_) {
+    for (NSObject<LCProcessDelegate>* delegate in delegates_) {
         [delegate onProcessFailed:self
                         exception:[NSException exceptionWithName:@"JavaScript exception"
                                                           reason:[exception toString]

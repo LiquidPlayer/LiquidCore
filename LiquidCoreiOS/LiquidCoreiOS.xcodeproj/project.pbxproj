@@ -351,7 +351,7 @@
 		07A7CF0B2092216000352ABF /* profiler-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0A2092215F00352ABF /* profiler-extension.cc */; };
 		07A7CF0D2092230D00352ABF /* CpuProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07A7CF0C2092230D00352ABF /* CpuProfiler.cpp */; };
 		07AA616420CFDBD700EA6B43 /* gc-extension.cc in Sources */ = {isa = PBXBuildFile; fileRef = 07AA616320CFDBD600EA6B43 /* gc-extension.cc */; };
-		07CA454020F0BA9300862266 /* Process.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA453F20F0BA9300862266 /* Process.m */; };
+		07CA454020F0BA9300862266 /* LCProcess.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA453F20F0BA9300862266 /* LCProcess.m */; };
 		07CA454320F10F4700862266 /* NodeBridge.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454220F10F4700862266 /* NodeBridge.cpp */; };
 		07CA454820F4C3F800862266 /* FileSystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454720F4C3F800862266 /* FileSystem.m */; };
 		07CA454A20F5244E00862266 /* ProcessTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 07CA454920F5244E00862266 /* ProcessTests.m */; };
@@ -380,6 +380,7 @@
 		07D2B3A6210CB50D003989F0 /* console.js in Resources */ = {isa = PBXBuildFile; fileRef = 07D2B3A5210CB50D003989F0 /* console.js */; };
 		07D2B3A9210DAD17003989F0 /* LCLiquidView.h in Headers */ = {isa = PBXBuildFile; fileRef = 07D2B3A7210DAD17003989F0 /* LCLiquidView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		07D2B3AA210DAD17003989F0 /* LCLiquidView.m in Sources */ = {isa = PBXBuildFile; fileRef = 07D2B3A8210DAD17003989F0 /* LCLiquidView.m */; };
+		07E0023321E781ED0088E79C /* LCProcess.h in Headers */ = {isa = PBXBuildFile; fileRef = 07CA454120F0BAA600862266 /* LCProcess.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		07E06BEC208F27CC0028153D /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 076F58C6201E7B5F004780FD /* JavaScriptCore.framework */; };
 		07E7BCAB20C07FBB00ABEE5A /* Exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E7BCAA20C07FBB00ABEE5A /* Exec.cpp */; };
 		07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07E9ADC520BBDFC1002F2002 /* HeapObjects.cpp */; };
@@ -838,8 +839,8 @@
 		07AA616120CEE7F600EA6B43 /* JSWeakRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSWeakRefPrivate.h; sourceTree = "<group>"; };
 		07AA616220CFA5ED00EA6B43 /* JSStringRefPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSStringRefPrivate.h; sourceTree = "<group>"; };
 		07AA616320CFDBD600EA6B43 /* gc-extension.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gc-extension.cc"; path = "../../../deps/node-8.9.3/deps/v8/src/extensions/gc-extension.cc"; sourceTree = "<group>"; };
-		07CA453F20F0BA9300862266 /* Process.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Process.m; sourceTree = "<group>"; };
-		07CA454120F0BAA600862266 /* Process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Process.h; sourceTree = "<group>"; };
+		07CA453F20F0BA9300862266 /* LCProcess.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCProcess.m; sourceTree = "<group>"; };
+		07CA454120F0BAA600862266 /* LCProcess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LCProcess.h; sourceTree = "<group>"; };
 		07CA454220F10F4700862266 /* NodeBridge.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NodeBridge.cpp; sourceTree = "<group>"; };
 		07CA454420F2573200862266 /* NodeBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NodeBridge.h; sourceTree = "<group>"; };
 		07CA454620F4C37E00862266 /* FileSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
@@ -995,6 +996,7 @@
 		072FDB14212EE19100557264 /* LiquidCore */ = {
 			isa = PBXGroup;
 			children = (
+				07CA454120F0BAA600862266 /* LCProcess.h */,
 				076F5887201E797F004780FD /* LiquidCore.h */,
 				0765640920F9EB70002C330B /* LCMicroService.h */,
 				07D2B3A2210C70DB003989F0 /* LCSurface.h */,
@@ -1534,12 +1536,11 @@
 		07CA453E20F0BA1A00862266 /* API */ = {
 			isa = PBXGroup;
 			children = (
-				07CA453F20F0BA9300862266 /* Process.m */,
-				07CA454120F0BAA600862266 /* Process.h */,
 				07CA454420F2573200862266 /* NodeBridge.h */,
 				07CA454220F10F4700862266 /* NodeBridge.cpp */,
 				07CA454620F4C37E00862266 /* FileSystem.h */,
 				07CA454720F4C3F800862266 /* FileSystem.m */,
+				07CA453F20F0BA9300862266 /* LCProcess.m */,
 				0765640A20F9F1F9002C330B /* LCMicroService.m */,
 				07D2B3A8210DAD17003989F0 /* LCLiquidView.m */,
 				07E001EA21E5F6E10088E79C /* LCAddOn.h */,
@@ -1668,6 +1669,7 @@
 				0738918120EE07AC009056FD /* spinlock.h in Headers */,
 				07D2B3A4210CB38B003989F0 /* LCMicroService.h in Headers */,
 				07D2B3A3210CB360003989F0 /* LCSurface.h in Headers */,
+				07E0023321E781ED0088E79C /* LCProcess.h in Headers */,
 				07D2B3A9210DAD17003989F0 /* LCLiquidView.h in Headers */,
 				073892D520EE5E29009056FD /* string_bytes.h in Headers */,
 				072E6CA220FCF37300B80349 /* node_dtrace.h in Headers */,
@@ -2306,7 +2308,7 @@
 				073892BB20EE5E29009056FD /* string_bytes.cc in Sources */,
 				07F804F6202DD5AD00FDFC27 /* Exception.cpp in Sources */,
 				07CA454320F10F4700862266 /* NodeBridge.cpp in Sources */,
-				07CA454020F0BA9300862266 /* Process.m in Sources */,
+				07CA454020F0BA9300862266 /* LCProcess.m in Sources */,
 				07FE85AC2075F7A90013E1B4 /* file-utils.cc in Sources */,
 				0738920B20EE0CEE009056FD /* ares_parse_ptr_reply.c in Sources */,
 				07E9ADC620BBDFC1002F2002 /* HeapObjects.cpp in Sources */,

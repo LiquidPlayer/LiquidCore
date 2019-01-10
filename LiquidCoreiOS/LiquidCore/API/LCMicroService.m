@@ -7,17 +7,17 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <LiquidCore/LiquidCore.h>
-#import "Process.h"
+#import "LCProcess.h"
 #import "LCAddOn.h"
 
 @interface LCAddOnFactory()
 @property (atomic, readonly, class) NSMutableDictionary *factories;
 @end
 
-@interface LCMicroService() <ProcessDelegate>
+@interface LCMicroService() <LCProcessDelegate>
 @property (atomic, assign, readonly, class) NSMutableDictionary *serviceMap;
 @property (nonatomic) JSValue *emitter;
-@property (atomic, readwrite) Process *process;
+@property (atomic, readwrite) LCProcess *process;
 @property (atomic, assign) bool fetched;
 @property (atomic) NSMutableArray* eventListeners;
 - (NSError*) fetchService;
@@ -48,7 +48,7 @@ static NSMutableDictionary* _serviceMap = nil;
     serviceId = [serviceId stringByAddingPercentEncodingWithAllowedCharacters:
                   [NSCharacterSet URLHostAllowedCharacterSet]];
 
-    [Process uninstall:serviceId scope:GLOBAL];
+    [LCProcess uninstall:serviceId scope:GLOBAL];
 }
 
 + (NSURL *)devServer:(NSString *)fileName port:(NSNumber *)port
@@ -253,7 +253,7 @@ static NSMutableDictionary* _serviceMap = nil;
     return [JSValue valueWithUndefinedInContext:context];
 }
 
-- (void) onProcessStart:(Process*)process context:(JSContext*)context
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context
 {
     // Create LiquidCore EventEmitter
     [context evaluateScript:
@@ -317,7 +317,7 @@ static NSMutableDictionary* _serviceMap = nil;
     self.process = nil;
 }
 
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code
 {
     if( delegate_ && [delegate_ respondsToSelector:@selector(onExit:exitCode:)]) {
         [delegate_ onExit:self exitCode:code];
@@ -325,7 +325,7 @@ static NSMutableDictionary* _serviceMap = nil;
     [self shutDown];
 }
 
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     if( delegate_ && [delegate_ respondsToSelector:@selector(onExit:exitCode:)]) {
         [delegate_ onExit:self exitCode:code];
@@ -333,7 +333,7 @@ static NSMutableDictionary* _serviceMap = nil;
     [self shutDown];
 }
 
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     if( delegate_ && [delegate_ respondsToSelector:@selector(onError:exception:)]) {
         [delegate_ onError:self exception:exception];
@@ -443,7 +443,7 @@ static NSMutableDictionary* _serviceMap = nil;
     } else {
         started_ = true;
         argv_ = argv;
-        self.process = [[Process alloc] initWithDelegate:self id:serviceId_ mediaAccessMask:PermissionsRW];
+        self.process = [[LCProcess alloc] initWithDelegate:self id:serviceId_ mediaAccessMask:PermissionsRW];
     }
 }
 

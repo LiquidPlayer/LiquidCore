@@ -7,7 +7,7 @@
 #ifndef FileSystem_h
 #define FileSystem_h
 
-#import "Process.h"
+#import "LCProcess.h"
 
 @interface FileSystem : NSObject
 @property (nonatomic, copy) NSString* modulePath;

@@ -4,18 +4,15 @@
  * Distributed under the MIT License.  See LICENSE.md at
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
-#ifndef Process_h
-#define Process_h
-
 #import <JavaScriptCore/JavaScriptCore.h>
 
-@class Process;
+@class LCProcess;
 
-@protocol ProcessDelegate <NSObject>
-- (void) onProcessStart:(Process*)process context:(JSContext*)context;
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code;
-- (void) onProcessExit:(Process*)process exitCode:(int)code;
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception;
+@protocol LCProcessDelegate <NSObject>
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context;
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code;
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code;
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception;
 @end
 
 typedef void (^ProcessThreadBlock)(JSContext*);
@@ -32,14 +29,14 @@ typedef enum _MediaAccessMask {
 - (void) letDie;
 @end
 
-@interface Process : NSObject
+@interface LCProcess : NSObject
 @property (nonatomic, readonly, copy) NSString* modulePath;
 
-- (id) initWithDelegate:(id<ProcessDelegate>)delegate
+- (id) initWithDelegate:(id<LCProcessDelegate>)delegate
                      id:(NSString*)uniqueID
         mediaAccessMask:(MediaAccessMask)mediaAccessMask;
-- (void) addDelegate:(id<ProcessDelegate>)delegate;
-- (void) removeDelegate:(id<ProcessDelegate>)delegate;
+- (void) addDelegate:(id<LCProcessDelegate>)delegate;
+- (void) removeDelegate:(id<LCProcessDelegate>)delegate;
 - (bool) isActive;
 - (void) sync:(ProcessThreadBlock)block;
 - (void) async:(ProcessThreadBlock)block;
@@ -47,5 +44,3 @@ typedef enum _MediaAccessMask {
 - (id<LoopPreserver>) keepAlive;
 + (void) uninstall:(NSString*)uniqueID scope:(UninstallScope)scope;
 @end
-
-#endif /* Node_h */

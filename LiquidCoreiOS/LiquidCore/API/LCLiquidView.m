@@ -5,7 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #import <LiquidCore/LiquidCore.h>
-#import "Process.h"
+#import "LCProcess.h"
 
 static NSMutableArray* registeredSurfaces;
 

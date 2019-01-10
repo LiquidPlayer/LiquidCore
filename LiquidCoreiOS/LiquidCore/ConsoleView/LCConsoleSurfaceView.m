@@ -5,9 +5,9 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #import "LCConsoleSurfaceView.h"
-#import "Process.h"
+#import "LCProcess.h"
 
-@interface ConsoleSession : NSObject <ProcessDelegate>
+@interface ConsoleSession : NSObject <LCProcessDelegate>
 @property (nonatomic) LCConsoleSurfaceView *currentView;
 
 - (id) initWithMicroService:(LCMicroService*)service onAttached:(LCOnSuccessHandler)onAttached;
@@ -17,7 +17,7 @@
 
 @implementation ConsoleSession {
     LCOnSuccessHandler onAttached_;
-    Process* process_;
+    LCProcess* process_;
     NSString* uuid_;
     NSInteger rows_;
     NSInteger columns_;
@@ -36,7 +36,7 @@
     return self;
 }
 
-- (void) onProcessStart:(Process*)process context:(JSContext*)context
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context
 {
     JSValue *stdout = context[@"process"][@"stdout"];
     JSValue *stderr = context[@"process"][@"stderr"];
@@ -134,7 +134,7 @@
     [stream deleteProperty:@"moveCursor"];
 }
 
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code
 {
     if (self.currentView != nil) {
         NSString *display = [NSString stringWithFormat:@"%C[31mProcess about to exit with code %d", 0x001B, code];
@@ -144,7 +144,7 @@
     [self detach];
 }
 
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     NSLog(@"onProcessExit: Process exited with code %d", code);
     if (self.currentView != nil) {
@@ -154,7 +154,7 @@
     process_ = nil;
 }
 
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     
 }
