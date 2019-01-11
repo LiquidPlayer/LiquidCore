@@ -5,6 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #import <UIKit/UIKit.h>
+#import <LiquidCore/LiquidCore.h>
 #import <JavaScriptCore/JavaScriptCore.h>
 
 /**
@@ -29,8 +30,9 @@
  to the caller.
  
  @param binding The native binding object.
+ @param service The `LCMicroService` of this process
  */
-- (void) require:(JSValue*) binding;
+- (void) require:(JSValue*) binding service:(LCMicroService*)service;
 
 @end
 

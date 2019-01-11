@@ -246,7 +246,7 @@ static NSMutableDictionary* _serviceMap = nil;
         [addOn register:moduleName];
         [context evaluateScript:[NSString stringWithFormat:@"fs.writeFileSync('/home/temp/%@', '')", fname]];
         JSValue* binding = [require callWithArguments:@[[NSString stringWithFormat:@"/home/temp/%@", fname]]];
-        [addOn require:binding];
+        [addOn require:binding service:self];
         return binding;
     }
     

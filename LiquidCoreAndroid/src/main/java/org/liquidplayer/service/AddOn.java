@@ -27,6 +27,7 @@ public interface AddOn {
      * else to the object that may be required from Java before returning it to the caller.
      *
      * @param binding The native binding object.
+     * @param service The {@code #org.liquidplayer.service.MicroService} of this process
      */
-    void require(JSValue binding);
+    void require(JSValue binding, MicroService service);
 }

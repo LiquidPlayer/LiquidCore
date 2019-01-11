@@ -740,7 +740,7 @@ public class MicroService implements Process.EventListener {
 
                 context.evaluateScript("fs.writeFileSync('/home/temp/" + fname + "', '')");
                 JSValue binding = require.call(null, "/home/temp/" + fname);
-                addOn.require(binding);
+                addOn.require(binding, this);
                 return binding;
             } else {
                 android.util.Log.e("LiquidCore.bindings", "Class " +
