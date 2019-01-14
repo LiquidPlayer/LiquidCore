@@ -2115,7 +2115,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCore/node-8.9.3/node/config.gypi .\nSCRIPT_INPUT_FILES=''\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\n    INF=${!INFILE}\n    if [ -e \"$INF\" ]; then\n        FILTERED=`echo $INF | sed 's/.*node-8.9.3\\///'`\n        SCRIPT_INPUT_FILES=\"$SCRIPT_INPUT_FILES ${FILTERED}\"\n    fi\ndone\nexec tools/js2c.py ${SCRIPT_OUTPUT_FILE_0} ${SCRIPT_INPUT_FILES}\n";
+			shellScript = "cd ${SRCROOT}/../deps/node-8.9.3\ncp ${SRCROOT}/LiquidCore/node-8.9.3/node/config.gypi .\nSCRIPT_INPUT_FILES=''\nSCRIPT_INPUT_FILE_COUNT=\nSCRIPT_INPUT_FILE_LIST_COUNT=\nfor INFILE in ${!SCRIPT_INPUT_FILE_*};\ndo\nINF=${!INFILE}\nFILTERED=`echo $INF | sed 's/.*node-8.9.3\\///'`\nSCRIPT_INPUT_FILES=\"$SCRIPT_INPUT_FILES ${FILTERED}\"\ndone\nexec tools/js2c.py ${SCRIPT_OUTPUT_FILE_0} ${SCRIPT_INPUT_FILES}\n";
 		};
 		07D2B34721077699003989F0 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
