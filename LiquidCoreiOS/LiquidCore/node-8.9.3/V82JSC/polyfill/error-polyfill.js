@@ -44,17 +44,22 @@
             if (config && config instanceof Object) {
                 this.frameString = config.frameString;
                 this.functionValue = config.functionValue;
+                var fr = /(.*)@(.*):([0-9]*):([0-9]*)/.exec(String(this.frameString));
+                this.functionName = fr && fr[1] || 'anonymous';
+                this.fileName = fr && fr[2] || '[code]';
+                this.lineNumber = fr && parseInt(fr[3]);
+                this.columnNumber = fr && parseInt(fr[4]);
             }
         }
         toString () { return this.frameString; }
         getThis() { throw new Error("absract method"); }
         getTypeName() { throw new Error("absract method"); }
         getFunction() { return this.functionValue; }
-        getFunctionName() { throw new Error("absract method"); }
+        getFunctionName() { return this.functionName; }
         getMethodName() { throw new Error("absract method"); }
-        getFileName() { return undefined; }
-        getLineNumber() { throw new Error("absract method"); }
-        getColumnNumber() { throw new Error("absract method"); }
+        getFileName() { return this.fileName; }
+        getLineNumber() { return this.lineNumber; }
+        getColumnNumber() { return this.columnNumber; }
         getEvalOrigin() { throw new Error("absract method"); }
         isTopLevel() { throw new Error("absract method"); }
         isEval() { throw new Error("absract method"); }
