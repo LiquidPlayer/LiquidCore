@@ -59,7 +59,7 @@
 {
     self = [super init];
     if (self) {
-        _js = [[NSMutableString alloc] initWithString:@"fs_.aliases_={};fs_.access_={};fs_.require=global.require;"];
+        _js = [[NSMutableString alloc] initWithString:@"fs_.aliases_={};fs_.access_={};"];
     }
     return self;
 }
@@ -144,8 +144,9 @@ static NSDate* lastBark;
 
 static NSString* fs_code =
 @"new Function('file',\""
+@"const path=require('path');"
 @"if (!file.startsWith('/')) { file = ''+this.cwd+'/'+file; }"
-@"try { file = fs_.require('path').resolve(file); } catch (e) {console.log(e);}"
+@"try { file = path.resolve(file); } catch (e) {console.loge(e);}"
 @"var access = 0;"
 @"var keys = Object.keys(this.aliases_).sort().reverse();"
 @"for (var p=0; p<keys.length; p++) {"
