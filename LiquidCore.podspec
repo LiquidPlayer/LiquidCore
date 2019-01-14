@@ -285,6 +285,16 @@ LiquidCore enables Node.js virtual machines to run inside Android and iOS apps. 
   s.vendored_libraries = "deps/openssl-1.0.2o/lib-ios/libcrypto.a", "deps/openssl-1.0.2o/lib-ios/libssl.a"
   s.frameworks = "JavaScriptCore"
 
+  # Generate some of the source files so that CocoaPods may pick them up.
+  s.prepare_command = <<-CMD
+      # Generate node_javascript.cc
+      bash LiquidCoreiOS/scripts/generate_node_javascript.sh
+      # Generate node_provider.h
+      bash LiquidCoreiOS/scripts/generate_node_provider.sh
+      # Generate V82JSC polyfills
+      bash LiquidCoreiOS/scripts/generate_javascript_polyfills.sh
+  CMD
+
   s.script_phases = [
       {
           :name => 'Generate node_javascript.cc',
