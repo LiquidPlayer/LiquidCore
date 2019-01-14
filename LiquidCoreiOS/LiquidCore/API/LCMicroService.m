@@ -465,6 +465,15 @@ static NSMutableDictionary* _factories = nil;
     [LCAddOnFactory.factories setObject:factory forKey:moduleName];
 }
 
+- (instancetype) init
+{
+    self = [super init];
+    if (self) {
+        
+    }
+    return self;
+}
+
 - (id<LCAddOn>) createInstance
 {
     @throw ([NSException exceptionWithName:@"This method must be overridden"

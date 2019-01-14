@@ -41,6 +41,8 @@
  */
 @interface LCAddOnFactory : NSObject
 
+- (instancetype) init;
+
 - (id<LCAddOn>) createInstance;
 
 /**
