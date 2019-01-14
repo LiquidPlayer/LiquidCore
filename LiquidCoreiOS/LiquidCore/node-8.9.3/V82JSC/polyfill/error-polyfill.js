@@ -52,7 +52,7 @@
         getFunction() { return this.functionValue; }
         getFunctionName() { throw new Error("absract method"); }
         getMethodName() { throw new Error("absract method"); }
-        getFileName() { throw new Error("absract method"); }
+        getFileName() { return undefined; }
         getLineNumber() { throw new Error("absract method"); }
         getColumnNumber() { throw new Error("absract method"); }
         getEvalOrigin() { throw new Error("absract method"); }
