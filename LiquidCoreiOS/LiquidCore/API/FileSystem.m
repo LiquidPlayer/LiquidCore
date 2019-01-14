@@ -59,7 +59,7 @@
 {
     self = [super init];
     if (self) {
-        _js = [[NSMutableString alloc] initWithString:@"fs_.aliases_={};fs_.access_={};"];
+        _js = [[NSMutableString alloc] initWithString:@"const fs=require('fs');fs_.aliases_={};fs_.access_={};"];
     }
     return self;
 }
