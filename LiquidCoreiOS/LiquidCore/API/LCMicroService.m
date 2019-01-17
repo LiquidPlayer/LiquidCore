@@ -244,6 +244,8 @@ static NSMutableDictionary* _serviceMap = nil;
     } else {
         id<LCAddOn> addOn = [factory createInstance];
         [addOn register:moduleName];
+        // FIXME: This has to be fixed before releasing.  It shouldn't be necessary to write a dummy file
+        // or even if it is, it needs to be more foolproof
         [context evaluateScript:[NSString stringWithFormat:@"fs.writeFileSync('/home/temp/%@', '')", fname]];
         JSValue* binding = [require callWithArguments:@[[NSString stringWithFormat:@"/home/temp/%@", fname]]];
         [addOn require:binding service:self];

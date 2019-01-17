@@ -10,14 +10,15 @@
 
 @protocol FileSystemExports <JSExport>
 @property (nonatomic, readwrite) NSString* cwd;
-@property (nonatomic, readonly) JSValue *fs;
-@property (nonatomic, readonly) JSValue *alias;
+@property (nonatomic, readwrite) JSValue* fs;
+@property (nonatomic, readwrite) JSValue* alias;
+
 @end
 
 @interface FileSystemImpl : FileSystem<FileSystemExports>
 @property (nonatomic, readwrite) NSString* cwd;
-@property (nonatomic, readwrite) JSValue *fs;
-@property (nonatomic, readwrite) JSValue *alias;
+@property (nonatomic, readwrite) JSValue* fs;
+@property (nonatomic, readwrite) JSValue* alias;
 
 @property (nonatomic, copy) NSString *uniqueID;
 @property (nonatomic, copy) NSString *sessionID;
@@ -59,7 +60,7 @@
 {
     self = [super init];
     if (self) {
-        _js = [[NSMutableString alloc] initWithString:@"const fs=require('fs');fs_.aliases_={};fs_.access_={};"];
+        _js = [[NSMutableString alloc] initWithString:@"fs_.aliases_={};fs_.access_={};"];
     }
     return self;
 }
@@ -143,8 +144,7 @@ static NSMutableArray* _activeSessions = nil;
 static NSDate* lastBark;
 
 static NSString* fs_code =
-@"new Function('file',\""
-@"const path=require('path');"
+@"((()=>{const path=require('path'); return function(file){"
 @"if (!file.startsWith('/')) { file = ''+this.cwd+'/'+file; }"
 @"try { file = path.resolve(file); } catch (e) {console.loge(e);}"
 @"var access = 0;"
@@ -176,10 +176,10 @@ static NSString* fs_code =
 @"    }"
 @"}"
 @"return [access,newfile];"
-@"\");";
+@"}})())";
 
 static NSString* alias_code =
-@"new Function('file',\""
+@"(function(file){"
 @"var keys = Object.keys(this.aliases_).sort().reverse();"
 @"for (var p=0; p<keys.length; p++) {"
 @"   if (file.startsWith(this.aliases_[keys[p]] + '/')) {"
@@ -191,7 +191,7 @@ static NSString* alias_code =
 @"   }"
 @"}"
 @"return file;"
-@"\");";
+@"})";
 
 - initWithContext:(JSContext*)context
          uniqueID:(NSString*)uniqueID
@@ -212,9 +212,6 @@ static NSString* alias_code =
         [FileSystemImpl.activeSessions addObject:_sessionID];
         
         [self setUp:context mediaAccessMask:mask];
-        
-        _fs = [context evaluateScript:fs_code];
-        _alias = [context evaluateScript:alias_code];
     }
     return self;
 }
@@ -286,10 +283,13 @@ static NSString* alias_code =
                linkpath:[NSString stringWithFormat:@"%@/home/public/data", sessionPath]
                    mask:mask];
 
-    [js append:@"fs_.cwd='/home';"];
+    _cwd = @"/home";
+    _fs = [context evaluateScript:fs_code];
+    _alias = [context evaluateScript:alias_code];
     
     context[@"fs_"] = self;
     [context evaluateScript:js.js];
+    
     [[context globalObject] deleteProperty:@"fs_"];
 }
 

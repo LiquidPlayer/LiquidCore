@@ -45,8 +45,8 @@
                 this.frameString = config.frameString;
                 this.functionValue = config.functionValue;
                 var fr = /(.*)@(.*):([0-9]*):([0-9]*)/.exec(String(this.frameString));
-                this.functionName = fr && fr[1] || 'anonymous';
-                this.fileName = fr && fr[2] || '[code]';
+                this.functionName = (fr && fr[1]) || 'anonymous';
+                this.fileName = (fr && fr[2]) || '[code]';
                 this.lineNumber = fr && parseInt(fr[3]);
                 this.columnNumber = fr && parseInt(fr[4]);
             }
