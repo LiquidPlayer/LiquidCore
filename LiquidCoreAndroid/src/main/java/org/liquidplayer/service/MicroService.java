@@ -271,6 +271,12 @@ public class MicroService implements Process.EventListener {
             "               if (~stack.indexOf(value))value=cycleReplacer.call(this, key, value)\n"+
             "           }\n"+
             "           else stack.push(value)\n"+
+            "\n" +
+            // Functions are converted to undefined, try and keep the consistency with the iOS version.
+            "           if (typeof value === 'function') {\n" +
+            "               value = {};\n" +
+            "           }\n" +
+            "\n"+
             "           return replacer == null ? value : replacer.call(this, key, value)\n"+
             "       }\n"+
             "   }\n"+
@@ -291,8 +297,19 @@ public class MicroService implements Process.EventListener {
                             JSONArray a = new JSONArray(safeStringify.call(null, value).toString());
                             o = new JSONObject();
                             o.put("_", a);
-                        } else if (value.isObject() && !value.isDate()) {
-                            o = new JSONObject(safeStringify.call(null,value).toString());
+                        } else if (value.isNumber()) {
+                            o = new JSONObject();
+                            o.put("_", value.toNumber());
+                        } else if (value.isBoolean()) {
+                            o = new JSONObject() ;
+                            o.put("_", value.toBoolean());
+                        } else if (value.isDate()) {
+                            o = new JSONObject();
+                            // Convert to ISO8601 date String, same format as if it was a property in an object.
+                            o.put("_", safeStringify.call(null, value).toString());
+                        } else if (value.isObject()) {
+                            // Convert objects and functions.
+                            o = new JSONObject(safeStringify.call(null, value).toString());
                         } else {
                             o = new JSONObject();
                             o.put("_", value.toString());
