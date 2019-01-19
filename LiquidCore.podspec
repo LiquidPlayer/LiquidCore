@@ -26,6 +26,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 
       "deps/node-8.9.3/deps/cares/config/darwin/ares_config.h",
       "deps/node-8.9.3/deps/cares/include/ares.h",
+      "deps/node-8.9.3/deps/cares/include/ares_build.h",
       "deps/node-8.9.3/deps/cares/include/ares_rules.h",
       "deps/node-8.9.3/deps/cares/include/ares_version.h",
       "deps/node-8.9.3/deps/cares/include/nameser.h",
@@ -107,6 +108,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/v8/src/libplatform/tracing/tracing-controller.cc",
       "deps/node-8.9.3/deps/v8/src/libplatform/worker-thread.{cc,h}",
       "deps/node-8.9.3/deps/v8/src/ostreams.cc",
+      "deps/node-8.9.3/deps/v8/include/libplatform/v8-tracing.h",
 
       "deps/node-8.9.3/src/aliased_buffer.h",
       "deps/node-8.9.3/src/async-wrap-inl.h",
@@ -251,24 +253,24 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 
   # --- Tests ――――――――――-――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
-  s.test_spec 'Tests' do |test_spec|
-    test_spec.source_files = [
-        'LiquidCoreiOS/LiquidCoreTests/**/*.{m,cpp,cc}',
-        'deps/node-8.9.3/deps/v8/src/extensions/gc-extension.cc',
-        'deps/node-8.9.3/deps/v8/src/flags.cc',
-        'deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc',
-        'deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc',
-    ]
-
-    test_spec.resources = [
-        'LiquidCoreiOS/LiquidCoreTests/Resources'
-    ]
-
-    test_spec.exclude_files = [
-        'LiquidCoreiOS/LiquidCore/ConsoleView/ConsoleView.xib'
-    ]
-
-  end
+  # s.test_spec 'Tests' do |test_spec|
+  #   test_spec.source_files = [
+  #       'LiquidCoreiOS/LiquidCoreTests/**/*.{m,cpp,cc}',
+  #       'deps/node-8.9.3/deps/v8/src/extensions/gc-extension.cc',
+  #       'deps/node-8.9.3/deps/v8/src/flags.cc',
+  #       'deps/node-8.9.3/deps/v8/test/cctest/print-extension.cc',
+  #       'deps/node-8.9.3/deps/v8/test/cctest/profiler-extension.cc',
+  #   ]
+  #
+  #   test_spec.resources = [
+  #       'LiquidCoreiOS/LiquidCoreTests/Resources'
+  #   ]
+  #
+  #   test_spec.exclude_files = [
+  #       'LiquidCoreiOS/LiquidCore/ConsoleView/ConsoleView.xib'
+  #   ]
+  #
+  # end
 
   # ――― Project Settings ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
