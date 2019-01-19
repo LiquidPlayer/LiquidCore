@@ -7,7 +7,7 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 #import "LCMicroService.h"
-#import "Process.h"
+#import "LCProcess.h"
 
 @interface MicroServiceTest : XCTestCase <LCMicroServiceDelegate, LCMicroServiceEventListener>
 - (void) onStart:(LCMicroService *)service;

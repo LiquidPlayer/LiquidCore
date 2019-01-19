@@ -5,19 +5,19 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #import <XCTest/XCTest.h>
-#import "Process.h"
+#import "LCProcess.h"
 #import <JavaScriptCore/JavaScriptCore.h>
 
 @interface ProcessTests : XCTestCase
 
 @end
 
-@interface MultiProcessDelegate : XCTestCase<ProcessDelegate>
+@interface MultiProcessDelegate : XCTestCase<LCProcessDelegate>
 @property (atomic, assign) int count;
 @property (atomic, assign) int countdown;
 @end
 @implementation MultiProcessDelegate
-- (void) onProcessStart:(Process*)process context:(JSContext*)context
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context
 {
     XCTAssertTrue([process isActive]);
     
@@ -28,23 +28,23 @@
     JSValue* incd = [function callWithArguments:@[[NSNumber numberWithInt:mycount]]];
     XCTAssertEqual([incd toInt32], mycount + 1);
 }
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code {}
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code {}
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     XCTAssertFalse([process isActive]);
     self.countdown --;
 }
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     XCTAssertTrue(false);
 }
 @end
 
-@interface MultiThreadDelegate : XCTestCase<ProcessDelegate>
+@interface MultiThreadDelegate : XCTestCase<LCProcessDelegate>
 @property (atomic, assign) bool done;
 @end
 @implementation MultiThreadDelegate
-- (void) onProcessStart:(Process*)process context:(JSContext*)ctx
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)ctx
 {
     // Don't let the process exit until our thread finishes
     id<LoopPreserver> preserver = [process keepAlive];
@@ -69,33 +69,33 @@
         [preserver letDie];
     });
 }
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code {}
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code {}
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     self.done = true;
 }
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     XCTAssertTrue(false);
 }
 @end
 
-@interface ForceExitDelegate : XCTestCase<ProcessDelegate>
+@interface ForceExitDelegate : XCTestCase<LCProcessDelegate>
 @property (atomic, assign) bool done;
 @end
 @implementation ForceExitDelegate
-- (void) onProcessStart:(Process*)process context:(JSContext*)context
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context
 {
     [context evaluateScript:@"setInterval(function(){console.log('tick');},1000);"];
     [context evaluateScript:@"setTimeout(function(){process.exit(2);},500);"];
 }
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code {}
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code {}
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     XCTAssertEqual(code, 2);
     self.done = true;
 }
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     XCTAssertTrue(false);
 }
@@ -107,9 +107,9 @@
 {
     MultiProcessDelegate* delegate = [[MultiProcessDelegate alloc] init];
     delegate.countdown = 3;
-    XCTAssertNotNil([[Process alloc] initWithDelegate:delegate id:@"_1" mediaAccessMask:PermissionsRW]);
-    XCTAssertNotNil([[Process alloc] initWithDelegate:delegate id:@"_2" mediaAccessMask:PermissionsRW]);
-    XCTAssertNotNil([[Process alloc] initWithDelegate:delegate id:@"_3" mediaAccessMask:PermissionsRW]);
+    XCTAssertNotNil([[LCProcess alloc] initWithDelegate:delegate id:@"_1" mediaAccessMask:PermissionsRW]);
+    XCTAssertNotNil([[LCProcess alloc] initWithDelegate:delegate id:@"_2" mediaAccessMask:PermissionsRW]);
+    XCTAssertNotNil([[LCProcess alloc] initWithDelegate:delegate id:@"_3" mediaAccessMask:PermissionsRW]);
     volatile int countdown = 100;
     while (countdown > 0) {
         countdown = delegate.countdown;
@@ -120,7 +120,7 @@
 {
     MultiThreadDelegate *delegate = [[MultiThreadDelegate alloc] init];
     delegate.done = false;
-    XCTAssertNotNil([[Process alloc] initWithDelegate:delegate id:@"_" mediaAccessMask:PermissionsRW]);
+    XCTAssertNotNil([[LCProcess alloc] initWithDelegate:delegate id:@"_" mediaAccessMask:PermissionsRW]);
     volatile bool done = false;
     while (!done) {
         done = delegate.done;
@@ -131,12 +131,12 @@
 {
     ForceExitDelegate *delegate = [[ForceExitDelegate alloc] init];
     delegate.done = false;
-    XCTAssertNotNil([[Process alloc] initWithDelegate:delegate id:@"forceExitTest" mediaAccessMask:PermissionsRW]);
+    XCTAssertNotNil([[LCProcess alloc] initWithDelegate:delegate id:@"forceExitTest" mediaAccessMask:PermissionsRW]);
     volatile bool done = false;
     while (!done) {
         done = delegate.done;
     }
     
-    [Process uninstall:@"forceExitTest" scope:GLOBAL];
+    [LCProcess uninstall:@"forceExitTest" scope:GLOBAL];
 }
 @end
