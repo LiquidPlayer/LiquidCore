@@ -367,6 +367,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       :GCC_WARN_64_TO_32_BIT_CONVERSION => 'NO',
       :GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS => 'NO',
       :GCC_WARN_UNUSED_VARIABLE => 'NO',
+      :GCC_WARN_UNINITIALIZED_AUTOS => 'NO',
       :CLANG_WARN_UNREACHABLE_CODE => 'NO',
   }
 
