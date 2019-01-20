@@ -272,6 +272,17 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   #
   # end
 
+  # Preserve header include paths.
+  s.preserve_paths = [
+    "deps/node-8.9.3/deps/v8/include",
+    "deps/node-8.9.3/deps/v8",
+
+    "deps/openssl-1.0.2o/include-ios",
+    "deps/node-8.9.3/src",
+    "deps/node-8.9.3/deps/nghttp2/lib/includes",
+    "LiquidCoreiOS/LiquidCore/node-8.9.3/node",
+  ]
+
   # ――― Project Settings ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
   s.requires_arc = true
