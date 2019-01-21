@@ -109,6 +109,8 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/v8/src/libplatform/worker-thread.{cc,h}",
       "deps/node-8.9.3/deps/v8/src/ostreams.cc",
       "deps/node-8.9.3/deps/v8/include/libplatform/v8-tracing.h",
+      "deps/node-8.9.3/deps/v8/include/*.h",
+      "deps/node-8.9.3/deps/v8/include/libplatform/*.h",
 
       "deps/node-8.9.3/src/aliased_buffer.h",
       "deps/node-8.9.3/src/async-wrap-inl.h",

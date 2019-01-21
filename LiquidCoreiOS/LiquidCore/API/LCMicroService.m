@@ -421,7 +421,7 @@ static NSMutableDictionary* _serviceMap = nil;
     }
 }
 
-- (void) emitBoolean:(NSString*)event boolean:(bool)boolean
+- (void) emitBoolean:(NSString*)event boolean:(BOOL)boolean
 {
     if (self.emitter) {
         [self.process async:^(JSContext* context) {

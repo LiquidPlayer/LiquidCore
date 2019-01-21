@@ -96,31 +96,6 @@ artifacts {
     archives javadocJar
 }
 
-task copyHeadersToAARDebug(type: Zip) {
-    baseName = 'LiquidCore-debug'
-    extension = 'aar.in'
-    destinationDir = file('build/outputs/aar')
-    def aarNameO = "build/outputs/aar/LiquidCore-debug.aar"
-
-    from zipTree(aarNameO)
-    from("../deps/node-8.9.3/deps/v8/include") {
-        into('include/v8')
-        include ('**/*.h')
-    }
-    from("../deps/node-8.9.3/src") {
-        into('include/node')
-        include('*.h')
-    }
-}
-task removeOldAARDebug(type: Delete) {
-    delete file('build/outputs/aar/LiquidCore-debug.aar.in')
-}
-task renameAARDebug (type: Copy) {
-    from ('build/outputs/aar/')
-    include 'LiquidCore-debug.aar.in'
-    destinationDir file('build/outputs/aar/')
-    rename "LiquidCore-debug.aar.in", "LiquidCore-debug.aar"
-}
 task copyHeadersToAARRelease(type: Zip) {
     baseName = 'LiquidCore-release'
     extension = 'aar.in'
@@ -148,13 +123,8 @@ task renameAARRelease (type: Copy) {
 }
 
 afterEvaluate {
-    if (project.hasProperty("assembleDebug")) {
-        assembleDebug.finalizedBy copyHeadersToAARDebug
-        copyHeadersToAARDebug.finalizedBy renameAARDebug
-        renameAARDebug.finalizedBy removeOldAARDebug
-    }
-    if (project.hasProperty("assembleRelease")) {
-        assembleRelease.finalizedBy copyHeadersToAARRelease
+    if (project.hasProperty("bundleReleaseAar")) {
+        bundleReleaseAar.finalizedBy copyHeadersToAARRelease
         copyHeadersToAARRelease.finalizedBy renameAARRelease
         renameAARRelease.finalizedBy removeOldAARRelease
     }

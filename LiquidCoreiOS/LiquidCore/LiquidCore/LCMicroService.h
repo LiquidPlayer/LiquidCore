@@ -137,7 +137,7 @@
  @param port The server's port (default: 8082)
  @return A service URL for use in the `LCMicroService` constructor
  */
-+ (NSURL *) devServer:(NSString* _Nullable)fileName port:(NSNumber* _Nullable)port;
++ (NSURL * _Nonnull) devServer:(NSString* _Nullable)fileName port:(NSNumber* _Nullable)port;
 
 /**
  Generates a URL for fetching from a development server on the loopback address (localhost).
@@ -145,7 +145,7 @@
  machine.
  @return A service URL for use in the `LCMicroService` constructor
  */
-+ (NSURL *) devServer;
++ (NSURL * _Nonnull) devServer;
 
 /**
  Creates a new instance of the micro service referenced by `serviceURI`.
