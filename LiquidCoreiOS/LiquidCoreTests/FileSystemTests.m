@@ -5,13 +5,13 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #import <XCTest/XCTest.h>
-#import "Process.h"
+#import "LCProcess.h"
 #import <JavaScriptCore/JavaScriptCore.h>
 
 @interface FileSystemTests : XCTestCase
 @end
 
-@interface Script : XCTestCase <ProcessDelegate>
+@interface Script : XCTestCase <LCProcessDelegate>
 @property (atomic, assign) bool done;
 @end
 
@@ -29,33 +29,33 @@ typedef void (^OnDone)(JSContext *);
         script_ = script;
         onDone_ = onDone;
         _done = false;
-        XCTAssertNotNil([[Process alloc] initWithDelegate:self id:@"_" mediaAccessMask:PermissionsRW]);
+        XCTAssertNotNil([[LCProcess alloc] initWithDelegate:self id:@"_" mediaAccessMask:PermissionsRW]);
     }
     return self;
 }
-- (void) onProcessStart:(Process*)process context:(JSContext*)context
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context
 {
     context_ = context;
     [context evaluateScript:script_];
 }
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code
 {
     onDone_(context_);
 }
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     self.done = true;
 }
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     XCTAssertTrue(false);
 }
 @end
 
-@interface CwdTest : XCTestCase <ProcessDelegate>
+@interface CwdTest : XCTestCase <LCProcessDelegate>
 @property (atomic, assign) bool done;
 @property (atomic, assign) bool ready;
-@property (atomic) Process *process;
+@property (atomic) LCProcess *process;
 @property (atomic) id<LoopPreserver> preserver;
 @end
 
@@ -66,24 +66,24 @@ typedef void (^OnDone)(JSContext *);
     if (self) {
         _done = false;
         _ready = false;
-        _process = [[Process alloc] initWithDelegate:self id:@"_" mediaAccessMask:PermissionsRW];
+        _process = [[LCProcess alloc] initWithDelegate:self id:@"_" mediaAccessMask:PermissionsRW];
         _preserver = nil;
     }
     return self;
 }
-- (void) onProcessStart:(Process*)process context:(JSContext*)context
+- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context
 {
     self.preserver = [process keepAlive];
     self.ready = true;
 }
-- (void) onProcessAboutToExit:(Process*)process exitCode:(int)code
+- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code
 {
 }
-- (void) onProcessExit:(Process*)process exitCode:(int)code
+- (void) onProcessExit:(LCProcess*)process exitCode:(int)code
 {
     self.done = true;
 }
-- (void) onProcessFailed:(Process*)process exception:(NSException*)exception
+- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception
 {
     XCTAssertTrue(false);
 }
@@ -120,7 +120,7 @@ typedef void (^OnDone)(JSContext *);
     NSString *content = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
     XCTAssertEqualObjects(content, @"Hello, World!");
     
-    [Process uninstall:@"_" scope:LOCAL];
+    [LCProcess uninstall:@"_" scope:LOCAL];
     XCTAssertFalse([[NSFileManager defaultManager] fileExistsAtPath:path]);
 }
 
@@ -195,7 +195,7 @@ typedef void (^OnDone)(JSContext *);
     }];
     volatile bool done = false; while (!done) { done = s.done; }
 
-    [Process uninstall:@"_" scope:LOCAL];
+    [LCProcess uninstall:@"_" scope:LOCAL];
 }
 
 - (void)testChdirCwdMultipleProcesses
@@ -231,7 +231,7 @@ typedef void (^OnDone)(JSContext *);
     [cwd2.preserver letDie];
     volatile bool done = false; while (!done) { done = cwd1.done && cwd2.done; }
     
-    [Process uninstall:@"_" scope:LOCAL];
+    [LCProcess uninstall:@"_" scope:LOCAL];
 }
 
 @end
