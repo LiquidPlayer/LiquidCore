@@ -59,7 +59,9 @@
     [self.command setCommandDelegate:self];
     [self.command becomeFirstResponder];
     [self.console setDelegate:self];
-    self.command.smartQuotesType = UITextSmartQuotesTypeNo;
+    if (@available(iOS 11.0, *)) {
+        self.command.smartQuotesType = UITextSmartQuotesTypeNo;
+    }
     self.command.autocorrectionType = UITextAutocorrectionTypeNo;
     
     UITextInputAssistantItem* item = [self.command inputAssistantItem];
