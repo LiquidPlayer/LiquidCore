@@ -2,12 +2,6 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set( SOURCES
 
-     # External dependencies
-     ../deps/node-sqlite3/src/database.cc
-     ../deps/node-sqlite3/src/node_sqlite3.cc
-     ../deps/node-sqlite3/src/statement.cc
-     ../deps/jscshim/JSCShim.cpp
-
      # Common V8 objects for JNI/JSC
      src/main/cpp/Common/ContextGroup.cpp
      src/main/cpp/Common/JSContext.cpp
@@ -47,7 +41,6 @@ set( SOURCES
 
      # Node.js
      src/main/cpp/node/JNI_Process.cpp
-     src/main/cpp/node/sqlite3_shim.cpp
 )
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
@@ -125,6 +118,7 @@ include_directories(
              src/../../deps/nan-2.5.1
              src/../../deps/boost_1_66_0
              src/../../LiquidCoreCommon/node
+             src/../../LiquidCoreCommon/include
              )
 
 find_library( # Sets the name of the path variable.

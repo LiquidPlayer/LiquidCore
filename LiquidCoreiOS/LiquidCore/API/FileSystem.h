@@ -11,6 +11,7 @@
 
 @interface FileSystem : NSObject
 @property (nonatomic, copy) NSString* modulePath;
+@property (nonatomic, copy) NSString* node_modulesPath;
 + (id) createInContext:(JSContext *)context
               uniqueID:(NSString*)uniqueID
        mediaAccessMask:(MediaAccessMask)mask;

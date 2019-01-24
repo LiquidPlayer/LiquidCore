@@ -238,8 +238,6 @@ class FileSystem extends JSObject {
         final String sessionPath = androidCtx.getCacheDir().getAbsolutePath() + sessionSuffix;
         final String path = androidCtx.getCacheDir().getAbsolutePath() + suffix;
         final String localPath = androidCtx.getFilesDir().getAbsolutePath() + suffix;
-        final String node_modules = androidCtx.getFilesDir().getAbsolutePath() +
-                "/__org.liquidplayer.node__/node_modules";
 
         // Set up /home (read-only)
         js.mkdir("/home", sessionPath + "/home", Process.kMediaAccessPermissionsRead);
@@ -258,8 +256,11 @@ class FileSystem extends JSObject {
         // Set up /home/local (read/write)
         js.mkdirAndSymlink("/home/local", localPath + "/local",
                 sessionPath + "/home/local", Process.kMediaAccessPermissionsRW);
-        // Permit access to node_modules
-        js.symlink("/home/node_modules", node_modules,
+        // Set up /home/node_modules (read-only)
+        if (new File(localPath + "/node_modules").mkdirs()) {
+            android.util.Log.i("FileSystem", "Created directory " + path + "/node_module" );
+        }
+        js.symlink("/home/node_modules", localPath + "/node_modules",
                 sessionPath + "/home/node_modules", Process.kMediaAccessPermissionsRead);
 
         String state = Environment.getExternalStorageState();

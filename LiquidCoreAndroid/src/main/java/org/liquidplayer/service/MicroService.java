@@ -20,7 +20,6 @@ import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSON;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
-import org.liquidplayer.node.BuildConfig;
 import org.liquidplayer.node.Process;
 
 import java.io.File;
@@ -53,7 +52,7 @@ import java.util.zip.GZIPInputStream;
  * whose operation is defined by the code referenced by the service URI.  When a MicroService
  * is instantiated, its Node.js environment is set up, its code downloaded (or fetched from cache)
  * from the URI, and is executed in a VM.  The host may interact with the VM via a simple
- * message-based API, or a UI may be exposed by attaching to a Surface.
+ * message-based API.
  */
 public class MicroService implements Process.EventListener {
 
@@ -170,19 +169,6 @@ public class MicroService implements Process.EventListener {
     private boolean started = false;
     private Process process;
 
-    static class AvailableSurface {
-        Class<? extends Surface> cls;
-        String version;
-        AvailableSurface(Class <? extends Surface> cls, String version) {
-            this.cls = cls;
-            this.version = version;
-        }
-    }
-    private AvailableSurface [] availableSurfaces = new AvailableSurface[0];
-    void setAvailableSurfaces(AvailableSurface[] availableSurfaces) {
-        this.availableSurfaces = availableSurfaces;
-    }
-
     /**
      * Creates a new instance of the MicroService referenced by serviceURI
      * @param ctx  The android context of this app
@@ -246,10 +232,10 @@ public class MicroService implements Process.EventListener {
 
     /**
      * Adds an event listener for an event triggered by 'LiquidCore.emit(event, payload)' in
-     * JavaScript.  Example:<br/>
-     * <code>
-     *     LiquidCore.emit('my_event', { stringData: 'foo', bar : 6 });<br/>
-     * </code>
+     * JavaScript.  Example:
+     * <pre>{@code
+     *     LiquidCore.emit('my_event', { stringData: 'foo', bar : 6 });
+     * }</pre>
      * This will trigger the 'listener' added here, with the JavaScript object represented as a
      * JSONObject payload.
      * @param event  The String event id
@@ -340,9 +326,7 @@ public class MicroService implements Process.EventListener {
     }
 
     /**
-     * Returns the Node.js Process object.  This is only intended to be used by Surfaces, and
-     * directly accessing the Process is not recommended.  May deprecate in the future, so don't
-     * get used to it.
+     * Returns the Node.js Process object.
      * @return  The Node.js Process object
      */
     public Process getProcess() {
@@ -384,19 +368,19 @@ public class MicroService implements Process.EventListener {
 
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(payload) {<br/>
-     *        // Do something with the payload data<br/>
-     *        console.log(payload.hello);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     JSONObject foo = new JSONObject();<br/>
-     *     foo.putString("hello", "world");<br/>
-     *     myService.emit("my_event", foo);<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(payload) {
+     *        // Do something with the payload data
+     *        console.log(payload.hello);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     JSONObject foo = new JSONObject();
+     *     foo.putString("hello", "world");
+     *     myService.emit("my_event", foo);
+     * }</pre>
      * @param event  The event to trigger
      * @param payload  The JSONObject data structure to emit
      */
@@ -413,16 +397,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function() {<br/>
-     *        console.log('Received my_event');<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event");<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function() {
+     *        console.log('Received my_event');
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event");
+     * }</pre>
      * @param event  The event to trigger
      */
     public void emit(String event) {
@@ -430,16 +414,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event", 5);<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event", 5);
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -450,16 +434,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event", 5L);<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event", 5L);
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -470,16 +454,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event", 5.2f);<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event", 5.2f);
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -490,16 +474,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event", 15.6);<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event", 15.6);
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -510,16 +494,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event", "foo");<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event", "foo");
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -530,16 +514,16 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
-     *     myService.emit("my_event", true);<br/>
-     * </code><br/>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
+     *     myService.emit("my_event", true);
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -550,19 +534,19 @@ public class MicroService implements Process.EventListener {
     }
     /**
      * Emits an event that can be received by the JavaScript code, if the MicroService has
-     * registered a listener.  Example:<br/>
-     * <code>
-     *     LiquidCore.on('my_event', function(val) {<br/>
-     *        console.log('Received: ' + val);<br/>
-     *     });<br/>
-     * </code><br/>
-     * On the Java side:<br/>
-     * <code>
+     * registered a listener.  Example:
+     * <pre>{@code
+     *     LiquidCore.on('my_event', function(val) {
+     *        console.log('Received: ' + val);
+     *     });
+     * }</pre>
+     * On the Java side:
+     * <pre>{@code
      *     JSONArray a = new JSONArray();
      *     a.put(0);
      *     a.put("two");
-     *     myService.emit("my_event", a);<br/>
-     * </code><br/>
+     *     myService.emit("my_event", a);
+     * }</pre>
      * @param event  The event to trigger
      * @param v value to send
      */
@@ -618,10 +602,9 @@ public class MicroService implements Process.EventListener {
         return new File(modules);
     }
 
-    // FIXME: We want to use the symlinked version so that we are only capturing those modules exposed to this service
     private File getNodeModulesPath() {
-        String node_modules = androidCtx.getFilesDir().getAbsolutePath() +
-                "/__org.liquidplayer.node__/node_modules";
+        final String suffix = "/__org.liquidplayer.node__/_" + serviceId;
+        String node_modules = androidCtx.getFilesDir().getAbsolutePath() + suffix + "/node_modules";
         return new File(node_modules);
     }
 
@@ -648,34 +631,9 @@ public class MicroService implements Process.EventListener {
                         sdf.format(new Date(lastModified)) + " GMT");
             }
             connection.setRequestProperty("Accept-Encoding", "gzip");
-            String version = BuildConfig.VERSION_NAME;
+            String version = org.liquidplayer.node.BuildConfig.VERSION_NAME;
             String info = "Android; API " + Build.VERSION.SDK_INT;
-            String bindings = "";
-            for (File binding : getNodeModulesPath().listFiles()) {
-                if (binding.isDirectory()) {
-                    if (!"".equals(bindings)) {
-                        bindings += "; ";
-                    }
-                    bindings += binding.getName();
-                }
-            }
-            String surfaces = "";
-            for (AvailableSurface surface : availableSurfaces) {
-                if (!"".equals(surfaces)) {
-                    surfaces += "; ";
-                }
-                surfaces += surface.cls.getCanonicalName();
-                if (surface.version != null) {
-                    surfaces += "/" + surface.version;
-                }
-            }
             String userAgent = "LiquidCore/" + version + " (" + info + ")";
-            if (!"".equals(surfaces)) {
-                userAgent += " Surface (" + surfaces + ")";
-            }
-            if (!"".equals(bindings)) {
-                userAgent += " Binding (" + bindings + ")";
-            }
             android.util.Log.d("MicroService", "User-Agent : " + userAgent);
             connection.setRequestProperty("User-Agent", userAgent);
             int responseCode = connection.getResponseCode();
@@ -733,6 +691,9 @@ public class MicroService implements Process.EventListener {
         return canonical.toString();
     }
 
+    @SuppressWarnings("unused")
+    private static void IGNORE_RESULT(boolean b) {}
+
     @SuppressWarnings("unchecked")
     private JSValue bindings(JSContext context, String module, JSFunction require) {
         final int fndx = module.lastIndexOf('/');
@@ -755,8 +716,15 @@ public class MicroService implements Process.EventListener {
                 AddOn addOn = addOnClass.getConstructor(Context.class).newInstance(androidCtx);
                 addOn.register(moduleName);
 
-                context.evaluateScript("fs.writeFileSync('/home/temp/" + fname + "', '')");
-                JSValue binding = require.call(null, "/home/temp/" + fname);
+                File node_module = new File(getNodeModulesPath() + "/" + fname);
+                if (!node_module.exists()) {
+                    try {
+                        IGNORE_RESULT(node_module.createNewFile());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                JSValue binding = require.call(null, "/home/node_modules/" + fname);
                 addOn.require(binding, this);
                 return binding;
             } else {

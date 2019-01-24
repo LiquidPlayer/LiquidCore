@@ -88,7 +88,7 @@
  whose operation is defined by the code referenced by the service URI.  When an `LCMicroService`
  is instantiated, its Node.js environment is set up, its code downloaded (or fetched from cache)
  from the URI, and is executed in a VM.  The host may interact with the VM via a simple
- message-based API, or a UI may be exposed by attaching to an `LCSurface`.
+ message-based API.
  */
 @interface LCMicroService : NSObject
 
@@ -100,16 +100,8 @@
 
 /**
  The Node.js Process object.
- @note This is only intended to be used by surfaces, and
- directly accessing the `Process` is not recommended.
  */
 @property (atomic, readonly, nullable) LCProcess* process;
-
-/**
- An array of strings with the canonical names of `LCSurface` UIs available to the
- micro service.
- */
-@property (nonatomic, readwrite, nullable, copy) NSArray* availableSurfaces;
 
 /**
  The URI from which the service was started.

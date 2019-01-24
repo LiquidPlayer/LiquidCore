@@ -1,5 +1,0 @@
-include ':NodeConsole'
-include ':LiquidCoreAndroid'
-
-project(':LiquidCoreAndroid').projectDir = new File(
-        rootProject.projectDir, '../../LiquidCoreAndroid')

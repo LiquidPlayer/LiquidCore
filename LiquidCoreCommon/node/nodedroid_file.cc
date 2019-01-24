@@ -32,6 +32,7 @@
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
+#include "addon.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 # include <io.h>

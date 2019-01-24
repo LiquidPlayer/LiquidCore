@@ -154,43 +154,8 @@ static NSMutableDictionary* _serviceMap = nil;
         NSDictionary *infoDictionary = [[NSBundle bundleForClass:self.class]infoDictionary];        
         NSString *version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
         NSString *info = [NSString stringWithFormat:@"iOS; API=%@", [[UIDevice currentDevice] systemVersion]];
-
-        NSString *bindings = nil;
-        NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-        NSString* node_modules = [bundle pathForResource:@"node_modules" ofType:nil];
-        NSDirectoryEnumerator * enumerator = [fileManager enumeratorAtPath:node_modules];
-        [enumerator skipDescendants];
-        NSString* path;
-        while (path = [enumerator nextObject])
-        {
-            if (![path containsString:@"/"]) {
-                if (bindings) {
-                    bindings = [NSString stringWithFormat:@"%@; %@", bindings, path];
-                } else {
-                    bindings = [NSString stringWithString:path];
-                }
-            }
-        }
-        if (bindings) bindings = [NSString stringWithFormat:@" Binding (%@)", bindings];
-        else bindings = @"";
         
-        NSString *surfaces = nil;
-        if (self.availableSurfaces != nil) {
-            for (Class<LCSurface> surface in self.availableSurfaces) {
-                NSString *sfc = [NSString stringWithFormat:@"%@/%@",
-                                 [[surface class] SURFACE_CANONICAL_NAME],
-                                 [[surface class] SURFACE_VERSION]];
-                if (surfaces != nil) {
-                    surfaces = [NSString stringWithFormat:@"%@; %@", surfaces, sfc];
-                } else {
-                    surfaces = sfc;
-                }
-            }
-        }
-        if (surfaces) surfaces = [NSString stringWithFormat:@" Surface (%@)", surfaces];
-        else surfaces = @"";
-
-        NSString *userAgent = [NSString stringWithFormat:@"LiquidCore/%@ (%@)%@%@", version, info, surfaces, bindings];
+        NSString *userAgent = [NSString stringWithFormat:@"LiquidCore/%@ (%@)", version, info];
         NSLog(@"MicroService User-Agent : %@", userAgent);
         [request setValue:userAgent forHTTPHeaderField:@"User-Agent"];
         [request setHTTPMethod:@"GET"];
@@ -244,10 +209,12 @@ static NSMutableDictionary* _serviceMap = nil;
     } else {
         id<LCAddOn> addOn = [factory createInstance];
         [addOn register:moduleName];
-        // FIXME: This has to be fixed before releasing.  It shouldn't be necessary to write a dummy file
-        // or even if it is, it needs to be more foolproof
-        [context evaluateScript:[NSString stringWithFormat:@"fs.writeFileSync('/home/temp/%@', '')", fname]];
-        JSValue* binding = [require callWithArguments:@[[NSString stringWithFormat:@"/home/temp/%@", fname]]];
+
+        [[NSFileManager defaultManager]
+         createFileAtPath:[NSString stringWithFormat:@"%@/%@", self.process.node_modulesPath, fname]
+         contents:[@"" dataUsingEncoding:NSUTF8StringEncoding]
+         attributes:nil];
+        JSValue* binding = [require callWithArguments:@[[NSString stringWithFormat:@"/home/node_modules/%@", fname]]];
         [addOn require:binding service:self];
         return binding;
     }

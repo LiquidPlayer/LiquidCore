@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version = "0.5.1"
   s.summary = "Provides Node.js virtual machines to run inside iOS apps."
   s.description = <<-DESC
-LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system and native SQLite3 support.
+LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system.
   DESC
 
   s.homepage = "https://github.com/LiquidPlayer/LiquidCore"
@@ -228,9 +228,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/src/util.cc",
       "deps/node-8.9.3/src/uv.cc",
 
-      "deps/node-sqlite3/src/*",
-
-      # V82JS
+      # V82JSC
       "LiquidCoreiOS/LiquidCore/node-8.9.3/V82JSC/**/*.{cpp,h}",
       "deps/node-8.9.3/deps/v8/src/base/debug/stack_trace_posix.cc",
       "deps/node-8.9.3/deps/v8/src/base/debug/stack_trace.{cc,h}",
@@ -244,9 +242,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "LiquidCoreiOS/LiquidCore/node-8.9.3/node/node_provider.h",
 
       "LiquidCoreCommon/node/*",
-
-      # ConsoleView
-      "LiquidCoreiOS/LiquidCore/ConsoleView/*.{h,m}",
+      "LiquidCoreCommon/include/*.h",
 
       # API
       "LiquidCoreiOS/LiquidCore/LiquidCore/*.h",
@@ -291,7 +287,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   s.requires_arc = true
 
   s.libraries = [
-      'sqlite3', # libsqlite3.tbd
       'z' # libz.tbd
   ]
   s.vendored_libraries = "deps/openssl-1.0.2o/lib-ios/libcrypto.a", "deps/openssl-1.0.2o/lib-ios/libssl.a"
@@ -375,10 +370,5 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   }
 
   s.swift_version = '3.0'
-
-  s.resources = [
-      'LiquidCoreiOS/LiquidCore/ConsoleView/ConsoleView.xib',
-      'LiquidCoreiOS/LiquidCore/node_modules'
-  ]
 
 end

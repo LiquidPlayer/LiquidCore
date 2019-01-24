@@ -225,7 +225,6 @@ static NSString* alias_code =
     NSString* path = [NSString stringWithFormat:@"%@/Library/Caches/%@", homedir, suffix];
     NSString* localPath = [NSString stringWithFormat:@"%@/Library/%@", homedir, suffix];
     NSBundle* bundle = [NSBundle bundleForClass:[self class]];
-    NSString* node_modules = [bundle pathForResource:@"node_modules" ofType:nil];
     NSString* public_data = [NSString stringWithFormat:@"%@/Documents/%@", homedir, suffix];
  
     JSBuilder* js = [[JSBuilder alloc] init];
@@ -252,7 +251,26 @@ static NSString* alias_code =
          target:module
        linkpath:[NSString stringWithFormat:@"%@/home/module", sessionPath]
            mask:PermissionsRead];
-    
+
+    // Set up /home/node_modules (read-only)
+    NSString *node_modules = [NSString stringWithFormat:@"%@/node_modules", localPath];
+    self.node_modulesPath = node_modules;
+    if (![[NSFileManager defaultManager] createDirectoryAtPath:node_modules
+                                   withIntermediateDirectories:YES
+                                                    attributes:nil
+                                                         error:&error])
+    {
+        NSLog(@"Create directory error: %@", error);
+    }
+    else
+    {
+        //NSLog(@"mkdir: Created directory %@", module);
+    }
+    [js symlink:@"/home/node_modules"
+         target:node_modules
+       linkpath:[NSString stringWithFormat:@"%@/home/node_modules", sessionPath]
+           mask:PermissionsRead];
+
     // Set up /home/temp (read/write)
     [js mkdirAndSymlink:@"/home/temp"
                     target:[NSString stringWithFormat:@"%@/temp", sessionPath]
@@ -268,11 +286,6 @@ static NSString* alias_code =
                     target:[NSString stringWithFormat:@"%@/local", localPath]
                linkpath:[NSString stringWithFormat:@"%@/home/local", sessionPath]
                    mask:PermissionsRW];
-    // Permit access to node_modules
-    [js symlink:@"/home/node_modules"
-         target:node_modules
-       linkpath:[NSString stringWithFormat:@"%@/home/node_modules", sessionPath]
-           mask:PermissionsRead];
     
     // Set up /home/public (read-only)
     [js mkdir:@"/home/public" ios:[NSString stringWithFormat:@"%@/home/public", sessionPath] mask:PermissionsRead];

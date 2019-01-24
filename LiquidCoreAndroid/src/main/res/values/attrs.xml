@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <declare-styleable name="LiquidView">
-        <attr name="liquidcore.URI" format="string" />
-        <attr name="liquidcore.argv" format="reference" />
-        <attr name="liquidcore.surfaces" format="reference" />
-        <attr name="liquidcore.surface" format="string" />
-    </declare-styleable>
-</resources>

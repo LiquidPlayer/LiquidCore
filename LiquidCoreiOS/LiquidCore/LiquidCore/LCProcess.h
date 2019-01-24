@@ -31,6 +31,7 @@ typedef enum _MediaAccessMask {
 
 @interface LCProcess : NSObject
 @property (nonatomic, readonly, copy) NSString* modulePath;
+@property (nonatomic, readonly, copy) NSString* node_modulesPath;
 
 - (id) initWithDelegate:(id<LCProcessDelegate>)delegate
                      id:(NSString*)uniqueID

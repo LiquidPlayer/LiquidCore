@@ -93,13 +93,15 @@ public class Process {
 
     /**
      * Creates a node.js process and attaches an event listener
-     * @param listener the listener interface object
+     * @param androidContext The current Android context.
+     * @param uniqueID A unique ID to identify the #Process across runs.  The file system will
+     *                 be preserved and reused for all processes using the same ID.
+     * @param mediaAccessMask Permission mask for read/write access to external media.
+     * @param listener The listener interface object.
      */
     public Process(Context androidContext, String uniqueID, int mediaAccessMask,
                    EventListener listener) {
         addEventListener(listener);
-
-        new Modules(androidContext).setUpNodeModules();
 
         processRef = start();
         Thread processThread = new Thread(null, new Runnable() {
@@ -172,8 +174,10 @@ public class Process {
 
     /**
      * Instructs the VM not to shutdown the process when no more callbacks are pending.  In effect,
-     * this method indefinitely leaves a callback pending until @letDie() is called.  This must
-     * be followed up by a call to letDie() or the process will remain active indefinitely.
+     * this method indefinitely leaves a callback pending until the resulting
+     * #org.liquidplayer.javascript.JSContextGroup.LoopPreserver is released.  The loop preserver
+     * must eventually be released or the process will remain active indefinitely.
+     * @return A preserver object
      */
     public JSContextGroup.LoopPreserver keepAlive() {
         JSContext ctx = jscontext.get();

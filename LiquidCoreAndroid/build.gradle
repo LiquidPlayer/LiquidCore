@@ -3,17 +3,16 @@ apply plugin: 'jacoco'
 apply plugin: 'com.github.dcendents.android-maven'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
     buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 5
         versionName "0.5.1"
         setProperty("archivesBaseName", "LiquidCore")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        //multiDexEnabled true
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++11 -fexceptions"
@@ -65,7 +64,7 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     debugImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
     androidTestImplementation 'com.android.support:support-annotations:28.0.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
@@ -81,8 +80,14 @@ task sourcesJar(type: Jar) {
 task javadoc(type: Javadoc) {
     failOnError  false
     source = android.sourceSets.main.java.sourceFiles
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
+    configurations.implementation.setCanBeResolved(true)
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator)) +
+            configurations.implementation
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
 }
 
 // build a jar with javadoc
@@ -107,8 +112,36 @@ task copyHeadersToAARRelease(type: Zip) {
         into('include/v8')
         include ('**/*.h')
     }
+    from("../deps/node-8.9.3/deps/uv/include") {
+        into('include/uv')
+        include ('**/*.h')
+    }
+    from("../deps/node-8.9.3/deps/cares/include") {
+        into('include/cares')
+        include ('**/*.h')
+    }
+    from("../deps/node-8.9.3/deps/http_parser") {
+        into('include/http_parser')
+        include ('**/*.h')
+    }
+    from("../deps/node-8.9.3/deps/nghttp2") {
+        into('include/nghttp2')
+        include ('**/*.h')
+    }
+    from("../deps/node-8.9.3/deps/openssl/openssl/include") {
+        into('include/openssl')
+        include ('**/*.h')
+    }
     from("../deps/node-8.9.3/src") {
         into('include/node')
+        include('*.h')
+    }
+    from("../deps/JavaScriptCore/include/JavaScriptCore") {
+        into('include/JavaScriptCore')
+        include('*.h')
+    }
+    from("../LiquidCoreCommon/include") {
+        into('include')
         include('*.h')
     }
 }
