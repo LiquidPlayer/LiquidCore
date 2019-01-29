@@ -71,7 +71,7 @@ Local<String> Message::Get() const
 MaybeLocal<String> Message::GetSourceLine(Local<Context> context) const
 {
     // Not supported
-    return MaybeLocal<String>();
+    return String::NewFromUtf8(V82JSC::ToIsolate(this), "<Source line not available>", NewStringType::kNormal);
 }
 
 /**

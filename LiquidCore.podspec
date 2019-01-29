@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = "LiquidCore"
-  s.version = "0.5.1"
+  s.version = "0.6.0-pre1"
   s.summary = "Provides Node.js virtual machines to run inside iOS apps."
   s.description = <<-DESC
 LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system.
@@ -248,7 +248,19 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "LiquidCoreiOS/LiquidCore/LiquidCore/*.h",
       "LiquidCoreiOS/LiquidCore/API/*.{h,m,cpp}"
 
-  s.public_header_files = "LiquidCoreiOS/LiquidCore/LiquidCore/*.h"
+  s.public_header_files = [
+      "LiquidCoreiOS/LiquidCore/LiquidCore/*.h"
+  ]
+
+  s.private_header_files = [
+        "deps/node-8.9.3/src/*.h",
+        "deps/node-8.9.3/deps/cares/include/*.h",
+        "deps/node-8.9.3/deps/http_parser/*.h",
+        "deps/node-8.9.3/deps/nghttp2/lib/**/*.h",
+        "deps/node-8.9.3/deps/uv/include/*.h",
+        "deps/node-8.9.3/deps/v8/include/**/*.h"
+  ]
+
 
   # --- Tests ――――――――――-――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
 
@@ -287,7 +299,8 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   s.requires_arc = true
 
   s.libraries = [
-      'z' # libz.tbd
+      'z',
+      'c++'
   ]
   s.vendored_libraries = "deps/openssl-1.0.2o/lib-ios/libcrypto.a", "deps/openssl-1.0.2o/lib-ios/libssl.a"
   s.frameworks = "JavaScriptCore"
@@ -366,9 +379,12 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       :GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS => 'NO',
       :GCC_WARN_UNUSED_VARIABLE => 'NO',
       :GCC_WARN_UNINITIALIZED_AUTOS => 'NO',
-      :CLANG_WARN_UNREACHABLE_CODE => 'NO',
+      :CLANG_WARN_UNREACHABLE_CODE => 'NO'
   }
 
   s.swift_version = '3.0'
+
+  s.resources = [
+  ]
 
 end
