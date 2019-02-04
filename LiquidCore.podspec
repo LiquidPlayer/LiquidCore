@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = "LiquidCore"
-  s.version = "0.6.0-pre1"
+  s.version = "0.6.0"
   s.summary = "Provides Node.js virtual machines to run inside iOS apps."
   s.description = <<-DESC
 LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system.
@@ -22,8 +22,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/cares/src/windows_port.c",
   ]
 
-  s.source_files = "deps/nan-2.5.1/*.h",
-
+  s.source_files =
       "deps/node-8.9.3/deps/cares/config/darwin/ares_config.h",
       "deps/node-8.9.3/deps/cares/include/ares.h",
       "deps/node-8.9.3/deps/cares/include/ares_build.h",
@@ -112,67 +111,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/v8/include/*.h",
       "deps/node-8.9.3/deps/v8/include/libplatform/*.h",
 
-      "deps/node-8.9.3/src/aliased_buffer.h",
-      "deps/node-8.9.3/src/async-wrap-inl.h",
-      "deps/node-8.9.3/src/async-wrap.h",
-      "deps/node-8.9.3/src/base-object-inl.h",
-      "deps/node-8.9.3/src/base-object.h",
-      "deps/node-8.9.3/src/connect_wrap.h",
-      "deps/node-8.9.3/src/connection_wrap.h",
-      "deps/node-8.9.3/src/env-inl.h",
-      "deps/node-8.9.3/src/env.h",
-      "deps/node-8.9.3/src/handle_wrap.h",
-      "deps/node-8.9.3/src/js_stream.h",
-      "deps/node-8.9.3/src/module_wrap.h",
-      "deps/node-8.9.3/src/node.h",
-      "deps/node-8.9.3/src/node_api.h",
-      "deps/node-8.9.3/src/node_api_types.h",
-      "deps/node-8.9.3/src/node_buffer.h",
-      "deps/node-8.9.3/src/node_constants.h",
-      "deps/node-8.9.3/src/node_crypto.h",
-      "deps/node-8.9.3/src/node_crypto_bio.h",
-      "deps/node-8.9.3/src/node_crypto_clienthello-inl.h",
-      "deps/node-8.9.3/src/node_crypto_clienthello.h",
-      "deps/node-8.9.3/src/node_crypto_groups.h",
-      "deps/node-8.9.3/src/node_debug_options.h",
-      "deps/node-8.9.3/src/node_dtrace.h",
-      "deps/node-8.9.3/src/node_http2.h",
-      "deps/node-8.9.3/src/node_http2_state.h",
-      "deps/node-8.9.3/src/node_i18n.h",
-      "deps/node-8.9.3/src/node_internals.h",
-      "deps/node-8.9.3/src/node_javascript.h",
-      "deps/node-8.9.3/src/node_mutex.h",
-      "deps/node-8.9.3/src/node_perf.h",
-      "deps/node-8.9.3/src/node_perf_common.h",
-      "deps/node-8.9.3/src/node_platform.h",
-      "deps/node-8.9.3/src/node_revert.h",
-      "deps/node-8.9.3/src/node_root_certs.h",
-      "deps/node-8.9.3/src/node_stat_watcher.h",
-      "deps/node-8.9.3/src/node_url.h",
-      "deps/node-8.9.3/src/node_version.h",
-      "deps/node-8.9.3/src/node_watchdog.h",
-      "deps/node-8.9.3/src/node_wrap.h",
-      "deps/node-8.9.3/src/pipe_wrap.h",
-      "deps/node-8.9.3/src/req-wrap-inl.h",
-      "deps/node-8.9.3/src/req-wrap.h",
-      "deps/node-8.9.3/src/spawn_sync.h",
-      "deps/node-8.9.3/src/stream_base-inl.h",
-      "deps/node-8.9.3/src/stream_base.h",
-      "deps/node-8.9.3/src/stream_wrap.h",
-      "deps/node-8.9.3/src/string_bytes.h",
-      "deps/node-8.9.3/src/string_search.h",
-      "deps/node-8.9.3/src/tcp_wrap.h",
-      "deps/node-8.9.3/src/tls_wrap.h",
-      "deps/node-8.9.3/src/tracing/agent.h",
-      "deps/node-8.9.3/src/tracing/node_trace_buffer.h",
-      "deps/node-8.9.3/src/tracing/node_trace_writer.h",
-      "deps/node-8.9.3/src/tracing/trace_event.h",
-      "deps/node-8.9.3/src/tracing/trace_event_common.h",
-      "deps/node-8.9.3/src/tty_wrap.h",
-      "deps/node-8.9.3/src/udp_wrap.h",
-      "deps/node-8.9.3/src/util-inl.h",
-      "deps/node-8.9.3/src/util.h",
-      "deps/node-8.9.3/src/node_object_wrap.h",
+      "deps/node-8.9.3/src/*.h",
 
       "deps/node-8.9.3/src/async-wrap.cc",
       "deps/node-8.9.3/src/backtrace_posix.cc",
@@ -235,6 +174,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/v8/src/base/*.cc",
       "deps/node-8.9.3/deps/v8/src/assert-scope.{cc,h}",
       "deps/node-8.9.3/deps/v8/src/base/utils/random-number-generator.{cc,h}",
+      "deps/utfcpp/**/*.{h}",
 
       # Dynamically generated files.
       "LiquidCoreiOS/LiquidCore/node-8.9.3/V82JSC/polyfill/polyfill.c",
@@ -257,7 +197,16 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
         "deps/node-8.9.3/deps/cares/include/*.h",
         "deps/node-8.9.3/deps/http_parser/*.h",
         "deps/node-8.9.3/deps/nghttp2/lib/**/*.h",
-        "deps/node-8.9.3/deps/uv/include/*.h",
+
+        "deps/node-8.9.3/deps/uv/include/pthread-barrier.h",
+        "deps/node-8.9.3/deps/uv/include/tree.h",
+        "deps/node-8.9.3/deps/uv/include/uv-darwin.h",
+        "deps/node-8.9.3/deps/uv/include/uv-errno.h",
+        "deps/node-8.9.3/deps/uv/include/uv-threadpool.h",
+        "deps/node-8.9.3/deps/uv/include/uv-unix.h",
+        "deps/node-8.9.3/deps/uv/include/uv-version.h",
+        "deps/node-8.9.3/deps/uv/include/uv.h",
+
         "deps/node-8.9.3/deps/v8/include/**/*.h"
   ]
 

@@ -8,6 +8,7 @@
 #include "JSWeakRefPrivate.h"
 #include "JSStringRefPrivate.h"
 #include <codecvt>
+#include "utf8.h"
 
 using namespace v8;
 
@@ -90,16 +91,18 @@ MaybeLocal<String> String::NewFromUtf8(Isolate* isolate, const char* data,
     if (length > v8::String::kMaxLength) {
         return MaybeLocal<String>();
     }
+    
+    if (length < 0) {
+        length = strlen(data);
+    }
+    
+    std::vector<unsigned short> backstore;
+    utf8::unchecked::utf8to16(data, data + length, std::back_inserter(backstore));
 
-    char *str_ = (char*) malloc(length>=0 ? length+1 : 0);
-    if (length>0) {
-        strncpy(str_, data, length);
-        str_[length] = 0;
-        data = str_;
-    }    
-    Local<String> out = StringImpl::New(isolate, JSStringCreateWithUTF8CString(data), nullptr, nullptr, type);
-    free(str_);
-
+    // FIXME: Would be nice to use JSStringCreateWithCharactersNoCopy
+    JSStringRef s = JSStringCreateWithCharacters(&backstore [0], length);
+    Local<String> out = StringImpl::New(isolate, s, nullptr, nullptr, type);
+    
     return scope.Escape(out);
 }
 

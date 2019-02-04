@@ -1701,9 +1701,12 @@ void* Object::SlowGetAlignedPointerFromInternalField(int index)
     HandleScope scope(isolate);
     Local<Context> context = V82JSC::ToCurrentContext(this);
 
-    Local<External> external = SlowGetInternalField(index).As<External>();
-    JSObjectRef o = (JSObjectRef) V82JSC::ToJSValueRef(external, context);
-    return JSObjectGetPrivate(o);
+    Local<Value> external = SlowGetInternalField(index);
+    if (external->IsExternal()) {
+        return external.As<External>()->Value();
+    } else {
+        return nullptr;
+    }
 }
 
 Local<Value> Object::SlowGetInternalField(int index)

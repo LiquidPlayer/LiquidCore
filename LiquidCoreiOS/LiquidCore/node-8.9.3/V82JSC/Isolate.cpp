@@ -195,10 +195,18 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
 
+#define EXTERNAL_MEMORY_SIZE (512 * 1024)
+
 bool internal::Heap::SetUp()
 {
     IsolateImpl* iso = reinterpret_cast<IsolateImpl*>(isolate());
     incremental_marking_ = &iso->incremental_marking_;
+    
+    void *memptr;
+    posix_memalign(&memptr, EXTERNAL_MEMORY_SIZE, EXTERNAL_MEMORY_SIZE);
+    external_memory_ = reinterpret_cast<uint64_t>(memptr);
+    external_memory_limit_ = external_memory_ + EXTERNAL_MEMORY_SIZE;
+    
     return true;
 }
 
@@ -561,12 +569,15 @@ void Isolate::Dispose()
     }
     
     // Finally, blitz the global handles and the heap
+    void *memptr = reinterpret_cast<void*>(isolate->ii.heap()->external_memory());
+    free(memptr);
+
     isolate->ii.global_handles()->TearDown();
     V82JSC_HeapObject::HeapAllocator::TearDown(isolate);
     
     if (isolate->m_locker) delete isolate->m_locker;
     
-    // And now we the isolate is done
+    // And now the isolate is done
     free(isolate);
 }
 
