@@ -52,8 +52,7 @@ struct MessageListener {
 // This is a hack to avoid having to edit the V8 header files.  We do garbage collection
 // differently and GlobalHandle struct is locked down as private.  This allows us to call
 // back into GlobalHandle with a custom function.
-typedef std::function<void(std::map<v8::internal::Object*, int>&, std::map<v8::internal::Object*,
-                           std::vector<v8::internal::Object**>>&)> GetGlobalHandles;
+typedef std::function<void(H::HeapContext&)> GetGlobalHandles;
 typedef std::function<void(v8::internal::Object**, std::vector<v8::internal::SecondPassCallback>&,
                            JSObjectRef)> WeakObjectNearDeath;
 typedef std::function<void(v8::Isolate*, v8::internal::SecondPassCallback&)> WeakHeapObjectFinalized;
@@ -141,6 +140,7 @@ struct IsolateImpl {
     std::vector<GCCallbackStruct> m_gc_prologue_callbacks;
     std::vector<GCCallbackStruct> m_gc_epilogue_callbacks;
     std::map<void*, JSObjectRef> m_near_death;
+    std::atomic<bool> m_pending_collection;
     bool m_pending_prologue;
     bool m_pending_epilogue;
     int m_in_gc;
@@ -154,6 +154,7 @@ struct IsolateImpl {
     std::thread::id m_owner;
     
     std::mutex m_isolate_lock;
+    std::mutex m_handlewalk_lock;
 
     struct PerIsolateThreadData
     {
@@ -248,7 +249,7 @@ struct IsolateImpl {
 
     void EnterContext(v8::Local<v8::Context> ctx);
     void ExitContext(v8::Local<v8::Context> ctx);
-    void GetActiveLocalHandles(std::map<v8::internal::Object*, int>& dontDeleteMap);
+    void GetActiveLocalHandles(H::HeapContext&);
     void CollectGarbage();
     void TriggerGCPrologue();
     void TriggerGCFirstPassPhantomCallbacks();

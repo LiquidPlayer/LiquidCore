@@ -1281,13 +1281,13 @@ void Object::SetAlignedPointerInInternalField(int index, void* value)
     JSContextRef ctx = V82JSC::ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
     
-    SetInternalField(index, External::New(context->GetIsolate(), value));
-    
     if (index < 2) {
         TrackedObjectImpl *wrap = getPrivateInstance(ctx, obj);
         if (wrap) {
             wrap->m_embedder_data[index] = value;
         }
+    } else {
+        SetInternalField(index, External::New(context->GetIsolate(), value));
     }
 }
 void Object::SetAlignedPointerInInternalFields(int argc, int indices[],
@@ -1700,13 +1700,29 @@ void* Object::SlowGetAlignedPointerFromInternalField(int index)
     Isolate* isolate = V82JSC::ToIsolate(this);
     HandleScope scope(isolate);
     Local<Context> context = V82JSC::ToCurrentContext(this);
+    JSContextRef ctx = V82JSC::ToContextRef(context);
+    JSObjectRef obj = (JSObjectRef) V82JSC::ToJSValueRef(this, context);
 
-    Local<Value> external = SlowGetInternalField(index);
-    if (external->IsExternal()) {
-        return external.As<External>()->Value();
-    } else {
-        return nullptr;
+    TrackedObjectImpl *wrap = getPrivateInstance(ctx, obj);
+    if (index < v8::ArrayBufferView::kInternalFieldCount && (IsTypedArray() || IsDataView())) {
+        JSStringRef buffer = JSStringCreateWithUTF8CString("buffer");
+        obj = (JSObjectRef) JSObjectGetProperty(ctx, obj, buffer, 0);
+        JSStringRelease(buffer);
+        wrap = getPrivateInstance(ctx, obj);
     }
+
+    if (wrap && index < wrap->m_num_internal_fields) {
+        if (index < 2) {
+            return wrap->m_embedder_data[index];
+        } else {
+            Local<Value> external = ValueImpl::New(V82JSC::ToContextImpl(context),
+                    JSObjectGetPropertyAtIndex(ctx, wrap->m_internal_fields_array, index, 0));
+            if (external->IsExternal()) {
+                return external.As<External>()->Value();
+            }
+        }
+    }
+    return nullptr;
 }
 
 Local<Value> Object::SlowGetInternalField(int index)

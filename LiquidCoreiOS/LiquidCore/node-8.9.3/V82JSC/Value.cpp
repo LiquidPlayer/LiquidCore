@@ -586,8 +586,7 @@ Local<External> External::New(Isolate* isolate, void* value)
     JSObjectRef external = JSObjectMake(V82JSC::ToContextRef(context), s_externalClass, value);
     auto e = ValueImpl::New(V82JSC::ToContextImpl(context), external);
     
-    Local<External> ext = * reinterpret_cast<Local<External> *>(&e);
-    return scope.Escape(ext);
+    return scope.Escape(e.As<External>());
 }
 
 void* External::Value() const

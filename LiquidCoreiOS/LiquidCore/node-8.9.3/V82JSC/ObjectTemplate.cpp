@@ -738,7 +738,11 @@ v8::MaybeLocal<v8::Object> ObjectTemplateImpl::NewInstance(v8::Local<v8::Context
     // Create lifecycle object
     wrap->m_object_template.Reset(isolate, thiz);
     wrap->m_num_internal_fields = m_internal_fields;
-    wrap->m_internal_fields_array = JSObjectMakeArray(ctx->m_ctxRef, 0, nullptr, 0);
+    JSValueRef *initarray = new JSValueRef[m_internal_fields];
+    for (int i=0; i<m_internal_fields; i++) {
+        initarray[i] = JSValueMakeUndefined(ctx->m_ctxRef);
+    }
+    wrap->m_internal_fields_array = JSObjectMakeArray(ctx->m_ctxRef, m_internal_fields, initarray, 0);
     JSValueProtect(ctx->m_ctxRef, wrap->m_internal_fields_array);
     wrap->m_isHiddenPrototype = isHiddenPrototype;
 

@@ -69,7 +69,7 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
             if (log < HEAP_SMALL_SPACE_LOG) {
                 Transform xform = transform(slots);
                 for (index=chunk->info.m_small_indicies[log];
-                     index>=0 && (pos = xform(chunk->alloc_map[index])) == 0;
+                     index>=HEAP_RESERVED_SLOTS/64 && (pos = xform(chunk->alloc_map[index])) == 0;
                      --index);
                 if (pos == 0) {
                     for (index=HEAP_BLOCKS-1;
@@ -78,7 +78,7 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
                 }
                 if (pos) {
                     int slot = (index * 64) + (pos-1);
-                    assert(slot < HEAP_SLOTS);
+                    assert(slot >= HEAP_RESERVED_SLOTS && slot < HEAP_SLOTS);
                     alloc = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(chunk) +
                                                     slot * HEAP_SLOT_SIZE);
                     assert(alloc > chunk && alloc < (void*)(reinterpret_cast<intptr_t>(chunk) + HEAP_ALIGNMENT));
@@ -171,9 +171,13 @@ HeapObject * HeapAllocator::Alloc(IsolateImpl *isolate, const BaseMap *map, uint
     return o;
 }
 
-int HeapAllocator::Deallocate(HeapObject *obj, CanonicalHandles& handles, WeakHandles& weak,
-                              std::vector<v8::internal::SecondPassCallback>& callbacks)
+int HeapAllocator::Deallocate(HeapContext& context, HeapObject *obj)
 {
+    if (context.deallocated_.count(obj)) {
+        // This has already been deallocated in this GC session, don't do it again
+        return 0;
+    }
+    
     intptr_t addr = reinterpret_cast<intptr_t>(obj);
     intptr_t chunk_addr = addr & ~(HEAP_ALIGNMENT - 1);
     HeapAllocator *chunk = reinterpret_cast<HeapAllocator*>(chunk_addr);
@@ -183,13 +187,13 @@ int HeapAllocator::Deallocate(HeapObject *obj, CanonicalHandles& handles, WeakHa
 
     // If there are any primitive weak handles, perform callbacks now before we blow them away
     internal::Object *h = ToHeapPointer(obj);
-    if (weak.count(h)) {
-        for (auto i=weak[h].begin(); i != weak[h].end(); ++i) {
-            iso->weakObjectNearDeath(*i, callbacks, 0);
+    if (context.weak_.count(h)) {
+        for (auto i=context.weak_[h].begin(); i != context.weak_[h].end(); ++i) {
+            iso->weakObjectNearDeath(*i, context.callbacks_, 0);
         }
     }
     
-    int freed = ((BaseMap*)FromHeapPointer(obj->m_map))->dtor(obj, handles, weak, callbacks);
+    int freed = ((BaseMap*)FromHeapPointer(obj->m_map))->dtor(context, obj);
     int slot = (int) (addr - chunk_addr) / HEAP_SLOT_SIZE;
     int index = slot / 64;
     int pos = slot % 64;
@@ -215,12 +219,12 @@ int HeapAllocator::Deallocate(HeapObject *obj, CanonicalHandles& handles, WeakHa
     uint64_t mask = (((uint64_t)1 << actual_used_slots) - 1) << pos;
     assert((chunk->alloc_map[index] & mask) == mask);
     chunk->alloc_map[index] &= ~mask;
-    
-    // FIXME: This is a hack.  Create a GCContext struct to pass all the necessary info
-    // Ideally we should remove this address from the vector of allocated objects so
-    // it doesn't get deallocated twice.  But for now, just add the object to the
-    // canonical handles list.  It has the same effect.
-    handles[ToHeapPointer(obj)] = 1;
+
+    // SmartReset may cause objects to get deallocated before the collector gets to them.
+    // Keep track of deallocated objects to ensure we don't deallocate them again.
+    // Ideally, we would just remove this object from the context.allocated_ set, but
+    // C++ iterators make this tough.  So we will keep a separate list.
+    context.deallocated_.insert(obj);
     
     heapimpl->m_allocated -= freed;
     
@@ -239,19 +243,16 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     // maps are forever, so they will be skipped by the garbage collector.  We need to keep track of this
     // if we happen to decide to implement HeapObject relocation.
     //
-    // There shouldn't be any other non-transient references.  We have to also be careful not to collect
-    // garbage while inside of a callback, as transient references may exist
+    // There shouldn't be any other non-transient references.
     iso->m_pending_garbage_collection = false;
     
-    CanonicalHandles canonical_handles;
-    WeakHandles weak_handles;
-    std::vector<internal::SecondPassCallback> second_pass_callbacks;
+    HeapContext context;
     
     // 1. Walk through local handles and add to our canonical list
-    iso->GetActiveLocalHandles(canonical_handles);
+    iso->GetActiveLocalHandles(context);
     
     // 2. Walk through global handles (separating out weak references)
-    iso->getGlobalHandles(canonical_handles, weak_handles);
+    iso->getGlobalHandles(context);
     
     // 3. Walk through the heap and capture all non-map references.  If we happen along a FixedArray, also
     //    add its elements to the canonical handle list
@@ -259,7 +260,6 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
     HeapImpl *heapimpl = reinterpret_cast<HeapImpl*>(heap);
     HeapAllocator *chunk = static_cast<HeapAllocator*>(heapimpl->m_heap_top);
 
-    std::vector<HeapObject*> allocated;
     while (chunk) {
         int slot = HEAP_RESERVED_SLOTS;
         while (slot < HEAP_SLOTS) {
@@ -278,14 +278,15 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
                         size = sizeof(FixedArray) + fa->m_size * sizeof(internal::Object*);
                         for (int j=0; j<fa->m_size; j++) {
                             if (fa->m_elements[j]->IsHeapObject()) {
-                                int count = canonical_handles.count(fa->m_elements[j]) ? canonical_handles[fa->m_elements[j]] : 0;
-                                canonical_handles[fa->m_elements[j]] = count + 1;
+                                int count = context.handles_.count(fa->m_elements[j]) ?
+                                    context.handles_[fa->m_elements[j]] + 1 : 1;
+                                context.handles_[fa->m_elements[j]] = count;
                             }
                         }
                     } else {
                         size = map->size;
                     }
-                    allocated.push_back(obj);
+                    context.allocated_.insert(obj);
                 } else {
                     size = sizeof(BaseMap);
                 }
@@ -297,58 +298,61 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
         }
         chunk = static_cast<HeapAllocator*>(chunk->next_chunk());
     }
-    // Now we have a list of all the allocated memory locations ('allocated') and a map
-    // of those locations that are actually in use ('canonical_handles').
-    // We will walk through the 'allocated' list, and if it is not referenced in 'canonical_handles',
+    // Now we have a list of all the allocated memory locations ('context.allocated_') and a map
+    // of those locations that are actually in use ('context.handles_').
+    // We will walk through the 'context.allocated_' list, and if it is not referenced in 'context.handles_',
     // we will call its destructor and deallocate its memory.
-    // The destructors may then trigger further deallocations.
+    // The destructors may then trigger further deallocations.  We keep track of those deallocations
+    // in 'context.deallocated_' to ensure they aren't deallocated twice.
     int freed = 0;
     int freed_chunks = 0;
     int used_chunks = 0;
 
-    for (auto it = allocated.begin(); it != allocated.end(); ++it) {
-        if (canonical_handles.count(ToHeapPointer(*it)) == 0) {
-            freed += Deallocate(*it, canonical_handles, weak_handles, second_pass_callbacks);
+    for (auto it = context.allocated_.begin(); it != context.allocated_.end(); ++it) {
+        if (context.handles_.count(ToHeapPointer(*it)) == 0) {
+            freed += Deallocate(context, *it);
         }
     }
     
     // Finally, deallocate any chunks that are completely free and reset the indicies
-    chunk = static_cast<HeapAllocator*>(heapimpl->m_heap_top);
-    assert(chunk);
-    while (chunk) {
-        bool used = false;
-        for (int i=HEAP_RESERVED_SLOTS/8; i< HEAP_SLOTS/8; i++) {
-            if (chunk->alloc_map[i] != 0) {
-                used = true;
-                break;
+    if (freed > 0) {
+        chunk = static_cast<HeapAllocator*>(heapimpl->m_heap_top);
+        assert(chunk);
+        while (chunk) {
+            bool used = false;
+            for (int i=HEAP_RESERVED_SLOTS/64; i< HEAP_SLOTS/64; i++) {
+                if (chunk->alloc_map[i] != 0) {
+                    used = true;
+                    break;
+                }
             }
-        }
-        HeapAllocator *next = static_cast<HeapAllocator*>(chunk->next_chunk());
-        if (used) {
-            // Reset all indicies
-            for (int i=0; i<HEAP_SMALL_SPACE_LOG; i++)
-                chunk->info.m_small_indicies[i] = HEAP_BLOCKS-1;
-            chunk->info.m_large_index = 0;
-            used_chunks ++;
-        } else {
-            if (chunk->prev_chunk()) {
-                chunk->prev_chunk()->set_next_chunk(chunk->next_chunk());
+            HeapAllocator *next = static_cast<HeapAllocator*>(chunk->next_chunk());
+            if (used) {
+                // Reset all indicies
+                for (int i=0; i<HEAP_SMALL_SPACE_LOG; i++)
+                    chunk->info.m_small_indicies[i] = HEAP_BLOCKS-1;
+                chunk->info.m_large_index = 0;
+                used_chunks ++;
             } else {
-                heapimpl->m_heap_top = chunk->next_chunk();
+                if (chunk->prev_chunk()) {
+                    chunk->prev_chunk()->set_next_chunk(chunk->next_chunk());
+                } else {
+                    heapimpl->m_heap_top = chunk->next_chunk();
+                }
+                if (chunk->next_chunk()) {
+                    chunk->next_chunk()->set_prev_chunk(chunk->prev_chunk());
+                }
+                free(chunk);
+                freed_chunks ++;
             }
-            if (chunk->next_chunk()) {
-                chunk->next_chunk()->set_prev_chunk(chunk->prev_chunk());
-            }
-            free(chunk);
-            freed_chunks ++;
+            chunk = next;
         }
-        chunk = next;
     }
     
     // Make any second pass phantom callbacks for primtive values
-    for (auto i=second_pass_callbacks.begin(); i!= second_pass_callbacks.end(); ) {
+    for (auto i=context.callbacks_.begin(); i!= context.callbacks_.end(); ) {
         iso->weakHeapObjectFinalized(reinterpret_cast<v8::Isolate*>(iso), *i);
-        second_pass_callbacks.erase(i);
+        context.callbacks_.erase(i);
     }
     // And second pass phantom calls for object values that are ready
     for (auto i=iso->m_second_pass_callbacks.begin(); i!= iso->m_second_pass_callbacks.end(); ) {
@@ -360,12 +364,14 @@ bool HeapAllocator::CollectGarbage(v8::internal::IsolateImpl *iso)
         }
     }
 
-    assert(second_pass_callbacks.empty());
+    assert(context.callbacks_.empty());
 
-/*
-    printf ("V82JSC Garbage Collector: Freed %d bytes; Deallocated %d / %d kB chunks; %d kB in use\n",
-            freed, freed_chunks * 512, (freed_chunks+used_chunks) * 512, used_chunks * 512);
-*/
+    /*
+    if (freed > 0) {
+        printf ("V82JSC Garbage Collector: Freed %d bytes; Deallocated %d / %d kB chunks; %d kB in use\n",
+                freed, freed_chunks * 512, (freed_chunks+used_chunks) * 512, used_chunks * 512);
+    }
+    */
     
     return true;
 }

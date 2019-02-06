@@ -32,9 +32,13 @@ std::map<JSGlobalContextRef, IsolateImpl*> IsolateImpl::s_context_to_isolate_map
 static void triggerGarbageCollection(IsolateImpl* iso)
 {
     Isolate* isolate = V82JSC::ToIsolate(iso);
-    isolate->EnqueueMicrotask([](void *data){
-        reinterpret_cast<IsolateImpl*>(data)->CollectGarbage();
-    }, iso);
+    if (!iso->m_pending_collection) {
+        iso->m_pending_collection = true;
+        isolate->EnqueueMicrotask([](void *data){
+            reinterpret_cast<IsolateImpl*>(data)->CollectGarbage();
+            reinterpret_cast<IsolateImpl*>(data)->m_pending_collection = false;
+        }, iso);
+    }
 }
 
 static void MarkingConstraintCallback(JSMarkerRef marker, void *userData)
@@ -100,6 +104,7 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     new (&impl->m_isolate_lock) std::mutex();
     new (&impl->m_pending_interrupt_mutex) std::mutex();
+    new (&impl->m_handlewalk_lock) std::mutex();
     impl->m_pending_interrupts = std::vector<IsolateImpl::PendingInterrupt>();
 
     HandleScope scope(isolate);
@@ -416,6 +421,7 @@ void Isolate::MemoryPressureNotification(MemoryPressureLevel level)
                 }, isolate);
             }, nullptr);
         } else {
+            printf ("Immediately collecting garbage due to memory pressure\n");
             collectGarbage(iso);
         }
     }
