@@ -41,8 +41,15 @@
  */
 @interface LCAddOnFactory : NSObject
 
+/**
+ Default initializer for the factory.
+ */
 - (instancetype) init;
 
+/**
+ Creates an instance of the add-on.
+ @return a new instance of the add-on
+ */
 - (id<LCAddOn>) createInstance;
 
 /**
