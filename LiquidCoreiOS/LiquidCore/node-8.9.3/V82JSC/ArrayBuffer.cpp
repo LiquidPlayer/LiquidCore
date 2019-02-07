@@ -188,6 +188,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
     JSValueRef excp = 0;
     wrap->m_internal_fields_array = JSObjectMakeArray(ctx, 0, nullptr, &excp);
     assert(excp==0);
+    JSValueProtect(ctx, wrap->m_internal_fields_array);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
     JSValueRef zero = V82JSC::ToJSValueRef(External::New(isolate, nullptr), context);
     for (int i=0; i<ArrayBuffer::kInternalFieldCount; i++) {
@@ -247,6 +248,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
     JSValueRef excp = 0;
     wrap->m_internal_fields_array = JSObjectMakeArray(ctx, 0, nullptr, &excp);
     assert(excp==0);
+    JSValueProtect(ctx, wrap->m_internal_fields_array);
     wrap->m_num_internal_fields = ArrayBuffer::kInternalFieldCount;
     JSValueRef zero = V82JSC::ToJSValueRef(External::New(isolate, nullptr), context);
     for (int i=0; i<ArrayBuffer::kInternalFieldCount; i++) {
