@@ -1,48 +1,32 @@
-The LiquidCore Project (iOS)
-----------------------------
+# The LiquidCore Project
 
-LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system and native SQLite3 support.
+LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system.
 
 Version
 -------
-[0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1)
+[0.6.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.0)
 
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+LiquidCore is distributed using [CocoaPods](https://cocoapods.org/).  In your project's root directory:
 
-The framework is distributed through [Carthage](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application).
+```
+% npm i -g liquidcore-cli
+% liquidcore pod <project-name> > Podfile
+```
 
-1. Install Carthage as described [here](https://github.com/Carthage/Carthage/blob/master/README.md#installing-carthage).
-1. Create a [Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile) that includes the `LiquidCore` framework: ```git "git@github.com:LiquidPlayer/LiquidCore.git" ~> 0.5.1```
-1. Run `carthage update`. This will fetch dependencies into a [Carthage/Checkouts](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#carthagecheckouts) folder, then build each one or download a pre-compiled framework.
-1. On your application targets’ _General_ settings tab, in the “Linked Frameworks and Libraries” section, drag and drop `LiquidCore.framework` from the [Carthage/Build](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#carthagebuild) folder on disk.
-1. On your application targets’ _Build Phases_ settings tab, click the _+_ icon and choose _New Run Script Phase_. Create a Run Script in which you specify your shell (ex: `/bin/sh`), add the following contents to the script area below the shell:
-
-    ```sh
-    /usr/local/bin/carthage copy-frameworks
-    ```
-
-   Add the paths to the framework under “Input Files":
-
-    ```
-    $(SRCROOT)/Carthage/Build/iOS/LiquidCore.framework
-    ```
-
-   Add the paths to the copied framework to the “Output Files”:
-
-    ```
-    $(BUILT_PRODUCTS_DIR)/$(FRAMEWORKS_FOLDER_PATH)/LiquidCore.framework
-    ```
-
+This will generate a `Podfile` for your project.  If you are already using CocoaPods, you can simply
+copy the `pod` and `source` lines from the output into your existing `Podfile`.
 
 API Documentation
 -----------------
-[Version 0.5.1](https://liquidplayer.github.io/LiquidCoreiOS/0.5.1/index.html)
+[Version 0.6.0](https://liquidplayer.github.io/LiquidCoreiOS/0.6.0/index.html)
 
 # Table of Contents
 
 1. [Architecture](#architecture)
-2. [Use Cases](#use-cases)
-3. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
+2. [Node `LCProcess`](#node-lcprocess) - Run raw Node.js instances on Android
+3. [The `LCMicroService`](#the-lcmicroservice) - Run enhanced Node.js instances on Android
+3. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial)
+6. [Native add-ons](#native-add-ons) 
 4. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
 5. [License](#license)
 
@@ -50,15 +34,26 @@ API Documentation
 
 ![iOS Architecture Diagram](https://github.com/LiquidPlayer/LiquidCore/raw/master/doc/ArchitectureiOS.png)
 
-# Use Cases
+LiquidCore for iOS includes the Node.js runtime, but without the V8 backend.  Instead, it marshalls calls to V8 through an interpreter to Apple's JavaScriptCore engine.  It provides two APIs for apps to interact with:
 
-This section covers the two major intended use cases of LiquidCore, complete with _Hello, World!_ step-by-step examples.
+* **Node [`LCProcess`](#node-lcprocess) API**, which allows developers to launch fast isolated instances of the Node.js runtime.
+* **[`LCMicroService`](#the-lcmicroservice) API**, which is an abstraction of a Node.js process and supports dynamic code fetching and native add-ons.
 
-1. [The Micro Service](#the-micro-service)
-2. [The Micro App](#the-micro-app)
+Native add-ons enable extending the basic runtime environment with additional native functionality.  Add-ons have access to the above APIs, plus the ability to use the V8 API.  This allows projects that depend on V8, such native Node modules to use LiquidCore directly.
 
 
-## The Micro Service
+# Node `LCProcess`
+
+[Jazzy API Doc v0.6.0](https://liquidplayer.github.io/LiquidCoreiOS/0.6.0/Classes/LCProcess.html)
+
+LiquidCore allows creation of raw Node.js instances.  Each instance runs in its own thread and is isolated from all other instances.  Instances can share a [virtual file system](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System), by using a common unique identifier.
+
+It is not recommended to use the `LCProcess` API directly for most use cases. The [`LCMicroService`](#the-lcmicroservice) API is more robust and has additional functionality, like support for native modules and downloadable JavaScript bundles.
+
+
+# The `LCMicroService`
+
+[Jazzy API Doc v0.6.0](https://liquidplayer.github.io/LiquidCoreiOS/0.6.0/Classes/LCMicroService.html)
 
 A *micro app* is built on a *micro service*.  A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
 
@@ -175,24 +170,6 @@ LiquidCore.on('host_event', function(msg) {
 
 LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the iOS filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
 
-## The Micro App
-
-**Important Notice:** The Micro App concept is being completely re-thought.  In version 0.6.0, `LiquidView` will disappear from LiquidCore and be reborn in a separate project built on top of LiquidCore.  The goal is to keep LiquidCore focused on just providing a fast, secure Node VM for mobile devices.  The UI will reappear in a project called **_caraml_**. Stay tuned.
-
-There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
-
-There are two surfaces so far:
-
-1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  Run the [NodeConsole](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreiOS/NodeConsole) app to see it in action.
-2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/ReactNativeSurface).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.
-
-There are other surfaces under consideration, including:
-
-* **`WebSurface`** - a `WebView` front-end where a micro service can write to the DOM
-* **`CardSurface`** - a limited feature set suitable for driving card-like UI elements in a list
-* **`OpenGLSurface`** - an [OpenGL](https://www.opengl.org/) canvas
-
-Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
 
 # "Hallo, die Weld!" Micro Service Tutorial
 
@@ -367,22 +344,60 @@ That's it.  That's all there is to it.  Of course, this is an overly simplified 
 
 A quick note about the `LCMicroService.devServer()`: this generates convenience URL which points to the loopback address (`localhost`) on iOS, which is used to serve the simulator from the host machine.  This won't work on actual hardware.  You would need to replace this with an actual URL.  `LCMicroService.devServer()` assumes the entry file is named `liquid.js` and the server is running on port 8082.  Both of these assumptions can be changed by providing arguments, e.g. `LCMicroService.devServer(fileName:"another_file.bundle", port:8888)` would generate a URL to fetch a bundle with an entry point of `another_file.js` on port 8888. 
 
-Building the LiquidCore iOS framework
-------------------------------------
+
+# Native Add-ons
+
+Introduced in version 0.6.0 is experimental support for native node modules (add-ons).  In Node, native add-ons are compiled (or os/architecture-specific prebuilts are downloaded) during `npm install`.  For example, `npm install sqlite3` installs the JavaScript interface to SQLite3 to `node_modules/sqlite3`, but it also compiles a native module `node_sqlite3.node` which is a dynamic library that contains the C-language SQLite3 library and native V8 interface code.  The code is built for the specific machine it is running on using `node-gyp`.
+
+Unfortunately, there are several issues with this on mobile devices.  Primarily, although dynamic frameworks are supported, for security reasons, those frameworks must be embedded in the app to be used.  So it is not possible to download a native framework at runtime and link to it (unlike with pure JavaScript modules, where this is perfectly ok).  Secondly, `node-gyp` is not really a cross-compiler (although some have hacked it for this purpose).  That is, it is optimized to build for the machine on which it is being run (e.g. your Mac machine), not for some remote device like a mobile phone, and not for multiple architectures at once (i.e. ARM64, X86_64).
+
+To support these requirements, native modules have to be modified to work with LiquidCore.  Documentation, frameworks and tools for how to build a native module for LiquidCore are forthcoming, but for now, here is an example of how to use an existing add-on.  [This fork of node-sqlite3](https://github.com/LiquidPlayer/node-sqlite3) has been modified for use with LiquidCore.  We can install it using `npm`.
+
+In your iOS project's root directory, create an empty `package.json` file.  This will allow us to install node modules locally.
+
+```
+% echo "{}" > package.json
+```
+
+Then, install `@liquidcore/sqlite3`:
+
+```
+% npm i @liquidcore/sqlite3
+```
+
+Now, generate the `Podfile` to include the framework into your app using the `liquidcore` utility (make sure you have installed at least version 0.4.4 of `liquidcore-cli`):
+
+```
+% liquidcore pod <project-name> > Podfile
+```
+
+This will generate a Podfile with all required pods.  If you are already using CocoaPods, you can just copy the `source` and `pod` lines from this output into your existing `Podfile`.
+
+That's it.  The SQLite3 add-on will now be available for your JavaScript code to use.
+
+To use it, install `@liquidcore/sqlite3` instead of `sqlite3` with `npm` in your JavaScript project and use the module exactly as you would otherwise.
+
+If there are specific native modules that you would like to use with LiquidCore, please file an issue to request it.  In the near term, I will build a few in order to document and simplify the process (it is a bit arduous at the moment) or I can help you to build it.  Once the documentation stabilizes, I will stop.
+
+# Building the LiquidCore iOS framework
 
 If you are interested in building the library directly and possibly contributing, you must
 do the following:
 
     % git clone https://github.com/liquidplayer/LiquidCore.git
-    % cd LiquidCore/LiquidCoreiOS
-    % carthage build --no-skip-current
+    % cd LiquidCore
+    % pod lib lint
 
-Your framework now sits in `LiquidCoreiOS/Carthage/Build/iOS/LiquidCore.framework`.  You can also build it inside of XCode without issue.
+You can use the pod locally, by specifying the `--liquidcore` option when creating your podfile:
 
-License
--------
+```
+% liquidcore pod <project-name> --liquidcore=/path/to/local/LiquidCore
+```
 
-Copyright (c) 2014 - 2018 LiquidPlayer
+
+# License
+
+Copyright (c) 2014 - 2019 LiquidPlayer
 
 Distributed under the MIT License.  See [LICENSE.md](https://github.com/LiquidPlayer/LiquidCore/blob/master/LICENSE.md) for terms and conditions.
 
