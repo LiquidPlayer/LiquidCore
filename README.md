@@ -25,7 +25,7 @@ API Documentation
 Architecture
 ------------
 
-The diagrams below generally represent reality, although they are aligned with the vocabulary that will be used in version 0.6.0.  Plugins are currently referred to as "surfaces" in versions 0.5.x, but this will change shortly.
+The diagrams below generally represent reality, although they are aligned with the vocabulary that will be used in version 0.6.0.  Add-ons are currently referred to as "surfaces" in versions 0.5.x, but this will change shortly.
 
 ### Android
 
@@ -45,12 +45,12 @@ Native plugins enable extending the basic runtime environment with additional na
 
 LiquidCore for iOS includes the Node.js runtime, but without the V8 backend.  Instead, it marshalls calls to V8 through an interpreter to Apple's JavaScriptCore engine.  It provides two APIs for apps to interact with:
 
-* **Node `Process` API**, which allows developers to launch fast isolated instances of the Node.js runtime
+* **Node `LCProcess` API**, which allows developers to launch fast isolated instances of the Node.js runtime
 * **[`LCMicroService`](https://liquidplayer.github.io/LiquidCoreiOS/0.5.1/Classes/LCMicroService.html) API**, which is an abstraction of a Node.js process and supports dynamic code fetching and native plugins 
 
-Native plugins enable extending the basic runtime environment with additional native functionality.  Plugins have access to the above APIs, plus the ability to use the V8 API.  This allows projects that depend on V8, such native Node modules to use LiquidCore directly.
+Native add-ons enable extending the basic runtime environment with additional native functionality.  Plugins have access to the above APIs, plus the ability to use the V8 API.  This allows projects that depend on V8, such native Node modules to use LiquidCore directly.
 
-Note: The `Process` API is not exposed publicly in versions 0.5.x and below.  It will be in 0.6+.
+Note: The `LCProcess` API is not exposed publicly in versions 0.5.x and below.  It will be in 0.6+.
 
 License
 -------
