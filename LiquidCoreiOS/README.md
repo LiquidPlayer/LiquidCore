@@ -6,15 +6,11 @@ Version
 -------
 [0.6.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.0)
 
-LiquidCore is distributed using [CocoaPods](https://cocoapods.org/).  In your project's root directory:
+LiquidCore is distributed using [CocoaPods](https://cocoapods.org/).  In your project's `Podfile`, add:
 
 ```
-% npm i -g liquidcore-cli
-% liquidcore pod <project-name> > Podfile
+pod 'LiquidCore'
 ```
-
-This will generate a `Podfile` for your project.  If you are already using CocoaPods, you can simply
-copy the `pod` and `source` lines from the output into your existing `Podfile`.
 
 API Documentation
 -----------------
