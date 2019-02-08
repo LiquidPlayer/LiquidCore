@@ -1,45 +1,87 @@
-The LiquidCore Project
-----------------------
+# The LiquidCore Project
 
-LiquidCore enables Node.js virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system and native SQLite3 support.
+LiquidCore enables [Node.js] virtual machines to run inside Android and iOS apps.  It provides a complete runtime environment, including a virtual file system.
 
 LiquidCore also provides a convenient way for Android developers to [execute raw JavaScript](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine) inside of their apps, as iOS developers can already do natively with JavaScriptCore.
 
 Version
 -------
-[0.5.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.5.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.5.1)
-
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 ![Downloads](https://jitpack.io/v/LiquidPlayer/LiquidCore/week.svg)
 
+[0.6.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.6.0), **or**:
+
+In your Android project root directory:
+```
+% npm i -g liquidcore-cli
+% liquidcore gradle
+```
+And follow the directions in the output.
+
 Javadocs
 --------
-[Version 0.5.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.5.1/index.html)
+[Version 0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html)
 
 # Table of Contents
 
 1. [Architecture](#architecture)
-2. [Use Cases](#use-cases)
-3. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial) 
-4. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
-5. [License](#license)
+2. [Java / JavaScript API](#java--javascript-api) - Access JavaScript directly from Java
+3. [Node `Process`](#node-process) - Run raw Node.js instances on Android
+4. [The `MicroService`](#the-microservice) - Run enhanced Node.js instances on Android
+5. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial)
+6. [Native add-ons](#native-add-ons) 
+7. [Building the LiquidCore Android library](#building-the-liquidcore-android-library)
+8. [License](#license)
 
 # Architecture
 
 ![Android Architecture Diagram](https://github.com/LiquidPlayer/LiquidCore/raw/master/doc/ArchitectureAndroid.png)
 
-# Use Cases
+LiquidCore for Android includes the Node.js runtime and V8 backend.  In addition, it provides three APIs for apps to interact with:
 
-This section covers the two major intended use cases of LiquidCore, complete with _Hello, World!_ step-by-step examples.
+* **[Java / JavaScript JNI](#java--javascript-api) API**, which provides a convenient way to run raw JavaScript code from within Java, without the need for a clunky `WebView` or to write any native code.
+* **[Node `Process`](#node-process) API**, which allows developers to launch fast isolated instances of the Node.js runtime.
+* **[`MicroService`](#the-microservice) API**, which is an abstraction of a Node.js process and supports dynamic code fetching and native add-ons.
 
-1. [The Micro Service](#the-micro-service)
-2. [The Micro App](#the-micro-app)
+Native add-ons enable extending the basic runtime environment with additional native functionality.  Add-ons have access to all the above APIs, plus the ability to use [WebKit's JavaScriptCore API](https://developer.apple.com/documentation/javascriptcore?language=objc) running on top of V8.  This allows projects that depend on JavaScriptCore, like [React Native](https://facebook.github.io/react-native/), to use LiquidCore directly.
 
-You can also use LiquidCore as a raw Native Javascript Engine (i.e. as a replacement for [`AndroidJSCore`](https://github.com/ericwlange/AndroidJSCore)).  That topic is discussed [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine).
+# Java / JavaScript API
 
-## The Micro Service
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/javascript/package-frame.html)
 
-A *micro app* is built on a *micro service*.  A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
+You can use LiquidCore as a raw Native Javascript Engine (i.e. as a replacement for [`AndroidJSCore`](https://github.com/ericwlange/AndroidJSCore)).  That topic is discussed [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine).
+
+For example:
+
+```java
+JSContext context = new JSContext();
+JSFunction javaFactorial = new JSFunction(context,"factorial") {
+    public Integer factorial(Integer x) {
+        int factorial = 1;
+        for (; x > 1; x--) {
+            factorial *= x;
+        }
+        return factorial;
+    }
+};
+context.property("factorial", javaFactorial);
+JSValue result = context.evaluateScript("(() => { let x = 10; return factorial(x); })()");
+android.util.Log.i("LiquidCoreExample", "The factorial of 10 is " + result.toString());
+```
+
+# Node `Process`
+
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/node/Process.html)
+
+LiquidCore allows creation of raw Node.js instances.  Each instance runs in its own thread and is isolated from all other instances.  Instances can share a [virtual file system](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System), by using a common unique identifier.
+
+It is not recommended to use the `Process` API directly for most use cases. The [`MicroService`](#the-microservice) API is more robust and has additional functionality, like support for native modules and downloadable JavaScript bundles.
+
+# The `MicroService`
+
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/service/MicroService.html)
+
+A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
 
 ```java
 MicroService service = new MicroService(androidContext,
@@ -107,25 +149,6 @@ LiquidCore.on('host_event', function(msg) {
 ```
 
 LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the Android filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
-
-## The Micro App
-
-**Important Notice:** The Micro App concept is being completely re-thought.  In version 0.6.0, `LiquidView` will disappear from LiquidCore and be reborn in a separate project built on top of LiquidCore.  The goal is to keep LiquidCore focused on just providing a fast, secure Node VM for mobile devices.  The UI will reappear in a project called **_caraml_**. Stay tuned.
-
-There are many uses for micro services.  They are really useful for taking advantage of all the work that has been done by the Node community.  But we want to be able to create our own native applications that do not require much, if any, interaction from the host.  To achieve this, we will introduce one more term: **Surface**.  A surface is a UI canvas for micro services.
-
-There are two surfaces so far:
-
-1. **`ConsoleSurface`**.  A `ConsoleSurface` is simply a Node.js terminal console that displays anything written to `console.log()` and `console.error()`.  It also allows injection of Javascript commands, just like a standard Node console.  Run the [NodeConsole](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreAndroid/Tests/NodeConsole) app under the `Tests` directory to see it in action.
-2. [**`ReactNativeSurface`**](https://github.com/LiquidPlayer/ReactNativeSurface).  You can drive native UI elements using the [React Native](https://facebook.github.io/react-native/) framework from within your micro app.
-
-There are other surfaces under consideration, including:
-
-* **`WebSurface`** - a `WebView` front-end where a micro service can write to the DOM
-* **`CardSurface`** - a limited feature set suitable for driving card-like UI elements in a list
-* **`OpenGLSurface`** - an [OpenGL](https://www.opengl.org/) canvas
-
-Eventually, we would like to have virtual/augmented reality surfaces, as well as non-graphical canvases such as chat and voice query interfaces.
 
 # "Hallo, die Weld!" Micro Service Tutorial
 
@@ -255,7 +278,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.5.1'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.6.0'
 }
 
 ```
@@ -363,40 +386,65 @@ That's it.  That's all there is to it.  Of course, this is an overly simplified 
 
 A quick note about the `MicroService.DevServer()`: this generates convenience URL which points to the loopback address (`10.0.2.2`) on Android, which is used to serve the emulator from the host machine.  This won't work on actual hardware.  You would need to replace this with an actual URL.  `MicroService.DevServer()` assumes the entry file is named `liquid.js` and the server is running on port 8082.  Both of these assumptions can be changed by providing arguments, e.g. `MicroService.DevServer("another_file.bundle", 8888)` would generate a URL to fetch a bundle with an entry point of `another_file.js` on port 8888. 
 
-Building the LiquidCore Android library
----------------------------------------
+# Native Add-ons
+
+Introduced in version 0.6.0 is experimental support for native node modules (add-ons).  In Node, native add-ons are compiled (or os/architecture-specific prebuilts are downloaded) during `npm install`.  For example, `npm install sqlite3` installs the JavaScript interface to SQLite3 to `node_modules/sqlite3`, but it also compiles a native module `node_sqlite3.node` which is a dynamic library that contains the C-language SQLite3 library and native V8 interface code.  The code is built for the specific machine it is running on using `node-gyp`.
+
+Unfortunately, there are several issues with this on mobile devices.  Primarily, although dynamic loading of libraries is supported, for security reasons, those libraries must be embedded in the APK to be used.  So it is not possible to download a native library at runtime and link to it (unlike with pure JavaScript modules, where this is perfectly ok).  Secondly, `node-gyp` is not really a cross-compiler (although some have hacked it for this purpose).  That is, it is optimized to build for the machine on which it is being run (e.g. your Mac or Linux machine), not for some remote device like a mobile phone, and not for multiple architectures at once (i.e. ARM, ARM64, X86, and X86_64).
+
+To support these requirements, native modules have to be modified to work with LiquidCore.  Documentation, frameworks and tools for how to build a native module for LiquidCore are forthcoming, but for now, here is an example of how to use an existing add-on.  [This fork of node-sqlite3](https://github.com/LiquidPlayer/node-sqlite3) has been modified for use with LiquidCore.  We can install it using `npm`.
+
+In your Android project's root directory, create an empty `package.json` file.  This will allow us to install node modules locally.
+
+```
+% echo "{}" > package.json
+```
+
+Then, install `@liquidcore/sqlite3`:
+
+```
+% npm i @liquidcore/sqlite3
+```
+
+Now, generate the gradle file(s) to include the library into your app using the `liquidcore` utility (make sure you have installed at least version 0.4.4 of `liquidcore-cli`):
+
+```
+% liquidcore gradle
+```
+
+This will generate a file called `liquidcore.build.gradle`.  Simply include this file in your own app's `build.gradle` by adding the following line near the top:
+
+```gradle
+apply from: new File(rootProject.projectDir, 'liquidcore.build.gradle')
+```
+
+That's it.  The SQLite3 add-on will now be available for your JavaScript code to use.
+
+To use it, install `@liquidcore/sqlite3` instead of `sqlite3` with `npm` in your JavaScript project and use the module exactly as you would otherwise.
+
+If there are specific native modules that you would like to use with LiquidCore, please file an issue to request it.  In the near term, I will build a few in order to document and simplify the process (it is a bit arduous at the moment) or I can help you to build it.  Once the documentation stabilizes, I will stop.
+
+# Building the LiquidCore Android library
 
 If you are interested in building the library directly and possibly contributing, you must
-do the following:
+clone the repository:
 
     % git clone https://github.com/liquidplayer/LiquidCore.git
-    % cd LiquidCore
-    % echo ndk.dir=$ANDROID_NDK > local.properties
-    % echo sdk.dir=$ANDROID_SDK >> local.properties
-    % ./gradlew assembleRelease
 
-Your library now sits in `LiquidCoreAndroid/build/outputs/aar/LiquidCore-release.aar`.  To use it, simply
-add the following to your app's `build.gradle`:
+You can then use the library locally, by specifying the `--liquidcore` option when creating your gradle files:
 
-    repositories {
-        flatDir {
-            dirs '/path/to/lib'
-        }
-    }
+    % liquidcore gradle --liquidcore=/path/to/local/LiquidCore
 
-    dependencies {
-        implementation(name:'LiquidCore-release', ext:'aar')
-    }
+This will generate two files, `liquidcore.build.gradle` and `liquidcore.settings.gradle`.  Include them into your project's gradle files as described in the output of the `liquidcore gradle` command.
     
 ##### Note
 
 The Node.js library (`libnode.so`) is pre-compiled and included in binary form in
 `deps/node-8.9.3/prebuilt`.  All of the modifications required to produce the library are included in `deps/node-8.9.3`.  To build each library (if you so choose), see the instructions [here](https://github.com/LiquidPlayer/LiquidCore/wiki/How-to-build-libnode.so).
 
-License
--------
+# License
 
-Copyright (c) 2014 - 2018 LiquidPlayer
+Copyright (c) 2014 - 2019 LiquidPlayer
 
 Distributed under the MIT License.  See [LICENSE.md](https://github.com/LiquidPlayer/LiquidCore/blob/master/LICENSE.md) for terms and conditions.
 
