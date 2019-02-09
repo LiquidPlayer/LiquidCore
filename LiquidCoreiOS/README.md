@@ -19,8 +19,8 @@ API Documentation
 # Table of Contents
 
 1. [Architecture](#architecture)
-2. [Node `LCProcess`](#node-lcprocess) - Run raw Node.js instances on Android
-3. [The `LCMicroService`](#the-lcmicroservice) - Run enhanced Node.js instances on Android
+2. [Node `LCProcess`](#node-lcprocess) - Run raw Node.js instances on iOS
+3. [The `LCMicroService`](#the-lcmicroservice) - Run enhanced Node.js instances on iOS
 3. ["Hallo, die Weld!" Micro Service Tutorial](#hallo-die-weld-micro-service-tutorial)
 6. [Native add-ons](#native-add-ons) 
 4. [Building the LiquidCore iOS framework](#building-the-liquidcore-ios-framework)
