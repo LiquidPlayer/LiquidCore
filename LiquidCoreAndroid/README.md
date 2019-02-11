@@ -47,7 +47,7 @@ Native add-ons enable extending the basic runtime environment with additional na
 
 # Java / JavaScript API
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/javascript/package-frame.html)
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/javascript/package-summary.html)
 
 You can use LiquidCore as a raw Native Javascript Engine (i.e. as a replacement for [`AndroidJSCore`](https://github.com/ericwlange/AndroidJSCore)).  That topic is discussed [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine).
 
