@@ -47,13 +47,13 @@ if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
     set(SOURCES ${SOURCES}
 
      # Test files
-     src/main/cpp/androidTest/testapi.cpp
-     src/main/cpp/androidTest/CustomGlobalObjectClassTest.cpp
-     src/main/cpp/androidTest/JSNode.cpp
-     src/main/cpp/androidTest/JSNodeList.cpp
-     src/main/cpp/androidTest/Node.cpp
-     src/main/cpp/androidTest/NodeList.cpp
-     src/main/cpp/androidTest/minidom.cpp
+     src/androidTest/cpp/testapi.cpp
+     src/androidTest/cpp/CustomGlobalObjectClassTest.cpp
+     src/androidTest/cpp/JSNode.cpp
+     src/androidTest/cpp/JSNodeList.cpp
+     src/androidTest/cpp/Node.cpp
+     src/androidTest/cpp/NodeList.cpp
+     src/androidTest/cpp/minidom.cpp
      )
 endif()
 

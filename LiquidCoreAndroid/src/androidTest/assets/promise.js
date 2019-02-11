@@ -1,7 +1,7 @@
 setInterval(function(){}, 5000)
 
 var promise = new Promise(function(resolve, reject) {
-    resolve(123)
+    setTimeout(resolve, 500, 123)
 })
 
 promise.then(function(result) {
