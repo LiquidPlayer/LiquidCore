@@ -188,11 +188,11 @@ extern "C" void process_set_filesystem(JSContextRef ctx, JSObjectRef fs)
     Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
     HandleScope scope(isolate);
     
-    v8::Local<v8::Context> context = LocalContextImpl::New(isolate, ctx);
+    v8::Local<v8::Context> context = V82JSC::LocalContext::New(isolate, ctx);
     Context::Scope context_scope(context);
     
     Local<Object> globalObj = context->Global();
-    Local<Object> fsObj = ValueImpl::New(V82JSC::ToContextImpl(context), fs).As<Object>();
+    Local<Object> fsObj = V82JSC::Value::New(V82JSC::ToContextImpl(context), fs).As<Object>();
     
     Local<Private> privateKey = v8::Private::ForApi(isolate,
                                                     String::NewFromUtf8(isolate, "__fs"));

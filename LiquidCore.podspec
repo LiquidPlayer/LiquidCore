@@ -23,19 +23,17 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   ]
 
   s.source_files =
+      # node
       "deps/node-8.9.3/deps/cares/config/darwin/ares_config.h",
       "deps/node-8.9.3/deps/cares/include/ares.h",
       "deps/node-8.9.3/deps/cares/include/ares_build.h",
       "deps/node-8.9.3/deps/cares/include/ares_rules.h",
       "deps/node-8.9.3/deps/cares/include/ares_version.h",
       "deps/node-8.9.3/deps/cares/include/nameser.h",
-
       "deps/node-8.9.3/deps/cares/src/*.{c,h}",
       "deps/node-8.9.3/deps/http_parser/http_parser.{c,h}",
-
       "deps/node-8.9.3/deps/nghttp2/lib/**/*.h",
       "deps/node-8.9.3/deps/nghttp2/lib/*.c",
-
       "deps/node-8.9.3/deps/uv/include/pthread-barrier.h",
       "deps/node-8.9.3/deps/uv/include/tree.h",
       "deps/node-8.9.3/deps/uv/include/uv-darwin.h",
@@ -44,7 +42,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/uv/include/uv-unix.h",
       "deps/node-8.9.3/deps/uv/include/uv-version.h",
       "deps/node-8.9.3/deps/uv/include/uv.h",
-
       "deps/node-8.9.3/deps/uv/src/heap-inl.h",
       "deps/node-8.9.3/deps/uv/src/queue.h",
       "deps/node-8.9.3/deps/uv/src/unix/atomic-ops.h",
@@ -52,7 +49,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/uv/src/unix/spinlock.h",
       "deps/node-8.9.3/deps/uv/src/uv-common.h",
       "deps/node-8.9.3/deps/uv/src/*.c",
-
       "deps/node-8.9.3/deps/uv/src/unix/async.c",
       "deps/node-8.9.3/deps/uv/src/unix/bsd-ifaddrs.c",
       "deps/node-8.9.3/deps/uv/src/unix/core.c",
@@ -77,7 +73,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/uv/src/unix/timer.c",
       "deps/node-8.9.3/deps/uv/src/unix/tty.c",
       "deps/node-8.9.3/deps/uv/src/unix/udp.c",
-
       "deps/node-8.9.3/deps/v8/src/assert-scope.cc",
       "deps/node-8.9.3/deps/v8/src/base/bits.cc",
       "deps/node-8.9.3/deps/v8/src/base/cpu.cc",
@@ -110,9 +105,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/deps/v8/include/libplatform/v8-tracing.h",
       "deps/node-8.9.3/deps/v8/include/*.h",
       "deps/node-8.9.3/deps/v8/include/libplatform/*.h",
-
       "deps/node-8.9.3/src/*.h",
-
       "deps/node-8.9.3/src/async-wrap.cc",
       "deps/node-8.9.3/src/backtrace_posix.cc",
       "deps/node-8.9.3/src/cares_wrap.cc",
@@ -166,30 +159,33 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-8.9.3/src/udp_wrap.cc",
       "deps/node-8.9.3/src/util.cc",
       "deps/node-8.9.3/src/uv.cc",
-
-      # V82JSC
-      "LiquidCoreiOS/LiquidCore/node-8.9.3/V82JSC/**/*.{cpp,h}",
       "deps/node-8.9.3/deps/v8/src/base/debug/stack_trace_posix.cc",
       "deps/node-8.9.3/deps/v8/src/base/debug/stack_trace.{cc,h}",
       "deps/node-8.9.3/deps/v8/src/base/*.cc",
       "deps/node-8.9.3/deps/v8/src/assert-scope.{cc,h}",
       "deps/node-8.9.3/deps/v8/src/base/utils/random-number-generator.{cc,h}",
+
+      # V82JSC
+      "LiquidCoreiOS/LiquidCore/V82JSC/**/*.{cpp,h}",
       "deps/utfcpp/**/*.{h}",
+      "deps/JavaScriptCore/private/*.h",
+      "deps/Apple/**/*.h",
 
       # Dynamically generated files.
-      "LiquidCoreiOS/LiquidCore/node-8.9.3/V82JSC/polyfill/polyfill.c",
-      "LiquidCoreiOS/LiquidCore/node-8.9.3/node/node_javascript.cc",
-      "LiquidCoreiOS/LiquidCore/node-8.9.3/node/node_provider.h",
+      "LiquidCoreiOS/LiquidCore/gen/polyfill.c",
+      "LiquidCoreiOS/LiquidCore/gen/node_javascript.cc",
+      "LiquidCoreiOS/LiquidCore/gen/node_provider.h",
 
+      # LiquidCore node modifications
       "LiquidCoreCommon/node/*",
       "LiquidCoreCommon/include/*.h",
 
       # API
-      "LiquidCoreiOS/LiquidCore/LiquidCore/*.h",
+      "LiquidCoreiOS/LiquidCore/Headers/*.h",
       "LiquidCoreiOS/LiquidCore/API/*.{h,m,cpp}"
 
   s.public_header_files = [
-      "LiquidCoreiOS/LiquidCore/LiquidCore/*.h"
+      "LiquidCoreiOS/LiquidCore/Headers/*.h"
   ]
 
   s.private_header_files = [

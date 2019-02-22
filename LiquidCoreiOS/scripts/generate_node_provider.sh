@@ -4,8 +4,10 @@
 CURRENT_DIR=$(cd $(dirname "$0"); pwd)
 SOURCE_DIR=$(cd "$CURRENT_DIR/.."; pwd)
 
+mkdir -p "$SOURCE_DIR/LiquidCore/gen"
+
 INPUT_FILE="$SOURCE_DIR/../deps/node-8.9.3/src/node_provider.d"
-OUTPUT_FILE="$SOURCE_DIR/LiquidCore/node-8.9.3/node/node_provider.h"
+OUTPUT_FILE="$SOURCE_DIR/LiquidCore/gen/node_provider.h"
 
 cd "$SOURCE_DIR/../deps/node-8.9.3"
 cp "$SOURCE_DIR/LiquidCore/node-8.9.3/node/config.gypi" .

@@ -4,9 +4,11 @@
 CURRENT_DIR=$(cd $(dirname "$0"); pwd)
 SOURCE_DIR=$(cd "$CURRENT_DIR/.."; pwd)
 
-SCRIPT_OUTPUT="$SOURCE_DIR/LiquidCore/node-8.9.3/node/node_javascript.cc"
+mkdir -p "$SOURCE_DIR/LiquidCore/gen"
+
+SCRIPT_OUTPUT="$SOURCE_DIR/LiquidCore/gen/node_javascript.cc"
 cd "$SOURCE_DIR/../deps/node-8.9.3"
-cp "$SOURCE_DIR/LiquidCore/node-8.9.3/node/config.gypi" .
+cp "$SOURCE_DIR/LiquidCore/config.gypi" .
 SCRIPT_INPUT_FILES=''
 
 while read INFILE; do
