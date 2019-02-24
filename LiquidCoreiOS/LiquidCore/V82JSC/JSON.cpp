@@ -25,7 +25,7 @@ MaybeLocal<v8::Value> JSON::Parse(Local<Context> context, Local<String> json_str
     
     LocalException exception(ToIsolateImpl(ToContextImpl(context)));
     JSValueRef value = exec(ctx, "return JSON.parse(_1)", 1, &string, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<Value>();
     }
     return V82JSC::Value::New(ToContextImpl(context), value);
@@ -50,7 +50,7 @@ MaybeLocal<v8::String> JSON::Stringify(Local<Context> context, Local<Object> jso
     
     LocalException exception(ToIsolateImpl(ToContextImpl(context)));
     JSValueRef value = exec(ctx, "return JSON.stringify(_1, null, _2)", 2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<String>();
     }
     return V82JSC::Value::New(ToContextImpl(context), value).As<String>();

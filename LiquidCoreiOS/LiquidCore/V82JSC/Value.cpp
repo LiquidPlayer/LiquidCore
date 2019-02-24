@@ -412,7 +412,7 @@ Maybe<T> handleException(IsolateImpl* isolate, F&& lambda)
 {
     LocalException exception(isolate);
     T value = lambda(&exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return _maybe<T>(value).toMaybe();
     }
     return v8::Nothing<T>();
@@ -434,7 +434,7 @@ Maybe<T> toValue(const v8::Value* thiz, Local<v8::Context> context, bool isNaNZe
         if (isNaNZero && std::isnan(number)) number = 0;
         ret = static_cast<T>(number);
     }
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return _maybe<T>(ret).toMaybe();
     }
     return v8::Nothing<T>();
@@ -454,7 +454,7 @@ Maybe<bool> v8::Value::Equals(Local<v8::Context> context, Local<v8::Value> that)
 
     LocalException exception(i);
     bool is = JSValueIsEqual(context_, this_, that_, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return _maybe<bool>(is).toMaybe();
     }
     return Nothing<bool>();
@@ -501,7 +501,7 @@ Maybe<bool> v8::Value::InstanceOf(Local<v8::Context> context, Local<Object> obje
     };
     LocalException exception(ToIsolateImpl(ToContextImpl(context)));
     JSValueRef is = exec(c->m_ctxRef, "return _1 instanceof _2", 2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return Nothing<bool>();
     }
     return _maybe<bool>(JSValueToBoolean(c->m_ctxRef, is)).toMaybe();
@@ -534,7 +534,7 @@ MaybeLocal<v8::String> v8::Value::ToString(Local<v8::Context> context) const
     JSValueRef v = ToJSValueRef(this, context);
     LocalException exception(iso);
     JSStringRef s = JSValueToStringCopy (ctx->m_ctxRef, v, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<String>();
     }
     return scope.Escape(V82JSC::String::New(reinterpret_cast<Isolate*>(iso), s));
@@ -549,7 +549,7 @@ MaybeLocal<v8::Object> v8::Value::ToObject(Local<v8::Context> context) const
     JSValueRef v = ToJSValueRef(this, context);
     LocalException exception(iso);
     JSObjectRef o = JSValueToObject(ctx->m_ctxRef, v, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<Object>();
     }
     return scope.Escape(V82JSC::Value::New(ctx, o).As<Object>());
@@ -563,7 +563,7 @@ MaybeLocal<T> ToNum(const v8::Value* thiz, Local<v8::Context> context)
     JSValueRef v = ToJSValueRef(thiz, context);
     LocalException exception(iso);
     double num = JSValueToNumber(ctx->m_ctxRef, v, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<T>();
     }
     C val;

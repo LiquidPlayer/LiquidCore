@@ -41,7 +41,7 @@ MaybeLocal<RegExp> RegExp::New(Local<Context> context,
     JSStringRelease(flagsref);
     LocalException exception(ToIsolateImpl(ToContextImpl(context)));
     JSObjectRef regexp = JSObjectMakeRegExp(ctx, 2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<RegExp>();
     }
     return V82JSC::Value::New(ToContextImpl(context), regexp).As<RegExp>();

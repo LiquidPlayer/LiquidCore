@@ -305,7 +305,7 @@ MaybeLocal<Object> V82JSC::Template::InitInstance(Local<v8::Context> context, JS
     if (!impl->m_parent.IsEmpty()) {
         thiz = InitInstance(context, instance, excep, impl->m_parent.Get(isolate));
     }
-    if (!excep.ShouldThow()) {
+    if (!excep.ShouldThrow()) {
         thiz = reinterpret_cast<Template*>(instance_impl)->InitInstance(context, instance, excep);
         return scope.Escape(thiz.ToLocalChecked());
     }
@@ -390,7 +390,7 @@ MaybeLocal<Object> V82JSC::Template::InitInstance(Local<v8::Context> context, JS
                          "  configurable : !(_4&(1<<2)), "
                          "  value: _3 })", 4, args, &exception);
         }
-        if (exception.ShouldThow()) return MaybeLocal<Object>();
+        if (exception.ShouldThrow()) return MaybeLocal<Object>();
     }
     
     std::vector<PropAccessor*> prop_accessors;

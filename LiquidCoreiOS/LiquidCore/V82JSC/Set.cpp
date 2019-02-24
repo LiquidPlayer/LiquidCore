@@ -38,7 +38,7 @@ MaybeLocal<Set> Set::Add(Local<Context> context, Local<Value> key)
         ToJSValueRef(key, context),
     };
     exec(ctx, "_1.add(_2)", 2, args, &exception);
-    if (exception.ShouldThow()) return MaybeLocal<Set>();
+    if (exception.ShouldThrow()) return MaybeLocal<Set>();
     return CreateLocal<Set>(ToIsolate(iso), impl);
 }
 Maybe<bool> Set::Has(Local<Context> context, Local<Value> key)

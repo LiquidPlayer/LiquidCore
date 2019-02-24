@@ -41,10 +41,10 @@ Maybe<bool> Object::Set(Local<Context> context, Local<Value> key, Local<Value> v
     JSValueRef ret = exec(ctx, "return _3 == (_1[_2] = _3)", 3, args, &exception);
     
     _maybe<bool> out;
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         out.value_ = JSValueToBoolean(ctx, ret);
     }
-    out.has_value_ = !exception.ShouldThow();
+    out.has_value_ = !exception.ShouldThrow();
     
     return out.toMaybe();
 }
@@ -144,7 +144,7 @@ Maybe<bool> Object::DefineOwnProperty(
                  "  enumerable : !(_4&(1<<1)), "
                  "  configurable : !(_4&(1<<2)), "
                  "  value: _3 })", 4, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         success = false;
         JSStringRef err = JSValueToStringCopy(ctx, exception.exception_, 0);
         char e[JSStringGetMaximumUTF8CStringSize(err)];
@@ -265,7 +265,7 @@ MaybeLocal<v8::Value> Object::Get(Local<Context> context, Local<Value> key)
     
     JSValueRef ret = exec(ctx, "return Reflect.get(_1,_2)", 2, args, &exception);
     
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), ret));
     }
     return MaybeLocal<Value>();
@@ -284,7 +284,7 @@ MaybeLocal<v8::Value> Object::Get(Local<Context> context, uint32_t index)
 
     LocalException exception(iso);
     JSValueRef prop = JSObjectGetPropertyAtIndex(ctx, (JSObjectRef)obj, index, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), prop));
     }
     
@@ -323,12 +323,12 @@ Maybe<v8::PropertyAttribute> Object::GetPropertyAttributes(Local<Context> contex
                                   , 2, args, &exception);
 
     _maybe<PropertyAttribute> out;
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         JSValueRef excp = 0;
         out.value_ = (PropertyAttribute) JSValueToNumber(ctx, ret, &excp);
         assert(excp==0);
     }
-    out.has_value_ = !exception.ShouldThow();
+    out.has_value_ = !exception.ShouldThrow();
     
     return out.toMaybe();
 }
@@ -354,7 +354,7 @@ MaybeLocal<v8::Value> Object::GetOwnPropertyDescriptor(Local<Context> context, L
     JSValueRef descriptor = exec(ctx,
                                          "return Object.getOwnPropertyDescriptor(_1, _2)",
                                          2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<Value>();
     }
     
@@ -395,10 +395,10 @@ Maybe<bool> Object::Has(Local<Context> context, Local<Value> key)
     JSValueRef ret = exec(ctx, "return (_2 in _1)", 2, args, &exception);
     
     _maybe<bool> out;
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         out.value_ = JSValueToBoolean(ctx, ret);
     }
-    out.has_value_ = !exception.ShouldThow();
+    out.has_value_ = !exception.ShouldThrow();
     
     return out.toMaybe();
 }
@@ -422,10 +422,10 @@ Maybe<bool> Object::Delete(Local<Context> context, Local<Value> key)
     JSValueRef ret = exec(ctx, "return delete _1[_2]", 2, args, &exception);
 
     _maybe<bool> out;
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         out.value_ = JSValueToBoolean(ctx, ret);
     }
-    out.has_value_ = !exception.ShouldThow();
+    out.has_value_ = !exception.ShouldThrow();
     
     return out.toMaybe();
 }
@@ -448,10 +448,10 @@ Maybe<bool> Object::Has(Local<Context> context, uint32_t index)
     JSValueRef ret = exec(ctx, "return (_2 in _1)", 2, args, &exception);
     
     _maybe<bool> out;
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         out.value_ = JSValueToBoolean(ctx, ret);
     }
-    out.has_value_ = !exception.ShouldThow();
+    out.has_value_ = !exception.ShouldThrow();
     
     return out.toMaybe();
 }
@@ -475,10 +475,10 @@ Maybe<bool> Object::Delete(Local<Context> context, uint32_t index)
     JSValueRef ret = exec(ctx, "return Reflect.deleteProperty(_1, _2)", 2, args, &exception);
 
     _maybe<bool> out;
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         out.value_ = JSValueToBoolean(ctx, ret);
     }
-    out.has_value_ = !exception.ShouldThow();
+    out.has_value_ = !exception.ShouldThrow();
     
     return out.toMaybe();
 }
@@ -761,7 +761,7 @@ Maybe<bool> Object::HasPrivate(Local<Context> context, Local<Private> key)
         };
         LocalException exception(iso);
         JSValueRef ret = exec(ctx, "return _1.hasOwnProperty(_2)", 2, args);
-        if (exception.ShouldThow()) return Nothing<bool>();
+        if (exception.ShouldThrow()) return Nothing<bool>();
         return _maybe<bool>(JSValueToBoolean(ctx, ret)).toMaybe();
     }
     return _maybe<bool>(false).toMaybe();
@@ -787,7 +787,7 @@ Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
     };
     LocalException exception(iso);
     exec(ctx, "_1[_2] = _3", 3, args, &exception);
-    if (exception.ShouldThow()) return Nothing<bool>();
+    if (exception.ShouldThrow()) return Nothing<bool>();
     return _maybe<bool>(true).toMaybe();
 }
 Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
@@ -805,7 +805,7 @@ Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
         };
         LocalException exception(iso);
         exec(ctx, "return delete _1[_2]", 2, args, &exception);
-        if (exception.ShouldThow()) return Nothing<bool>();
+        if (exception.ShouldThrow()) return Nothing<bool>();
         return _maybe<bool>(true).toMaybe();
     }
     return _maybe<bool>(false).toMaybe();
@@ -825,7 +825,7 @@ MaybeLocal<v8::Value> Object::GetPrivate(Local<Context> context, Local<Private> 
         };
         LocalException exception(iso);
         JSValueRef ret = exec(ctx, "return _1[_2]", 2, args);
-        if (exception.ShouldThow()) return MaybeLocal<Value>();
+        if (exception.ShouldThrow()) return MaybeLocal<Value>();
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), ret));
     }
     return scope.Escape(Undefined(context->GetIsolate()));
@@ -855,7 +855,7 @@ MaybeLocal<v8::Array> Object::GetPropertyNames(Local<Context> context)
     
     JSValueRef ret = exec(ctx->m_ctxRef, "var keys = []; for (var k in _1) keys.push(k); return keys", 1, args, &exception);
     
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ctx, ret).As<Array>());
     }
     return MaybeLocal<Array>();
@@ -919,7 +919,7 @@ MaybeLocal<v8::Array> Object::GetOwnPropertyNames(Local<Context> context)
     
     JSValueRef ret = exec(ctx->m_ctxRef, "return Object.getOwnPropertyNames(_1)", 1, args, &exception);
     
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ctx, ret).As<Array>());
     }
     return MaybeLocal<Array>();
@@ -977,7 +977,7 @@ MaybeLocal<v8::Array> Object::GetOwnPropertyNames(Local<Context> context, Proper
     "return arr.concat(sprops);";
     
     JSValueRef array = exec(ctx, code, 2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<Array>();
     }
     
@@ -1169,7 +1169,7 @@ MaybeLocal<v8::String> Object::ObjectProtoToString(Local<Context> context)
 
     LocalException exception(ToIsolateImpl(this));
     JSValueRef s = JSObjectCallAsFunction(ctx, toString, obj, 0, nullptr, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), s).As<String>());
     }
     
@@ -1227,7 +1227,7 @@ Maybe<bool> Object::SetIntegrityLevel(Local<Context> context, IntegrityLevel lev
         r = exec(ctx, "return _1 === Object.seal(_1)", 1, &obj, &exception);
     }
 
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return Nothing<bool>();
     }
     return _maybe<bool>(JSValueToBoolean(ctx, r)).toMaybe();
@@ -1330,7 +1330,7 @@ Maybe<bool> Object::HasOwnProperty(Local<Context> context, Local<Name> key)
     JSValueRef has = exec(ctx,
                                   "return Object.prototype.hasOwnProperty.call(_1, _2)",
                                   2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return Nothing<bool>();
     }
     
@@ -1380,7 +1380,7 @@ Maybe<bool> Object::HasRealNamedProperty(Local<Context> context, Local<Name> key
     JSValueRef has = exec(ctx,
                                   "return Object.getOwnPropertyDescriptor(_1, _2) !== undefined",
                                   2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return Nothing<bool>();
     }
     
@@ -1472,7 +1472,7 @@ MaybeLocal<v8::Value> Object::GetRealNamedProperty(Local<Context> context, Local
     "return getreal(_1,_2);";
     
     JSValueRef value = exec(ctx, code, 2, args, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         if (JSValueIsStrictEqual(ctx, exception.exception_, JSValueMakeNumber(ctx, 0))) {
             exception.Clear();
         }
@@ -1526,7 +1526,7 @@ Maybe<v8::PropertyAttribute> Object::GetRealNamedPropertyAttributes(Local<Contex
         "return 0 + (desc.writable ? 0 : ReadOnly) + (desc.enumerable ? 0 : DontEnum) + (desc.configurable ? 0 : DontDelete);";
 
         JSValueRef value = exec(ctx, code, 2, args, &exception);
-        if (!exception.ShouldThow()) {
+        if (!exception.ShouldThrow()) {
             retval = (PropertyAttribute)JSValueToNumber(ctx, value, 0);
         } else {
             JSStringRef err = JSValueToStringCopy(ctx, exception.exception_, 0);
@@ -1685,7 +1685,7 @@ MaybeLocal<v8::Value> Object::CallAsConstructor(Local<Context> context,
     }
     LocalException exception(iso);
     JSValueRef newobj = exec(ctx, "return new _1(...Array.prototype.slice.call(arguments, 1))", argc+1, args, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), newobj).As<Object>());
     }
     return MaybeLocal<Value>();

@@ -19,7 +19,7 @@ MaybeLocal<v8::Value> Date::New(Local<v8::Context> context, double time)
 
     LocalException exception(iso);
     auto r = JSObjectMakeDate(c, 1, &t, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return V82JSC::Value::New(ToContextImpl(context), r);
     }
     return MaybeLocal<Value>();

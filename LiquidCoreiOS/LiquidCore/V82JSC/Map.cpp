@@ -100,7 +100,7 @@ MaybeLocal<v8::Value> v8::Map::Get(Local<Context> context, Local<Value> key)
         ToJSValueRef(key, context)
     };
     JSValueRef r = exec(ctx, "return _1.get(_2)", 2, args, &exception);
-    if (exception.ShouldThow()) return MaybeLocal<Value>();
+    if (exception.ShouldThrow()) return MaybeLocal<Value>();
     return V82JSC::Value::New(ToContextImpl(context), r);
 }
 
@@ -119,7 +119,7 @@ MaybeLocal<v8::Map> v8::Map::Set(Local<v8::Context> context,
         ToJSValueRef(value, context)
     };
     exec(ctx, "_1.set(_2, _3)", 3, args, &exception);
-    if (exception.ShouldThow()) return MaybeLocal<Map>();
+    if (exception.ShouldThrow()) return MaybeLocal<Map>();
     return CreateLocal<v8::Map>(ToIsolate(iso), impl);
 }
 
@@ -134,7 +134,7 @@ Maybe<bool> v8::Map::Has(Local<v8::Context> context, Local<v8::Value> key)
         ToJSValueRef(key, context)
     };
     JSValueRef r = exec(ctx, "return _1.has(_2)", 2, args, &exception);
-    if (exception.ShouldThow()) return Nothing<bool>();
+    if (exception.ShouldThrow()) return Nothing<bool>();
     return _maybe<bool>(JSValueToBoolean(ctx, r)).toMaybe();
 }
 
@@ -150,7 +150,7 @@ Maybe<bool> v8::Map::Delete(Local<v8::Context> context,
         ToJSValueRef(key, context)
     };
     JSValueRef r = exec(ctx, "return _1.delete(_2)", 2, args, &exception);
-    if (exception.ShouldThow()) return Nothing<bool>();
+    if (exception.ShouldThrow()) return Nothing<bool>();
     return _maybe<bool>(JSValueToBoolean(ctx, r)).toMaybe();
 }
 

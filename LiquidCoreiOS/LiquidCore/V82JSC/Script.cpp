@@ -88,7 +88,7 @@ MaybeLocal<v8::Value> v8::Script::Run(Local<Context> context)
             } else {
                 value = JSScriptEvaluate(ctx, unbound->m_script, JSContextGetGlobalObject(ctx), &exception);
             }
-            if (!exception.ShouldThow()) {
+            if (!exception.ShouldThrow()) {
                 ret = V82JSC::Value::New(ToContextImpl(bound_context), value);
             }
             /* DEBUG

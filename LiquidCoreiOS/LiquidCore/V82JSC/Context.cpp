@@ -291,7 +291,7 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
         JSObjectRef global = (JSObjectRef) JSObjectGetPrototype(context->m_ctxRef, JSContextGetGlobalObject(context->m_ctxRef));
         JSObjectSetPrototype(context->m_ctxRef, global, ToJSValueRef(thiz.ToLocalChecked(), ctx));
 
-        if (exception.ShouldThow()) {
+        if (exception.ShouldThrow()) {
             return scope.Escape(Local<Context>());
         }
     } else {

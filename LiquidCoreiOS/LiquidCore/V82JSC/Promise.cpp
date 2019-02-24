@@ -27,7 +27,7 @@ MaybeLocal<Promise::Resolver> Promise::Resolver::New(Local<Context> context)
     JSValueRef resolver = exec(ctx,
                                        "var pr = { }; pr.promise = new Promise((resolve,reject) => { pr.resolve = resolve; pr.reject = reject; }); return pr;",
                                        0, &exception);
-    if (exception.ShouldThow()) {
+    if (exception.ShouldThrow()) {
         return MaybeLocal<Promise::Resolver>();
     }
 
@@ -76,7 +76,7 @@ Maybe<bool> Promise::Resolver::Resolve(Local<Context> context,Local<Value> value
         ToJSValueRef(value, context)
     };
     JSValueRef success = exec(ctx, "return _1.resolve(_2)", 2, args, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return _maybe<bool>(JSValueToBoolean(ctx, success)).toMaybe();
     }
     return Nothing<bool>();
@@ -96,7 +96,7 @@ Maybe<bool> Promise::Resolver::Reject(Local<Context> context, Local<Value> value
         ToJSValueRef(value, context)
     };
     JSValueRef success = exec(ctx, "return _1.reject(_2)", 2, args, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return _maybe<bool>(JSValueToBoolean(ctx, success)).toMaybe();
     }
     return Nothing<bool>();
@@ -121,7 +121,7 @@ MaybeLocal<Promise> Promise::Catch(Local<Context> context,Local<Function> handle
         ToJSValueRef(handler, context)
     };
     JSValueRef promise = exec(ctx, "return _1.catch(_2)", 2, args, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), promise).As<Promise>());
     }
     return MaybeLocal<Promise>();
@@ -140,7 +140,7 @@ MaybeLocal<Promise> Promise::Then(Local<Context> context, Local<Function> handle
         ToJSValueRef(handler, context)
     };
     JSValueRef promise = exec(ctx, "return _1.then(_2)", 2, args, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), promise).As<Promise>());
     }
     return MaybeLocal<Promise>();

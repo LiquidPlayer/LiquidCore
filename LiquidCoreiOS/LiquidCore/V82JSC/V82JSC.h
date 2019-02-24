@@ -48,7 +48,7 @@ struct LocalException {
     {
         return &exception_;
     }
-    inline bool ShouldThow() { return exception_ != nullptr; }
+    inline bool ShouldThrow() { return exception_ != nullptr; }
     inline void Clear() { exception_ = nullptr; }
     JSValueRef exception_;
     IsolateImpl *isolate_;

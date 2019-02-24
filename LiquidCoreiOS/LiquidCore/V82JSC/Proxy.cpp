@@ -76,7 +76,7 @@ MaybeLocal<Proxy> Proxy::New(Local<Context> context,
     LocalException exception(iso);
     JSValueRef proxy = exec(ctx, "var revocable = Proxy.revocable(_1, _2); revocable.handler = _2;"
                                     "_3[revocable.proxy] = revocable; return revocable.proxy", 3, args, &exception);
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return V82JSC::Value::New(ToContextImpl(context), proxy).As<Proxy>();
     }
     return MaybeLocal<Proxy>();

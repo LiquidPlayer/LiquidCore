@@ -49,7 +49,7 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
     } else {
         exception.exception_ = excp;
     }
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(cc), newobj).As<Object>());
     }
     return MaybeLocal<Object>();
@@ -116,7 +116,7 @@ MaybeLocal<v8::Value> Function::Call(Local<Context> context,
         }
     }
     
-    if (!exception.ShouldThow()) {
+    if (!exception.ShouldThrow()) {
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), result));
     }
     
