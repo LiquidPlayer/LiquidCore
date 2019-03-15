@@ -167,16 +167,16 @@ We will start by creating a very simple micro service, which does nothing more t
 $ npm install -g liquidcore-cli
 ```
 
-Next, generate a project called `helloworld` using the tool:
+Next, generate a project called `HelloWorld` using the tool:
 
 ```
-$ liquidcore init helloworld
-$ cd helloworld && npm install
+$ liquidcore init HelloWorld
+$ cd HelloWorld && npm install
 ```
 
 This will generate a small Hello World project for you.  We are going to change it a bit, but the important thing is that this sets everything up correctly and provides you with some nice features like a development server and production bundler.
 
-Once installation has completed, edit the file `index.js` in your `helloworld` directory and replace its contents with the following:
+Once installation has completed, edit the file `index.js` in your `HelloWorld` directory and replace its contents with the following:
 
 ```javascript
 /* Hello, World! Micro Service */
