@@ -331,28 +331,33 @@ MaybeLocal<Object> v8::FunctionTemplate::NewRemoteInstance()
 void v8::FunctionTemplate::SetCallHandler(FunctionCallback callback,
                     Local<Value> data)
 {
-    auto impl =  ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl =  ToImpl<V82JSC::FunctionTemplate>(this);
     IsolateImpl* iso = ToIsolateImpl(impl);
+    auto ctx = ToContextRef(ToIsolate(iso));
     HandleScope scope(ToIsolate(iso));
     
     impl->m_callback = callback;
     if (!*data) {
         data = Undefined(ToIsolate(iso));
     }
+    if (impl->m_data) {
+        JSValueUnprotect(ctx, impl->m_data);
+    }
     impl->m_data = ToJSValueRef(data, ToIsolate(iso));
+    JSValueProtect(ctx, impl->m_data);
 }
 
 /** Set the predefined length property for the FunctionTemplate. */
 void v8::FunctionTemplate::SetLength(int length)
 {
-    auto impl =  ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl =  ToImpl<V82JSC::FunctionTemplate>(this);
     impl->m_length = length;
 }
 
 /** Get the InstanceTemplate. */
 Local<v8::ObjectTemplate> v8::FunctionTemplate::InstanceTemplate()
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     Isolate* isolate = ToIsolate(ToIsolateImpl(impl));
     EscapableHandleScope scope(isolate);
 
@@ -388,7 +393,7 @@ void v8::FunctionTemplate::Inherit(Local<FunctionTemplate> parent)
  */
 Local<v8::ObjectTemplate> v8::FunctionTemplate::PrototypeTemplate()
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     auto isolate = ToIsolate(ToIsolateImpl(impl));
     EscapableHandleScope scope(isolate);
     
@@ -410,7 +415,7 @@ Local<v8::ObjectTemplate> v8::FunctionTemplate::PrototypeTemplate()
  **/
 void v8::FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> prototype_provider)
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     Isolate* isolate = ToIsolate(ToIsolateImpl(impl));
     impl->m_prototype_provider.Reset(isolate, prototype_provider);
 }
@@ -422,7 +427,7 @@ void v8::FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> 
  */
 void v8::FunctionTemplate::SetClassName(Local<String> name)
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     impl->m_name.Reset(ToIsolate(this), name);
 }
 
@@ -449,7 +454,7 @@ void v8::FunctionTemplate::SetAcceptAnyReceiver(bool value)
  */
 void v8::FunctionTemplate::SetHiddenPrototype(bool value)
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     impl->m_isHiddenPrototype = value;
 }
 
@@ -459,7 +464,7 @@ void v8::FunctionTemplate::SetHiddenPrototype(bool value)
  */
 void v8::FunctionTemplate::ReadOnlyPrototype()
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     impl->m_readOnlyPrototype = true;
 }
 
@@ -469,7 +474,7 @@ void v8::FunctionTemplate::ReadOnlyPrototype()
  */
 void v8::FunctionTemplate::RemovePrototype()
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     impl->m_removePrototype = true;
 }
 
@@ -479,7 +484,7 @@ void v8::FunctionTemplate::RemovePrototype()
  */
 bool v8::FunctionTemplate::HasInstance(Local<Value> object)
 {
-    auto impl = ToImpl<V82JSC::FunctionTemplate,FunctionTemplate>(this);
+    auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     Isolate* isolate = ToIsolate(impl->GetIsolate());
     HandleScope scope(isolate);
     

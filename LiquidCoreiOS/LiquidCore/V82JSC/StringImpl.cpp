@@ -117,7 +117,7 @@ MaybeLocal<v8::String> v8::String::NewFromUtf8(Isolate* isolate, const char* dat
     }
     
     std::vector<unsigned short> backstore;
-    utf8::utf8to16(data, data + length, std::back_inserter(backstore));
+    utf8::unchecked::utf8to16(data, data + length, std::back_inserter(backstore));
 
     // FIXME: Would be nice to use JSStringCreateWithCharactersNoCopy
     JSStringRef s = JSStringCreateWithCharacters(&backstore [0], backstore.size());
