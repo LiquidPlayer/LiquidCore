@@ -47,7 +47,7 @@ Native add-ons enable extending the basic runtime environment with additional na
 
 # Java / JavaScript API
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/javascript/package-summary.html)
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html?org/liquidplayer/javascript/package-summary.html)
 
 You can use LiquidCore as a raw Native Javascript Engine (i.e. as a replacement for [`AndroidJSCore`](https://github.com/ericwlange/AndroidJSCore)).  That topic is discussed [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine).
 
@@ -71,7 +71,7 @@ android.util.Log.i("LiquidCoreExample", "The factorial of 10 is " + result.toStr
 
 # Node `Process`
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/node/Process.html)
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html?org/liquidplayer/node/Process.html)
 
 LiquidCore allows creation of raw Node.js instances.  Each instance runs in its own thread and is isolated from all other instances.  Instances can share a [virtual file system](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System), by using a common unique identifier.
 
@@ -79,7 +79,7 @@ It is not recommended to use the `Process` API directly for most use cases. The 
 
 # The `MicroService`
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/org/liquidplayer/service/MicroService.html)
+[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html?org/liquidplayer/service/MicroService.html)
 
 A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
 
