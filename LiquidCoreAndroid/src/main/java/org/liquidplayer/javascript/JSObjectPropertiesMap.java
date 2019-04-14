@@ -135,7 +135,7 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
      * @since 0.1.0
      */
     @Override
-    public V put(final String key, final V value) {
+    public V put(final @NonNull String key, final @NonNull V value) {
         final V oldValue = get(key);
         property(key,value);
         return oldValue;
@@ -159,7 +159,9 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
     @Override
     public void putAll(final @NonNull Map<? extends String, ? extends V> map) {
         for (String key : map.keySet()) {
-            put(key,map.get(key));
+            V value = map.get(key);
+            if (value != null)
+                put(key,value);
         }
     }
 
@@ -253,11 +255,11 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
             int i = 0;
             for (; i<properties.length; i++) {
                 if (current.equals(properties[i])) {
-                    final Object key = properties[i];
+                    final String key = properties[i];
                     entry = new Entry<String, V>() {
                         @Override
                         public String getKey() {
-                            return (String) key;
+                            return key;
                         }
 
                         @Override
@@ -267,7 +269,7 @@ public class JSObjectPropertiesMap<V> extends JSObjectWrapper implements Map<Str
 
                         @Override
                         public V setValue(V object) {
-                            return put((String)key,object);
+                            return put(key,object);
                         }
                     };
                     break;

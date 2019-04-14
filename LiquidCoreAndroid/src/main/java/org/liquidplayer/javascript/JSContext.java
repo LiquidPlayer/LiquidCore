@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Semaphore;
 
 /**
- * Wraps a JavaScriptCore context
+ * Wraps a JavaScript context
  */
 @SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSContext extends JSObject {
@@ -48,11 +48,15 @@ public class JSContext extends JSObject {
         return ctxRef == null || getGroup().isOnThread();
     }
 
+    /**
+     * Returns the JSC context reference if this context was created using JSC.
+     */
+    @SuppressWarnings("unused")
     public long getJSCContext() {
         return 0L;
     }
 
-    private JSContextGroup contextGroup = null;
+    private JSContextGroup contextGroup;
 
     /**
      * Object interface for handling JSExceptions.
@@ -176,12 +180,7 @@ public class JSContext extends JSObject {
         return contextGroup;
     }
 
-    /**
-     * Gets the JavaScriptCore context reference
-     * @return  the JavaScriptCore context reference
-     * @since 0.1.0
-     */
-    public JNIJSContext ctxRef() {
+    /* package */ JNIJSContext ctxRef() {
         return ctxRef;
     }
 
@@ -223,9 +222,8 @@ public class JSContext extends JSObject {
      * local variables in the Java object will stay wrapped around all returns of the same
      * instance.  This is handled by JSObject, and should not need to be called by clients.
      * @param obj  The object with which to associate with this context
-     * @since 0.1.0
      */
-    void persistObject(JSObject obj) {
+    /* package */ void persistObject(JSObject obj) {
         objects.put(obj.canonical(), new WeakReference<>(obj));
         obj.persisted = true;
     }
@@ -233,20 +231,18 @@ public class JSContext extends JSObject {
      * Removes a reference to an object in this context.  Should only be used from the 'finalize'
      * object method.  This is handled by JSObject, and should not need to be called by clients.
      * @param obj the JSObject to dereference
-     * @since 0.1.0
      */
-    void finalizeObject(JSObject obj) {
+    /* package */ void finalizeObject(JSObject obj) {
         objects.remove(obj.canonical());
     }
     /**
      * Reuses a stored reference to a JavaScript object if it exists, otherwise, it creates the
      * reference.
-     * @param objRef the JavaScriptCore object reference
+     * @param objRef the JavaScript object reference
      * @param create whether to create the object if it does not exist
-     * @since 0.1.0
      * @return The JSObject representing the reference
      */
-    JSObject getObjectFromRef(final JNIJSObject objRef, boolean create) {
+    /* package */ JSObject getObjectFromRef(final JNIJSObject objRef, boolean create) {
         if (objRef.equals(valueRef())) {
             return this;
         }

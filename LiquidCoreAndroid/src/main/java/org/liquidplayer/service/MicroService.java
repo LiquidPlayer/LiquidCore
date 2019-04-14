@@ -739,7 +739,7 @@ public class MicroService implements Process.EventListener {
                     " not found.");
         } catch (NoSuchMethodException e) {
             android.util.Log.e("LiquidCore AddOn", "" + addOnClass.getCanonicalName() +
-                    " must have a default constructor.");
+                    " must have a public constructor that takes os.android.Context as its lone parameter.");
         } catch (IllegalAccessException e) {
             android.util.Log.e("LiquidCore AddOn", "" + addOnClass.getCanonicalName() +
                     " must be public.");
@@ -755,14 +755,13 @@ public class MicroService implements Process.EventListener {
     @Override
     public void onProcessStart(Process process, final JSContext context) {
         // Create LiquidCore EventEmitter
-        context.evaluateScript(
+        emitter = context.evaluateScript(
                 "(()=>{\n" +
                 "   class LiquidCore extends require('events') {}\n" +
                 "   global.LiquidCore = new LiquidCore();\n" +
                 "   return global.LiquidCore;" +
                 "})()"
-        );
-        emitter = context.property("LiquidCore").toObject();
+        ).toObject();
 
         // Override require() function to handle module binding
         final JSValue require = context.property("require");
@@ -816,11 +815,7 @@ public class MicroService implements Process.EventListener {
             Collections.synchronizedMap(new HashMap<String,MicroService>());
     static final private Object serviceMapMutex = new Object();
 
-    @Override
-    public void onProcessAboutToExit(Process process, int exitCode) {
-        if (exitListener != null) {
-            exitListener.onExit(this, exitCode);
-        }
+    private void clean() {
         exitListener = null;
         errorListener = null;
         emitter = null;
@@ -834,6 +829,11 @@ public class MicroService implements Process.EventListener {
             }
         }
         this.process = null;
+    }
+
+    @Override
+    public void onProcessAboutToExit(Process process, int exitCode) {
+        onProcessExit(process, exitCode);
     }
 
     @Override
@@ -841,19 +841,7 @@ public class MicroService implements Process.EventListener {
         if (exitListener != null) {
             exitListener.onExit(this, exitCode);
         }
-        exitListener = null;
-        errorListener = null;
-        emitter = null;
-        synchronized (serviceMapMutex) {
-            for (Map.Entry<String, MicroService> entry : serviceMap.entrySet()) {
-                if (entry.getValue() == this) {
-                    serviceMap.remove(entry.getKey());
-                    process.removeEventListener(this);
-                    break;
-                }
-            }
-        }
-        this.process = null;
+        clean();
     }
 
     @Override
@@ -861,21 +849,7 @@ public class MicroService implements Process.EventListener {
         if (errorListener != null) {
             errorListener.onError(this, error);
         }
-        exitListener = null;
-        errorListener = null;
-        emitter = null;
-        synchronized (serviceMapMutex) {
-            for (Map.Entry<String, MicroService> entry : serviceMap.entrySet()) {
-                if (entry.getValue() == this) {
-                    serviceMap.remove(entry.getKey());
-                    if (process != null) {
-                        process.removeEventListener(this);
-                    }
-                    break;
-                }
-            }
-        }
-        this.process = null;
+        clean();
     }
 
     /**

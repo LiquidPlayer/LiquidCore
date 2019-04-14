@@ -161,7 +161,7 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
     }
 
     private class ArrayIterator implements ListIterator<T> {
-        private int current = 0;
+        private int current;
         private Integer modifiable = null;
 
         public ArrayIterator() {
@@ -251,10 +251,8 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
     @Override
     @SuppressWarnings("unchecked")
     @NonNull
-    public <U> U[] toArray(final @NonNull U[] elemArray) {
-        if (size() > elemArray.length) {
-            return (U[])toArray();
-        }
+    public <U> U[] toArray(final U[] phantomArray) {
+        U[] elemArray = (U[])Array.newInstance(phantomArray.getClass().getComponentType(), size());
         ArrayIterator iterator = new ArrayIterator();
         int index = 0;
         while (iterator.hasNext()) {

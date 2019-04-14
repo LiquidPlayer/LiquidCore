@@ -114,8 +114,6 @@ include_directories(
              src/../../deps/node-8.9.3/deps/openssl/openssl/include
              src/../../deps/node-8.9.3/deps/http_parser
              src/../../deps/utfcpp
-             src/../../deps/sqlite-autoconf-3150000
-             src/../../deps/nan-2.5.1
              src/../../deps/boost_1_66_0
              src/../../LiquidCoreCommon/node
              src/../../LiquidCoreCommon/include
@@ -147,14 +145,6 @@ list (APPEND DEFS_RELEASE
 	-D_LARGEFILE_SOURCE
 	-D_GLIBCXX_USE_C99_MATH
     -D_REENTRANT=1
-    -DSQLITE_DISABLE_LFS
-    -DSQLITE_THREADSAFE=1
-    -DSQLITE_ENABLE_FTS3
-    -DSQLITE_ENABLE_FTS4
-    -DSQLITE_ENABLE_FTS5
-    -DSQLITE_ENABLE_JSON1
-    -DSQLITE_ENABLE_RTREE
-    -DJSCSHIM_IMPL
     )
     
 list (APPEND CFLAGS_RELEASE

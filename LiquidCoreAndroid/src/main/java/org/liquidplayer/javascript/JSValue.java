@@ -6,6 +6,8 @@
  */
 package org.liquidplayer.javascript;
 
+import android.support.annotation.NonNull;
+
 import java.util.List;
 import java.util.Map;
 
@@ -80,11 +82,10 @@ public class JSValue {
 
     /**
      * Wraps an existing JavaScript value
-     * @param valueRef  The JavaScriptCore reference to the value
+     * @param valueRef  The JavaScript reference to the value
      * @param ctx  The context in which the value exists
-     * @since 0.1.0
      */
-    protected JSValue(final JNIJSValue valueRef, final JSContext ctx) {
+    /* package */ JSValue(final JNIJSValue valueRef, final JSContext ctx) {
         context = ctx;
         if (valueRef != null) {
             this.valueRef = valueRef;
@@ -331,12 +332,12 @@ public class JSValue {
         }
     }
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         try {
             return valueRef().toStringCopy();
         } catch (JNIJSException excp) {
             context.throwJSException(new JSException(new JSValue(excp.exception, context)));
-            return null;
+            return "";
         }
     }
     /**
@@ -454,11 +455,11 @@ public class JSValue {
         return context;
     }
     /**
-     * Gets the JavaScriptCore value reference
-     * @return  the JavaScriptCore value reference
+     * Gets the JavaScript value reference
+     * @return  the JavaScript value reference
      * @since 0.1.0
      */
-    public JNIJSValue valueRef() {
+    /* package */ JNIJSValue valueRef() {
         return valueRef;
     }
     public long valueHash() { return valueRef().reference; }

@@ -6,6 +6,8 @@
  */
 package org.liquidplayer.javascript;
 
+import android.support.annotation.NonNull;
+
 /**
  *  A JSException is thrown for a number of different reasons, mostly by the JavaScriptCore
  *  library.  The description of the exception is given in the message.
@@ -73,7 +75,7 @@ public class JSException extends RuntimeException {
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         if (error!=null) {
             try {
                 return error.toString();

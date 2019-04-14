@@ -49,10 +49,10 @@ abstract class JNIJSPrimitive extends JNIJSValue {
             return b.isStrictEqual(this);
         }
     }
-    @Override JNIJSValue createJSONString() throws JNIJSException { return null; }
+    @Override JNIJSValue createJSONString() { return null; }
     @Override boolean toBoolean() { return false; }
-    @Override double toNumber() throws JNIJSException { return 0; }
-    @Override String toStringCopy() throws JNIJSException { return null; }
+    @Override double toNumber() { return 0; }
+    @Override String toStringCopy() { return null; }
     @Override JNIJSObject toObject() { return null; }
 
 }

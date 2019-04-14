@@ -228,7 +228,7 @@ public class JSObjectTest {
         assertTrue(object.hasProperty("readonly"));
         assertEquals(object.property("readonly"),new JSValue(context,4));
         object.property("dontdelete",6,JSObject.JSPropertyAttributeDontDelete);
-        object.deleteProperty("dontdelete");
+        assertFalse(object.deleteProperty("dontdelete"));
         assertTrue(object.hasProperty("dontdelete"));
         assertEquals(object.property("dontdelete"),new JSValue(context,6));
         object.property("noenum",7,JSObject.JSPropertyAttributeDontEnum);
@@ -237,26 +237,26 @@ public class JSObjectTest {
         assertTrue(object.hasProperty("noenum"));
         assertEquals(object.property("noenum"), new JSValue(context,7));
 
-        /**
+        /*
          * deleteProperty(property)
          */
-        object.deleteProperty("added");
+        assertTrue(object.deleteProperty("added"));
         assertFalse(object.hasProperty("added"));
         assertTrue(object.property("added").isUndefined());
 
-        /**
+        /*
          * propertyAtIndex(index,value)
          */
         object.propertyAtIndex(50,"fifty");
         assertEquals(object.property("50").toString(),"fifty");
 
-        /**
+        /*
          * propertyAtIndex(index)
          */
         assertEquals(object.propertyAtIndex(50).toString(),"fifty");
         assertTrue(object.propertyAtIndex(51).isUndefined());
 
-        /**
+        /*
          * propertyNames()
          */
         object.propertyAtIndex(52,"fifty-two");

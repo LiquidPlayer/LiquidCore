@@ -58,7 +58,7 @@ NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jlong grpRef, jobject 
  * -3 = snapshot taken, but could not write to file
  * -4 = snapshot taken, but could not close file properly
  */
-NATIVE(JNIJSContextGroup,int,createSnapshot) (PARAMS, jstring script_, jstring outFile_)
+NATIVE(JNIJSContextGroup,jint,createSnapshot) (PARAMS, jstring script_, jstring outFile_)
 {
     const char *_script = env->GetStringUTFChars(script_, NULL);
     const char *_outFile = env->GetStringUTFChars(outFile_, NULL);

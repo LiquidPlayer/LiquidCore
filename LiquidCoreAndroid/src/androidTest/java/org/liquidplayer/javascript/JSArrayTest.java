@@ -143,7 +143,7 @@ public class JSArrayTest {
         arr2 = list2.toArray(arr1);
         assertThat(arr2[0],is(0));
         assertThat(arr2[1],is(1));
-        assertNull(arr2[2]);
+        assertThat(arr2.length, is(2));
 
         /*
          * JSArray.remove(object)
@@ -399,7 +399,7 @@ public class JSArrayTest {
         assertEquals(fillArray,Arrays.asList(fillCompare));
         assertEquals(fillArray2,Arrays.asList(fillCompare));
         fillCompare = new Integer [] { 5,5,5,5,5 };
-        fillArray.fill(5);
+        assertEquals(fillArray, fillArray.fill(5));
         assertEquals(fillArray,Arrays.asList(fillCompare));
 
         // Array.prototype.filter()
@@ -536,7 +536,7 @@ public class JSArrayTest {
         assertEquals(popped,"Thousand");
 
         // Array.prototype.push()
-        keysArr.push("One-Thousand","One-Thousand One");
+        assertEquals(1002, keysArr.push("One-Thousand","One-Thousand One"));
         assertThat(keysArr.size(),is(1002));
         assertEquals(keysArr.pop(),"One-Thousand One");
 

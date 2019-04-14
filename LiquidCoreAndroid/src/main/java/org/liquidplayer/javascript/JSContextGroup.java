@@ -147,5 +147,5 @@ public class JSContextGroup {
                 groupRef().equals(((JSContextGroup)other).groupRef());
     }
 
-    private boolean hasDedicatedThread = false;
+    private boolean hasDedicatedThread;
 }
