@@ -8,7 +8,7 @@
 #include "JNI/JNI.h"
 #include "JSC/JSC.h"
 
-NATIVE(JNIJSContextGroup,jlong,create) (PARAMS)
+NATIVE(JNIJSContextGroup,jlong,create) (STATIC)
 {
     // Maintain compatibility at the ContextGroup level with JSC by using JSContextGroupCreate()
     return SharedWrap<ContextGroup>::New(
@@ -16,14 +16,14 @@ NATIVE(JNIJSContextGroup,jlong,create) (PARAMS)
     );
 }
 
-NATIVE(JNIJSContextGroup,jboolean,isManaged) (PARAMS, jlong grpRef)
+NATIVE(JNIJSContextGroup,jboolean,isManaged) (STATIC, jlong grpRef)
 {
     auto group = SharedWrap<ContextGroup>::Shared(grpRef);
 
     return (jboolean) (group && group->Loop());
 }
 
-NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jlong grpRef, jobject thisObj, jobject runnable) {
+NATIVE(JNIJSContextGroup,void,runInContextGroup) (STATIC, jlong grpRef, jobject thisObj, jobject runnable) {
     auto group = SharedWrap<ContextGroup>::Shared(grpRef);
 
     if (group && group->Loop() && std::this_thread::get_id() != group->Thread()) {
@@ -37,8 +37,8 @@ NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jlong grpRef, jobject 
             env->ExceptionClear();
             jclass super = env->GetSuperclass(cls);
             env->DeleteLocalRef(cls);
-            if (super == NULL || env->ExceptionCheck()) {
-                if (super != NULL) env->DeleteLocalRef(super);
+            if (super == nullptr || env->ExceptionCheck()) {
+                if (super != nullptr) env->DeleteLocalRef(super);
                 __android_log_assert("FAIL", "runInContextGroup",
                                      "Internal error.  Can't call back.");
             }
@@ -58,10 +58,10 @@ NATIVE(JNIJSContextGroup,void,runInContextGroup) (PARAMS, jlong grpRef, jobject 
  * -3 = snapshot taken, but could not write to file
  * -4 = snapshot taken, but could not close file properly
  */
-NATIVE(JNIJSContextGroup,jint,createSnapshot) (PARAMS, jstring script_, jstring outFile_)
+NATIVE(JNIJSContextGroup,jint,createSnapshot) (STATIC, jstring script_, jstring outFile_)
 {
-    const char *_script = env->GetStringUTFChars(script_, NULL);
-    const char *_outFile = env->GetStringUTFChars(outFile_, NULL);
+    const char *_script = env->GetStringUTFChars(script_, nullptr);
+    const char *_outFile = env->GetStringUTFChars(outFile_, nullptr);
 
     int rval = 0;
 
@@ -72,7 +72,7 @@ NATIVE(JNIJSContextGroup,jint,createSnapshot) (PARAMS, jstring script_, jstring 
     if (data.data == nullptr) {
         rval = -1;
     } else {
-        FILE *fp = fopen(_outFile, "wb");
+        FILE *fp = fopen(_outFile, "wbe");
         if (fp == nullptr) {
             rval = -2;
         } else {
@@ -90,9 +90,9 @@ NATIVE(JNIJSContextGroup,jint,createSnapshot) (PARAMS, jstring script_, jstring 
     return rval;
 }
 
-NATIVE(JNIJSContextGroup,jlong,createWithSnapshotFile) (PARAMS, jstring inFile_)
+NATIVE(JNIJSContextGroup,jlong,createWithSnapshotFile) (STATIC, jstring inFile_)
 {
-    const char *_inFile = env->GetStringUTFChars(inFile_, NULL);
+    const char *_inFile = env->GetStringUTFChars(inFile_, nullptr);
 
     boost::shared_ptr<ContextGroup> group = ContextGroup::New(_inFile);
 
@@ -102,8 +102,13 @@ NATIVE(JNIJSContextGroup,jlong,createWithSnapshotFile) (PARAMS, jstring inFile_)
     return SharedWrap<ContextGroup>::New(group);
 }
 
-NATIVE(JNIJSContextGroup,void,Finalize) (PARAMS, jlong reference)
+NATIVE(JNIJSContextGroup,void,Finalize) (STATIC, jlong reference)
 {
     SharedWrap<ContextGroup>::Dispose(reference);
 }
 
+NATIVE(JNIJSContextGroup,void,TerminateExecution) (STATIC, jlong grpRef)
+{
+    auto group = SharedWrap<ContextGroup>::Shared(grpRef);
+    group->isolate()->TerminateExecution();
+}

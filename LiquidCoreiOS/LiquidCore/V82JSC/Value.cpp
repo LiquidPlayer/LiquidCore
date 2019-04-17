@@ -102,6 +102,10 @@ Local<v8::Value> Value::New(const Context *ctx, JSValueRef value, BaseMap *map)
                 }
                 break;
             }
+            case kJSTypeSymbol: {
+                map = isolateimpl->m_symbol_map;
+                break;
+            }
             default:
                 break;
         }

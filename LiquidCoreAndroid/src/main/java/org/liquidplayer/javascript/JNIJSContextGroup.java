@@ -49,6 +49,10 @@ class JNIJSContextGroup extends JNIObject {
         return new JNILoopPreserver(JNILoopPreserver.create(reference));
     }
 
+    void terminateExecution() {
+        TerminateExecution(reference);
+    }
+
     /* Natives */
     static native int createSnapshot(String script, String snapshotFile);
 
@@ -57,4 +61,5 @@ class JNIJSContextGroup extends JNIObject {
     private static native boolean isManaged(long groupRef);
     private static native void runInContextGroup(long groupRef, Object thisObject, Runnable runnable);
     private static native void Finalize(long groupRef);
+    private static native void TerminateExecution(long groupRef);
 }

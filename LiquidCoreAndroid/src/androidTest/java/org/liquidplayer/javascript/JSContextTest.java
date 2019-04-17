@@ -17,9 +17,11 @@ import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -312,6 +314,30 @@ public class JSContextTest {
 
         if(snapshot1.delete()) android.util.Log.d("snapshotTest()", "Deleted " + snapshot1.getAbsolutePath());
         if(snapshot2.delete()) android.util.Log.d("snapshotTest()", "Deleted " + snapshot2.getAbsolutePath());
+    }
+
+    public void terminateTest(final JSContext context) throws Exception {
+        final String endlessLoop = "while (true) {}";
+        final CountDownLatch latch = new CountDownLatch(1);
+        final Thread jsthread = new Thread() {
+            @Override public void run() {
+                try {
+                    context.evaluateScript(endlessLoop);
+                } catch (JSException e) {
+                    latch.countDown();
+                }
+            }
+        };
+        jsthread.start();
+        Thread.sleep(500);
+        context.getGroup().terminateExecution();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void terminateTest() throws Exception {
+        JSContext context = new JSContext();
+        terminateTest(context);
     }
 
     @org.junit.After

@@ -42,7 +42,11 @@ public class JSError extends JSObject {
      * @param error the JavaScript Error object
      */
     public JSError(JSValue error) {
-        super((JNIJSObject)error.toObject().valueRef(), error.getContext());
+        super(
+            error.isObject() ? (JNIJSObject)error.toObject().valueRef() :
+                    (JNIJSObject)new JSError(error.getContext()).valueRef(),
+            error.getContext()
+        );
     }
 
     /**

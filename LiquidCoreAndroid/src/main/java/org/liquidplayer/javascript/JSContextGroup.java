@@ -95,6 +95,13 @@ public class JSContextGroup {
     }
 
     /**
+     * Terminates execution of any running script.  The script will exit with an exception.
+     */
+    public void terminateExecution() {
+        group.terminateExecution();
+    }
+
+    /**
      * Determines if the ContextGroup is being managed by a single thread (i.e. Node)
      * @return true if managed by a single thread, false otherwise
      */
@@ -124,6 +131,10 @@ public class JSContextGroup {
         runnable.run();
     }
 
+    /**
+     * Schedules an asynchronous callback to run in the JavaScript thread.
+     * @param runnable A callback Runnable.
+     */
     public void schedule(Runnable runnable) {
         group.runInContextGroup(this, runnable);
     }

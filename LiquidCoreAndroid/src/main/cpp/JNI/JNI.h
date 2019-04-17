@@ -14,6 +14,7 @@
 #define NATIVE(package,rt,f) extern "C" JNIEXPORT \
     rt JNICALL Java_org_liquidplayer_javascript_##package##_##f
 #define PARAMS JNIEnv* env, jobject thiz
+#define STATIC JNIEnv* env, jclass klass
 
 jclass findClass(JNIEnv *env, const char* name);
 JavaVM * getJavaVM();

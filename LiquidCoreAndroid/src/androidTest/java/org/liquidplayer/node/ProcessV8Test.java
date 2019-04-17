@@ -13,6 +13,7 @@ import org.liquidplayer.javascript.JSArrayBufferTest;
 import org.liquidplayer.javascript.JSArrayTest;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
+import org.liquidplayer.javascript.JSContextTest;
 import org.liquidplayer.javascript.JSDataViewTest;
 import org.liquidplayer.javascript.JSDateTest;
 import org.liquidplayer.javascript.JSErrorTest;
@@ -714,6 +715,16 @@ public class ProcessV8Test {
             @Override
             public void run(JSContext context) throws Exception {
                 new JSValueTest().testJSValueGetters(context);
+            }
+        });
+    }
+
+    @org.junit.Test
+    public void testTerminate() throws Exception {
+        new V8Test(new Runner() {
+            @Override
+            public void run(JSContext context) throws Exception {
+                new JSContextTest().terminateTest(context);
             }
         });
     }
