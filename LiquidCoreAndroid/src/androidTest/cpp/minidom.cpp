@@ -46,7 +46,7 @@
 
 static JSValueRef print(JSContextRef context, JSObjectRef object, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception);
 
-extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_minidom(JNIEnv* env,
+extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_jsctest_JSC_minidom(JNIEnv* env,
     jobject thiz, jstring minidom_js, jlong group_)
 {
     auto group = SharedWrap<ContextGroup>::Shared(group_);

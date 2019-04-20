@@ -16,7 +16,6 @@ import java.util.concurrent.Semaphore;
 /**
  * Wraps a JavaScript context
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSContext extends JSObject {
 
     static {
@@ -153,7 +152,7 @@ public class JSContext extends JSObject {
      * @param exception The JSException to be thrown
      * @since 0.1.0
      */
-    public void throwJSException(JSException exception) {
+    void throwJSException(JSException exception) {
         if (exceptionHandler == null) {
             throw exception;
         } else {
@@ -239,10 +238,9 @@ public class JSContext extends JSObject {
      * Reuses a stored reference to a JavaScript object if it exists, otherwise, it creates the
      * reference.
      * @param objRef the JavaScript object reference
-     * @param create whether to create the object if it does not exist
      * @return The JSObject representing the reference
      */
-    /* package */ JSObject getObjectFromRef(final JNIJSObject objRef, boolean create) {
+    /* package */ JSObject getObjectFromRef(final JNIJSObject objRef) {
         if (objRef.equals(valueRef())) {
             return this;
         }
@@ -251,7 +249,7 @@ public class JSContext extends JSObject {
         if (wr != null) {
             obj = wr.get();
         }
-        if (obj==null && create) {
+        if (obj==null) {
             obj = new JSObject(objRef,this);
             if (obj.isArray()) {
                 obj = new JSArray(objRef, this);
@@ -262,8 +260,5 @@ public class JSContext extends JSObject {
             }
         }
         return obj;
-    }
-    JSObject getObjectFromRef(JNIJSObject objRef) {
-        return getObjectFromRef(objRef,true);
     }
 }

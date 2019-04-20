@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Uint16Array
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSUint16Array extends JSTypedArray<Short> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
@@ -70,13 +69,7 @@ public class JSUint16Array extends JSTypedArray<Short> {
         super(buffer,"Uint16Array",Short.class);
     }
 
-    /**
-     * Treats an existing value as a typed array
-     * @param valueRef  the JavaScriptCore value reference
-     * @param ctx  The JSContext of the value
-     * @since 0.1.0
-     */
-    public JSUint16Array(JNIJSObject valueRef, JSContext ctx) {
+    JSUint16Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Short.class);
     }
 
@@ -110,7 +103,6 @@ public class JSUint16Array extends JSTypedArray<Short> {
      * @since 0.1.0
      */
     @Override @NonNull
-    @SuppressWarnings("unchecked")
     public JSUint16Array subList(final int fromIndex, final int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();

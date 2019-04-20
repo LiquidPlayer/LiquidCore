@@ -17,34 +17,33 @@
 #endif
 
 /* Reserve position 0 -- node uses it for some objects */
-#define INSTANCE_OBJECT_RESERVED (0)
 #define INSTANCE_OBJECT_CLASS    (1)
 #define INSTANCE_OBJECT_JSOBJECT (2)
 #define INSTANCE_OBJECT_FIELDS   (3)
 
 #define V8_ISOLATE_OBJ(ctx,object,isolate,context,o) \
     V8_ISOLATE_CTX(ctx,isolate,context); \
-    Local<Object> o = \
+    Local<Object> (o) = \
         (object)->L()->ToObject(context).ToLocalChecked();
 
 #define VALUE_ISOLATE(ctxRef,valueRef,isolate,context,value) \
     V8_ISOLATE_CTX(ctxRef,isolate,context); \
-    Local<Value> value = (valueRef)->L();
+    Local<Value> (value) = (valueRef)->L();
 
 #define V8_ISOLATE_CALLBACK(info,isolate,context,definition) \
-    Isolate::Scope isolate_scope_(info.GetIsolate()); \
-    HandleScope handle_scope_(info.GetIsolate()); \
-    const JSClassDefinition *definition = ObjectData::Get(info.Data())->Definition();\
-    if (nullptr == ObjectData::Get(info.Data())->Context()) return; \
-    JSContextRef ctxRef_ = ObjectData::Get(info.Data())->Context(); \
+    Isolate::Scope isolate_scope_((info).GetIsolate()); \
+    HandleScope handle_scope_((info).GetIsolate()); \
+    const JSClassDefinition *(definition) = ObjectData::Get((info).Data())->Definition();\
+    if (nullptr == ObjectData::Get((info).Data())->Context()) return; \
+    JSContextRef ctxRef_ = ObjectData::Get((info).Data())->Context(); \
     V8_ISOLATE_CTX(ctxRef_->Context(),isolate,context)
 
 #define TO_REAL_GLOBAL(o) \
-    o = o->StrictEquals(context->Global()) && \
-        !o->GetPrototype()->ToObject(context).IsEmpty() && \
-        o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()>INSTANCE_OBJECT_JSOBJECT ? \
-        o->GetPrototype()->ToObject(context).ToLocalChecked() : \
-        o;
+    (o) = (o)->StrictEquals(context->Global()) && \
+        !(o)->GetPrototype()->ToObject(context).IsEmpty() && \
+        (o)->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()>INSTANCE_OBJECT_JSOBJECT ? \
+        (o)->GetPrototype()->ToObject(context).ToLocalChecked() : \
+        (o);
 
 #define CTX(ctx)     ((ctx)->Context())
 

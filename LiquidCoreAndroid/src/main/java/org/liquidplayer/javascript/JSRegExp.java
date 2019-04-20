@@ -13,7 +13,6 @@ package org.liquidplayer.javascript;
  *  for details on JavaScript regexp.
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSRegExp extends JSObject {
     /**
      * Creates a new JavaScript regular expression
@@ -48,7 +47,7 @@ public class JSRegExp extends JSObject {
      * @since 0.1.0
      */
     public class ExecResult extends JSArray<String> {
-        protected ExecResult(JSObject result) {
+        ExecResult(JSObject result) {
             super((JNIJSObject)result.valueRef(),result.getContext(),String.class);
         }
 

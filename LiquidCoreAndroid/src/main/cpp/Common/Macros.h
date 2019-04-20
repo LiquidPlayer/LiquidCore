@@ -19,8 +19,8 @@
             HandleScope handle_scope_(iso);
 
 #define V8_ISOLATE_CTX(ctx,iso,Ctx) \
-        V8_ISOLATE(ctx->Group(),iso) \
-            Local<v8::Context> Ctx = ctx->Value(); \
+        V8_ISOLATE((ctx)->Group(),iso) \
+            Local<v8::Context> Ctx = (ctx)->Value(); \
             v8::Context::Scope context_scope_(Ctx);
 
 #define V8_UNLOCK() \

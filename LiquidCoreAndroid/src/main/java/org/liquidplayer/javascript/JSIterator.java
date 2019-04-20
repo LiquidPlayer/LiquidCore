@@ -13,14 +13,13 @@ import java.util.Iterator;
  * @since 0.1.0
  * @param <T> Parameterized type of iterator elements
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
-public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
+/*package*/ class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
     /**
      * Represents the object returned by 'next'
      * @since 0.1.0
      */
     public class Next extends JSObjectWrapper {
-        protected Next(JSObject next) {
+        Next(JSObject next) {
             super(next);
         }
 
@@ -28,7 +27,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
          * Tests if there are any more elements in the array
          * @return true if more elements to iterate, false otherwise
          */
-        public boolean done() {
+        boolean done() {
             return getJSObject().property("done").toBoolean();
         }
 
@@ -41,13 +40,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
         }
     }
 
-    /**
-     * Wraps a JavaScript iterator in a Java iterator
-     * @since 0.1.0
-     * @param iterator the JavaScript iterator object.  Assumes the object is a properly formed JS
-     *                 iterator
-     */
-    public JSIterator(JSObject iterator) {
+    JSIterator(JSObject iterator) {
         super(iterator);
         next = _jsnext();
     }
@@ -62,7 +55,7 @@ public class JSIterator<T> extends JSObjectWrapper implements Iterator<T> {
      * @since 0.1.0
      * @return the next JSObject in the JSIterator
      */
-    public Next jsnext() {
+    Next jsnext() {
         Next ret = next;
         next = _jsnext();
         return ret;

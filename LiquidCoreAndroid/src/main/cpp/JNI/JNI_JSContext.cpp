@@ -9,9 +9,9 @@
 #include "JSC/JSC.h"
 #include "JNIJSException.h"
 
-extern "C" jlong Java_org_liquidplayer_javascript_JNIJSContextGroup_create(JNIEnv *, jobject);
+extern "C" jlong Java_org_liquidplayer_javascript_JNIJSContextGroup_create(JNIEnv *, jclass);
 
-NATIVE(JNIJSContext,jlong,createInGroup) (PARAMS,jlong grp)
+NATIVE(JNIJSContext,jlong,createInGroup) (STATIC,jlong grp)
 {
     auto group = SharedWrap<ContextGroup>::Shared(grp);
     jlong ctx;
@@ -22,12 +22,12 @@ NATIVE(JNIJSContext,jlong,createInGroup) (PARAMS,jlong grp)
     return ctx;
 }
 
-NATIVE(JNIJSContext,void,Finalize) (PARAMS, jlong reference)
+NATIVE(JNIJSContext,void,Finalize) (STATIC, jlong reference)
 {
     SharedWrap<JSContext>::Dispose(reference);
 }
 
-NATIVE(JNIJSContext,jlong,getGlobalObject) (PARAMS, jlong ctxRef)
+NATIVE(JNIJSContext,jlong,getGlobalObject) (STATIC, jlong ctxRef)
 {
     jlong v=0;
     auto ctx = SharedWrap<JSContext>::Shared(ctxRef);
@@ -39,19 +39,19 @@ NATIVE(JNIJSContext,jlong,getGlobalObject) (PARAMS, jlong ctxRef)
     return v;
 }
 
-NATIVE(JNIJSContext,jlong,getGroup) (PARAMS, jlong grpRef)
+NATIVE(JNIJSContext,jlong,getGroup) (STATIC, jlong grpRef)
 {
     auto context = SharedWrap<JSContext>::Shared(grpRef);
     return SharedWrap<ContextGroup>::New(context->Group());
 }
 
-NATIVE(JNIJSContext,jlong,evaluateScript) (PARAMS, jlong ctxRef, jstring script_,
+NATIVE(JNIJSContext,jlong,evaluateScript) (STATIC, jlong ctxRef, jstring script_,
     jstring sourceURL_, jint startingLineNumber)
 {
     auto ctx = SharedWrap<JSContext>::Shared(ctxRef);
 
-    const char *_script = env->GetStringUTFChars(script_, NULL);
-    const char *_sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
+    const char *_script = env->GetStringUTFChars(script_, nullptr);
+    const char *_sourceURL = env->GetStringUTFChars(sourceURL_, nullptr);
 
     jlong ret = 0;
     boost::shared_ptr<JSValue> exception;

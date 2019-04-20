@@ -393,8 +393,6 @@ void OpaqueJSClass::ProtoPropertyGetter(Local< String > property,
 void OpaqueJSClass::NamedPropertySetter(Local< String > property, Local< Value > value,
     const PropertyCallbackInfo< Value > &info)
 {
-    String::Utf8Value const str(property);
-
     V8_ISOLATE_CALLBACK(info,isolate,context,definition)
         TempException exception(nullptr);
         TempJSValue thisObject(ctxRef_, info.This());
@@ -545,7 +543,7 @@ void OpaqueJSClass::NamedPropertyEnumerator(const PropertyCallbackInfo< Array > 
                 .ToLocalChecked().As<Function>();
         Local<Function> push = array->Get(context, String::NewFromUtf8(isolate, "push"))
                 .ToLocalChecked().As<Function>();
-        while (accumulator.size() > 0) {
+        while (!accumulator.empty()) {
             Local<Value> property = accumulator.back()->Value(isolate);
             Local<Value> index = indexOf->Call(context, array, 1, &property).ToLocalChecked();
             if (index->ToNumber(context).ToLocalChecked()->Value() < 0) {
@@ -603,7 +601,7 @@ void OpaqueJSClass::IndexedPropertyEnumerator(const PropertyCallbackInfo< Array 
                 .ToLocalChecked()->ToObject(context).ToLocalChecked();
         Local<Function> isInteger = Number->Get(context, String::NewFromUtf8(isolate,"isInteger"))
                 .ToLocalChecked().As<Function>();
-        while (accumulator.size() > 0) {
+        while (!accumulator.empty()) {
             Local<Value> property = accumulator.back()->Value(isolate);
             Local<Value> numeric = property->ToNumber(context).ToLocalChecked();
             if (!isNaN->Call(context, isNaN, 1, &property).ToLocalChecked()
@@ -654,7 +652,7 @@ void OpaqueJSClass::ProtoPropertyEnumerator(const PropertyCallbackInfo< Array > 
                 .ToLocalChecked().As<Function>();
         Local<Function> push = array->Get(context, String::NewFromUtf8(isolate, "push"))
                 .ToLocalChecked().As<Function>();
-        while (accumulator.size() > 0) {
+        while (!accumulator.empty()) {
             Local<Value> property = accumulator.back()->Value(isolate);
             Local<Value> index = indexOf->Call(context, array, 1, &property).ToLocalChecked();
             if (index->ToNumber(context).ToLocalChecked()->Value() < 0) {
@@ -725,9 +723,8 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
 
 void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& info)
 {
-    OpaqueJSClass* clazz = reinterpret_cast<OpaqueJSClass*>(info.GetInternalField(INSTANCE_OBJECT_CLASS));
-    JSObjectRef objRef =
-        reinterpret_cast<JSObjectRef>(info.GetInternalField(INSTANCE_OBJECT_JSOBJECT));
+    auto clazz = reinterpret_cast<OpaqueJSClass*>(info.GetInternalField(INSTANCE_OBJECT_CLASS));
+    auto objRef = reinterpret_cast<JSObjectRef>(info.GetInternalField(INSTANCE_OBJECT_JSOBJECT));
     /* Note: A weak callback will only retain the first two internal fields
      * But the first one is reserved.  So we will have nulled out the second one in the
      * OpaqueJSValue destructor.
@@ -871,7 +868,7 @@ JSObjectRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance
             retObj = const_cast<JSObjectRef>(OpaqueJSValue::New(ctx, instance, m_definition));
         }
 
-        UniquePersistent<Object>* weak = new UniquePersistent<Object>(isolate, instance);
+        auto weak = new UniquePersistent<Object>(isolate, instance);
         weak->SetWeak<UniquePersistent<Object>>(
             weak,
             Finalize,
@@ -943,12 +940,11 @@ JSObjectRef OpaqueJSClass::InitInstance(JSContextRef ctx, Local<Object> instance
         }
 
         // Find the greatest ancestor
-        definition = nullptr;
         for (definition = m_definition; definition && definition->parentClass;
             definition = definition->parentClass->m_definition);
 
         // Walk backwards and call 'initialize' on each
-        while (true) {
+        while (definition) {
             if (definition->initialize)
                 definition->initialize(ctx, retObj);
             const JSClassDefinition *parent = definition;

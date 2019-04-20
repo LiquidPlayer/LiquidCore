@@ -11,7 +11,6 @@ import android.support.annotation.NonNull;
 /**
  * A convenience class for handling JavaScript's Int16Array
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSInt16Array extends JSTypedArray<Short> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
@@ -70,13 +69,7 @@ public class JSInt16Array extends JSTypedArray<Short> {
         super(buffer,"Int16Array",Short.class);
     }
 
-    /**
-     * Treats an existing value as a typed array
-     * @since 0.1.0
-     * @param valueRef  the JavaScriptCore value reference
-     * @param ctx  The JSContext of the value
-     */
-    public JSInt16Array(JNIJSObject valueRef, JSContext ctx) {
+    JSInt16Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Short.class);
     }
 
@@ -110,7 +103,6 @@ public class JSInt16Array extends JSTypedArray<Short> {
      * @since 3.0
      */
     @Override @NonNull
-    @SuppressWarnings("unchecked")
     public JSInt16Array subList(final int fromIndex, final int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();

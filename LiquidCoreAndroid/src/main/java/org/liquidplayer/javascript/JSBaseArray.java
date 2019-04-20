@@ -20,12 +20,11 @@ import java.util.NoSuchElementException;
  * simple integration with Java methods.
  *
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
 
     Class<T> mType;
     int mLeftBuffer = 0;
-    int mRightBuffer = 0;
+    private int mRightBuffer = 0;
     JSBaseArray<T> mSuperList = null;
 
     JSBaseArray(JNIJSObject valueRef, JSContext ctx, Class<T> cls) {
@@ -124,14 +123,14 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
         propertyAtIndex(index,value);
     }
 
-    JSValue elementAtIndex(final int index) {
+    private JSValue elementAtIndex(final int index) {
         if (mSuperList == null)
             return arrayElement(index);
         else
             return mSuperList.elementAtIndex(index + mLeftBuffer);
     }
 
-    void elementAtIndex(final int index, final T value) {
+    private void elementAtIndex(final int index, final T value) {
         if (mSuperList == null)
             arrayElement(index, value);
         else
@@ -164,10 +163,10 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
         private int current;
         private Integer modifiable = null;
 
-        public ArrayIterator() {
+        ArrayIterator() {
             this(0);
         }
-        public ArrayIterator(int index) {
+        ArrayIterator(int index) {
             if (index > size()) index = size();
             if (index < 0) index = 0;
             current = index;
@@ -394,7 +393,6 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
      * @since 0.1.0
      */
     @Override
-    @SuppressWarnings("unchecked")
     public void add(final int index, final T element) {
         throw new UnsupportedOperationException();
     }
@@ -404,7 +402,6 @@ public abstract class JSBaseArray<T> extends JSFunction implements List<T> {
      * @since 0.1.0
      */
     @Override
-    @SuppressWarnings("unchecked")
     public T remove(final int index) {
         throw new UnsupportedOperationException();
     }

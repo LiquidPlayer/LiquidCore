@@ -24,119 +24,119 @@ jboolean boolean_func(jlong thiz, F&& lambda, bool defValue){
     return (jboolean) defValue;
 }
 
-NATIVE(JNIJSValue,jboolean,isUndefined) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isUndefined) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUndefined();
     }, true);
 }
 
-NATIVE(JNIJSValue,jboolean,isNull) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isNull) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsNull();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isBoolean) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isBoolean) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsBoolean();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isNumber) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isNumber) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsNumber();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isString) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isString) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsString();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isArray) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isArray) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsArray();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isDate) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isDate) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsDate();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isTypedArray) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isTypedArray) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsTypedArray();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isInt8Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isInt8Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsInt8Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isInt16Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isInt16Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsInt16Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isInt32Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isInt32Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsInt32Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint8Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isUint8Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint8Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint8ClampedArray) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isUint8ClampedArray) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint8ClampedArray();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint16Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isUint16Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint16Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isUint32Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isUint32Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsUint32Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isFloat32Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isFloat32Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsFloat32Array();
     }, false);
 }
 
-NATIVE(JNIJSValue,jboolean,isFloat64Array) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,isFloat64Array) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         return value->IsFloat64Array();
@@ -145,7 +145,7 @@ NATIVE(JNIJSValue,jboolean,isFloat64Array) (PARAMS, jlong valueRef)
 
 /* Comparing values */
 
-NATIVE(JNIJSValue,jboolean,isEqual) (PARAMS, jlong a_, jlong b_)
+NATIVE(JNIJSValue,jboolean,isEqual) (STATIC, jlong a_, jlong b_)
 {
     if (!ISPOINTER(a_)) {
         __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "a_ must be pointer");
@@ -176,7 +176,7 @@ NATIVE(JNIJSValue,jboolean,isEqual) (PARAMS, jlong a_, jlong b_)
 }
 
 
-NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jlong valueRef, jlong b)
+NATIVE(JNIJSValue,jboolean,isStrictEqual) (STATIC, jlong valueRef, jlong b)
 {
     if (!ISPOINTER(valueRef)) {
         __android_log_assert("!ISPOINTER(valueRef)", "JNIJSValue.isStrictEqual", "valueRef must be pointer");
@@ -195,7 +195,7 @@ NATIVE(JNIJSValue,jboolean,isStrictEqual) (PARAMS, jlong valueRef, jlong b)
 
 /* Creating values */
 
-NATIVE(JNIJSValue,jlong,makeNumber) (PARAMS, jlong ctxRef, jdouble number)
+NATIVE(JNIJSValue,jlong,makeNumber) (STATIC, jlong ctxRef, jdouble number)
 {
     jlong value = 0;
 
@@ -209,12 +209,12 @@ NATIVE(JNIJSValue,jlong,makeNumber) (PARAMS, jlong ctxRef, jdouble number)
     return value;
 }
 
-NATIVE(JNIJSValue,jlong,makeString) (PARAMS, jlong ctxRef, jstring string)
+NATIVE(JNIJSValue,jlong,makeString) (STATIC, jlong ctxRef, jstring string)
 {
     jlong value = 0;
 
     auto context_ = SharedWrap<JSContext>::Shared(ctxRef);
-    const char *c_string = env->GetStringUTFChars(string, NULL);
+    const char *c_string = env->GetStringUTFChars(string, nullptr);
     V8_ISOLATE_CTX(context_,isolate,context)
 
         MaybeLocal<String> str = String::NewFromUtf8(isolate, c_string, NewStringType::kNormal);
@@ -236,10 +236,10 @@ NATIVE(JNIJSValue,jlong,makeString) (PARAMS, jlong ctxRef, jstring string)
 
 /* Converting to and from JSON formatted strings */
 
-NATIVE(JNIJSValue,jlong,makeFromJSONString) (PARAMS, jlong ctxRef, jstring string)
+NATIVE(JNIJSValue,jlong,makeFromJSONString) (STATIC, jlong ctxRef, jstring string)
 {
     jlong value = 0;
-    const char *c_string = env->GetStringUTFChars(string, NULL);
+    const char *c_string = env->GetStringUTFChars(string, nullptr);
 
     auto context_ = SharedWrap<JSContext>::Shared(ctxRef);
     V8_ISOLATE_CTX(context_,isolate,context)
@@ -266,7 +266,7 @@ NATIVE(JNIJSValue,jlong,makeFromJSONString) (PARAMS, jlong ctxRef, jstring strin
     return value;
 }
 
-NATIVE(JNIJSValue,jlong,createJSONString) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jlong,createJSONString) (STATIC, jlong valueRef)
 {
     if (!ISPOINTER(valueRef)) {
         __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "valueRef must be pointer");
@@ -292,7 +292,7 @@ NATIVE(JNIJSValue,jlong,createJSONString) (PARAMS, jlong valueRef)
 
 /* Converting to primitive values */
 
-NATIVE(JNIJSValue,jboolean,toBoolean) (PARAMS, jlong valueRef)
+NATIVE(JNIJSValue,jboolean,toBoolean) (STATIC, jlong valueRef)
 {
     return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
         MaybeLocal<Boolean> boolean = value->ToBoolean(context);
@@ -300,7 +300,7 @@ NATIVE(JNIJSValue,jboolean,toBoolean) (PARAMS, jlong valueRef)
     }, false);
 }
 
-NATIVE(JNIJSValue,jdouble,toNumber) (PARAMS, jlong valueRef) {
+NATIVE(JNIJSValue,jdouble,toNumber) (STATIC, jlong valueRef) {
     double out = 0.0;
     if (!ISPOINTER(valueRef)) {
         __android_log_assert("!ISPOINTER", "toNumber", "SharedWrap<JSValue> is not a pointer");
@@ -325,7 +325,7 @@ NATIVE(JNIJSValue,jdouble,toNumber) (PARAMS, jlong valueRef) {
     return out;
 }
 
-NATIVE(JNIJSValue,jstring,toStringCopy) (PARAMS, jlong valueRef) {
+NATIVE(JNIJSValue,jstring,toStringCopy) (STATIC, jlong valueRef) {
     jstring out = nullptr;
     if (!ISPOINTER(valueRef)) {
         __android_log_assert("!ISPOINTER", "toStringCopy", "SharedWrap<JSValue> is not a pointer");
@@ -358,7 +358,7 @@ NATIVE(JNIJSValue,jstring,toStringCopy) (PARAMS, jlong valueRef) {
     return out;
 }
 
-NATIVE(JNIJSValue,jlong,toObject) (PARAMS, jlong valueRef) {
+NATIVE(JNIJSValue,jlong,toObject) (STATIC, jlong valueRef) {
     jlong out = 0;
     if (!ISPOINTER(valueRef)) {
         __android_log_assert("!ISPOINTER", "toObject", "SharedWrap<JSValue> is not a pointer");
@@ -385,11 +385,11 @@ NATIVE(JNIJSValue,jlong,toObject) (PARAMS, jlong valueRef) {
     return out;
 }
 
-NATIVE(JNIJSValue,jlong,canonicalReference) (PARAMS, jlong valueRef) {
+NATIVE(JNIJSValue,jlong,canonicalReference) (STATIC, jlong valueRef) {
     return SharedWrap<JSValue>::CanonicalReference(valueRef);
 }
 
-NATIVE(JNIJSValue,void,Finalize) (PARAMS, jlong reference)
+NATIVE(JNIJSValue,void,Finalize) (STATIC, jlong reference)
 {
     if (!ISPOINTER(reference)) {
         __android_log_assert("!ISPOINTER", "Finalize", "reference is not a pointer");

@@ -117,7 +117,6 @@ import java.util.UUID;
  *
  * Everything else will result in a ENOACES (access denied) error
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 class FileSystem extends JSObject {
 
     private class JSBuilder {
@@ -214,7 +213,7 @@ class FileSystem extends JSObject {
         }
         return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
     }
-    static void deleteRecursive(File fileOrDirectory) {
+    private static void deleteRecursive(File fileOrDirectory) {
         try {
             if (fileOrDirectory.isDirectory() && !isSymlink(fileOrDirectory) &&
                     fileOrDirectory.listFiles() != null) {

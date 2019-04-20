@@ -99,7 +99,7 @@ static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefi
 JS_EXPORT JSObjectRef JSObjectMakeFunctionWithCallback(JSContextRef ctx, JSStringRef name,
     JSObjectCallAsFunctionCallback callAsFunction)
 {
-    JSClassDefinition *definition = new JSClassDefinition;
+    auto definition = new JSClassDefinition;
     memset(definition, 0, sizeof(JSClassDefinition));
     definition->callAsFunction = callAsFunction;
 
@@ -109,7 +109,7 @@ JS_EXPORT JSObjectRef JSObjectMakeFunctionWithCallback(JSContextRef ctx, JSStrin
 JS_EXPORT JSObjectRef JSObjectMakeConstructor(JSContextRef ctx, JSClassRef jsClass,
     JSObjectCallAsConstructorCallback callAsConstructor)
 {
-    JSClassDefinition *definition = new JSClassDefinition;
+    auto definition = new JSClassDefinition;
     memset(definition, 0, sizeof(JSClassDefinition));
     definition->callAsConstructor = callAsConstructor;
 
@@ -117,14 +117,14 @@ JS_EXPORT JSObjectRef JSObjectMakeConstructor(JSContextRef ctx, JSClassRef jsCla
 }
 
 JS_EXPORT JSObjectRef JSObjectMakeArray(JSContextRef ctx, size_t argumentCount,
-    const JSValueRef arguments[], JSValueRef* exception)
+    const JSValueRef arguments[], JSValueRef* )
 {
     JSObjectRef object;
 
     V8_ISOLATE_CTX(CTX(ctx),isolate,context)
-        Local<Array> array = Array::New(isolate, argumentCount);
+        Local<Array> array = Array::New(isolate, (int)argumentCount);
         for(size_t i=0; i<argumentCount; i++) {
-            array->Set(context, i, arguments[i]->L());
+            array->Set(context, (int)i, arguments[i]->L());
         }
         object = const_cast<JSObjectRef>(OpaqueJSValue::New(ctx, array));
     V8_UNLOCK()
@@ -152,7 +152,7 @@ JS_EXPORT JSObjectRef JSObjectMakeDate(JSContextRef ctx, size_t argumentCount,
             TryCatch trycatch(isolate);
 
             MaybeLocal<Number> number = arguments[0]->L()->ToNumber(context);
-            double epoch = 0.0;
+            double epoch;
             if (!number.IsEmpty()) {
                 epoch = number.ToLocalChecked()->Value();
             } else {
@@ -231,18 +231,19 @@ JS_EXPORT JSObjectRef JSObjectMakeRegExp(JSContextRef ctx, size_t argumentCount,
 
         if (!*exception) {
             String::Utf8Value const str(flags_);
-            RegExp::Flags flags = RegExp::Flags::kNone;
+            unsigned flags = RegExp::Flags::kNone;
             for (size_t i=0; i<strlen(*str); i++) {
                 switch ((*str)[i]) {
-                    case 'g': flags = (RegExp::Flags) (flags | RegExp::Flags::kGlobal);     break;
-                    case 'i': flags = (RegExp::Flags) (flags | RegExp::Flags::kIgnoreCase); break;
-                    case 'm': flags = (RegExp::Flags) (flags | RegExp::Flags::kMultiline);  break;
+                    case 'g': flags |= RegExp::Flags::kGlobal;     break;
+                    case 'i': flags |= RegExp::Flags::kIgnoreCase; break;
+                    case 'm': flags |= RegExp::Flags::kMultiline;  break;
+                    default: break;
                 }
             }
 
             TryCatch trycatch(isolate);
 
-            MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, flags);
+            MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, (RegExp::Flags)flags);
             if (regexp.IsEmpty()) {
                 exception.Set(ctx, trycatch.Exception());
             } else {
@@ -380,7 +381,7 @@ JS_EXPORT void JSObjectSetProperty(JSContextRef ctx, JSObjectRef object, JSStrin
         TempException exception(exceptionRef);
         TempJSValue null(JSValueMakeNull(ctx));
         if (!value) value = *null;
-        int v8_attr = v8::None;
+        unsigned v8_attr = v8::None;
         if (attributes & kJSPropertyAttributeReadOnly) v8_attr |= v8::ReadOnly;
         if (attributes & kJSPropertyAttributeDontEnum) v8_attr |= v8::DontEnum;
         if (attributes & kJSPropertyAttributeDontDelete) v8_attr |= v8::DontDelete;
@@ -500,7 +501,7 @@ JS_EXPORT JSValueRef JSObjectCallAsFunction(JSContextRef ctx, JSObjectRef object
             thisObject->L() :
             Local<Value>::New(isolate,Null(isolate));
 
-        Local<Value> *elements = new Local<Value>[argumentCount];
+        auto elements = new Local<Value>[argumentCount];
         for (size_t i=0; i<argumentCount; i++) {
             if (arguments[i]) {
                 elements[i] = arguments[i]->L();
@@ -511,7 +512,7 @@ JS_EXPORT JSValueRef JSObjectCallAsFunction(JSContextRef ctx, JSObjectRef object
 
         TryCatch trycatch(isolate);
 
-        MaybeLocal<Value> value = o->CallAsFunction(context, this_, argumentCount, elements);
+        MaybeLocal<Value> value = o->CallAsFunction(context, this_, (int)argumentCount, elements);
         if (value.IsEmpty()) {
             exception.Set(ctx, trycatch.Exception());
         }
@@ -539,14 +540,14 @@ JS_EXPORT JSObjectRef JSObjectCallAsConstructor(JSContextRef ctx, JSObjectRef ob
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
         TempException exception(exceptionRef);
-        Local<Value> *elements = new Local<Value>[argumentCount];
+        auto elements = new Local<Value>[argumentCount];
         for (size_t i=0; i<argumentCount; i++) {
             elements[i] = arguments[i]->L();
         }
 
         TryCatch trycatch(isolate);
 
-        MaybeLocal<Value> value = o->CallAsConstructor(context, argumentCount, elements);
+        MaybeLocal<Value> value = o->CallAsConstructor(context, (int)argumentCount, elements);
         if (value.IsEmpty()) {
             exception.Set(ctx, trycatch.Exception());
         }

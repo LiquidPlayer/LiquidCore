@@ -17,7 +17,6 @@ import java.io.IOException;
  * threads, explicit synchronization is required.
  *
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSContextGroup {
     static {
         JSContext.init();
@@ -114,12 +113,12 @@ public class JSContextGroup {
      * @since 0.1.0
      * @return  the JNI context group reference
      */
-    public JNIJSContextGroup groupRef() {
+    JNIJSContextGroup groupRef() {
         return group;
     }
     public long groupHash() { return group.reference; }
 
-    public boolean isOnThread() {
+    boolean isOnThread() {
         return (!hasDedicatedThread() ||
                 android.os.Process.myTid() == mContextGroupThreadTid);
     }
@@ -151,8 +150,7 @@ public class JSContextGroup {
      */
     @Override
     public boolean equals(Object other) {
-        return (other !=null) &&
-                (this == other) ||
+        return (this == other) ||
                 (other instanceof JSContextGroup) &&
                 groupRef() != null &&
                 groupRef().equals(((JSContextGroup)other).groupRef());

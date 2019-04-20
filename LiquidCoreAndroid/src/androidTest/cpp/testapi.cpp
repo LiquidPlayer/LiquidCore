@@ -1143,7 +1143,7 @@ static void reset_globals() {
     count1 = count2 = count3 = count4 = count5 = 0;
 }
 
-extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_test_JSC_main(JNIEnv* env,
+extern "C" JNIEXPORT jint JNICALL Java_org_liquidplayer_jsctest_JSC_main(JNIEnv* env,
     jobject thiz, jstring testapi_js, jlong group_)
 {
     auto group = SharedWrap<ContextGroup>::Shared(group_);

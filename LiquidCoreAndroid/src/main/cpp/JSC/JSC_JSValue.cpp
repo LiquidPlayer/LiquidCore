@@ -322,8 +322,8 @@ JS_EXPORT JSStringRef JSValueCreateJSONString(JSContextRef ctxRef, JSValueRef va
             value = &* OpaqueJSString::New(string);
         } else if (exceptionRef) {
             TempJSValue e(ctxRef, "Unserializable value");
-            JSValueRef args[] = {*e};
-            exception.Set(JSObjectMakeError(ctxRef, 1, args, nullptr));
+            JSValueRef args_[] = {*e};
+            exception.Set(JSObjectMakeError(ctxRef, 1, args_, nullptr));
         }
     V8_UNLOCK()
 
@@ -412,14 +412,14 @@ JS_EXPORT JSObjectRef JSValueToObject(JSContextRef ctxRef, JSValueRef valueRef,
 }
 
 /* Garbage collection */
-JS_EXPORT void JSValueProtect(JSContextRef ctx, JSValueRef valueRef)
+JS_EXPORT void JSValueProtect(JSContextRef, JSValueRef valueRef)
 {
     if (valueRef) {
         const_cast<OpaqueJSValue *>(valueRef)->Retain();
     }
 }
 
-JS_EXPORT void JSValueUnprotect(JSContextRef ctx, JSValueRef valueRef)
+JS_EXPORT void JSValueUnprotect(JSContextRef, JSValueRef valueRef)
 {
     if (valueRef) {
         const_cast<OpaqueJSValue *>(valueRef)->Release(false);

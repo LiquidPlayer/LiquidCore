@@ -13,15 +13,15 @@
     if (!ISPOINTER(objRef)) { \
         __android_log_assert("!ISPOINTER(##objRef)", "VALUE_ISOLATE", "##ojbRef must be pointer"); \
     } \
-    auto valueRef = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), objRef); \
-    V8_ISOLATE_CTX(valueRef->Context(),isolate,context); \
-    Local<Value> value = valueRef->Value();
+    auto (valueRef) = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), objRef); \
+    V8_ISOLATE_CTX((valueRef)->Context(),isolate,context); \
+    Local<Value> (value) = (valueRef)->Value();
 
 #define V8_ISOLATE_OBJ(objRef,object,isolate,context,o) \
     VALUE_ISOLATE(objRef,object,isolate,context,__v__) \
-    Local<Object> o = __v__->ToObject(context).ToLocalChecked();
+    Local<Object> (o) = __v__->ToObject(context).ToLocalChecked();
 
-NATIVE(JNIJSObject,jlong,make) (PARAMS, jlong context_)
+NATIVE(JNIJSObject,jlong,make) (STATIC, jlong context_)
 {
     jlong value = 0;
     auto ctx = SharedWrap<JSContext>::Shared(context_);
@@ -33,22 +33,22 @@ NATIVE(JNIJSObject,jlong,make) (PARAMS, jlong context_)
     return value;
 }
 
-NATIVE(JNIJSFunction,jlong,makeFunctionWithCallback) (PARAMS, jobject jsfthis, jlong ctx, jstring name)
+NATIVE(JNIJSFunction,jlong,makeFunctionWithCallback) (STATIC, jobject jsfthis, jlong ctx, jstring name)
 {
     return SharedWrap<JSValue>::New(JSFunction::New(env, jsfthis, ctx, name));
 }
 
-NATIVE(JNIJSFunction,void,setException) (PARAMS, jlong funcRef, jlong valueRef)
+NATIVE(JNIJSFunction,void,setException) (STATIC, jlong funcRef, jlong valueRef)
 {
     if (!ISPOINTER(funcRef)) {
         __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "funcRef must be pointer");
     }
     auto func = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), funcRef);
-    JSFunction *jsfunc = static_cast<JSFunction*>(&* func);
+    auto jsfunc = static_cast<JSFunction*>(&* func);
     jsfunc->setException(SharedWrap<JSValue>::Shared(func->Context(), valueRef));
 }
 
-NATIVE(JNIJSObject,jlong,makeArray) (PARAMS, jlong context_, jlongArray args)
+NATIVE(JNIJSObject,jlong,makeArray) (STATIC, jlong context_, jlongArray args)
 {
     jlong ret = 0;
     auto ctx = SharedWrap<JSContext>::Shared(context_);
@@ -84,12 +84,12 @@ NATIVE(JNIJSObject,jlong,makeArray) (PARAMS, jlong context_, jlongArray args)
     return ret;
 }
 
-NATIVE(JNIJSObject,jlong,makeDate) (PARAMS, jlong context_, jlongArray args)
+NATIVE(JNIJSObject,jlong,makeDate) (STATIC, jlong context_, jlongArray args)
 {
     auto ctx = SharedWrap<JSContext>::Shared(context_);
     jlong out = 0;
     jsize len = env->GetArrayLength(args);
-    jlong *values = env->GetLongArrayElements(args, 0);
+    jlong *values = env->GetLongArrayElements(args, nullptr);
 
     V8_ISOLATE_CTX(ctx,isolate,context)
 
@@ -114,11 +114,11 @@ NATIVE(JNIJSObject,jlong,makeDate) (PARAMS, jlong context_, jlongArray args)
     return out;
 }
 
-NATIVE(JNIJSObject,jlong,makeError) (PARAMS, jlong context_, jstring message)
+NATIVE(JNIJSObject,jlong,makeError) (STATIC, jlong context_, jstring message)
 {
     auto ctx = SharedWrap<JSContext>::Shared(context_);
     jlong out = 0;
-    const char *c_string = env->GetStringUTFChars(message, NULL);
+    const char *c_string = env->GetStringUTFChars(message, nullptr);
 
     V8_ISOLATE_CTX(ctx,isolate,context)
         Local<String> str =
@@ -131,31 +131,31 @@ NATIVE(JNIJSObject,jlong,makeError) (PARAMS, jlong context_, jstring message)
     return out;
 }
 
-NATIVE(JNIJSObject,jlong,makeRegExp) (PARAMS, jlong context_, jstring pattern_, jstring flags_)
+NATIVE(JNIJSObject,jlong,makeRegExp) (STATIC, jlong context_, jstring pattern_, jstring flags_)
 {
     jlong out = 0;
     auto ctx = SharedWrap<JSContext>::Shared(context_);
     boost::shared_ptr<JSValue> exception;
-    const char *_pattern = env->GetStringUTFChars(pattern_, NULL);
-    const char *_flags = env->GetStringUTFChars(flags_, NULL);
+    const char *_pattern = env->GetStringUTFChars(pattern_, nullptr);
+    const char *_flags = env->GetStringUTFChars(flags_, nullptr);
 
     V8_ISOLATE_CTX(ctx,isolate,context)
         Local<String> pattern =
             String::NewFromUtf8(isolate, _pattern, NewStringType::kNormal).ToLocalChecked();
 
-        RegExp::Flags flags = RegExp::Flags::kNone;
+        unsigned flags = RegExp::Flags::kNone;
         for (size_t i=0; i<strlen(_flags); i++) {
             switch (_flags[i]) {
-                case 'g': flags = (RegExp::Flags)(flags | RegExp::Flags::kGlobal);     break;
-                case 'i': flags = (RegExp::Flags)(flags | RegExp::Flags::kIgnoreCase); break;
-                case 'm': flags = (RegExp::Flags)(flags | RegExp::Flags::kMultiline);  break;
+                case 'g': flags |= RegExp::Flags::kGlobal;     break;
+                case 'i': flags |= RegExp::Flags::kIgnoreCase; break;
+                case 'm': flags |= RegExp::Flags::kMultiline;  break;
                 default: break;
             }
         }
 
         TryCatch trycatch(isolate);
 
-        MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, flags);
+        MaybeLocal<RegExp> regexp = RegExp::New(context, pattern, (RegExp::Flags)flags);
         if (regexp.IsEmpty()) {
             exception = JSValue::New(ctx, trycatch.Exception());
         }
@@ -174,15 +174,15 @@ NATIVE(JNIJSObject,jlong,makeRegExp) (PARAMS, jlong context_, jstring pattern_, 
     return out;
 }
 
-NATIVE(JNIJSObject,jlong,makeFunction) (PARAMS, jlong context_, jstring name_,
+NATIVE(JNIJSObject,jlong,makeFunction) (STATIC, jlong context_, jstring name_,
         jstring func_, jstring sourceURL_, jint startingLineNumber)
 {
     jlong out = 0;
     auto ctx = SharedWrap<JSContext>::Shared(context_);
     boost::shared_ptr<JSValue> exception;
-    const char *_name = env->GetStringUTFChars(name_, NULL);
-    const char *_func = env->GetStringUTFChars(func_, NULL);
-    const char *_sourceURL = env->GetStringUTFChars(sourceURL_, NULL);
+    const char *_name = env->GetStringUTFChars(name_, nullptr);
+    const char *_func = env->GetStringUTFChars(func_, nullptr);
+    const char *_sourceURL = env->GetStringUTFChars(sourceURL_, nullptr);
 
     V8_ISOLATE_CTX(ctx,isolate,context)
         Local<String> name =
@@ -230,7 +230,7 @@ NATIVE(JNIJSObject,jlong,makeFunction) (PARAMS, jlong context_, jstring name_,
     return out;
 }
 
-NATIVE(JNIJSObject,jlong,getPrototype) (PARAMS, jlong objRef)
+NATIVE(JNIJSObject,jlong,getPrototype) (STATIC, jlong objRef)
 {
     jlong out;
 
@@ -241,17 +241,17 @@ NATIVE(JNIJSObject,jlong,getPrototype) (PARAMS, jlong objRef)
     return out;
 }
 
-NATIVE(JNIJSObject,void,setPrototype) (PARAMS, jlong objRef, jlong valueRef)
+NATIVE(JNIJSObject,void,setPrototype) (STATIC, jlong objRef, jlong valueRef)
 {
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         o->SetPrototype(context, SharedWrap<JSValue>::Shared(object->Context(), valueRef)->Value());
     V8_UNLOCK()
 }
 
-NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jlong objRef, jstring propertyName)
+NATIVE(JNIJSObject,jboolean,hasProperty) (STATIC, jlong objRef, jstring propertyName)
 {
     bool v;
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
+    const char *c_string = env->GetStringUTFChars(propertyName, nullptr);
 
     V8_ISOLATE_OBJ(objRef, object,isolate,context,o)
         Maybe<bool> has = o->HasOwnProperty(context, String::NewFromUtf8(isolate, c_string));
@@ -263,11 +263,11 @@ NATIVE(JNIJSObject,jboolean,hasProperty) (PARAMS, jlong objRef, jstring property
     return (jboolean)v;
 }
 
-NATIVE(JNIJSObject,jlong,getProperty) (PARAMS, jlong objRef, jstring propertyName)
+NATIVE(JNIJSObject,jlong,getProperty) (STATIC, jlong objRef, jstring propertyName)
 {
     jlong out = 0;
     boost::shared_ptr<JSValue> exception;
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
+    const char *c_string = env->GetStringUTFChars(propertyName, nullptr);
 
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
 
@@ -292,22 +292,22 @@ NATIVE(JNIJSObject,jlong,getProperty) (PARAMS, jlong objRef, jstring propertyNam
     return out;
 }
 
-NATIVE(JNIJSObject,void,setProperty) (PARAMS, jlong objRef, jstring propertyName, jlong value, jint attributes)
+NATIVE(JNIJSObject,void,setProperty) (STATIC, jlong objRef, jstring propertyName, jlong value, jint attributes)
 {
     boost::shared_ptr<JSValue> exception;
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
+    const char *c_string = env->GetStringUTFChars(propertyName, nullptr);
 
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         enum {
-            kJSPropertyAttributeReadOnly = 1 << 1,
-            kJSPropertyAttributeDontEnum = 1 << 2,
-            kJSPropertyAttributeDontDelete = 1 << 3
+            kJSPropertyAttributeReadOnly = 0x2,
+            kJSPropertyAttributeDontEnum = 0x4,
+            kJSPropertyAttributeDontDelete = 0x8
         };
 
-        int v8_attr = v8::None;
-        if (attributes & kJSPropertyAttributeReadOnly) v8_attr |= v8::ReadOnly;
-        if (attributes & kJSPropertyAttributeDontEnum) v8_attr |= v8::DontEnum;
-        if (attributes & kJSPropertyAttributeDontDelete) v8_attr |= v8::DontDelete;
+        unsigned int v8_attr = v8::None;
+        if ((unsigned long)attributes & kJSPropertyAttributeReadOnly) v8_attr |= v8::ReadOnly;
+        if ((unsigned long)attributes & kJSPropertyAttributeDontEnum) v8_attr |= v8::DontEnum;
+        if ((unsigned long)attributes & kJSPropertyAttributeDontDelete) v8_attr |= v8::DontDelete;
 
         TryCatch trycatch(isolate);
 
@@ -333,11 +333,11 @@ NATIVE(JNIJSObject,void,setProperty) (PARAMS, jlong objRef, jstring propertyName
     }
 }
 
-NATIVE(JNIJSObject,jboolean,deleteProperty) (PARAMS, jlong objRef, jstring propertyName)
+NATIVE(JNIJSObject,jboolean,deleteProperty) (STATIC, jlong objRef, jstring propertyName)
 {
-    jboolean out = (jboolean) false;
+    auto out = (jboolean) false;
     boost::shared_ptr<JSValue> exception;
-    const char *c_string = env->GetStringUTFChars(propertyName, NULL);
+    const char *c_string = env->GetStringUTFChars(propertyName, nullptr);
 
     V8_ISOLATE_OBJ(objRef, object,isolate,context,o)
         TryCatch trycatch(isolate);
@@ -359,7 +359,7 @@ NATIVE(JNIJSObject,jboolean,deleteProperty) (PARAMS, jlong objRef, jstring prope
     return out;
 }
 
-NATIVE(JNIJSObject,jlong,getPropertyAtIndex) (PARAMS, jlong objRef, jint propertyIndex)
+NATIVE(JNIJSObject,jlong,getPropertyAtIndex) (STATIC, jlong objRef, jint propertyIndex)
 {
     jlong out = 0;
     boost::shared_ptr<JSValue> exception;
@@ -384,7 +384,7 @@ NATIVE(JNIJSObject,jlong,getPropertyAtIndex) (PARAMS, jlong objRef, jint propert
     return out;
 }
 
-NATIVE(JNIJSObject,void,setPropertyAtIndex) (PARAMS, jlong objRef, jint propertyIndex, jlong value)
+NATIVE(JNIJSObject,void,setPropertyAtIndex) (STATIC, jlong objRef, jint propertyIndex, jlong value)
 {
     boost::shared_ptr<JSValue> exception;
 
@@ -406,7 +406,7 @@ NATIVE(JNIJSObject,void,setPropertyAtIndex) (PARAMS, jlong objRef, jint property
     }
 }
 
-NATIVE(JNIJSObject,jboolean,isFunction) (PARAMS, jlong objRef)
+NATIVE(JNIJSObject,jboolean,isFunction) (STATIC, jlong objRef)
 {
     bool v;
 
@@ -417,7 +417,7 @@ NATIVE(JNIJSObject,jboolean,isFunction) (PARAMS, jlong objRef)
     return (jboolean) v;
 }
 
-NATIVE(JNIJSObject,jlong,callAsFunction) (PARAMS, jlong objRef, jlong thisObject, jlongArray args)
+NATIVE(JNIJSObject,jlong,callAsFunction) (STATIC, jlong objRef, jlong thisObject, jlongArray args)
 {
     jlong out = 0;
     boost::shared_ptr<JSValue> exception;
@@ -456,7 +456,7 @@ NATIVE(JNIJSObject,jlong,callAsFunction) (PARAMS, jlong objRef, jlong thisObject
     return out;
 }
 
-NATIVE(JNIJSObject,jboolean,isConstructor) (PARAMS, jlong objRef)
+NATIVE(JNIJSObject,jboolean,isConstructor) (STATIC, jlong objRef)
 {
     bool v;
 
@@ -467,7 +467,7 @@ NATIVE(JNIJSObject,jboolean,isConstructor) (PARAMS, jlong objRef)
     return (jboolean)v;
 }
 
-NATIVE(JNIJSObject,jlong,callAsConstructor) (PARAMS, jlong objRef, jlongArray args)
+NATIVE(JNIJSObject,jlong,callAsConstructor) (STATIC, jlong objRef, jlongArray args)
 {
     jlong out = 0;
     boost::shared_ptr<JSValue> exception;
@@ -502,9 +502,9 @@ NATIVE(JNIJSObject,jlong,callAsConstructor) (PARAMS, jlong objRef, jlongArray ar
     return out;
 }
 
-NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong objRef) {
+NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (STATIC, jlong objRef) {
     jobjectArray ret;
-    size_t length;
+    jsize length;
     const char **nameArray;
 
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
@@ -512,7 +512,7 @@ NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong objRef) {
         length = names->Length();
         nameArray = new const char * [length];
 
-        for (size_t i=0; i<length; i++) {
+        for (uint32_t i=0; i<(uint32_t)length; i++) {
             Local<String> property =
                 names->Get(context, i).ToLocalChecked()->ToString(context).ToLocalChecked();
             String::Utf8Value const str(property);
@@ -524,7 +524,7 @@ NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (PARAMS, jlong objRef) {
             length,
             env->FindClass("java/lang/String"),
             env->NewStringUTF(""));
-    for (size_t i=0; i<length; i++) {
+    for (uint32_t i=0; i<(uint32_t)length; i++) {
         env->SetObjectArrayElement(ret, i, env->NewStringUTF(nameArray[i]));
         delete nameArray[i];
     }

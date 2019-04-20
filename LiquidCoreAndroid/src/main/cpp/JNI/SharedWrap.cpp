@@ -17,4 +17,4 @@ void SharedWrapBase::FreeZombiesThread()
     };
 }
 
-std::thread FreeZombies(SharedWrapBase::FreeZombiesThread);
+static std::thread FreeZombies(SharedWrapBase::FreeZombiesThread);

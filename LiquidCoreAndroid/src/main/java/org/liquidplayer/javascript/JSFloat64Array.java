@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Float64Array
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSFloat64Array extends JSTypedArray<Double> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
@@ -70,13 +69,7 @@ public class JSFloat64Array extends JSTypedArray<Double> {
         super(buffer,"Float64Array",Double.class);
     }
 
-    /**
-     * Treats an existing value as a typed array
-     * @param valueRef  the JavaScriptCore value reference
-     * @param ctx  The JSContext of the value
-     * @since 0.1.0
-     */
-    public JSFloat64Array(JNIJSObject valueRef, JSContext ctx) {
+    JSFloat64Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Double.class);
     }
 
@@ -110,7 +103,6 @@ public class JSFloat64Array extends JSTypedArray<Double> {
      * @since 0.1.0
      */
     @Override @NonNull
-    @SuppressWarnings("unchecked")
     public JSFloat64Array subList(final int fromIndex, final int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();

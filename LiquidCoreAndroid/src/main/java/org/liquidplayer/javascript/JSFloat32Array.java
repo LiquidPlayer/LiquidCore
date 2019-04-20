@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Float32Array
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSFloat32Array extends JSTypedArray<Float> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
@@ -71,13 +70,7 @@ public class JSFloat32Array extends JSTypedArray<Float> {
         super(buffer,"Float32Array",Float.class);
     }
 
-    /**
-     * Treats an existing value as a typed array
-     * @param valueRef  the JavaScriptCore value reference
-     * @param ctx  The JSContext of the value
-     * @since 0.1.0
-     */
-    public JSFloat32Array(JNIJSObject valueRef, JSContext ctx) {
+    JSFloat32Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Float.class);
     }
 
@@ -111,7 +104,6 @@ public class JSFloat32Array extends JSTypedArray<Float> {
      * @since 0.1.0
      */
     @Override @NonNull
-    @SuppressWarnings("unchecked")
     public JSFloat32Array subList(final int fromIndex, final int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();

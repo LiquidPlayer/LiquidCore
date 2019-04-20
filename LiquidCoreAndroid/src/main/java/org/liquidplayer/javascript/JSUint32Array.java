@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Uint32Array
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSUint32Array extends JSTypedArray<Long> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
@@ -71,13 +70,7 @@ public class JSUint32Array extends JSTypedArray<Long> {
         super(buffer,"Uint32Array",Long.class);
     }
 
-    /**
-     * Treats an existing value as a typed array
-     * @param valueRef  the JavaScriptCore value reference
-     * @param ctx  The JSContext of the value
-     * @since 0.1.0
-     */
-    public JSUint32Array(JNIJSObject valueRef, JSContext ctx) {
+    JSUint32Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Long.class);
     }
 
@@ -111,7 +104,6 @@ public class JSUint32Array extends JSTypedArray<Long> {
      * @since 0.1.0
      */
     @Override @NonNull
-    @SuppressWarnings("unchecked")
     public JSUint32Array subList(final int fromIndex, final int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();

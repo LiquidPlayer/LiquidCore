@@ -141,8 +141,7 @@ public class MicroService implements Process.EventListener {
         if (!fileName.endsWith((".bundle"))) {
             fileName = fileName.concat(".bundle");
         }
-        URI loopback = URI.create("http://10.0.2.2:" + port + "/" + fileName + "?platform=android&dev=true");
-        return loopback;
+        return URI.create("http://10.0.2.2:" + port + "/" + fileName + "?platform=android&dev=true");
     }
 
     /**
@@ -650,7 +649,11 @@ public class MicroService implements Process.EventListener {
             }
         } else if ("jarfile".equals(scheme)) {
             int loc = serviceURI.getPath().lastIndexOf("/");
-            in = getClass().getClassLoader().getResourceAsStream(serviceURI.getPath().substring(loc+1));
+            ClassLoader loader = getClass().getClassLoader();
+            if (loader == null) {
+                throw new IOException("Failed to get class loader");
+            }
+            in = loader.getResourceAsStream(serviceURI.getPath().substring(loc+1));
         } else {
             if ("file".equals(scheme) && path.startsWith("/android_asset/")) {
                 // Open javascript file located in the android asset directory.
@@ -708,8 +711,12 @@ public class MicroService implements Process.EventListener {
 
         Class<? extends AddOn> addOnClass = AddOn.class;
         try {
-            Class klass = context.getClass().getClassLoader()
-                    .loadClass("org.liquidplayer.addon." + canon(moduleName));
+            ClassLoader loader = getClass().getClassLoader();
+            if (loader == null) {
+                throw new IOException("Failed to get class loader");
+            }
+
+            Class klass = loader.loadClass("org.liquidplayer.addon." + canon(moduleName));
 
             if (AddOn.class.isAssignableFrom(klass)) {
                 addOnClass = (Class<? extends AddOn>) klass;
@@ -746,6 +753,8 @@ public class MicroService implements Process.EventListener {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

@@ -15,7 +15,6 @@ import java.util.Map;
  * A JavaScript value
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSValue {
 
     protected JNIJSValue valueRef;

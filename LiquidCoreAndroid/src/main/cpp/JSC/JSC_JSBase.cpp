@@ -67,7 +67,6 @@ JS_EXPORT bool JSCheckScriptSyntax(JSContextRef ctx, JSStringRef script_, JSStri
             Integer::New(isolate, startingLineNumber)
         );
 
-        MaybeLocal<Value>  result;
         MaybeLocal<Script> script = Script::Compile(context,script_->Value(isolate),&script_origin);
         if (script.IsEmpty()) {
             exception.Set(ctx, trycatch.Exception());

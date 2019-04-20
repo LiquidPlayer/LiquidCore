@@ -20,7 +20,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-@SuppressWarnings({"WeakerAccess,SameParameterValue","unused"})
 public class Process {
 
     final public static int kMediaAccessPermissionsNone = 0;

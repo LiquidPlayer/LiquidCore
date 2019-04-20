@@ -20,7 +20,6 @@ import java.util.Map;
  * simple integration with Java methods.
  *
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSArray<T> extends JSBaseArray<T> {
 
     /**
@@ -47,7 +46,6 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param cls  The class of the component objects
      * @since 0.1.0
      */
-    @SuppressWarnings("unused")
     public JSArray(JSContext ctx, JSValue [] array, Class<T> cls) {
         super(ctx,cls);
         final JNIJSValue [] valueRefs = new JNIJSValue[array.length];
@@ -113,7 +111,6 @@ public class JSArray<T> extends JSBaseArray<T> {
         super(valueRef,ctx,(Class<T>)JSValue.class);
     }
 
-    @SuppressWarnings("unchecked")
     protected JSArray(JNIJSObject valueRef, JSContext ctx, Class<T> cls) {
         super(valueRef,ctx,cls);
     }
@@ -439,10 +436,10 @@ public class JSArray<T> extends JSBaseArray<T> {
         double callback(T a, T b);
     }
 
-    protected JSValue each(JSFunction callback, JSObject thiz, String each) {
+    private JSValue each(JSFunction callback, JSObject thiz, String each) {
         return property(each).toFunction().call(this,callback,thiz);
     }
-    protected JSValue each(final EachBooleanCallback<T> callback, String each) {
+    private JSValue each(final EachBooleanCallback<T> callback, String each) {
         return property(each).toFunction().call(this,new JSFunction(context,"_callback") {
             @SuppressWarnings("unchecked,unused")
             public boolean _callback(T currentValue, int index, JSArray array) {
@@ -450,15 +447,7 @@ public class JSArray<T> extends JSBaseArray<T> {
             }
         });
     }
-    protected JSValue each(final ForEachCallback<T> callback, String each) {
-        return property(each).toFunction().call(this,new JSFunction(context,"_callback") {
-            @SuppressWarnings("unchecked,unused")
-            public void _callback(T currentValue, int index, JSArray array) {
-                callback.callback((T)((JSValue)currentValue).toJavaObject(mType),index,array);
-            }
-        });
-    }
-    protected JSValue each(final ReduceCallback callback, String each, Object initialValue) {
+    private JSValue each(final ReduceCallback callback, String each, Object initialValue) {
         return property(each).toFunction().call(this,new JSFunction(context,"_callback") {
             @SuppressWarnings("unused")
             public JSValue _callback(JSValue previousValue, JSValue currentValue, int index,
@@ -474,7 +463,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param <U> Parameterized type of array elements
      */
     public class EntriesIterator<U> extends JSIterator<Map.Entry<Integer,U>> {
-        protected EntriesIterator(JSObject iterator) {
+        EntriesIterator(JSObject iterator) {
             super(iterator);
         }
 
@@ -625,7 +614,12 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param callback the Java function to call on each element
      */
     public void forEach(final ForEachCallback<T> callback) {
-        each(callback,"forEach");
+        property("forEach").toFunction().call(this,new JSFunction(context,"_callback") {
+            @SuppressWarnings("unchecked,unused")
+            public void _callback(T currentValue, int index, JSArray array) {
+                callback.callback((T)((JSValue)currentValue).toJavaObject(mType),index,array);
+            }
+        });
     }
 
     /**
@@ -687,7 +681,7 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @since 0.1.0
      */
     public class KeysIterator extends JSIterator<Integer> {
-        protected KeysIterator(JSObject iterator) {
+        KeysIterator(JSObject iterator) {
             super(iterator);
         }
 
@@ -696,7 +690,6 @@ public class JSArray<T> extends JSBaseArray<T> {
          * @return the array index
          */
         @Override
-        @SuppressWarnings("unchecked")
         public Integer next() {
             Next jsnext = jsnext();
 
@@ -975,7 +968,6 @@ public class JSArray<T> extends JSBaseArray<T> {
      * @param callback the JavaScript function to call on each element
      * @return a new mapped array
      */
-    @SuppressWarnings("unchecked")
     public JSArray<JSValue> map(JSFunction callback) {
         return map(callback,null);
     }

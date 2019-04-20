@@ -8,7 +8,7 @@
 #include "JNI/JNI.h"
 #include "Common/LoopPreserver.h"
 
-NATIVE(JNILoopPreserver,jlong,create) (PARAMS, jlong grpRef)
+NATIVE(JNILoopPreserver,jlong,create) (STATIC, jlong grpRef)
 {
     auto group = SharedWrap<ContextGroup>::Shared(grpRef);
 
@@ -19,12 +19,12 @@ NATIVE(JNILoopPreserver,jlong,create) (PARAMS, jlong grpRef)
     return 0;
 }
 
-NATIVE(JNILoopPreserver,void,release) (PARAMS, jlong loopRef)
+NATIVE(JNILoopPreserver,void,release) (STATIC, jlong loopRef)
 {
     SharedWrap<LoopPreserver>::Shared(loopRef)->Dispose();
 }
 
-NATIVE(JNILoopPreserver,void,Finalize) (PARAMS, jlong loopRef)
+NATIVE(JNILoopPreserver,void,Finalize) (STATIC, jlong loopRef)
 {
     SharedWrap<LoopPreserver>::Dispose(loopRef);
 }

@@ -19,7 +19,6 @@ import java.util.ArrayList;
  * @since 0.1.0
  *
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSFunction extends JSObject {
 
     /**
@@ -444,7 +443,7 @@ public class JSFunction extends JSObject {
 
     @SuppressWarnings("unused") // This is called directly from native code
     @Keep
-    private long functionCallback(long thisObjectRef, long argumentsValueRef[]) {
+    private long functionCallback(long thisObjectRef, long[] argumentsValueRef) {
         long reference = JNIJSValue.ODDBALL_UNDEFINED;
         try {
             JSValue [] args = new JSValue[argumentsValueRef.length];
@@ -452,7 +451,7 @@ public class JSFunction extends JSObject {
                 JNIJSValue ref = JNIJSValue.fromRef(argumentsValueRef[i]);
                 if (ref.isObject()) {
                     try {
-                        args[i] = context.getObjectFromRef(ref.toObject(), true);
+                        args[i] = context.getObjectFromRef(ref.toObject());
                     } catch (JNIJSException e) {
                         e.printStackTrace();
                         throw new AssertionError();
@@ -562,14 +561,14 @@ public class JSFunction extends JSObject {
 
     @SuppressWarnings("unused") // This is called directly from native code
     @Keep
-    private void constructorCallback(long thisObjectRef, long argumentsValueRef[]) {
+    private void constructorCallback(long thisObjectRef, long[] argumentsValueRef) {
         try {
             JSValue [] args = new JSValue[argumentsValueRef.length];
             for (int i=0; i<argumentsValueRef.length; i++) {
                 JNIJSValue ref = JNIJSValue.fromRef(argumentsValueRef[i]);
                 if (ref.isObject()) {
                     try {
-                        args[i] = context.getObjectFromRef(ref.toObject(), true);
+                        args[i] = context.getObjectFromRef(ref.toObject());
                     } catch (JNIJSException e) {
                         e.printStackTrace();
                         throw new AssertionError();

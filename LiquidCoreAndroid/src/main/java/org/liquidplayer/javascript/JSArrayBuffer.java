@@ -12,7 +12,6 @@ package org.liquidplayer.javascript;
  * Note, experimental ArrayBuffer.transfer() is not supported by this JavaScriptCore version
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSArrayBuffer extends JSObjectWrapper {
     /**
      * Creates a new array buffer of 'length' bytes

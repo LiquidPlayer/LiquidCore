@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
  * A convenience class for handling JavaScript's Uint8Array
  * @since 0.1.0
  */
-@SuppressWarnings("WeakerAccess,SameParameterValue")
 public class JSUint8Array extends JSTypedArray<Byte> {
     /**
      * Creates a typed array of length 'length' in JSContext 'context'
@@ -71,13 +70,7 @@ public class JSUint8Array extends JSTypedArray<Byte> {
         super(buffer,"Uint8Array",Byte.class);
     }
 
-    /**
-     * Treats an existing value as a typed array
-     * @param valueRef  the JavaScriptCore value reference
-     * @param ctx  The JSContext of the value
-     * @since 0.1.0
-     */
-    public JSUint8Array(JNIJSObject valueRef, JSContext ctx) {
+    JSUint8Array(JNIJSObject valueRef, JSContext ctx) {
         super(valueRef,ctx,Byte.class);
     }
 
@@ -111,7 +104,6 @@ public class JSUint8Array extends JSTypedArray<Byte> {
      * @since 0.1.0
      */
     @Override @NonNull
-    @SuppressWarnings("unchecked")
     public JSUint8Array subList(final int fromIndex, final int toIndex) {
         if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException();

@@ -51,14 +51,7 @@ class Queue
 
 class SharedWrapBase {
 public:
-    SharedWrapBase()
-    {
-
-    }
-    virtual ~SharedWrapBase()
-    {
-
-    }
+    SharedWrapBase() = default;
     static Queue<SharedWrapBase*> s_zombies;
     static void FreeZombiesThread();
 };
@@ -66,7 +59,7 @@ public:
 template<typename T>
 class SharedWrap : SharedWrapBase {
 public:
-    inline static jlong New(boost::shared_ptr<T> shared)
+    inline static jlong New(const boost::shared_ptr<T>& shared)
     {
         if (!shared) return 0L;
         return reinterpret_cast<jlong>(new SharedWrap<T>(shared));
@@ -77,7 +70,7 @@ public:
         if (!thiz) return boost::shared_ptr<T>();
         return reinterpret_cast<SharedWrap<T>*>(thiz)->m_shared;
     }
-    inline static boost::shared_ptr<T> Shared(boost::shared_ptr<JSContext> context, jlong thiz)
+    inline static boost::shared_ptr<T> Shared(const boost::shared_ptr<JSContext>& context, jlong thiz)
     {
         return Shared(thiz);
     }
@@ -94,7 +87,7 @@ public:
     }
 
 protected:
-    virtual ~SharedWrap()
+    ~SharedWrap()
     {
         boost::shared_ptr<T> shared = m_shared;
         if (shared) {
@@ -106,7 +99,7 @@ protected:
     }
 
 private:
-    SharedWrap(boost::shared_ptr<T> shared)
+    explicit SharedWrap(boost::shared_ptr<T> shared)
     {
         m_shared = shared;
     };
@@ -137,15 +130,15 @@ private:
 #define ODDBALL_FALSE 0xa
 #define ODDBALL_TRUE 0xe
 
-#define CANPRIMITIVE(x) ((x&3)==0)
-#define TOPTR(x) ((reinterpret_cast<long>(x)&~3)+1)
-#define TOOBJPTR(x) ((reinterpret_cast<long>(x)&~3)+3)
-#define TOSHAREDWRAP(x) (reinterpret_cast<SharedWrap<JSValue>*>(((long)x&~3)))
-#define ISPOINTER(x) ((x&1)==1)
-#define ISODDBALL(x) ((x&3)==2)
+#define CANPRIMITIVE(x) (((unsigned long)(x)&0x3UL)==0UL)
+#define TOPTR(x) ((reinterpret_cast<unsigned long>(x)&~0x3UL)+0x1UL)
+#define TOOBJPTR(x) ((reinterpret_cast<unsigned long>(x)&~0x3UL)+0x3UL)
+#define TOSHAREDWRAP(x) (reinterpret_cast<SharedWrap<JSValue>*>(((unsigned long)(x)&~0x3UL)))
+#define ISPOINTER(x) (((unsigned long)(x)&0x1UL)==0x1UL)
+#define ISODDBALL(x) (((unsigned long)(x)&0x3UL)==0x2UL)
 
 template<>
-inline jlong SharedWrap<JSValue>::New(boost::shared_ptr<JSValue> shared) {
+inline jlong SharedWrap<JSValue>::New(const boost::shared_ptr<JSValue>& shared) {
     if (!shared) return 0L;
     if (shared->IsObject()) {
         auto thiz = new SharedWrap<JSValue>(shared);
@@ -158,7 +151,7 @@ inline jlong SharedWrap<JSValue>::New(boost::shared_ptr<JSValue> shared) {
                 (shared->IsBoolean()) ? ODDBALL_FALSE : -1;
         if (reference == -1 && shared->IsNumber()) {
             double v = shared->NumberValue();
-            jlong *pv = (jlong *) &v;
+            auto pv = (jlong *) &v;
             if (CANPRIMITIVE(*pv)) {
                 reference = *pv;
             }
@@ -171,7 +164,7 @@ inline jlong SharedWrap<JSValue>::New(boost::shared_ptr<JSValue> shared) {
 }
 
 template<>
-inline boost::shared_ptr<JSValue> SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext> context,
+inline boost::shared_ptr<JSValue> SharedWrap<JSValue>::Shared(const boost::shared_ptr<JSContext>& context,
                                                               jlong thiz)
 {
     if (ISPOINTER(thiz)) {

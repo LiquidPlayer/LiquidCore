@@ -29,6 +29,31 @@ var source = function () {
 
     LiquidCore.on('js_number', (msg) => {
         if (msg === 2.5) {
+            LiquidCore.emit('integer', 24)
+        } else {
+            LiquidCore.emit('integer', 'fail')
+        }
+    })
+
+    LiquidCore.on('js_integer', (msg) => {
+        if (msg === 42) {
+            LiquidCore.emit('float', 16.3)
+        } else {
+            LiquidCore.emit('float', 'fail')
+        }
+    })
+
+    LiquidCore.on('js_float', (msg) => {
+        if (msg === 36.1) {
+            LiquidCore.emit('long', 123456789)
+        } else {
+            LiquidCore.emit('long', 'fail')
+        }
+    })
+
+
+    LiquidCore.on('js_long', (msg) => {
+        if (msg === 987654321) {
             LiquidCore.emit('string','foo')
         } else {
             LiquidCore.emit('string', 'fail')

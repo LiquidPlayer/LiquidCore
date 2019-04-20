@@ -17,6 +17,5 @@
 #define STATIC JNIEnv* env, jclass klass
 
 jclass findClass(JNIEnv *env, const char* name);
-JavaVM * getJavaVM();
 
 #endif //NODEDROID_JSJNI_H

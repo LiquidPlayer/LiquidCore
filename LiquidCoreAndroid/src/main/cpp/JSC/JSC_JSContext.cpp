@@ -49,8 +49,8 @@ static void setUpJSCFeatures(JSGlobalContextRef ctx) {
             v8::DontEnum);
         Local<FunctionTemplate> logt = FunctionTemplate::New(isolate,
             [](const FunctionCallbackInfo< Value > &info) {
-                Isolate::Scope isolate_scope_(info.GetIsolate());
-                HandleScope handle_scope_(info.GetIsolate());
+                Isolate::Scope isolate_scope__(info.GetIsolate());
+                HandleScope handle_scope__(info.GetIsolate());
 
                 String::Utf8Value str(info[0]->ToString(info.GetIsolate()));
                 __android_log_print(ANDROID_LOG_INFO, "[JSC] console.log", "%s", *str);
