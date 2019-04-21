@@ -53,7 +53,6 @@ int start_logger(const char *app_name)
 
 static jobject s_ClassLoader;
 static jmethodID s_FindClassMethod;
-static JavaVM *s_javaVM;
 
 jint JNI_OnLoad(JavaVM* vm, void*)
 {
@@ -61,8 +60,6 @@ jint JNI_OnLoad(JavaVM* vm, void*)
 #ifdef DEBUG
     start_logger("LiquidCore");
 #endif
-
-    s_javaVM = vm;
 
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {

@@ -6,5 +6,5 @@
  */
 #include "JNIJSException.h"
 
-jmethodID JNIJSException::m_cid = 0;
-jclass JNIJSException::m_clazz = 0;
+jmethodID JNIJSException::m_cid = nullptr;
+jclass JNIJSException::m_clazz = nullptr;

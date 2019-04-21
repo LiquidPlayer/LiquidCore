@@ -8,148 +8,42 @@
 #include "JNI/JNI.h"
 #include "JNI/JNIJSException.h"
 
-template <typename F>
-jboolean boolean_func(jlong thiz, F&& lambda, bool defValue){
-    if (!ISPOINTER(thiz)) {
-        __android_log_assert("!ISPOINTER", "boolean_func", "SharedWrap<JSValue> is not a pointer");
-    }
-    auto valueRef = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), thiz);
-    if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
-            !valueRef->Group()->IsDefunct()) {
-        V8_ISOLATE_CTX(valueRef->Context(), isolate, context)
-            Local<Value> value = valueRef->Value();
-            defValue = lambda(value, context);
-        V8_UNLOCK()
-    }
-    return (jboolean) defValue;
+#define IS_FUNCTION(TYPE) \
+NATIVE(JNIJSValue,jboolean,is##TYPE) (STATIC, jlong thiz) {\
+    auto valueRef = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), thiz); \
+    bool defValue = false; \
+    if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() && \
+        !valueRef->Group()->IsDefunct()) { \
+        V8_ISOLATE_CTX(valueRef->Context(), isolate, context) \
+            Local<Value> value = valueRef->Value(); \
+            defValue = value->Is##TYPE(); \
+        V8_UNLOCK() \
+    } \
+    return (jboolean) defValue; \
 }
 
-NATIVE(JNIJSValue,jboolean,isUndefined) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsUndefined();
-    }, true);
-}
-
-NATIVE(JNIJSValue,jboolean,isNull) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsNull();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isBoolean) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsBoolean();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isNumber) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsNumber();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isString) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsString();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isArray) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsArray();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isDate) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsDate();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isTypedArray) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsTypedArray();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isInt8Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsInt8Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isInt16Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsInt16Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isInt32Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsInt32Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isUint8Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsUint8Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isUint8ClampedArray) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsUint8ClampedArray();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isUint16Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsUint16Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isUint32Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsUint32Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isFloat32Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsFloat32Array();
-    }, false);
-}
-
-NATIVE(JNIJSValue,jboolean,isFloat64Array) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        return value->IsFloat64Array();
-    }, false);
-}
+IS_FUNCTION(Undefined)
+IS_FUNCTION(Null)
+IS_FUNCTION(Boolean)
+IS_FUNCTION(Number)
+IS_FUNCTION(String)
+IS_FUNCTION(Array)
+IS_FUNCTION(Date)
+IS_FUNCTION(TypedArray)
+IS_FUNCTION(Int8Array)
+IS_FUNCTION(Int16Array)
+IS_FUNCTION(Int32Array)
+IS_FUNCTION(Uint8Array)
+IS_FUNCTION(Uint16Array)
+IS_FUNCTION(Uint32Array)
+IS_FUNCTION(Uint8ClampedArray)
+IS_FUNCTION(Float32Array)
+IS_FUNCTION(Float64Array)
 
 /* Comparing values */
 
 NATIVE(JNIJSValue,jboolean,isEqual) (STATIC, jlong a_, jlong b_)
 {
-    if (!ISPOINTER(a_)) {
-        __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "a_ must be pointer");
-    }
     auto a = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), a_);
     boost::shared_ptr<JSValue> exception;
     bool out = false;
@@ -178,9 +72,6 @@ NATIVE(JNIJSValue,jboolean,isEqual) (STATIC, jlong a_, jlong b_)
 
 NATIVE(JNIJSValue,jboolean,isStrictEqual) (STATIC, jlong valueRef, jlong b)
 {
-    if (!ISPOINTER(valueRef)) {
-        __android_log_assert("!ISPOINTER(valueRef)", "JNIJSValue.isStrictEqual", "valueRef must be pointer");
-    }
     bool ret = false;
     auto a = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     if (a && !a->IsDefunct() && !a->Context()->IsDefunct() && !a->Group()->IsDefunct()) {
@@ -268,9 +159,6 @@ NATIVE(JNIJSValue,jlong,makeFromJSONString) (STATIC, jlong ctxRef, jstring strin
 
 NATIVE(JNIJSValue,jlong,createJSONString) (STATIC, jlong valueRef)
 {
-    if (!ISPOINTER(valueRef)) {
-        __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "valueRef must be pointer");
-    }
     auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     jlong out = 0;
 
@@ -292,19 +180,23 @@ NATIVE(JNIJSValue,jlong,createJSONString) (STATIC, jlong valueRef)
 
 /* Converting to primitive values */
 
-NATIVE(JNIJSValue,jboolean,toBoolean) (STATIC, jlong valueRef)
-{
-    return boolean_func(valueRef, [](Local<Value> value, Local<Context> context) {
-        MaybeLocal<Boolean> boolean = value->ToBoolean(context);
-        return !boolean.IsEmpty() && boolean.ToLocalChecked()->Value();
-    }, false);
+NATIVE(JNIJSValue,jboolean,toBoolean) (STATIC, jlong thiz) {
+    auto valueRef = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), thiz);
+    bool defValue = false;
+    if (valueRef && !valueRef->IsDefunct() && !valueRef->Context()->IsDefunct() &&
+        !valueRef->Group()->IsDefunct()) {
+        V8_ISOLATE_CTX(valueRef->Context(), isolate, context)
+            Local<Value> value = valueRef->Value();
+            MaybeLocal<Boolean> boolean = value->ToBoolean(context);
+            defValue = !boolean.IsEmpty() && boolean.ToLocalChecked()->Value();
+        V8_UNLOCK()
+    }
+    return (jboolean) defValue;
 }
+
 
 NATIVE(JNIJSValue,jdouble,toNumber) (STATIC, jlong valueRef) {
     double out = 0.0;
-    if (!ISPOINTER(valueRef)) {
-        __android_log_assert("!ISPOINTER", "toNumber", "SharedWrap<JSValue> is not a pointer");
-    }
     auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
 
@@ -327,9 +219,6 @@ NATIVE(JNIJSValue,jdouble,toNumber) (STATIC, jlong valueRef) {
 
 NATIVE(JNIJSValue,jstring,toStringCopy) (STATIC, jlong valueRef) {
     jstring out = nullptr;
-    if (!ISPOINTER(valueRef)) {
-        __android_log_assert("!ISPOINTER", "toStringCopy", "SharedWrap<JSValue> is not a pointer");
-    }
     auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
     const char *s = nullptr;
@@ -360,9 +249,6 @@ NATIVE(JNIJSValue,jstring,toStringCopy) (STATIC, jlong valueRef) {
 
 NATIVE(JNIJSValue,jlong,toObject) (STATIC, jlong valueRef) {
     jlong out = 0;
-    if (!ISPOINTER(valueRef)) {
-        __android_log_assert("!ISPOINTER", "toObject", "SharedWrap<JSValue> is not a pointer");
-    }
     auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
 
@@ -391,8 +277,5 @@ NATIVE(JNIJSValue,jlong,canonicalReference) (STATIC, jlong valueRef) {
 
 NATIVE(JNIJSValue,void,Finalize) (STATIC, jlong reference)
 {
-    if (!ISPOINTER(reference)) {
-        __android_log_assert("!ISPOINTER", "Finalize", "reference is not a pointer");
-    }
     SharedWrap<JSValue>::Dispose(reference);
 }

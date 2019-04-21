@@ -10,9 +10,6 @@
 #include "JNI/JNIJSException.h"
 
 #define VALUE_ISOLATE(objRef,valueRef,isolate,context,value) \
-    if (!ISPOINTER(objRef)) { \
-        __android_log_assert("!ISPOINTER(##objRef)", "VALUE_ISOLATE", "##ojbRef must be pointer"); \
-    } \
     auto (valueRef) = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), objRef); \
     V8_ISOLATE_CTX((valueRef)->Context(),isolate,context); \
     Local<Value> (value) = (valueRef)->Value();
@@ -40,9 +37,6 @@ NATIVE(JNIJSFunction,jlong,makeFunctionWithCallback) (STATIC, jobject jsfthis, j
 
 NATIVE(JNIJSFunction,void,setException) (STATIC, jlong funcRef, jlong valueRef)
 {
-    if (!ISPOINTER(funcRef)) {
-        __android_log_assert("!ISPOINTER(a_)", "JNIJSValue.isEqual", "funcRef must be pointer");
-    }
     auto func = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), funcRef);
     auto jsfunc = static_cast<JSFunction*>(&* func);
     jsfunc->setException(SharedWrap<JSValue>::Shared(func->Context(), valueRef));

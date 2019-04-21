@@ -33,8 +33,8 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> c
             env->ExceptionClear();
             jclass super = env->GetSuperclass(cls);
             env->DeleteLocalRef(cls);
-            if (super == NULL || env->ExceptionCheck()) {
-                if (super != NULL) env->DeleteLocalRef(super);
+            if (super == nullptr || env->ExceptionCheck()) {
+                if (super != nullptr) env->DeleteLocalRef(super);
                 __android_log_assert("FAIL", "FunctionCallback",
                                      "Did not find callback method");
             }
@@ -46,7 +46,7 @@ JSFunction::JSFunction(JNIEnv* env, jobject thiz, boost::shared_ptr<JSContext> c
 
     m_constructorMid = getMid("constructorCallback","(J[J)V");
     m_functionMid = getMid("functionCallback","(J[J)J");
-    const char *c_string = env->GetStringUTFChars(name_, NULL);
+    const char *c_string = env->GetStringUTFChars(name_, nullptr);
 
     V8_ISOLATE_CTX(ctx,isolate,context)
         Local<v8::Value> data = Wrap(this);
@@ -79,9 +79,7 @@ boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz,
     return p;
 }
 
-JSFunction::~JSFunction()
-{
-}
+JSFunction::~JSFunction() = default;
 
 void JSFunction::StaticFunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
 {
@@ -103,7 +101,7 @@ void JSFunction::FunctionCallback(const FunctionCallbackInfo< v8::Value > &info)
 
     int getEnvStat = m_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED) {
-        m_jvm->AttachCurrentThread(&env, NULL);
+        m_jvm->AttachCurrentThread(&env, nullptr);
     }
 
     Isolate *isolate = info.GetIsolate();
