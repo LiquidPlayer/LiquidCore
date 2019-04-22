@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
 import org.liquidplayer.javascript.JSException;
+import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSValue;
 
 import java.io.File;
@@ -369,6 +370,62 @@ public class JSContextTest {
     public void scheduleTest() throws InterruptedException {
         JSContext context = new JSContext();
         scheduleTest(context);
+    }
+
+    @Test
+    public void timerTest() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        JSContext context = new JSContext();
+        JSFunction callback = new JSFunction(context, "callback") {
+            @SuppressWarnings("unused")
+            public void callback() {
+                latch.countDown();
+            }
+        };
+        context.property("Callback", callback);
+        context.evaluateScript("setTimeout(Callback, 200)");
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void timerTest1() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        JSContext context = new JSContext();
+        JSFunction callback = new JSFunction(context, "callback") {
+            @SuppressWarnings("unused")
+            public void callback() {
+                latch.countDown();
+            }
+        };
+        context.property("Callback", callback);
+        context.evaluateScript("setTimeout(Callback)");
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void timerTest2() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(3);
+        JSContext context = new JSContext();
+        final JSFunction callback = new JSFunction(context, "callback") {
+            @SuppressWarnings("unused")
+            public void callback(Integer fortytwo) {
+                assertEquals(Integer.valueOf(42), fortytwo);
+                int count = context.property("count").toNumber().intValue();
+                count ++;
+                context.property("count", count);
+                if (count == 3) {
+                    context.evaluateScript("clearTimer(timer)");
+                }
+                latch.countDown();
+            }
+        };
+        context.property("count", 0);
+        context.property("Callback", callback);
+        context.evaluateScript("var timer = setInterval(Callback, 200, 42)");
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Thread.sleep(600);
+        int count = context.property("count").toNumber().intValue();
+        assertEquals(3, count);
     }
 
     @org.junit.After

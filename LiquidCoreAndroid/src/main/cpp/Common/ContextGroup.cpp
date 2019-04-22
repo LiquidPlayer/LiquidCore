@@ -16,10 +16,9 @@
 
 class GenericAllocator : public ArrayBuffer::Allocator {
 public:
-    GenericAllocator() {}
-    virtual ~GenericAllocator() {}
+    GenericAllocator() = default;
     virtual void* Allocate(size_t length) {
-        unsigned char * mem =  (unsigned char *) malloc(length);
+        auto mem =  (unsigned char *) malloc(length);
         memset(mem, 0, length);
         return (void*)mem;
     }
@@ -108,6 +107,7 @@ ContextGroup::ContextGroup()
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+    m_isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 }
 
 ContextGroup::ContextGroup(Isolate *isolate, uv_loop_t *uv_loop)
@@ -148,6 +148,7 @@ ContextGroup::ContextGroup(char *snapshot, int size)
     s_isolate_map[m_isolate] = this;
     m_gc_callbacks.clear();
     m_isolate->AddGCPrologueCallback(StaticGCPrologueCallback);
+    m_isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 }
 
 void ContextGroup::MarkZombie(boost::shared_ptr<JSValue> obj)

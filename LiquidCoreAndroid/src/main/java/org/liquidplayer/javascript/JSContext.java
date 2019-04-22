@@ -88,6 +88,57 @@ public class JSContext extends JSObject {
     public JSContext() {
         this(new JSContextGroup());
     }
+
+    private static String timer_code = "" +
+            " let makeTimer = function(callback, millis) { \n"+
+            "   if (!callback || typeof callback !== 'function') { \n"+
+            "     throw new TypeError('[ERR_INVALID_CALLBACK]: Callback must be a function') \n"+
+            "   } \n"+
+            "\n"+
+            "   let args = Array.from(arguments) \n"+
+            "   args.shift() \n"+
+            "   args.shift() \n"+
+            "\n"+
+            "   var timer = function() { \n"+
+            "     if (!this.destroyed) { \n"+
+            "       if (this.interval) { \n"+
+            "         __NativeTimer__(this) \n"+
+            "       } else { \n"+
+            "         this.destroyed = true \n"+
+            "       } \n"+
+            "       this.callback.apply(this, this.args) \n"+
+            "     } \n"+
+            "   } \n"+
+            "\n"+
+            "   timer.callback = callback \n"+
+            "   timer.args = args \n"+
+            "   timer.millis = millis \n"+
+            "   timer.destroyed = false \n"+
+            "\n"+
+            "   return timer \n"+
+            " } \n"+
+            "\n"+
+            " function setTimeout(callback, millis) { \n"+
+            "   var timer = makeTimer(...arguments) \n"+
+            "   timer.interval = false \n"+
+            "   __NativeTimer__(timer) \n"+
+            "   return timer \n"+
+            " } \n"+
+            "\n"+
+            " function setInterval(callback, millis) { \n"+
+            "   var timer = makeTimer(...arguments) \n"+
+            "   timer.interval = true \n"+
+            "   __NativeTimer__(timer) \n"+
+            "   return timer \n"+
+            " }\n"+
+            "\n"+
+            " function clearTimer(timer) { \n"+
+            "   if (timer && typeof timer === 'function') { \n"+
+            "      timer.destroyed = true \n"+
+            "   } \n"+
+            " } \n"+
+            "";
+
     /**
      * Creates a new JavaScript context in the context group 'inGroup'.
      * @param inGroup  The context group to create the context in
@@ -100,6 +151,26 @@ public class JSContext extends JSObject {
         ctxRef = JNIJSContext.createContext(inGroup.groupRef());
         valueRef = ctxRef.getGlobalObject();
         addJSExports();
+
+        context.property("__NativeTimer__", new JSFunction(context, "__NativeTimer__") {
+            @SuppressWarnings("unused")
+            public void __NativeTimer__(final JSFunction timer) {
+                final int millis = timer.property("millis").toNumber().intValue();
+                (new Thread() {
+                    @Override public void run() {
+                        try {
+                            Thread.sleep(millis);
+                        } catch (InterruptedException e) {
+                            /* Do nothing */
+                        } finally {
+                            timer.call(timer);
+                        }
+                    }
+                }).start();
+            }
+        });
+
+        context.evaluateScript(timer_code, "InitTimer", 1);
     }
     /**
      * Creates a JavaScript context, and defines the global object with interface 'iface'.  This
