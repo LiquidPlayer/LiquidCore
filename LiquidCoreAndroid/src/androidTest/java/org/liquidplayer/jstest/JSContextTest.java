@@ -414,7 +414,7 @@ public class JSContextTest {
                 count ++;
                 context.property("count", count);
                 if (count == 3) {
-                    context.evaluateScript("clearTimer(timer)");
+                    context.evaluateScript("clearTimeout(timer)");
                 }
                 latch.countDown();
             }

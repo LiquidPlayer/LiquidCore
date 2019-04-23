@@ -27,6 +27,7 @@ import org.liquidplayer.jstest.JSIteratorTest;
 import org.liquidplayer.jstest.JSONTest;
 import org.liquidplayer.jstest.JSObjectPropertiesMapTest;
 import org.liquidplayer.jstest.JSObjectTest;
+import org.liquidplayer.jstest.JSPromiseTest;
 import org.liquidplayer.jstest.JSRegExpTest;
 import org.liquidplayer.jstest.JSTypedArrayTest;
 import org.liquidplayer.jstest.JSUint16ArrayTest;
@@ -736,6 +737,26 @@ public class ProcessV8Test {
             @Override
             public void run(JSContext context) throws InterruptedException {
                 new JSContextTest().scheduleTest(context);
+            }
+        });
+    }
+
+    @org.junit.Test
+    public void promiseResolveTest() throws Exception {
+        new V8Test(new Runner() {
+            @Override
+            public void run(JSContext context) throws InterruptedException {
+                new JSPromiseTest().testPromiseResolve(context);
+            }
+        });
+    }
+
+    @org.junit.Test
+    public void promiseRejectTest() throws Exception {
+        new V8Test(new Runner() {
+            @Override
+            public void run(JSContext context) throws InterruptedException {
+                new JSPromiseTest().testPromiseReject(context);
             }
         });
     }
