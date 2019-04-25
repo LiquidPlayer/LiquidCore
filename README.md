@@ -17,7 +17,7 @@ Version
 
 API Documentation
 -----------------
-**Android Javadocs**: [Version 0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/index.html)
+**Android Javadocs**: [Version 0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/)
 
 **iOS Objective-C/Swift**: [Version 0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/index.html)
 
