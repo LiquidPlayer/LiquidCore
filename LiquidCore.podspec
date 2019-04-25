@@ -328,8 +328,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       :CLANG_WARN_UNREACHABLE_CODE => 'NO'
   }
 
-  s.swift_version = '3.0'
-
   s.resources = [
   ]
 
