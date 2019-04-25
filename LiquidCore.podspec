@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = "LiquidCore"
-  s.version = "0.6.0"
+  s.version = "0.6.1"
   s.summary = "Provides Node.js virtual machines to run inside iOS apps."
   s.description = <<-DESC
 LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system.
