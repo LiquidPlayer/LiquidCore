@@ -9,7 +9,7 @@ Version
 [![Release](https://jitpack.io/v/LiquidPlayer/LiquidCore.svg)](https://jitpack.io/#LiquidPlayer/LiquidCore)
 ![Downloads](https://jitpack.io/v/LiquidPlayer/LiquidCore/week.svg)
 
-[0.6.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.0) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.6.0), **or**:
+[0.6.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.1) - Get it through [JitPack](https://jitpack.io/#LiquidPlayer/LiquidCore/0.6.1), **or**:
 
 In your Android project root directory:
 ```
@@ -20,7 +20,7 @@ And follow the directions in the output.
 
 Javadocs
 --------
-[Version 0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html)
+[Version 0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/index.html)
 
 # Table of Contents
 
@@ -47,7 +47,7 @@ Native add-ons enable extending the basic runtime environment with additional na
 
 # Java / JavaScript API
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html?org/liquidplayer/javascript/package-summary.html)
+[JavaDocs v0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/index.html?org/liquidplayer/javascript/package-summary.html)
 
 You can use LiquidCore as a raw Native Javascript Engine (i.e. as a replacement for [`AndroidJSCore`](https://github.com/ericwlange/AndroidJSCore)).  That topic is discussed [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine).
 
@@ -71,7 +71,7 @@ android.util.Log.i("LiquidCoreExample", "The factorial of 10 is " + result.toStr
 
 # Node `Process`
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html?org/liquidplayer/node/Process.html)
+[JavaDocs v0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/index.html?org/liquidplayer/node/Process.html)
 
 LiquidCore allows creation of raw Node.js instances.  Each instance runs in its own thread and is isolated from all other instances.  Instances can share a [virtual file system](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System), by using a common unique identifier.
 
@@ -79,7 +79,7 @@ It is not recommended to use the `Process` API directly for most use cases. The 
 
 # The `MicroService`
 
-[JavaDocs v0.6.0](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.0/index.html?org/liquidplayer/service/MicroService.html)
+[JavaDocs v0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/index.html?org/liquidplayer/service/MicroService.html)
 
 A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
 
@@ -278,7 +278,7 @@ Then, add the LiquidCore library to your **app's `build.gradle`**:
 ```
 dependencies {
     ...
-    implementation 'com.github.LiquidPlayer:LiquidCore:0.6.0'
+    implementation 'com.github.LiquidPlayer:LiquidCore:0.6.1'
 }
 
 ```
@@ -388,7 +388,7 @@ A quick note about the `MicroService.DevServer()`: this generates convenience UR
 
 # Native Add-ons
 
-Introduced in version 0.6.0 is experimental support for native node modules (add-ons).  In Node, native add-ons are compiled (or os/architecture-specific prebuilts are downloaded) during `npm install`.  For example, `npm install sqlite3` installs the JavaScript interface to SQLite3 to `node_modules/sqlite3`, but it also compiles a native module `node_sqlite3.node` which is a dynamic library that contains the C-language SQLite3 library and native V8 interface code.  The code is built for the specific machine it is running on using `node-gyp`.
+Introduced in version 0.6.1 is experimental support for native node modules (add-ons).  In Node, native add-ons are compiled (or os/architecture-specific prebuilts are downloaded) during `npm install`.  For example, `npm install sqlite3` installs the JavaScript interface to SQLite3 to `node_modules/sqlite3`, but it also compiles a native module `node_sqlite3.node` which is a dynamic library that contains the C-language SQLite3 library and native V8 interface code.  The code is built for the specific machine it is running on using `node-gyp`.
 
 Unfortunately, there are several issues with this on mobile devices.  Primarily, although dynamic loading of libraries is supported, for security reasons, those libraries must be embedded in the APK to be used.  So it is not possible to download a native library at runtime and link to it (unlike with pure JavaScript modules, where this is perfectly ok).  Secondly, `node-gyp` is not really a cross-compiler (although some have hacked it for this purpose).  That is, it is optimized to build for the machine on which it is being run (e.g. your Mac or Linux machine), not for some remote device like a mobile phone, and not for multiple architectures at once (i.e. ARM, ARM64, X86, and X86_64).
 
