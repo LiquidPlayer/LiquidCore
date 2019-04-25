@@ -20,7 +20,7 @@ And follow the directions in the output.
 
 Javadocs
 --------
-[Version 0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/index.html)
+[Version 0.6.1](https://liquidplayer.github.io/LiquidCoreAndroid/0.6.1/)
 
 # Table of Contents
 
