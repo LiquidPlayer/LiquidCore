@@ -4,7 +4,7 @@ LiquidCore enables Node.js virtual machines to run inside Android and iOS apps. 
 
 Version
 -------
-[0.6.0](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.0)
+[0.6.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.1)
 
 LiquidCore is distributed using [CocoaPods](https://cocoapods.org/).  In your project's `Podfile`, add:
 
@@ -14,7 +14,7 @@ pod 'LiquidCore'
 
 API Documentation
 -----------------
-[Version 0.6.0](https://liquidplayer.github.io/LiquidCoreiOS/0.6.0/index.html)
+[Version 0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/index.html)
 
 # Table of Contents
 
@@ -40,7 +40,7 @@ Native add-ons enable extending the basic runtime environment with additional na
 
 # Node `LCProcess`
 
-[Jazzy API Doc v0.6.0](https://liquidplayer.github.io/LiquidCoreiOS/0.6.0/Classes/LCProcess.html)
+[Jazzy API Doc v0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/Classes/LCProcess.html)
 
 LiquidCore allows creation of raw Node.js instances.  Each instance runs in its own thread and is isolated from all other instances.  Instances can share a [virtual file system](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System), by using a common unique identifier.
 
@@ -49,7 +49,7 @@ It is not recommended to use the `LCProcess` API directly for most use cases. Th
 
 # The `LCMicroService`
 
-[Jazzy API Doc v0.6.0](https://liquidplayer.github.io/LiquidCoreiOS/0.6.0/Classes/LCMicroService.html)
+[Jazzy API Doc v0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/Classes/LCMicroService.html)
 
 A *micro app* is built on a *micro service*.  A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
 
@@ -350,7 +350,7 @@ A quick note about the `LCMicroService.devServer()`: this generates convenience 
 
 # Native Add-ons
 
-Introduced in version 0.6.0 is experimental support for native node modules (add-ons).  In Node, native add-ons are compiled (or os/architecture-specific prebuilts are downloaded) during `npm install`.  For example, `npm install sqlite3` installs the JavaScript interface to SQLite3 to `node_modules/sqlite3`, but it also compiles a native module `node_sqlite3.node` which is a dynamic library that contains the C-language SQLite3 library and native V8 interface code.  The code is built for the specific machine it is running on using `node-gyp`.
+Introduced in version 0.6.x is experimental support for native node modules (add-ons).  In Node, native add-ons are compiled (or os/architecture-specific prebuilts are downloaded) during `npm install`.  For example, `npm install sqlite3` installs the JavaScript interface to SQLite3 to `node_modules/sqlite3`, but it also compiles a native module `node_sqlite3.node` which is a dynamic library that contains the C-language SQLite3 library and native V8 interface code.  The code is built for the specific machine it is running on using `node-gyp`.
 
 Unfortunately, there are several issues with this on mobile devices.  Primarily, although dynamic frameworks are supported, for security reasons, those frameworks must be embedded in the app to be used.  So it is not possible to download a native framework at runtime and link to it (unlike with pure JavaScript modules, where this is perfectly ok).  Secondly, `node-gyp` is not really a cross-compiler (although some have hacked it for this purpose).  That is, it is optimized to build for the machine on which it is being run (e.g. your Mac machine), not for some remote device like a mobile phone, and not for multiple architectures at once (i.e. ARM64, X86_64).
 
