@@ -8,6 +8,10 @@ package org.liquidplayer.javascript;
 
 import android.support.annotation.NonNull;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +56,8 @@ public class JSValue {
             valueRef = context.ctxRef().makeNull();
         } else if (val instanceof JSValue) {
             valueRef = ((JSValue) val).valueRef();
+        } else if (val instanceof JSONObject || val instanceof JSONArray) {
+            valueRef = JSON.parse(context, val.toString()).valueRef();
         } else if (val instanceof Map) {
             valueRef = new JSObjectPropertiesMap(context, (Map)val, Object.class).getJSObject().valueRef();
         } else if (val instanceof List) {
@@ -73,7 +79,7 @@ public class JSValue {
         } else if (val instanceof Short) {
             valueRef = context.ctxRef().makeNumber(((Short)val).doubleValue());
         } else if (val instanceof String) {
-            valueRef = context.ctxRef().makeString((String)val);
+            valueRef = context.ctxRef().makeString((String) val);
         } else {
             valueRef = context.ctxRef().makeUndefined();
         }
@@ -403,36 +409,44 @@ public class JSValue {
 
     @SuppressWarnings("unchecked")
     Object toJavaObject(Class clazz) {
-        if (clazz == Object.class)
-            return this;
-        else if (clazz == Map.class)
-            return new JSObjectPropertiesMap(toObject(),Object.class);
-        else if (clazz == List.class)
-            return toJSArray();
-        else if (clazz == String.class)
-            return toString();
-        else if (clazz == Double.class || clazz == double.class)
-            return toNumber();
-        else if (clazz == Float.class || clazz == float.class)
-            return toNumber().floatValue();
-        else if (clazz == Integer.class || clazz == int.class)
-            return toNumber().intValue();
-        else if (clazz == Long.class || clazz == long.class)
-            return toNumber().longValue();
-        else if (clazz == Byte.class || clazz == byte.class)
-            return toNumber().byteValue();
-        else if (clazz == Short.class || clazz == short.class)
-            return toNumber().shortValue();
-        else if (clazz == Boolean.class || clazz == boolean.class)
-            return toBoolean();
-        else if (clazz.isArray())
-            return toJSArray().toArray(clazz.getComponentType());
-        else if (JSArray.class.isAssignableFrom(clazz))
-            return clazz.cast(toJSArray());
-        else if (JSObject.class.isAssignableFrom(clazz))
-            return clazz.cast(toObject());
-        else if (JSValue.class.isAssignableFrom(clazz))
-            return clazz.cast(this);
+        try {
+            if (clazz == Object.class)
+                return this;
+            else if (clazz == JSONObject.class && isObject())
+                return new JSONObject(toJSON());
+            else if (clazz == JSONArray.class && isArray())
+                return new JSONArray(toJSON());
+            else if (clazz == Map.class)
+                return new JSObjectPropertiesMap(toObject(), Object.class);
+            else if (clazz == List.class)
+                return toJSArray();
+            else if (clazz == String.class)
+                return toString();
+            else if (clazz == Double.class || clazz == double.class)
+                return toNumber();
+            else if (clazz == Float.class || clazz == float.class)
+                return toNumber().floatValue();
+            else if (clazz == Integer.class || clazz == int.class)
+                return toNumber().intValue();
+            else if (clazz == Long.class || clazz == long.class)
+                return toNumber().longValue();
+            else if (clazz == Byte.class || clazz == byte.class)
+                return toNumber().byteValue();
+            else if (clazz == Short.class || clazz == short.class)
+                return toNumber().shortValue();
+            else if (clazz == Boolean.class || clazz == boolean.class)
+                return toBoolean();
+            else if (clazz.isArray())
+                return toJSArray().toArray(clazz.getComponentType());
+            else if (JSArray.class.isAssignableFrom(clazz))
+                return clazz.cast(toJSArray());
+            else if (JSObject.class.isAssignableFrom(clazz))
+                return clazz.cast(toObject());
+            else if (JSValue.class.isAssignableFrom(clazz))
+                return clazz.cast(this);
+        } catch (JSONException e) {
+            /* Fall through */
+        }
         return null;
     }
 

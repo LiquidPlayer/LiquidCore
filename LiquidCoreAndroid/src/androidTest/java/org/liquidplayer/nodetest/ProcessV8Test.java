@@ -722,6 +722,26 @@ public class ProcessV8Test {
     }
 
     @org.junit.Test
+    public void testJSONObject() throws Exception {
+        new V8Test(new Runner() {
+            @Override
+            public void run(JSContext context) throws Exception {
+                new JSValueTest().testJSONObject(context);
+            }
+        });
+    }
+
+    @org.junit.Test
+    public void testJSONArray() throws Exception {
+        new V8Test(new Runner() {
+            @Override
+            public void run(JSContext context) throws Exception {
+                new JSValueTest().testJSONArray(context);
+            }
+        });
+    }
+
+    @org.junit.Test
     public void testTerminate() throws Exception {
         new V8Test(new Runner() {
             @Override

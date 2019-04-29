@@ -6,7 +6,13 @@
  */
 package org.liquidplayer.jstest;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Test;
+import org.liquidplayer.javascript.JSArray;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
 
 import java.util.ArrayList;
@@ -329,6 +335,60 @@ public class JSValueTest {
          */
         assertNotEquals(array.toJSArray(),null);
         assertThat(array.toJSArray().size(),is(0));
+    }
+
+    @Test
+    public void testJSONObject() throws JSONException {
+        testJSONObject(new JSContext());
+    }
+
+    public void testJSONObject(JSContext context) throws JSONException {
+        final String jsonObject = "{\"one\":1,\"two\":\"TWO\",\"three\":{\"a\":\"b\"},\"four\":[1,2,3,4]}";
+
+        JSONObject object = new JSONObject(jsonObject);
+        JSValue jsValue = new JSValue(context, object);
+
+        assertTrue(jsValue.isObject());
+        JSObject jsObject = jsValue.toObject();
+        assertEquals(1, jsObject.property("one").toNumber().intValue());
+        assertEquals("TWO", jsObject.property("two").toString());
+        assertTrue(jsObject.property("three").isObject());
+        assertEquals("b", jsObject.property("three").toObject().property("a").toString());
+        assertTrue(jsObject.property("four").isArray());
+        assertEquals(4, jsObject.property("four").toJSArray().size());
+        assertEquals(new JSValue(context, 3), jsObject.property("four").toJSArray().get(2));
+
+        JSArray<JSONObject> array = new JSArray<>(context, new JSValue[] { jsValue }, JSONObject.class);
+        JSONObject back = array.get(0);
+        assertNotNull(back);
+        assertEquals(jsonObject, back.toString());
+    }
+
+    @Test
+    public void testJSONArray() throws JSONException {
+        testJSONArray(new JSContext());
+    }
+
+    public void testJSONArray(JSContext context) throws JSONException {
+        final String jsonArray = "[1,\"two\",{\"a\":\"b\"},[1,2,3,4]]";
+        JSONArray array = new JSONArray(jsonArray);
+        JSValue jsValue = new JSValue(context, array);
+
+        assertTrue(jsValue.isArray());
+        @SuppressWarnings("unchecked")
+        JSArray<JSValue> jsArray = (JSArray<JSValue>)jsValue.toJSArray();
+        assertEquals(1, jsArray.get(0).toNumber().intValue());
+        assertEquals("two", jsArray.get(1).toString());
+        assertTrue(jsArray.get(2).isObject());
+        assertEquals("b", jsArray.get(2).toObject().property("a").toString());
+        assertTrue(jsArray.get(3).isArray());
+        assertEquals(4, jsArray.get(3).toJSArray().size());
+        assertEquals(new JSValue(context, 3), jsArray.get(3).toJSArray().get(2));
+
+        JSArray<JSONArray> array2 = new JSArray<>(context, new JSValue[] { jsValue }, JSONArray.class);
+        JSONArray back = array2.get(0);
+        assertNotNull(back);
+        assertEquals(jsonArray, back.toString());
     }
 
     @org.junit.After
