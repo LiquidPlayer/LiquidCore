@@ -85,7 +85,8 @@ STIN uint16_t ntohs(uint16_t netshort) {
   res += *p;
   return res;
 }
-
+#elif defined(__ANDROID__)
+# include <sys/endian.h>
 #endif /* WIN32 */
 
 #endif /* NGHTTP2_NET_H */

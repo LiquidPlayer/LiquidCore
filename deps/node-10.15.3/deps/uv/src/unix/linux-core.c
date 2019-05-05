@@ -81,9 +81,12 @@ static int read_times(FILE* statfile_fp,
 static void read_speeds(unsigned int numcpus, uv_cpu_info_t* ci);
 static unsigned long read_cpufreq(unsigned int cpunum);
 
-#ifdef __ANDROID__ && __ANDROID_API__<21
-static int epoll_create1(int event) { return -1; }
+#if defined(__ANDROID__) && __ANDROID_API__<21
+static int epoll_create1(int event) { errno = ENOSYS, -1; }
 #define EPOLL_CLOEXEC 0
+static int epoll_pwait(int fd, struct epoll_event* events, int max_events, int timeout, const sigset_t* ss) {
+  return errno = ENOSYS, -1;
+}
 #endif
 
 int uv__platform_loop_init(uv_loop_t* loop) {
@@ -188,7 +191,6 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
 
   return rc;
 }
-
 
 void uv__io_poll(uv_loop_t* loop, int timeout) {
   /* A bug in kernels < 2.6.37 makes timeouts larger than ~30 minutes

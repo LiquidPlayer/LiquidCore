@@ -78,6 +78,15 @@ export CXX_target=$TOOLCHAIN/bin/$target_host_clang$API-clang++
 export LD_target=$TOOLCHAIN/bin/$target_host-ld
 export STRIP_target=$TOOLCHAIN/bin/$target_host-strip
 export LINK_target=$TOOLCHAIN/bin/$target_host_clang$API-clang++
+export RANLIB_target=$TOOLCHAIN/bin/$target_host-ranlib
+
+export AR_host=ar
+export AS_host=clang
+export CC_host=clang
+export CXX_host=clang++
+export LD_host=ld
+export STRIP_host=strip
+export LINK_host=clang++
 
 GYP_DEFINES="target_arch=$ARCH"
 GYP_DEFINES+=" v8_target_arch=$DEST_CPU"

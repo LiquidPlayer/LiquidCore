@@ -1974,7 +1974,8 @@
                   # These libraries do not exist on Mac hosted builds.
                   'libraries': [
                     '-ldl',
-                    '-lrt'
+                    '-lrt',
+                    '-lpthread'
                   ]
                 }]
               ]
@@ -1994,7 +1995,7 @@
                 ],
               }, {
                 'sources': [
-                  '../src/base/platform/platform-linux.cc'
+                 '../src/base/platform/platform-linux.cc',
                 ]
               }],
             ],
@@ -2904,11 +2905,11 @@
       'target_name': 'mksnapshot',
       'type': 'executable',
       'dependencies': [
-        'v8_base',
-        'v8_init',
-        'v8_libbase',
         'v8_libplatform',
-        'v8_nosnapshot',
+        'v8_base',
+        'v8_libbase',
+        'v8_init',
+        'v8_nosnapshot'
       ],
       'include_dirs': [
         '..',

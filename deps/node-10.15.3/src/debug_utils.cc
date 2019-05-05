@@ -32,6 +32,7 @@
 
 #if defined(__linux__) || defined(__sun)
 #include <link.h>
+int dl_iterate_phdr(int(*callback) (struct dl_phdr_info *, size_t, void *), void *data);
 #endif  // (__linux__) || defined(__sun)
 
 #ifdef __APPLE__

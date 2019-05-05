@@ -170,6 +170,12 @@ static ssize_t uv__fs_fdatasync(uv_fs_t* req) {
 #endif
 }
 
+#if defined(__ANDROID__) && __ANDROID_API__<21
+int futimens(int fd, const struct timespec times[2]) {
+  return utimensat(fd, NULL, times, 0);
+}
+#endif
+
 
 static ssize_t uv__fs_futime(uv_fs_t* req) {
 #if defined(__linux__)                                                        \
