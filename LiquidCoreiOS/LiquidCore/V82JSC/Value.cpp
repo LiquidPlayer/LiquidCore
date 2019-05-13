@@ -4,6 +4,7 @@
  * Distributed under the MIT License.  See LICENSE.md at
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
+#include <Availability.h>
 #include "V82JSC.h"
 #include "JSObjectRefPrivate.h"
 #include "Value.h"
@@ -102,10 +103,12 @@ Local<v8::Value> Value::New(const Context *ctx, JSValueRef value, BaseMap *map)
                 }
                 break;
             }
+#ifdef __IPHONE_12_2
             case kJSTypeSymbol: {
                 map = isolateimpl->m_symbol_map;
                 break;
             }
+#endif
             default:
                 break;
         }
