@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.liquidplayer.javascript.JSArray;
 import org.liquidplayer.javascript.JSContext;
+import org.liquidplayer.javascript.JSON;
 import org.liquidplayer.javascript.JSObject;
 import org.liquidplayer.javascript.JSValue;
 
@@ -362,6 +363,20 @@ public class JSValueTest {
         JSONObject back = array.get(0);
         assertNotNull(back);
         assertEquals(jsonObject, back.toString());
+
+        JSValue notObject = JSON.parse(context, "5");
+        assertFalse(notObject.isObject());
+        boolean threwException = false;
+        try {
+            array = new JSArray<>(context, new JSValue[]{notObject}, JSONObject.class);
+            back = array.get(0);
+            assertNotNull(back);
+            fail();
+        } catch (Exception e) {
+            assertEquals(JSONException.class, e.getCause().getClass());
+            threwException = true;
+        }
+        assertTrue(threwException);
     }
 
     @Test
@@ -389,6 +404,20 @@ public class JSValueTest {
         JSONArray back = array2.get(0);
         assertNotNull(back);
         assertEquals(jsonArray, back.toString());
+
+        JSValue notArray = JSON.parse(context, "5");
+        assertFalse(notArray.isObject());
+        boolean threwException = false;
+        try {
+            array2 = new JSArray<>(context, new JSValue[]{notArray}, JSONArray.class);
+            back = array2.get(0);
+            assertNotNull(back);
+            fail();
+        } catch (Exception e) {
+            assertEquals(JSONException.class, e.getCause().getClass());
+            threwException = true;
+        }
+        assertTrue(threwException);
     }
 
     @org.junit.After
