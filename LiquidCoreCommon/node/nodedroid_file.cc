@@ -53,6 +53,7 @@ using v8::Function;
 using v8::FunctionCallbackInfo;
 using v8::FunctionTemplate;
 using v8::HandleScope;
+using v8::EscapableHandleScope;
 using v8::Integer;
 using v8::Local;
 using v8::MaybeLocal;
@@ -484,7 +485,7 @@ void Close(const FunctionCallbackInfo<Value>& args) {
 
 v8::Local<v8::Value> fs_(node::Environment *env, v8::Local<v8::Value> path, int req_access)
 {
-    HandleScope handle_scope(env->isolate());
+    EscapableHandleScope handle_scope(env->isolate());
     Context::Scope context_scope(env->context());
 
     BufferValue p(env->isolate(), path);
@@ -550,9 +551,10 @@ v8::Local<v8::Value> fs_(node::Environment *env, v8::Local<v8::Value> path, int 
 
         if ((req_access & access) != req_access) {
             env->ThrowError("access denied (EACCES)");
-            return Local<Value>::New(env->isolate(),Undefined(env->isolate()));
+            return Local<Value>(Undefined(env->isolate()));
         }
-        return rc;
+
+        return handle_scope.Escape(rc);
       }
     }
     // FileSystem object not set up yet, so carry on as normal
@@ -561,7 +563,7 @@ v8::Local<v8::Value> fs_(node::Environment *env, v8::Local<v8::Value> path, int 
 
 Local<Value> alias_(Environment *env, Local<Value> path)
 {
-    HandleScope handle_scope(env->isolate());
+    EscapableHandleScope handle_scope(env->isolate());
     Context::Scope context_scope(env->context());
 
     Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
@@ -577,7 +579,7 @@ Local<Value> alias_(Environment *env, Local<Value> path)
             .ToLocalChecked()->ToObject(env->context()).ToLocalChecked();
         MaybeLocal<Value> aliased = alias->CallAsFunction(env->context(), fsObj, 1, &path);
 
-        return aliased.ToLocalChecked();
+        return handle_scope.Escape(aliased.ToLocalChecked());
       }
     }
     // FileSystem object not set up yet, so carry on as normal
@@ -586,7 +588,7 @@ Local<Value> alias_(Environment *env, Local<Value> path)
 
 Local<Value> chdir_(Environment *env, Local<Value> path)
 {
-    HandleScope handle_scope(env->isolate());
+    EscapableHandleScope handle_scope(env->isolate());
     Context::Scope context_scope(env->context());
 
     path = fs_(env, path, _FS_ACCESS_RD);
@@ -605,12 +607,12 @@ Local<Value> chdir_(Environment *env, Local<Value> path)
         }
       }
     }
-    return path;
+    return handle_scope.Escape(path);
 }
 
 Local<Value> cwd_(Environment *env)
 {
-    HandleScope handle_scope(env->isolate());
+    EscapableHandleScope handle_scope(env->isolate());
     Context::Scope context_scope(env->context());
 
     Local<v8::Private> privateKey = v8::Private::ForApi(env->isolate(),
@@ -621,11 +623,11 @@ Local<Value> cwd_(Environment *env)
       Local<Value> fsVal;
       if(globalObj->GetPrivate(env->context(), privateKey).ToLocal(&fsVal)) {
         Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
-        return alias_(env, fsObj->Get(env->context(),
-            String::NewFromUtf8(env->isolate(), "cwd")).ToLocalChecked());
+        return handle_scope.Escape(alias_(env, fsObj->Get(env->context(),
+            String::NewFromUtf8(env->isolate(), "cwd")).ToLocalChecked()));
       }
     }
-    return Local<Value>::New(env->isolate(),Undefined(env->isolate()));
+    return Local<Value>(Undefined(env->isolate()));
 }
 
 void FillStatsArray(double* fields, const uv_stat_t* s) {
