@@ -64,9 +64,10 @@ MaybeLocal<v8::Value> v8::Script::Run(Local<Context> context)
             
             int line_offset = unbound->m_resource_line_offset.IsEmpty() ? 1 : (int)unbound->m_resource_line_offset.Get(isolate)->Value() + 1;
             JSValueRef value;
+#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
             if (line_offset > 1) {
                 // This is a hack.  Line offset in JSScriptScriptCreateFromString() does not work.  Schade.
-
+#endif
                 JSStringRef url = 0;
                 if (!unbound->m_sourceURL.IsEmpty()) {
                     Local<Value> v = unbound->m_sourceURL.Get(isolate);
@@ -85,9 +86,11 @@ MaybeLocal<v8::Value> v8::Script::Run(Local<Context> context)
                 value = JSEvaluateScript(ctx, unbound->m_script_string, JSContextGetGlobalObject(ctx),
                                          url, line_offset, &exception);
                 JSStringRelease(url);
+#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
             } else {
-                value = JSScriptEvaluate(ctx, unbound->m_script, JSContextGetGlobalObject(ctx), &exception);
+                value = JSCPrivate::JSScriptEvaluate(ctx, unbound->m_script, JSContextGetGlobalObject(ctx), &exception);
             }
+#endif
             if (!exception.ShouldThrow()) {
                 ret = V82JSC::Value::New(ToContextImpl(bound_context), value);
             }
@@ -369,7 +372,7 @@ MaybeLocal<v8::UnboundScript> ScriptCompiler::CompileUnboundScript(Isolate* isol
 
     impl->m_script = 0;
     if (JSStringGetLength(src) > 0) {
-        impl->m_script = JSScriptCreateFromString(iso->m_group, url, startingLineNumber, src, &errorMessage, &errorLine);
+        impl->m_script = JSCPrivate::JSScriptCreateFromString(iso->m_group, ctx, url, startingLineNumber, src, &errorMessage, &errorLine);
     } else {
         errorMessage = defaultError;
     }

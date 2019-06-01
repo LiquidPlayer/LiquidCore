@@ -5,12 +5,11 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSContextRefPrivate.h"
-#include "JSObjectRefPrivate.h"
 #include "ObjectTemplate.h"
 #include "Object.h"
 #include "ArrayBuffer.h"
 #include "Extension.h"
+#include "JSCPrivate.h"
 
 extern "C" unsigned char promise_polyfill_js[];
 extern "C" unsigned char typedarray_js[];
@@ -305,21 +304,21 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
         JSClassRelease(claz);
     }
     
-    JSGlobalContextSetIncludesNativeCallStackWhenReportingExceptions((JSGlobalContextRef)context->m_ctxRef, false);
-    
     JSObjectRef global_o = JSContextGetGlobalObject(context->m_ctxRef);
 
     // Set a reference back to our context so we can find our way back to the creation context
-    JSStringRef creationContext = JSStringCreateWithUTF8CString(CREATION_CONTEXT_PROP_NAME);
-    JSClassDefinition def = kJSClassDefinitionEmpty;
-    JSClassRef claz = JSClassCreate(&def);
-    JSObjectRef creation_context = JSObjectMake(context->m_ctxRef, claz, (void*)context->m_ctxRef);
-    JSObjectSetPrivateProperty(context->m_ctxRef, global_o, creationContext, creation_context);
-    JSStringRelease(creationContext);
-    JSClassRelease(claz);
-
-//    JSObjectSetPrivate(global_o, (void*)context->m_ctxRef);
-//    assert(JSObjectGetPrivate(global_o) == (void*)context->m_ctxRef);
+    if (i->m_creation_contexts) {
+        JSClassDefinition def = kJSClassDefinitionEmpty;
+        JSClassRef claz = JSClassCreate(&def);
+        JSObjectRef creation_context = JSObjectMake(context->m_ctxRef, claz, (void*)context->m_ctxRef);
+        JSValueRef args[] = {
+            i->m_creation_contexts,
+            global_o,
+            creation_context
+        };
+        exec(context->m_ctxRef, "_1.set(_2, _3)", 3, args);
+        JSClassRelease(claz);
+    }
 
     if (!global_object.IsEmpty()) {
         global_wrap->m_isDetached = false;
@@ -335,8 +334,29 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
     
     context->m_security_token.Reset();
 
+    // Only set a single proxy target map so it can be accessed from any context
+    if (i->m_nullContext.IsEmpty()) {
+        context->m_proxy_targets = exec(context->m_ctxRef, "return new WeakMap()", 0, 0);
+    } else {
+        context->m_proxy_targets = ToGlobalContextImpl(i->m_nullContext.Get(isolate))->m_proxy_targets;
+        JSValueProtect(context->m_ctxRef, context->m_proxy_targets);
+    }
+    
     // Don't do anything fancy if we are setting up the default context
     if (!i->m_nullContext.IsEmpty()) {
+        // Capture all proxy targets in a WeakMap
+        // The irony of proxying Proxy is not lost on me
+        exec(context->m_ctxRef,
+             "const handler = { " \
+             "  construct(t,a,n) { " \
+             "    let proxy = Reflect.construct(t,a,n); " \
+             "    _1.set(proxy,t); " \
+             "    return proxy; " \
+             "  } " \
+             "}; " \
+             "Proxy = new Proxy(Proxy, handler)",
+             1, &context->m_proxy_targets);
+        
         proxyArrayBuffer(context);
         
         // Proxy Object.getPrototypeOf and Object.setPrototypeOf
@@ -350,12 +370,13 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
                 JSValueRef o = ToJSValueRef(info[0], context);
 
                 if (JSValueIsObject(ctx, o)) {
-                    JSStringRef creationContext = JSStringCreateWithUTF8CString(CREATION_CONTEXT_PROP_NAME);
-                    JSValueRef cc = JSObjectGetPrivateProperty(ctx, (JSObjectRef)o, creationContext);
+                    JSValueRef args[] = {
+                        ToIsolateImpl(info.GetIsolate())->m_creation_contexts,
+                        o
+                    };
+                    JSValueRef cc = exec(ctx, "return _1.get(_2)", 2, args);
                     JSGlobalContextRef gctx = 0;
                     if (JSValueIsObject(ctx, cc)) gctx = (JSGlobalContextRef)JSObjectGetPrivate((JSObjectRef)cc);
-                    JSStringRelease(creationContext);
-//                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
                     
                     if (gctx && ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
                         Local<Context> other = ToIsolateImpl(info.GetIsolate())->
@@ -400,12 +421,13 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
                 JSValueRef o = ToJSValueRef(info[0], context);
                 
                 if (JSValueIsObject(ctx, o)) {
-                    JSStringRef creationContext = JSStringCreateWithUTF8CString(CREATION_CONTEXT_PROP_NAME);
-                    JSValueRef cc = JSObjectGetPrivateProperty(ctx, (JSObjectRef)o, creationContext);
+                    JSValueRef args[] = {
+                        ToIsolateImpl(info.GetIsolate())->m_creation_contexts,
+                        o
+                    };
+                    JSValueRef cc = exec(ctx, "return _1.get(_2)", 2, args);
                     JSGlobalContextRef gctx = 0;
                     if (JSValueIsObject(ctx, cc)) gctx = (JSGlobalContextRef)JSObjectGetPrivate((JSObjectRef)cc);
-                    JSStringRelease(creationContext);
-//                    JSGlobalContextRef gctx = (JSGlobalContextRef) JSObjectGetPrivate((JSObjectRef)o);
 
                     if (gctx && ToIsolateImpl(info.GetIsolate())->m_global_contexts.count(gctx)) {
                         Local<Context> other = ToIsolateImpl(info.GetIsolate())->m_global_contexts[gctx].Get(info.GetIsolate());

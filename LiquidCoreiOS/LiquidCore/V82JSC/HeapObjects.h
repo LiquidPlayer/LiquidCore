@@ -28,8 +28,6 @@
 #include "src/heap/heap.h"
 #include <map>
 #include <string>
-#include "JSScriptRefPrivate.h"
-#include "JSWeakRefPrivate.h"
 
 /* V82JSC Heap Objects are designed to mirror V8 heap objects as much as possible.  Some rules:
  * --> All heap objects have a reference to their v8::internal::Map at offset 0 to identify their type

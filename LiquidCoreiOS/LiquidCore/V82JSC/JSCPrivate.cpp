@@ -36,6 +36,15 @@
 #include "V82JSC.h"
 #endif
 
+#include "JSContextRefPrivate.h"
+#include "JSObjectRefPrivate.h"
+#include "JSScriptRefPrivate.h"
+#include "JSWeakRefPrivate.h"
+#include "JSHeapFinalizerPrivate.h"
+#include "JSMarkingConstraintPrivate.h"
+#include "JSStringRefPrivate.h"
+extern "C" void JSSynchronousGarbageCollectForDebugging(JSContextRef ctx);
+
 using v8::internal::IsolateImpl;
 
 #if defined(USE_JAVASCRIPTCORE_INTERNALS)
@@ -222,6 +231,201 @@ void JSCPrivate::PrintCurrentThread()
 {
     size_t hash = std::hash<std::thread::id>()(std::this_thread::get_id());
     printf ("Current: %x\n", (unsigned)hash);
+}
+
+#endif
+
+#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
+
+void JSCPrivate::JSScriptRelease(JSScriptRef script)
+{
+    return ::JSScriptRelease((::JSScriptRef)script);
+}
+
+JSValueRef JSCPrivate::JSScriptEvaluate(JSContextRef ctx, JSScriptRef script, JSValueRef thisValue, JSValueRef* exception)
+{
+    return ::JSScriptEvaluate(ctx, (::JSScriptRef)script, thisValue, exception);
+}
+
+JSCPrivate::JSScriptRef JSCPrivate::JSScriptCreateFromString(JSContextGroupRef contextGroup, JSContextRef ctx, JSStringRef url, int startingLineNumber,
+                                                             JSStringRef source, JSStringRef* errorMessage, int* errorLine)
+{
+    return ::JSScriptCreateFromString(contextGroup, url, startingLineNumber, source, errorMessage, errorLine);
+}
+
+JSStringRef JSCPrivate::JSContextCreateBacktrace(JSContextRef ctx, unsigned maxStackSize)
+{
+    return ::JSContextCreateBacktrace(ctx, maxStackSize);
+}
+
+JSCPrivate::JSWeakRef JSCPrivate::JSWeakCreate(JSContextGroupRef group, JSObjectRef object)
+{
+    return reinterpret_cast<JSWeakRef>(::JSWeakCreate(group, object));
+}
+
+void JSCPrivate::JSWeakRelease(JSContextGroupRef group, JSWeakRef weak)
+{
+    return ::JSWeakRelease(group, (::JSWeakRef)weak);
+}
+
+JSObjectRef JSCPrivate::JSWeakGetObject(JSWeakRef weak)
+{
+    return ::JSWeakGetObject((::JSWeakRef)weak);
+}
+
+void JSCPrivate::JSContextGroupSetExecutionTimeLimit(JSContextGroupRef group, double limit, JSShouldTerminateCallback callback, void* context)
+{
+    return ::JSContextGroupSetExecutionTimeLimit(group, limit, callback, context);
+}
+
+void JSCPrivate::JSContextGroupClearExecutionTimeLimit(JSContextGroupRef group)
+{
+    return ::JSContextGroupClearExecutionTimeLimit(group);
+}
+
+JSGlobalContextRef JSCPrivate::JSObjectGetGlobalContext(JSObjectRef object)
+{
+    return ::JSObjectGetGlobalContext(object);
+}
+
+JSObjectRef JSCPrivate::JSObjectGetProxyTarget(v8::Local<v8::Context> context, JSObjectRef object)
+{
+    return ::JSObjectGetProxyTarget(object);
+}
+
+void JSCPrivate::JSContextGroupAddMarkingConstraint(JSContextGroupRef group, JSMarkingConstraint constraint, void *userData)
+{
+    return ::JSContextGroupAddMarkingConstraint(group, (::JSMarkingConstraint)constraint, userData);
+}
+
+void JSCPrivate::JSContextGroupAddHeapFinalizer(JSContextGroupRef group, JSHeapFinalizer finalizer, IsolateImpl *userData)
+{
+    return ::JSContextGroupAddHeapFinalizer(group, finalizer, userData);
+}
+ 
+void JSCPrivate::JSContextGroupRemoveHeapFinalizer(JSContextGroupRef group, JSHeapFinalizer finalizer, IsolateImpl *userData)
+{
+    return ::JSContextGroupRemoveHeapFinalizer(group, finalizer, userData);
+}
+
+void JSCPrivate::JSSynchronousGarbageCollectForDebugging(JSContextRef ctx)
+{
+    ::JSSynchronousGarbageCollectForDebugging(ctx);
+}
+
+#else
+
+void JSCPrivate::JSScriptRelease(JSScriptRef script)
+{
+    // Do nothing
+}
+
+JSValueRef JSCPrivate::JSScriptEvaluate(JSContextRef ctx, JSScriptRef script, JSValueRef thisValue, JSValueRef* exception)
+{
+    // Should not reach
+    CHECK(false);
+}
+
+JSCPrivate::JSScriptRef JSCPrivate::JSScriptCreateFromString(JSContextGroupRef contextGroup,
+                                                             JSContextRef ctx,
+                                                             JSStringRef url,
+                                                             int startingLineNumber,
+                                                             JSStringRef source,
+                                                             JSStringRef* errorMessage,
+                                                             int* errorLine)
+{
+    JSValueRef exception = nullptr;
+    
+    auto success = JSCheckScriptSyntax(ctx, source, url, startingLineNumber, &exception);
+    if (!success && exception && errorMessage) {
+        *errorMessage = JSValueToStringCopy(ctx, exception, nullptr);
+        if (errorLine) *errorLine = 0; // FIXME
+    }
+    if (!success) return nullptr;
+    
+    // All we are doing is returning a non-null value.  In this case, we can't use
+    // private APIs, so we won't actually use this value.  It just needs to not be null.
+    return (JSCPrivate::JSScriptRef) source;
+}
+
+JSStringRef JSCPrivate::JSContextCreateBacktrace(JSContextRef ctx, unsigned maxStackSize)
+{
+    auto trace = V82JSC::exec(ctx, "(new Error()).stack", 0, 0);
+    return JSValueToStringCopy(ctx, trace, nullptr);
+}
+
+JSCPrivate::JSWeakRef JSCPrivate::JSWeakCreate(JSContextGroupRef group, JSObjectRef object)
+{
+    return reinterpret_cast<JSWeakRef>(object);
+}
+
+void JSCPrivate::JSWeakRelease(JSContextGroupRef group, JSWeakRef weak)
+{
+    // Do nothing
+}
+
+JSObjectRef JSCPrivate::JSWeakGetObject(JSWeakRef weak)
+{
+    return (JSObjectRef)weak;
+}
+
+void JSCPrivate::JSContextGroupSetExecutionTimeLimit(JSContextGroupRef group, double limit, JSShouldTerminateCallback callback, void* context)
+{
+    // Do nothing
+}
+
+void JSCPrivate::JSContextGroupClearExecutionTimeLimit(JSContextGroupRef group)
+{
+    // Do nothing
+}
+
+JSObjectRef JSCPrivate::JSObjectGetProxyTarget(v8::Local<v8::Context> context, JSObjectRef object)
+{
+    v8::HandleScope scope(V82JSC::ToIsolate(V82JSC::ToContextImpl(context)));
+    
+    auto gCtx = V82JSC::ToGlobalContextImpl(V82JSC::FindGlobalContext(context));
+
+    JSValueRef args[] = {
+        gCtx->m_proxy_targets,
+        object
+    };
+    
+    return (JSObjectRef) V82JSC::exec(V82JSC::ToContextRef(context),
+                                      "return _1.get(_2)",
+                                      2, args);
+}
+
+void JSCPrivate::JSContextGroupAddMarkingConstraint(JSContextGroupRef group, JSMarkingConstraint constraint, void *userData)
+{
+    // Do nothing.  There will not be a chance for first pass callbacks to attempt to save marked
+    // objects.
+}
+
+
+void JSCPrivate::JSContextGroupAddHeapFinalizer(JSContextGroupRef group, JSHeapFinalizer finalizer, IsolateImpl *userData)
+{
+    // This is a stupid hack.  We will just trigger the finalizer every 5 seconds.
+    userData->m_kill_collection_thread = false;
+    auto collectionThread = new std::thread([finalizer,userData](){
+        while (!userData->m_kill_collection_thread) {
+            sleep(5);
+            if (!userData->m_kill_collection_thread) {
+                finalizer(userData->m_group, userData);
+            }
+        }
+    });
+}
+ 
+void JSCPrivate::JSContextGroupRemoveHeapFinalizer(JSContextGroupRef group, JSHeapFinalizer finalizer, IsolateImpl *userData)
+{
+    userData->m_kill_collection_thread = true;
+    userData->m_collection_thread->join();
+    delete userData->m_collection_thread;
+}
+
+void JSCPrivate::JSSynchronousGarbageCollectForDebugging(JSContextRef ctx)
+{
+    // Ignore
 }
 
 #endif

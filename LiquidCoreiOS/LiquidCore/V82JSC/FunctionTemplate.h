@@ -16,7 +16,7 @@ struct FunctionTemplate : Template {
     v8::Persistent<v8::FunctionTemplate> m_prototype_provider;
     v8::ConstructorBehavior m_behavior;
     v8::Persistent<v8::String> m_name;
-    JSObjectRef m_functions_array;
+    JSValueRef m_functions_map;
     int m_length;
     bool m_isHiddenPrototype;
     bool m_removePrototype;
@@ -29,7 +29,7 @@ struct FunctionTemplate : Template {
         freed +=SmartReset<v8::FunctionTemplate>(context,obj->m_prototype_provider);
         freed +=SmartReset<v8::ObjectTemplate>(context, obj->m_instance_template);
         freed +=SmartReset<v8::String>(context, obj->m_name);
-        if (obj->m_functions_array) JSValueUnprotect(obj->GetNullContext(), obj->m_functions_array);
+        if (obj->m_functions_map) JSValueUnprotect(obj->GetNullContext(), obj->m_functions_map);
         return freed + Template::Destructor(context, obj);
     }
 

@@ -5,10 +5,10 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
 #include "FunctionTemplate.h"
 #include "ObjectTemplate.h"
 #include "Object.h"
+#include "JSCPrivate.h"
 
 using namespace V82JSC;
 using v8::Local;
@@ -78,8 +78,8 @@ Local<v8::FunctionTemplate> v8::FunctionTemplate::New(Isolate* isolate, Function
     }
     templ->m_data = ToJSValueRef<Value>(data, isolate);
     JSValueProtect(ToContextRef(context), templ->m_data);
-    templ->m_functions_array = JSObjectMakeArray(ToContextRef(context), 0, nullptr, 0);
-    JSValueProtect(ToContextRef(context), templ->m_functions_array);
+    templ->m_functions_map = exec(ToContextRef(context), "return new Map()", 0, 0);
+    JSValueProtect(ToContextRef(context), templ->m_functions_map);
     
     return scope.Escape(CreateLocal<FunctionTemplate>(isolate, templ));
 }
@@ -130,17 +130,18 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
     
     Local<v8::FunctionTemplate> thiz = CreateLocal<v8::FunctionTemplate>(isolate, impl);
 
-    assert(impl->m_functions_array);
-    int length = static_cast<int>(JSValueToNumber(ctx, exec(ctx, "return _1.length",
-                                                                    1, &impl->m_functions_array), 0));
-    JSObjectRef function = 0;
-    for (auto i=0; i < length; ++i) {
-        JSValueRef maybe_function = JSObjectGetPropertyAtIndex(ctx, impl->m_functions_array, i, 0);
-        if (JSObjectGetGlobalContext((JSObjectRef)maybe_function) == JSContextGetGlobalContext(ctx)) {
-            function = (JSObjectRef)maybe_function;
-            break;
-        }
+    assert(impl->m_functions_map);
+    auto gCtx = ToGlobalContextImpl(FindGlobalContext(context));
+    assert(gCtx);
+    JSObjectRef function = nullptr;
+    if (gCtx->m_creation_context) {
+        JSValueRef args_get[] = {
+            impl->m_functions_map,
+            gCtx->m_creation_context
+        };
+        function = (JSObjectRef) exec(ctx, "_1.get(_2)", 2, args_get);
     }
+
     if (function) {
         return scope.Escape(Value::New(ctximpl, function).As<Function>());
     }
@@ -304,8 +305,10 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
         JSStringRelease(sprototype);
     }
 
-    JSValueRef args[] = { impl->m_functions_array, function };
-    exec(ctx, "_1.push(_2)", 2, args);
+    if (gCtx->m_creation_context) {
+        JSValueRef args_set[] = { impl->m_functions_map, gCtx->m_creation_context, function };
+        exec(ctx, "_1.set(_2, _3)", 3, args_set);
+    }
 
     return scope.Escape(Value::New(ctximpl, function).As<Function>());
 }

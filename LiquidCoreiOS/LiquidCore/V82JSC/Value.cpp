@@ -6,7 +6,7 @@
  */
 #include <Availability.h>
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
+#include "JSCPrivate.h"
 #include "Value.h"
 #include "StringImpl.h"
 
@@ -39,6 +39,7 @@ Local<v8::Value> Value::New(const Context *ctx, JSValueRef value, BaseMap *map)
     v8::internal::Object * io;
     void* resource = nullptr;
     EscapableHandleScope scope(isolate);
+    Local<v8::Context> context = CreateLocal<v8::Context>(isolate, const_cast<Context*>(ctx));
     
     double num = 0.0;
     if (!map) {
@@ -86,7 +87,7 @@ Local<v8::Value> Value::New(const Context *ctx, JSValueRef value, BaseMap *map)
                     auto obj = isolateimpl->m_jsobjects[(JSObjectRef)value];
                     return scope.Escape(CreateLocal<v8::Value>(isolate, obj));
                 }
-                JSValueRef proxyless = JSObjectGetProxyTarget((JSObjectRef)value);
+                JSValueRef proxyless = JSCPrivate::JSObjectGetProxyTarget(context, (JSObjectRef)value);
                 if (proxyless == 0) proxyless = value;
                 JSValueRef exception = 0;
                 JSValueRef isArrayBuffer = exec(ctx->m_ctxRef, "return _1 instanceof ArrayBuffer", 1, &proxyless, &exception);
@@ -409,7 +410,7 @@ bool v8::Value::IsProxy() const
     JSContextRef ctx = ToContextRef(context);
     JSValueRef maybe_proxy = ToJSValueRef(this, context);
     
-    return (JSValueIsObject(ctx, maybe_proxy) && JSObjectGetProxyTarget((JSObjectRef)maybe_proxy) != 0);
+    return (JSValueIsObject(ctx, maybe_proxy) && JSCPrivate::JSObjectGetProxyTarget(context, (JSObjectRef)maybe_proxy) != 0);
 }
 
 bool v8::Value::IsWebAssemblyCompiledModule() const { return false; } // FIXME

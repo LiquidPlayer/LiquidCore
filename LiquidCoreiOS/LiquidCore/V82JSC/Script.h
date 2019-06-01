@@ -8,11 +8,12 @@
 #define V82JSC_Script_h
 
 #include "HeapObjects.h"
+#include "JSCPrivate.h"
 
 namespace V82JSC {
 
 struct UnboundScript : HeapObject {
-    JSScriptRef m_script;
+    JSCPrivate::JSScriptRef m_script;
     JSStringRef m_script_string;
     v8::Persistent<v8::Integer> m_id;
     v8::Persistent<v8::Value> m_resource_name;
@@ -28,7 +29,7 @@ struct UnboundScript : HeapObject {
     static void Constructor(UnboundScript *obj) {}
     static int Destructor(HeapContext& context, UnboundScript *obj)
     {
-        if (obj->m_script) JSScriptRelease(obj->m_script);
+        if (obj->m_script) JSCPrivate::JSScriptRelease(obj->m_script);
         if (obj->m_script_string) JSStringRelease(obj->m_script_string);
         
         int freed=0;

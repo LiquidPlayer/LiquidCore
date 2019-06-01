@@ -5,7 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
+#include "JSCPrivate.h"
 #include "Object.h"
 #include <malloc/malloc.h>
 
@@ -224,7 +224,6 @@ SealHandleScope::SealHandleScope(Isolate* isolate) : isolate_(nullptr)
     
 }
 
-
 class internal::GlobalHandles::Node {
 public:
     internal::Object *handle_;
@@ -238,7 +237,6 @@ public:
     WeakCallbackInfo<void>::Callback second_pass_callback_;
     void *param_;
 };
-
 
 class internal::GlobalHandles::NodeBlock {
 public:
@@ -410,7 +408,7 @@ public:
         }
         return handles_processed;
     }
-    void PerformIncrementalMarking(JSMarkerRef marker, std::map<void*, JSObjectRef>& ready_to_die)
+    void PerformIncrementalMarking(JSCPrivate::JSMarkerRef marker, std::map<void*, JSObjectRef>& ready_to_die)
     {
         uint64_t mask = 1;
         for (int i=0; i<64; i++) {
@@ -476,7 +474,7 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
     // For all active, weak values that have not previously been marked for death but are currently
     // ready to die, save them from collection one last time so that the client has a chance to resurrect
     // them in callbacks before we make this final
-    iso->performIncrementalMarking = [iso, this](JSMarkerRef marker, std::map<void*, JSObjectRef>& ready_to_die)
+    iso->performIncrementalMarking = [iso, this](JSCPrivate::JSMarkerRef marker, std::map<void*, JSObjectRef>& ready_to_die)
     {
         std::lock_guard<std::mutex> lock(iso->m_handlewalk_lock);
 
@@ -509,14 +507,17 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
         second_pass.callback_ = nullptr;
         second_pass.param_ = node->param_;
         second_pass.object_ = object;
+        v8::Isolate *isolate = reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate());
         if (object != 0) {
-            auto wrap = V82JSC::TrackedObject::getPrivateInstance(JSObjectGetGlobalContext(object), object);
+            v8::HandleScope handle_scope(isolate);
+            JSContextRef ctx = ToContextRef(ToIsolateImpl(isolate)->m_nullContext.Get(isolate));
+            auto wrap = V82JSC::TrackedObject::getPrivateInstance(ctx, object);
             assert(wrap);
             second_pass.embedder_fields_[0] = wrap->m_embedder_data[0];
             second_pass.embedder_fields_[1] = wrap->m_embedder_data[1];
         }
         if (node->weak_callback_) {
-            WeakCallbackInfo<void> info(reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate()),
+            WeakCallbackInfo<void> info(isolate,
                                         node->param_,
                                         second_pass.embedder_fields_,
                                         &second_pass.callback_);
@@ -546,6 +547,18 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
             }
         }
     };
+   
+    IsolateImpl::getIsolateFromGlobalHandle = [](v8::internal::Object **location) -> IsolateImpl* {
+        auto handle_loc = reinterpret_cast<Node*>(location);
+        int index = handle_loc->index_;
+        intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<internal::GlobalHandles::NodeBlock*>(16)->handles_) - 16;
+        intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+        NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+        v8::Isolate *isolate = reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate());
+        IsolateImpl *iso = ToIsolateImpl(isolate);
+        
+        return iso;
+    };
 }
 
 internal::Handle<internal::Object> internal::GlobalHandles::Create(Object* value)
@@ -555,6 +568,8 @@ internal::Handle<internal::Object> internal::GlobalHandles::Create(Object* value
     }
     return Handle<Object>(first_block_->New(value));
 }
+
+v8::internal::GetIsolateFromGlobalHandle IsolateImpl::getIsolateFromGlobalHandle;
 
 void internal::GlobalHandles::Destroy(internal::Object** location)
 {

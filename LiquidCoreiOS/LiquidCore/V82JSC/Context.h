@@ -60,12 +60,16 @@ struct GlobalContext : Context {
     v8::Persistent<v8::String> m_code_gen_error;
     v8::Persistent<v8::Value> m_security_token;
     bool m_code_eval_from_strings_disallowed;
+    JSObjectRef m_creation_context;
+    JSValueRef m_proxy_targets;
 
     static void Constructor(GlobalContext *obj) {}
     static int Destructor(HeapContext& context, GlobalContext *obj)
     {
         IsolateImpl *iso = obj->GetIsolate();
         
+        if (obj->m_creation_context) JSValueUnprotect(obj->GetNullContext(), obj->m_creation_context);
+        if (obj->m_proxy_targets) JSValueUnprotect(obj->GetNullContext(), obj->m_proxy_targets);
         if (obj->m_ctxRef) JSGlobalContextRelease((JSGlobalContextRef)obj->m_ctxRef);
         int freed=0;
         freed +=SmartReset<v8::Function>(context, obj->ObjectSetPrototypeOf);

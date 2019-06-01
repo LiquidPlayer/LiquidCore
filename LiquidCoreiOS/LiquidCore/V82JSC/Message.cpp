@@ -5,9 +5,9 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSContextRefPrivate.h"
 #include "Message.h"
 #include "Script.h"
+#include "JSCPrivate.h"
 
 using namespace V82JSC;
 using v8::Local;
@@ -20,9 +20,8 @@ using v8::TryCatch;
 using v8::ScriptOrigin;
 
 Message* Message::New(IsolateImpl* iso,
-                                      JSValueRef exception,
-                                      Local<v8::Script> script,
-                                      JSStringRef back_trace)
+                      JSValueRef exception,
+                      Local<v8::Script> script)
 {
     HandleScope scope(ToIsolate(iso));
     
@@ -30,7 +29,6 @@ Message* Message::New(IsolateImpl* iso,
     auto msgi = static_cast<Message*>(HeapAllocator::Alloc(iso, iso->m_message_map));
     msgi->m_value = exception;
     JSValueProtect(ToContextRef(context), msgi->m_value);
-    msgi->m_back_trace = back_trace;
     msgi->m_script.Reset(ToIsolate(iso), script);
     return msgi;
 }
@@ -140,7 +138,7 @@ Local<v8::Value> v8::Message::GetScriptResourceName() const
     auto thread = IsolateImpl::PerThreadData::Get(iso);
 
     Local<v8::StackTrace> trace = V82JSC::StackTrace::New(iso, CreateLocal<Value>(&iso->ii,impl),
-                                                  impl->m_script.Get(ToIsolate(iso)), impl->m_back_trace);
+                                                  impl->m_script.Get(ToIsolate(iso)));
     if (trace->GetFrameCount()) {
         Local<String> name = trace->GetFrame(0)->GetScriptName();
         if (!name.IsEmpty() && name->Equals(OperatingContext(isolate),
@@ -176,7 +174,7 @@ Local<v8::StackTrace> v8::Message::GetStackTrace() const
 
     if (iso->m_capture_stack_trace_for_uncaught_exceptions) {
         return scope.Escape(V82JSC::StackTrace::New(iso, CreateLocal<Value>(&iso->ii, message),
-                                   message->m_script.Get(ToIsolate(iso)), message->m_back_trace));
+                                   message->m_script.Get(ToIsolate(iso))));
     } else {
         return Local<StackTrace>();
     }
@@ -192,7 +190,7 @@ Maybe<int> v8::Message::GetLineNumber(Local<Context> context) const
     HandleScope scope(ToIsolate(iso));
     
     Local<StackTrace> trace = V82JSC::StackTrace::New(iso, CreateLocal<Value>(&iso->ii, impl),
-                                                  impl->m_script.Get(ToIsolate(iso)), impl->m_back_trace);
+                                                  impl->m_script.Get(ToIsolate(iso)));
     if (trace->GetFrameCount()) {
         return _maybe<int>(trace->GetFrame(0)->GetLineNumber()).toMaybe();
     }
@@ -241,7 +239,7 @@ Maybe<int> v8::Message::GetStartColumn(Local<v8::Context> context) const
     HandleScope scope(ToIsolate(iso));
     
     Local<StackTrace> trace = V82JSC::StackTrace::New(iso, CreateLocal<Value>(&iso->ii, impl),
-                                                  impl->m_script.Get(ToIsolate(iso)), impl->m_back_trace);
+                                                  impl->m_script.Get(ToIsolate(iso)));
     if (trace->GetFrameCount()) {
         return _maybe<int>(trace->GetFrame(0)->GetColumn()).toMaybe();
     }
@@ -259,7 +257,7 @@ Maybe<int> v8::Message::GetEndColumn(Local<v8::Context> context) const
     HandleScope scope(ToIsolate(iso));
     
     Local<StackTrace> trace = V82JSC::StackTrace::New(iso, CreateLocal<Value>(&iso->ii, impl),
-                                                  impl->m_script.Get(ToIsolate(iso)), impl->m_back_trace);
+                                                  impl->m_script.Get(ToIsolate(iso)));
     if (trace->GetFrameCount()) {
         return _maybe<int>(trace->GetFrame(0)->GetColumn()).toMaybe();
     }
@@ -285,7 +283,7 @@ void v8::Message::PrintCurrentStackTrace(Isolate* isolate, FILE* out)
     HandleScope scope(isolate);
     Local<v8::Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    JSStringRef trace = JSContextCreateBacktrace(ctx, 64);
+    JSStringRef trace = JSCPrivate::JSContextCreateBacktrace(ctx, 64);
     char buffer[JSStringGetMaximumUTF8CStringSize(trace)];
     JSStringGetUTF8CString(trace, buffer, JSStringGetMaximumUTF8CStringSize(trace));
     fprintf(out, "%s", buffer);
@@ -401,7 +399,7 @@ bool v8::StackFrame::IsWasm() const
 }
 
 v8::Local<v8::StackTrace> StackTrace::New(IsolateImpl* iso, Local<v8::Value> value,
-                                              Local<v8::Script> script, JSStringRef back_trace)
+                                          Local<v8::Script> script)
 {
     EscapableHandleScope scope(ToIsolate(iso));
     JSContextRef ctx = ToContextRef(ToIsolate(iso));
@@ -427,34 +425,6 @@ v8::Local<v8::StackTrace> StackTrace::New(IsolateImpl* iso, Local<v8::Value> val
     "        frame_array.push(array); "
     "    skipnext = array[0] == '[native code]';"
     "} "
-    "var frames = _2.split('\\n'); "
-    /*
-    "var back_frame_array = []; "
-    "for (var i=0; frames != '' && i<frames.length; i++) { "
-    "    var re = /#[0-9]* ([^\\(]*)\\(\\) at ([^:\\n]*):*([0-9]*)/g; "
-    "    var match = re.exec(frames[i]); "
-    "    if (match != null) { "
-    "        var array = [ match[1], match[2], match[3]=='' ? 1 : parseInt(match[3]), 0]; "
-    "        if (array[1] != '[native code]' && array[0] != 'Function') { "
-    "            back_frame_array.push(array); "
-    "        }"
-    "    } "
-    "} "
-    "if (frame_array.length == back_frame_array.length) {"
-    "   for (var i=0; i<frame_array.length; i++) { if (frame_array[i][2] == 1) frame_array[i][2] = back_frame_array[i][2]; }"
-    "}"
-     */
-    "for (var i=frame_array.length; i>0; --i) { "
-    "    if (i < frame_array.length && frame_array[i-1][0] != 'eval code' && frame_array[i-1][1] == '') "
-    "        frame_array[i-1][1] = frame_array[i][1]; "
-    "    if (frame_array[i-1][0] == 'eval code') {"
-    "        frame_array[i-1][4] = true; "
-    "        if (frame_array[i-1][1] == '') frame_array[i-1][1] = '[eval]'; "
-    "    } "
-    "    else if (i==frame_array.length) frame_array[i-1][4] = false;"
-    "    else if (frame_array[i-1][1] == frame_array[i][1]) frame_array[i-1][4] = frame_array[i][4]; "
-    "    else frame_array[i-1][4] = false; "
-    "} "
     "return frame_array;";
     
     auto stack_trace = static_cast<StackTrace*>(
@@ -475,17 +445,7 @@ v8::Local<v8::StackTrace> StackTrace::New(IsolateImpl* iso, Local<v8::Value> val
         JSStringRelease(s);
     }
     
-    JSValueRef back_stack_trace;
-    if (back_trace) {
-         back_stack_trace = JSValueMakeString(ctx, back_trace);
-    } else {
-        JSStringRef s = JSStringCreateWithUTF8CString("");
-        back_stack_trace = JSValueMakeString(ctx, s);
-        JSStringRelease(s);
-    }
-    
-    JSValueRef args[] = { stack, back_stack_trace };
-    stack_trace->m_stack_frame_array = (JSObjectRef) exec(ctx, parse_error_frames, 2, args);
+    stack_trace->m_stack_frame_array = (JSObjectRef) exec(ctx, parse_error_frames, 1, &stack);
     JSValueProtect(ctx, stack_trace->m_stack_frame_array);
 
     /*
@@ -592,6 +552,5 @@ Local<v8::StackTrace> v8::StackTrace::CurrentStackTrace(Isolate* isolate, int fr
     JSStringRef e = JSStringCreateWithUTF8CString("new Error()");
     JSValueRef error = JSEvaluateScript(ToContextRef(context), e, 0, 0, 0, 0);
     Local<Value> err = V82JSC::Value::New(ToContextImpl(context), error);
-    return scope.Escape(V82JSC::StackTrace::New(ToIsolateImpl(isolate), err, script,
-                               JSContextCreateBacktrace(ToContextRef(context), frame_limit)));
+    return scope.Escape(V82JSC::StackTrace::New(ToIsolateImpl(isolate), err, script));
 }

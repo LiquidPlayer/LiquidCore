@@ -5,8 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSWeakRefPrivate.h"
-#include "JSStringRefPrivate.h"
+#include "JSCPrivate.h"
 #include <codecvt>
 #include "utf8.h"
 #include "StringImpl.h"
@@ -473,7 +472,7 @@ MaybeLocal<v8::String> v8::String::NewExternalTwoByte(Isolate* isolate, String::
         return MaybeLocal<String>();
     }
     return scope.Escape(V82JSC::String::New(isolate,
-            JSStringCreateWithCharactersNoCopy(resource->data(), resource->length()),
+            JSStringCreateWithCharacters(resource->data(), resource->length()),
             ToIsolateImpl(isolate)->m_external_string_map, resource));
 }
 
@@ -564,7 +563,11 @@ bool v8::String::MakeExternal(ExternalOneByteStringResource* resource)
  */
 bool v8::String::CanMakeExternal()
 {
+#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
     return true;
+#else
+    return false;
+#endif
 }
 
 void V82JSC::WeakExternalString::Init(IsolateImpl* iso,
@@ -575,9 +578,9 @@ void V82JSC::WeakExternalString::Init(IsolateImpl* iso,
     HandleScope scope(ToIsolate(iso));
     auto ext = static_cast<WeakExternalString*>(HeapAllocator::Alloc(iso, map));
     ext->m_value = value;
-    ext->m_weakRef = JSWeakCreate(iso->m_group, (JSObjectRef)value);
+    ext->m_weakRef = JSCPrivate::JSWeakCreate(iso->m_group, (JSObjectRef)value);
     ext->m_resource = resource;
-    assert(JSWeakGetObject(ext->m_weakRef) == (JSObjectRef)value);
+    assert(JSCPrivate::JSWeakGetObject(ext->m_weakRef) == (JSObjectRef)value);
     Local<v8::WeakExternalString> wes = CreateLocal<v8::WeakExternalString>(&iso->ii, ext);
     iso->m_external_strings[ext->m_value].Reset(ToIsolate(iso), wes);
 }

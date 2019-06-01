@@ -5,7 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
+#include "JSCPrivate.h"
 
 using namespace V82JSC;
 using namespace v8;
@@ -15,7 +15,7 @@ Local<Object> Proxy::GetTarget()
     Local<Context> context = ToCurrentContext(this);
     JSValueRef obj = ToJSValueRef(this, context);
 
-    JSObjectRef target = JSObjectGetProxyTarget((JSObjectRef)obj);
+    JSObjectRef target = JSCPrivate::JSObjectGetProxyTarget(context, (JSObjectRef)obj);
     return V82JSC::Value::New(ToContextImpl(context), target).As<Object>();
 }
 

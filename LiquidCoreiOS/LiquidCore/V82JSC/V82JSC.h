@@ -10,8 +10,7 @@
 #include "Isolate.h"
 #include "Context.h"
 #include "Value.h"
-#include "JSContextRefPrivate.h"
-#include "JSObjectRefPrivate.h"
+#include "JSCPrivate.h"
 
 using v8::internal::IsolateImpl;
 

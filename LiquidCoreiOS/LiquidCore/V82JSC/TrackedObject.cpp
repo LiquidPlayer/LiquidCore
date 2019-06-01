@@ -5,7 +5,7 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
+#include "JSCPrivate.h"
 #include "ObjectTemplate.h"
 #include "Object.h"
 
@@ -34,16 +34,16 @@ void V82JSC::TrackedObject::setPrivateInstance(IsolateImpl* iso, JSContextRef ct
     def.finalize = [](JSObjectRef object) {
         void * persistent = JSObjectGetPrivate(object);
         assert(persistent);
-        JSGlobalContextRef ctx = JSObjectGetGlobalContext(object);
-        assert(ctx);
-        IsolateImpl *iso = IsolateFromCtx(ctx);
+        auto location = (v8::internal::Object **)persistent;
+        IsolateImpl *iso = IsolateImpl::getIsolateFromGlobalHandle(location);
         if (!iso) return;
 
         HandleScope scope(ToIsolate(iso));
         Local<TrackedObject> local = FromPersistentData<TrackedObject>(ToIsolate(iso), persistent);
         assert(!local.IsEmpty());
         TrackedObject *impl = ToImpl<TrackedObject>(local);
-        iso->weakJSObjectFinalized(ctx, (JSObjectRef) impl->m_security);
+        JSGlobalContextRef gctx = JSContextGetGlobalContext(ToContextRef(iso->m_nullContext.Get(ToIsolate(iso))));
+        iso->weakJSObjectFinalized(gctx, (JSObjectRef) impl->m_security);
         
         ReleasePersistentData<TrackedObject>(persistent);
     };
@@ -117,6 +117,10 @@ V82JSC::TrackedObject* V82JSC::TrackedObject::getPrivateInstance(JSContextRef ct
 
 Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v8::Context> toContext)
 {
+    Isolate* isolate = Isolate::GetCurrent();
+    EscapableHandleScope scope(isolate);
+
+#if USE_JAVASCRIPTCORE_PRIVATE_API
     /*
      V8::AccessControl::ALL_CAN_READ = 1;       (1)
      V8::AccessControl::ALL_CAN_WRITE = 1 << 1; (2)
@@ -146,9 +150,6 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
     "var o = (typeof _1 === 'function') ? function(){} : {};"
     "return new Proxy(o, handler);";
     
-    Isolate* isolate = Isolate::GetCurrent();
-    EscapableHandleScope scope(isolate);
-    
     Local<v8::Context> context = isolate->GetCurrentContext();
     JSContextRef ctx = ToContextRef(context);
     JSGlobalContextRef gctx = JSContextGetGlobalContext(ctx);
@@ -156,7 +157,7 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
     
     if (!JSValueIsObject(ctx, in_value)) return in;
     
-    JSGlobalContextRef orig_context = JSObjectGetGlobalContext((JSObjectRef)in_value);
+    JSGlobalContextRef orig_context = JSCPrivate::JSObjectGetGlobalContext((JSObjectRef)in_value);
     IsolateImpl* iso = ToIsolateImpl(isolate);
     if (orig_context == ToImpl<Context>(iso->m_nullContext.Get(isolate))->m_ctxRef) {
         return in;
@@ -197,13 +198,13 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
         int length = static_cast<int>(JSValueToNumber(ctx, exec(ctx, "return _1.length", 1, &check_proxies), 0));
         for (int i=0; i<length; i++) {
             JSObjectRef maybe_proxy = (JSObjectRef) JSObjectGetPropertyAtIndex(ctx, check_proxies, i, 0);
-            if (JSObjectGetGlobalContext(maybe_proxy) == gctx) {
+            if (JSCPrivate::JSObjectGetGlobalContext(maybe_proxy) == gctx) {
                 return scope.Escape(Value::New(ToContextImpl(context), maybe_proxy));
             }
         }
     }
     
-    bool install_proxy = JSObjectGetGlobalContext((JSObjectRef)in_value) != gctx;
+    bool install_proxy = orig_context != gctx;
     if (!install_proxy) {
         if (wrap && !wrap->m_object_template.IsEmpty()) {
             Local<v8::ObjectTemplate> ot = wrap->m_object_template.Get(isolate);
@@ -257,14 +258,13 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
             }
 
             JSObjectRef in_value = (JSObjectRef)arguments[1];
-            JSGlobalContextRef orig_context = JSObjectGetGlobalContext(in_value);
             Local<v8::Context> accessing_context = LocalContext::New(isolate, ctx);
             Local<Object> accessing_object = Value::New(ToContextImpl(accessing_context), in_value).As<Object>();
             bool allow = false;
             bool detached_behavior = false;
 
             if (argumentCount>4 && !JSValueIsNull(ctx,arguments[4])) {
-                JSObjectRef target = JSObjectGetProxyTarget((JSObjectRef)arguments[4]);
+                JSObjectRef target = JSCPrivate::JSObjectGetProxyTarget((JSObjectRef)arguments[4]);
                 /* FIXME! Not sure this will always work correctly
                 if (!JSValueIsStrictEqual(ctx, target, in_value)) {
                     return in_value;
@@ -463,6 +463,7 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
         Local<v8::Value> out = Value::New(ToContextImpl(context), out_value);
         return scope.Escape(out);
     }
+#endif
     
-    return in;
+    return scope.Escape(in);
 }

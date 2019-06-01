@@ -8,7 +8,7 @@
 #define Isolate_h
 
 #include "HeapObjects.h"
-#include "JSMarkingConstraintPrivate.h"
+#include "JSCPrivate.h"
 #include <thread>
 
 namespace V82JSC {
@@ -78,6 +78,8 @@ struct MessageListener {
     int message_levels_;
 };
     
+struct IsolateImpl;
+    
 // This is a hack to avoid having to edit the V8 header files.  We do garbage collection
 // differently and GlobalHandle struct is locked down as private.  This allows us to call
 // back into GlobalHandle with a custom function.
@@ -86,8 +88,9 @@ typedef std::function<void(v8::internal::Object**, std::vector<v8::internal::Sec
                            JSObjectRef)> WeakObjectNearDeath;
 typedef std::function<void(v8::Isolate*, v8::internal::SecondPassCallback&)> WeakHeapObjectFinalized;
 typedef std::function<void(JSGlobalContextRef, JSObjectRef)> WeakJSObjectFinalized;
-typedef std::function<void(JSMarkerRef, std::map<void*, JSObjectRef>&)> PerformIncrementalMarking;
-
+typedef std::function<void(JSCPrivate::JSMarkerRef, std::map<void*, JSObjectRef>&)> PerformIncrementalMarking;
+typedef std::function<IsolateImpl*(v8::internal::Object **location)> GetIsolateFromGlobalHandle;
+    
 struct IsolateImpl {
     v8::internal::Isolate ii;
     
@@ -97,6 +100,8 @@ struct IsolateImpl {
     JSValueRef m_empty_string;
     JSValueRef m_private_symbol;
     JSObjectRef m_proxy_revocables;
+    
+    JSObjectRef m_creation_contexts;
     
     // Maps
     H::Map<H::TrackedObject> *m_tracked_object_map;
@@ -293,6 +298,11 @@ struct IsolateImpl {
     v8::internal::WeakHeapObjectFinalized weakHeapObjectFinalized;
     v8::internal::WeakJSObjectFinalized weakJSObjectFinalized;
     v8::internal::PerformIncrementalMarking performIncrementalMarking;
+    
+    static v8::internal::GetIsolateFromGlobalHandle getIsolateFromGlobalHandle;
+    
+    std::thread *m_collection_thread;
+    std::atomic<bool> m_kill_collection_thread;
 };
 }} // namespaces
 

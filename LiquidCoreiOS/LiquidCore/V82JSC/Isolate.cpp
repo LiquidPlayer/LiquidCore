@@ -6,15 +6,13 @@
  */
 #include "Isolate.h"
 #include "V82JSC.h"
-#include "JSHeapFinalizerPrivate.h"
-#include "JSMarkingConstraintPrivate.h"
-#include "JSWeakRefPrivate.h"
 #include "StringImpl.h"
 #include "FunctionTemplate.h"
 #include "ObjectTemplate.h"
 #include "Object.h"
 #include "Script.h"
 #include "Message.h"
+#include "JSCPrivate.h"
 
 using namespace V82JSC;
 using v8::Isolate;
@@ -49,7 +47,7 @@ static void triggerGarbageCollection(IsolateImpl* iso)
     }
 }
 
-static void MarkingConstraintCallback(JSMarkerRef marker, void *userData)
+static void MarkingConstraintCallback(JSCPrivate::JSMarkerRef marker, void *userData)
 {
     IsolateImpl *impl = (IsolateImpl*)userData;
     impl->performIncrementalMarking(marker, impl->m_near_death);
@@ -123,10 +121,10 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     
     // Poll every second during script execution to see if there are any interrupts
     // pending
-    JSContextGroupSetExecutionTimeLimit(impl->m_group, 1, IsolateImpl::PollForInterrupts, impl);
+    JSCPrivate::JSContextGroupSetExecutionTimeLimit(impl->m_group, 1, IsolateImpl::PollForInterrupts, impl);
     
-    JSContextGroupAddMarkingConstraint(impl->m_group, MarkingConstraintCallback, impl);
-    JSContextGroupAddHeapFinalizer(impl->m_group, HeapFinalizerCallback, impl);
+    JSCPrivate::JSContextGroupAddMarkingConstraint(impl->m_group, MarkingConstraintCallback, impl);
+    JSCPrivate::JSContextGroupAddHeapFinalizer(impl->m_group, HeapFinalizerCallback, impl);
     
     Roots* roots = reinterpret_cast<Roots *>(impl->ii.heap()->roots_array_start());
     
@@ -195,8 +193,13 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     impl->m_private_symbol = exec(ToContextRef(nullContext), "return Symbol()", 0, 0);
     JSValueProtect(ToContextRef(nullContext), impl->m_private_symbol);
     
-    impl->m_proxy_revocables = (JSObjectRef) exec(ToContextRef(nullContext), "return new WeakMap()", 0, 0);
+    static const char *newWeakMap = "return new WeakMap()";
+    
+    impl->m_proxy_revocables = (JSObjectRef) exec(ToContextRef(nullContext), newWeakMap, 0, 0);
     JSValueProtect(ToContextRef(nullContext), impl->m_proxy_revocables);
+    
+    impl->m_creation_contexts = (JSObjectRef) exec(ToContextRef(nullContext), newWeakMap, 0, 0);
+    JSValueProtect(ToContextRef(nullContext), impl->m_creation_contexts);
 
     impl->ii.thread_local_top_.isolate_ = &impl->ii;
     impl->ii.thread_local_top_.scheduled_exception_ = reinterpret_cast<internal::Object*>(roots->the_hole_value);
@@ -227,7 +230,7 @@ bool IsolateImpl::PollForInterrupts(JSContextRef ctx, void* context)
 {
     IsolateImpl* iso = (IsolateImpl*)context;
     // Reset poll to one-second
-    JSContextGroupSetExecutionTimeLimit(iso->m_group, 1, IsolateImpl::PollForInterrupts, iso);
+    JSCPrivate::JSContextGroupSetExecutionTimeLimit(iso->m_group, 1, IsolateImpl::PollForInterrupts, iso);
     bool empty = false;
     bool terminate = iso->m_terminate_execution;
     
@@ -292,7 +295,7 @@ void IsolateImpl::CollectExternalStrings()
     
     for (auto i=m_external_strings.begin(); i!=m_external_strings.end(); ) {
         auto ext = ToImpl<V82JSC::WeakExternalString>(i->second.Get(ToIsolate(this)));
-        if (JSWeakGetObject(ext->m_weakRef) == 0) {
+        if (JSCPrivate::JSWeakGetObject(ext->m_weakRef) == 0) {
             m_external_strings.erase(i++);
         } else {
             ++i;
@@ -492,8 +495,6 @@ void IsolateImpl::ExitContext(Local<v8::Context> ctx)
  * thread to be disposable.
  */
 
-JS_EXPORT void JSContextGroupRemoveMarkingConstraint(JSContextGroupRef, JSMarkingConstraint, void *userData);
-
 IsolateImpl::PerIsolateThreadData::~PerIsolateThreadData() {
     while (m_handlers) {
         auto tcc = reinterpret_cast<TryCatchCopy*>(m_handlers);
@@ -514,10 +515,10 @@ void Isolate::Dispose()
         return;
     }
 
-    JSContextGroupClearExecutionTimeLimit(isolate->m_group);
+    JSCPrivate::JSContextGroupClearExecutionTimeLimit(isolate->m_group);
 
     // Hmm.  There is no JSContextGroupRemoveMarkingConstraint() equivalent
-    JSContextGroupRemoveHeapFinalizer(isolate->m_group, HeapFinalizerCallback, isolate);
+    JSCPrivate::JSContextGroupRemoveHeapFinalizer(isolate->m_group, HeapFinalizerCallback, isolate);
     {
         HandleScope scope(ToIsolate(isolate));
         auto deleted = std::map<String::ExternalStringResourceBase*, bool>();
@@ -974,7 +975,7 @@ void Isolate::TerminateExecution()
 {
     IsolateImpl *iso = reinterpret_cast<IsolateImpl*>(this);
     iso->m_terminate_execution = true;
-    JSContextGroupSetExecutionTimeLimit(iso->m_group, 0, IsolateImpl::PollForInterrupts, iso);
+    JSCPrivate::JSContextGroupSetExecutionTimeLimit(iso->m_group, 0, IsolateImpl::PollForInterrupts, iso);
 }
 
 /**
@@ -1031,14 +1032,6 @@ void Isolate::RequestInterrupt(InterruptCallback callback, void* data)
     */
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-    void JSSynchronousGarbageCollectForDebugging(JSContextRef);
-#ifdef __cplusplus
-}
-#endif
-
 /**
  * Request garbage collection in this Isolate. It is only valid to call this
  * function if --expose_gc was specified.
@@ -1059,7 +1052,7 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
     
     // Next, trigger garbage collection in JSC
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
+        JSCPrivate::JSSynchronousGarbageCollectForDebugging(i->first);
     }
     
     iso->TriggerGCPrologue();
@@ -1067,8 +1060,8 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
     
     // Next, trigger garbage collection in JSC (do it twice -- sometimes the first doesn't finish the job)
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
-        JSSynchronousGarbageCollectForDebugging(i->first);
+        JSCPrivate::JSSynchronousGarbageCollectForDebugging(i->first);
+        JSCPrivate::JSSynchronousGarbageCollectForDebugging(i->first);
     }
     
     iso->TriggerGCFirstPassPhantomCallbacks();
@@ -1076,7 +1069,7 @@ void Isolate::RequestGarbageCollectionForTesting(GarbageCollectionType type)
     H::HeapAllocator::CollectGarbage(iso);
 
     for (auto i=iso->m_global_contexts.begin(); i != iso->m_global_contexts.end(); ++i) {
-        JSSynchronousGarbageCollectForDebugging(i->first);
+        JSCPrivate::JSSynchronousGarbageCollectForDebugging(i->first);
     }
 
     // Second pass, clear V82JSC garbage again in case any weak references were cleared

@@ -13,19 +13,17 @@ namespace V82JSC {
 
 struct Message : Value {
     v8::Persistent<v8::Script> m_script;
-    JSStringRef m_back_trace;
     
     static void Constructor(Message *obj) {}
     static int Destructor(HeapContext& context, Message *obj)
     {
-        if (obj->m_back_trace) JSStringRelease(obj->m_back_trace);
         int freed=0;
         freed += SmartReset<v8::Script>(context, obj->m_script);
         return freed + Value::Destructor(context, obj);
     }
     
     static Message* New(IsolateImpl* iso, JSValueRef exception,
-                        v8::Local<v8::Script> script, JSStringRef back_trace);
+                        v8::Local<v8::Script> script);
     void CallHandlers();
 };
     
@@ -46,8 +44,7 @@ struct StackTrace : HeapObject {
     
     static v8::Local<v8::StackTrace> New(IsolateImpl* iso,
                                          v8::Local<v8::Value> error,
-                                         v8::Local<v8::Script> script,
-                                         JSStringRef back_trace);
+                                         v8::Local<v8::Script> script);
 };
 
 struct StackFrame : HeapObject {

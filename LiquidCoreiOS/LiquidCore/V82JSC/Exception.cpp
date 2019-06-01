@@ -78,7 +78,7 @@ Local<v8::Message> Exception::CreateMessage(Isolate* isolate, Local<Value> excep
         script = thread->m_running_scripts.top();
     }
 
-    auto msgi = V82JSC::Message::New(iso, ToJSValueRef(exception, context), script, 0);
+    auto msgi = V82JSC::Message::New(iso, ToJSValueRef(exception, context), script);
     Local<v8::Message> msg = CreateLocal<v8::Message>(&iso->ii, msgi);
 
     return msg;

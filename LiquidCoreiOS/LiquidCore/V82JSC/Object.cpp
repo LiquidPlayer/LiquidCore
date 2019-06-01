@@ -5,7 +5,6 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
 #include "ObjectTemplate.h"
 #include "FunctionTemplate.h"
 #include "Object.h"
@@ -1607,9 +1606,20 @@ Local<v8::Context> Object::CreationContext()
     auto iso = ToIsolateImpl(obj);
     auto wrap = V82JSC::TrackedObject::getPrivateInstance(ToContextRef(iso->m_nullContext.Get(isolate)),
                                                  (JSObjectRef)obj->m_value);
-    JSGlobalContextRef ctx = JSObjectGetGlobalContext((JSObjectRef)(wrap ? wrap->m_security : obj->m_value));
+#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
+    JSGlobalContextRef ctx = JSCPrivate::JSObjectGetGlobalContext((JSObjectRef)(wrap ? wrap->m_security : obj->m_value));
     CHECK_EQ(1, iso->m_global_contexts.count(ctx));
     return scope.Escape(iso->m_global_contexts[ctx].Get(ToIsolate(iso)));
+#else
+    auto context = isolate->GetCurrentContext();
+    if (context.IsEmpty()) {
+        context = iso->m_nullContext.Get(isolate);
+    }
+    auto gCtx = FindGlobalContext(context);
+    JSGlobalContextRef ctx = (JSGlobalContextRef) ToContextRef(gCtx);
+    CHECK_EQ(1, iso->m_global_contexts.count(ctx));
+    return scope.Escape(iso->m_global_contexts[ctx].Get(ToIsolate(iso)));
+#endif
 }
 
 /**

@@ -5,8 +5,8 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
 #include "Object.h"
+#include "JSCPrivate.h"
 
 using namespace V82JSC;
 using v8::MaybeLocal;
@@ -34,7 +34,7 @@ MaybeLocal<Object> Function::NewInstance(Local<Context> context, int argc, Local
     EscapableHandleScope scope(ToIsolate(iso));
 
     JSObjectRef func = (JSObjectRef) ToJSValueRef<Function>(this, context);
-    JSGlobalContextRef ctx = JSObjectGetGlobalContext((JSObjectRef)ToJSValueRef(this, context));
+    JSGlobalContextRef ctx = JSContextGetGlobalContext(ToContextRef(context));
     Local<Context> cc = iso->m_global_contexts[ctx].Get(ToIsolate(iso));
     JSValueRef args[argc];
     for (int i=0; i<argc; i++) {

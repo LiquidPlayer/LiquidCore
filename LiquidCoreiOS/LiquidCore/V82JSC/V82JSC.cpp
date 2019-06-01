@@ -8,6 +8,7 @@
 #include "Message.h"
 #include "ObjectTemplate.h"
 #include "Object.h"
+#include "JSCPrivate.h"
 
 using namespace v8;
 
@@ -24,7 +25,7 @@ JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj)
         return JSObjectGetPrototype(ToContextRef(context), obj);
     }
     JSContextRef ctx = ToContextRef(context);
-    global_context = ToIsolateImpl(isolate)->m_global_contexts[JSObjectGetGlobalContext(obj)].Get(isolate);
+    global_context = ToIsolateImpl(isolate)->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(isolate);
     v8::Local<v8::Function> getPrototype = ToGlobalContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
     if (getPrototype.IsEmpty()) {
         // No worries, it just means this hasn't been set up yet; use the native API
@@ -84,8 +85,7 @@ V82JSC::LocalException::~LocalException()
     v8::Local<v8::Context> context = OperatingContext(ToIsolate(isolate_));
     JSContextRef ctx = ToContextRef(context);
     if (exception_) {
-        auto msgi = Message::New(isolate_, (JSValueRef)exception_, script,
-                                         JSContextCreateBacktrace(ctx, 32));
+        auto msgi = Message::New(isolate_, (JSValueRef)exception_, script);
         if (thread->m_handlers) {
             TryCatchCopy *tcc = reinterpret_cast<TryCatchCopy*>(thread->m_handlers);
             tcc->exception_ = (void*)exception_;
@@ -100,8 +100,7 @@ V82JSC::LocalException::~LocalException()
             msgi->CallHandlers();
         }
     } else if (thread->m_verbose_exception && !thread->m_handlers) {
-        auto msgi = Message::New(isolate_, (JSValueRef)exception_, script,
-                                         JSContextCreateBacktrace(ctx, 32));
+        auto msgi = Message::New(isolate_, (JSValueRef)exception_, script);
         msgi->CallHandlers();
         thread->m_verbose_exception = 0;
     }

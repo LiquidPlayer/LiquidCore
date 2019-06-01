@@ -5,9 +5,9 @@
  * https://github.com/LiquidPlayer/LiquidCore for terms and conditions.
  */
 #include "V82JSC.h"
-#include "JSObjectRefPrivate.h"
 #include "ObjectTemplate.h"
 #include "Object.h"
+#include "JSCPrivate.h"
 #include <string.h>
 
 using namespace V82JSC;
@@ -261,7 +261,11 @@ JSValueRef PropertyHandler(CALLBACK_PARAMS,
     auto ctximpl = ToContextImpl(context);
     Local<v8::Value> holder = V82JSC::Value::New(ctximpl, wrap->m_proxy_security);
 
-    JSGlobalContextRef creation_context = JSObjectGetGlobalContext(target);
+#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
+    JSGlobalContextRef creation_context = JSCPrivate::JSObjectGetGlobalContext(target);
+#else
+    JSGlobalContextRef creation_context = JSContextGetGlobalContext(ctx);
+#endif
     
     bool ok = wrap->m_isGlobalObject && creation_context == JSContextGetGlobalContext(ctx);
     if (!ok && templ->m_access_check) {

@@ -8,6 +8,7 @@
 #define V82JSC_StringImpl_h
 
 #include "Value.h"
+#include "JSCPrivate.h"
 
 namespace V82JSC {
 
@@ -31,7 +32,7 @@ struct String : Value {
 };
 
 struct WeakExternalString : WeakValue {
-    JSWeakRef m_weakRef;
+    JSCPrivate::JSWeakRef m_weakRef;
     v8::String::ExternalStringResourceBase *m_resource;
     
     static void Constructor(WeakExternalString *obj)
@@ -40,7 +41,7 @@ struct WeakExternalString : WeakValue {
     }
     static int Destructor(HeapContext& context, WeakExternalString *obj)
     {
-        if (obj->m_weakRef) JSWeakRelease(obj->GetContextGroup(), obj->m_weakRef);
+        if (obj->m_weakRef) JSCPrivate::JSWeakRelease(obj->GetContextGroup(), obj->m_weakRef);
         obj->FinalizeExternalString();
         return WeakValue::Destructor(context, obj);
     }
