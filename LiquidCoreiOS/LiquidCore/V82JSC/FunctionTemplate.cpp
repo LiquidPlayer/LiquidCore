@@ -139,10 +139,10 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
             impl->m_functions_map,
             gCtx->m_creation_context
         };
-        function = (JSObjectRef) exec(ctx, "_1.get(_2)", 2, args_get);
+        function = (JSObjectRef) exec(ctx, "return _1.get(_2)", 2, args_get);
     }
 
-    if (function) {
+    if (function && JSValueIsObject(gCtx->m_ctxRef, function)) {
         return scope.Escape(Value::New(ctximpl, function).As<Function>());
     }
 

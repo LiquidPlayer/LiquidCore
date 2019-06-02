@@ -36,15 +36,6 @@
 #include "V82JSC.h"
 #endif
 
-#include "JSContextRefPrivate.h"
-#include "JSObjectRefPrivate.h"
-#include "JSScriptRefPrivate.h"
-#include "JSWeakRefPrivate.h"
-#include "JSHeapFinalizerPrivate.h"
-#include "JSMarkingConstraintPrivate.h"
-#include "JSStringRefPrivate.h"
-extern "C" void JSSynchronousGarbageCollectForDebugging(JSContextRef ctx);
-
 using v8::internal::IsolateImpl;
 
 #if defined(USE_JAVASCRIPTCORE_INTERNALS)
@@ -237,6 +228,15 @@ void JSCPrivate::PrintCurrentThread()
 
 #ifdef USE_JAVASCRIPTCORE_PRIVATE_API
 
+#include "JSContextRefPrivate.h"
+#include "JSObjectRefPrivate.h"
+#include "JSScriptRefPrivate.h"
+#include "JSWeakRefPrivate.h"
+#include "JSHeapFinalizerPrivate.h"
+#include "JSMarkingConstraintPrivate.h"
+#include "JSStringRefPrivate.h"
+extern "C" void JSSynchronousGarbageCollectForDebugging(JSContextRef ctx);
+
 void JSCPrivate::JSScriptRelease(JSScriptRef script)
 {
     return ::JSScriptRelease((::JSScriptRef)script);
@@ -350,7 +350,7 @@ JSCPrivate::JSScriptRef JSCPrivate::JSScriptCreateFromString(JSContextGroupRef c
 
 JSStringRef JSCPrivate::JSContextCreateBacktrace(JSContextRef ctx, unsigned maxStackSize)
 {
-    auto trace = V82JSC::exec(ctx, "(new Error()).stack", 0, 0);
+    auto trace = V82JSC::exec(ctx, "return (new Error()).stack", 0, 0);
     return JSValueToStringCopy(ctx, trace, nullptr);
 }
 
@@ -426,6 +426,12 @@ void JSCPrivate::JSContextGroupRemoveHeapFinalizer(JSContextGroupRef group, JSHe
 void JSCPrivate::JSSynchronousGarbageCollectForDebugging(JSContextRef ctx)
 {
     // Ignore
+}
+
+JSGlobalContextRef JSCPrivate::JSObjectGetGlobalContext(JSObjectRef object)
+{
+    // Should not reach
+    CHECK(false);
 }
 
 #endif

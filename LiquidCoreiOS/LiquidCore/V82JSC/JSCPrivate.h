@@ -50,10 +50,8 @@ namespace JSCPrivate {
     JSObjectRef JSWeakGetObject(JSWeakRef);
     void JSContextGroupSetExecutionTimeLimit(JSContextGroupRef group, double limit, JSShouldTerminateCallback callback, void* context);
     void JSContextGroupClearExecutionTimeLimit(JSContextGroupRef group);
-#ifdef USE_JAVASCRIPTCORE_PRIVATE_API
     JSGlobalContextRef JSObjectGetGlobalContext(JSObjectRef object);
-#endif
-    JSObjectRef JSObjectGetProxyTarget(v8::Local<v8::Context>,JSObjectRef);    
+    JSObjectRef JSObjectGetProxyTarget(v8::Local<v8::Context>,JSObjectRef);
     void JSContextGroupAddMarkingConstraint(JSContextGroupRef, JSMarkingConstraint, void *userData);
     void JSContextGroupAddHeapFinalizer(JSContextGroupRef, JSHeapFinalizer, v8::internal::IsolateImpl *userData);
     void JSContextGroupRemoveHeapFinalizer(JSContextGroupRef, JSHeapFinalizer, v8::internal::IsolateImpl *userData);

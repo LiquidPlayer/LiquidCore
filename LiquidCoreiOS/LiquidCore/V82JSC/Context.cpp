@@ -15,8 +15,6 @@ extern "C" unsigned char promise_polyfill_js[];
 extern "C" unsigned char typedarray_js[];
 extern "C" unsigned char error_polyfill_js[];
 
-#define CREATION_CONTEXT_PROP_NAME "__V82JSC__CreationContext"
-
 using namespace V82JSC;
 using v8::Local;
 using v8::Object;
@@ -310,11 +308,12 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
     if (i->m_creation_contexts) {
         JSClassDefinition def = kJSClassDefinitionEmpty;
         JSClassRef claz = JSClassCreate(&def);
-        JSObjectRef creation_context = JSObjectMake(context->m_ctxRef, claz, (void*)context->m_ctxRef);
+        context->m_creation_context = JSObjectMake(context->m_ctxRef, claz, (void*)context->m_ctxRef);
+        JSValueProtect(context->m_ctxRef, context->m_creation_context);
         JSValueRef args[] = {
             i->m_creation_contexts,
             global_o,
-            creation_context
+            context->m_creation_context
         };
         exec(context->m_ctxRef, "_1.set(_2, _3)", 3, args);
         JSClassRelease(claz);

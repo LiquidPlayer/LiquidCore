@@ -258,13 +258,14 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
             }
 
             JSObjectRef in_value = (JSObjectRef)arguments[1];
+            JSGlobalContextRef orig_context = JSCPrivate::JSObjectGetGlobalContext(in_value);
             Local<v8::Context> accessing_context = LocalContext::New(isolate, ctx);
             Local<Object> accessing_object = Value::New(ToContextImpl(accessing_context), in_value).As<Object>();
             bool allow = false;
             bool detached_behavior = false;
 
             if (argumentCount>4 && !JSValueIsNull(ctx,arguments[4])) {
-                JSObjectRef target = JSCPrivate::JSObjectGetProxyTarget((JSObjectRef)arguments[4]);
+                JSObjectRef target = JSCPrivate::JSObjectGetProxyTarget(accessing_context,(JSObjectRef)arguments[4]);
                 /* FIXME! Not sure this will always work correctly
                 if (!JSValueIsStrictEqual(ctx, target, in_value)) {
                     return in_value;
