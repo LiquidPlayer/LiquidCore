@@ -406,7 +406,7 @@ void JSCPrivate::JSContextGroupAddHeapFinalizer(JSContextGroupRef group, JSHeapF
 {
     // This is a stupid hack.  We will just trigger the finalizer every 5 seconds.
     userData->m_kill_collection_thread = false;
-    auto collectionThread = new std::thread([finalizer,userData](){
+    userData->m_collection_thread = new std::thread([finalizer,userData](){
         while (!userData->m_kill_collection_thread) {
             sleep(5);
             if (!userData->m_kill_collection_thread) {
