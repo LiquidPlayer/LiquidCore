@@ -11,7 +11,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 
   s.author = {"Eric Lange" => "eric@flicket.tv"}
 
-  s.platform = :ios, '10.0'
+  s.platform = :ios, '11.0'
 
   s.source = {:git => "https://github.com/LiquidPlayer/LiquidCore.git", :tag => "#{s.version}"}
 
@@ -315,7 +315,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
           '-D_REENTRANT=1',
           '-DHAVE_DTRACE=1',
           '-D_FILE_OFFSET_BITS=64',
-          '-D_DARWIN_USE_64BIT_INODE=1',
+          '-D_DARWIN_USE_64BIT_INODE=1'
       ].join(' '),
 
       # Disable warnings

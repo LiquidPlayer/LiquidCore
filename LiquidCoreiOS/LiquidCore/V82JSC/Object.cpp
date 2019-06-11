@@ -1015,7 +1015,7 @@ Maybe<bool> Object::SetPrototype(Local<Context> context,
     Local<Value> thiz = CreateLocal<Value>(isolate, ToImpl<V82JSC::Value>(this));
     JSValueRef obj = ToJSValueRef(thiz, context);
     JSContextRef ctx = ToContextRef(context);
-    JSValueRef new_proto = ToJSValueRef(prototype, isolate);
+    JSValueRef new_proto = ToJSValueRef(prototype, context);
 
     bool new_proto_is_hidden = false;
     if (JSValueIsObject(ctx, new_proto)) {

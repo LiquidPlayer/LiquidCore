@@ -150,15 +150,7 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
     JSStringRef empty_body = JSStringCreateWithUTF8CString("");
 
     JSValueRef excp = nullptr;
-    JSObjectRef generic_function = JSObjectMakeFunction(ToContextRef(context),
-                                    generic_function_name, 0, 0, empty_body, 0, 0, &excp);
-    assert(excp == nullptr);
-    JSStringRelease(generic_function_name);
-    JSStringRelease(empty_body);
-    JSValueRef generic_function_prototype = exec(ToContextRef(context),
-                                                         "return Object.getPrototypeOf(_1)", 1,
-                                                         &generic_function);
-
+    
     void * data = PersistentData<v8::Template>(isolate, thiz);
     
     JSClassDefinition function_def = kJSClassDefinitionEmpty;
@@ -170,7 +162,6 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
     };
     JSClassRef function_class = JSClassCreate(&function_def);
     JSObjectRef function_proxy = JSObjectMake(ctx, function_class, data);
-    SetRealPrototype(context, function_proxy, generic_function_prototype);
     JSClassRelease(function_class);
 
     void * data2 = PersistentData<v8::Template>(isolate, thiz);
@@ -184,28 +175,34 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
     };
     JSClassRef constructor_class = JSClassCreate(&constructor_def);
     JSObjectRef constructor_proxy = JSObjectMake(ctx, constructor_class, data2);
-    SetRealPrototype(context, constructor_proxy, generic_function_prototype);
     JSClassRelease(constructor_class);
     
     static const char *proxy_function_template =
+    "Object.setPrototypeOf(_1, Function.prototype); "
+    "Object.setPrototypeOf(_2, Function.prototype); "
+    "return (()=>{"
     "function name () { "
     "    if (new.target) { "
-    "        return name_ctor.call(this, new.target == name, new.target, ...arguments); "
+    "        return _2.call(this, new.target == name, new.target, ...arguments); "
     "    } else { "
-    "        return name_func.call(this, ...arguments); "
+    "        return _1.call(this, ...arguments); "
     "    } "
-    "}; "
-    "if (name_length) { "
-    "    Object.defineProperty(name, 'length', {value: name_length}); "
     "} "
-    "return name; ";
+    "if (_3) { "
+    "    Object.defineProperty(name, 'length', {value: _3}); "
+    "} "
+    "return name "
+    "})()";
 
     static const char *proxy_noconstructor_template =
-    "var name = () => name_func.call(this, ...arguments);"
-    "if (name_length) { "
-    "    Object.defineProperty(name, 'length', {value: name_length}); "
+    "Object.setPrototypeOf(_1, Function.prototype); "
+    "return (()=>{"
+    "var name = () => _1.call(this, ...arguments);"
+    "if (_3) { "
+    "    Object.defineProperty(name, 'length', {value: _3}); "
     "} "
-    "return name; ";
+    "return name; "
+    "})()";
 
     auto ReplaceStringInPlace = [](std::string& subject, const std::string& search,
                               const std::string& replace) {
@@ -226,34 +223,13 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
     v8::String::Utf8Value str(name_);
     const char *sname = !name_.IsEmpty() ? *str : "Function";
     ReplaceStringInPlace(proxy_function_body, "name", sname);
-    
-    JSStringRef name = JSStringCreateWithUTF8CString("proxy_function");
-    JSStringRef body = JSStringCreateWithUTF8CString(proxy_function_body.c_str());
-    JSStringRef paramNames[] = {
-        JSStringCreateWithUTF8CString(std::string(std::string(sname) + "_func").c_str()),
-        JSStringCreateWithUTF8CString(std::string(std::string(sname) + "_ctor").c_str()),
-        JSStringCreateWithUTF8CString(std::string(std::string(sname) + "_length").c_str()),
-    };
-    JSValueRef exp = nullptr;
-    JSObjectRef get_proxy = JSObjectMakeFunction(ToContextRef(context),
-                                                 name,
-                                                 sizeof paramNames / sizeof (JSStringRef),
-                                                 paramNames,
-                                                 body, 0, 0, &exp);
-    assert(exp==nullptr);
-    JSStringRelease(name);
-    JSStringRelease(body);
-    for (int i=0; i < sizeof paramNames / sizeof (JSStringRef); i++) {
-        JSStringRelease(paramNames[i]);
-    }
+
     JSValueRef params[] = {
         function_proxy,
         constructor_proxy,
         JSValueMakeNumber(ctx, impl->m_length)
     };
-    function = (JSObjectRef) JSObjectCallAsFunction(ToContextRef(context),
-                                                    get_proxy, 0, sizeof params / sizeof (JSValueRef), params, &exp);
-    assert(exp==nullptr);
+    function = (JSObjectRef) exec(ToContextRef(context), proxy_function_body.c_str(), 3, params);
     
     TrackedObject::makePrivateInstance(iso, ctx, function);
     

@@ -85,6 +85,8 @@ MaybeLocal<v8::Value> Function::Call(Local<Context> context,
     }
     LocalException exception(iso);
     
+    JSValueRef arr = JSObjectMakeArray(ToContextRef(context), argc, args, 0);
+    
     JSValueRef result = 0;
     if (iso->m_disallow_js) {
         if (iso->m_on_failure == Isolate::DisallowJavascriptExecutionScope::OnFailure::CRASH_ON_FAILURE) {
@@ -99,7 +101,8 @@ MaybeLocal<v8::Value> Function::Call(Local<Context> context,
         }
         
         JSValueRef excp = 0;
-        result = JSObjectCallAsFunction(ToContextRef(context), func, (JSObjectRef)thiz, argc, args, &excp);
+        JSValueRef inp[] = { func, thiz, arr };
+        result = exec(ToContextRef(context), "return _1.apply(_2,_3)", 3, inp, &excp);
         if (!result && !excp) {
             exec(ToContextRef(context), "throw new TypeError('object is not a function');", 1, &func, &exception);
         } else if (excp) {

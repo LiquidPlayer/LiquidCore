@@ -29,7 +29,7 @@ JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj)
     v8::Local<v8::Function> getPrototype = ToGlobalContextImpl(global_context)->ObjectGetPrototypeOf.Get(isolate);
     if (getPrototype.IsEmpty()) {
         // No worries, it just means this hasn't been set up yet; use the native API
-        return JSObjectGetPrototype(ToContextRef(context), obj);
+        return exec(ToContextRef(context), "return Object.getPrototypeOf(_1)", 1, &obj);
     }
     JSValueRef exception=0;
     JSValueRef our_proto = JSObjectCallAsFunction(ctx, (JSObjectRef)ToJSValueRef(getPrototype, global_context),
@@ -57,7 +57,8 @@ void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRe
     
     if (global_context.IsEmpty()) {
         // No worries, it just means this hasn't been set up yet; use the native API
-        JSObjectSetPrototype(ToContextRef(context), obj, proto);
+        JSValueRef args[] = {obj, proto};
+        exec(ToContextRef(context), "Object.setPrototypeOf(_1,_2)", 2, args);
         return;
     }
     v8::Local<v8::Function> setPrototype = ToGlobalContextImpl(global_context)->ObjectSetPrototypeOf.Get(isolate);
