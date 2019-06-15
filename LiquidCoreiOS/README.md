@@ -4,7 +4,7 @@ LiquidCore enables Node.js virtual machines to run inside Android and iOS apps. 
 
 Version
 -------
-[0.6.1](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.1)
+[0.6.2](https://github.com/LiquidPlayer/LiquidCore/releases/tag/0.6.2)
 
 LiquidCore is distributed using [CocoaPods](https://cocoapods.org/).  In your project's `Podfile`, add:
 
@@ -14,7 +14,7 @@ pod 'LiquidCore'
 
 API Documentation
 -----------------
-[Version 0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/index.html)
+[Version 0.6.2](https://liquidplayer.github.io/LiquidCoreiOS/0.6.2/index.html)
 
 # Table of Contents
 
@@ -40,7 +40,7 @@ Native add-ons enable extending the basic runtime environment with additional na
 
 # Node `LCProcess`
 
-[Jazzy API Doc v0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/Classes/LCProcess.html)
+[Jazzy API Doc v0.6.2](https://liquidplayer.github.io/LiquidCoreiOS/0.6.2/Classes/LCProcess.html)
 
 LiquidCore allows creation of raw Node.js instances.  Each instance runs in its own thread and is isolated from all other instances.  Instances can share a [virtual file system](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System), by using a common unique identifier.
 
@@ -49,7 +49,7 @@ It is not recommended to use the `LCProcess` API directly for most use cases. Th
 
 # The `LCMicroService`
 
-[Jazzy API Doc v0.6.1](https://liquidplayer.github.io/LiquidCoreiOS/0.6.1/Classes/LCMicroService.html)
+[Jazzy API Doc v0.6.2](https://liquidplayer.github.io/LiquidCoreiOS/0.6.2/Classes/LCMicroService.html)
 
 A *micro app* is built on a *micro service*.  A micro service is nothing more than an independent Node.js instance whose startup code is referenced by a URI.  For example:
 
