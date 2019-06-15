@@ -82,7 +82,7 @@ static void read_speeds(unsigned int numcpus, uv_cpu_info_t* ci);
 static unsigned long read_cpufreq(unsigned int cpunum);
 
 #if defined(__ANDROID__) && __ANDROID_API__<21
-static int epoll_create1(int event) { errno = ENOSYS, -1; }
+static int epoll_create1(int event) { return errno = ENOSYS, -1; }
 #define EPOLL_CLOEXEC 0
 static int epoll_pwait(int fd, struct epoll_event* events, int max_events, int timeout, const sigset_t* ss) {
   return errno = ENOSYS, -1;

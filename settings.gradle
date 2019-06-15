@@ -1,1 +1,1 @@
-include ':LiquidCoreAndroid'
+include ':LiquidCoreAndroid', ':liquidjs'
