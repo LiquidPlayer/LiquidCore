@@ -50,7 +50,7 @@ public:
     inline bool IsObject() { return m_isObject; }
     inline bool IsBoolean() { return m_isBoolean; }
     inline bool IsNumber() { return m_isNumber; }
-    inline bool IsTrue() { return m_booleanValue; }
+    inline bool IsTrue() { return !IsFalse(); }
     inline bool IsFalse() { return !m_booleanValue; }
     inline double NumberValue() { return m_numberValue; }
 
@@ -69,7 +69,7 @@ public:
     static boost::shared_ptr<JSValue> New(boost::shared_ptr<JSContext> context, Local<v8::Value> val);
 
 protected:
-    Persistent<v8::Value> m_value;
+    Global<v8::Value> m_value;
     boost::atomic_shared_ptr<JSContext> m_context;
     bool m_isUndefined;
     bool m_isNull;

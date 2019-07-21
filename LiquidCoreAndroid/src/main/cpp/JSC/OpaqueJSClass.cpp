@@ -723,7 +723,6 @@ void OpaqueJSClass::CallAsFunction(const FunctionCallbackInfo< Value > &info)
 
 void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& info)
 {
-    auto clazz = reinterpret_cast<OpaqueJSClass*>(info.GetInternalField(INSTANCE_OBJECT_CLASS));
     auto objRef = reinterpret_cast<JSObjectRef>(info.GetInternalField(INSTANCE_OBJECT_JSOBJECT));
     /* Note: A weak callback will only retain the first two internal fields
      * But the first one is reserved.  So we will have nulled out the second one in the
@@ -733,7 +732,7 @@ void OpaqueJSClass::Finalize(const WeakCallbackInfo<UniquePersistent<Object>>& i
      */
     if ((info.GetInternalField(1) != nullptr) && objRef && !objRef->HasFinalized()) {
         objRef->SetFinalized();
-        const JSClassDefinition *definition = clazz ? clazz->m_definition : nullptr;
+        auto definition = objRef->Definition();
         while (definition) {
             if (definition->finalize) {
                 definition->finalize(objRef);

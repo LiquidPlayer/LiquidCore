@@ -35,7 +35,7 @@ class ObjectData {
         JSClassRef              m_class;
         UniquePersistent<Value> m_weak;
         char *                  m_name;
-        Persistent<Object, CopyablePersistentTraits<Object>> m_func;
+        UniquePersistent<Object>m_func;
 };
 
 #endif //LIQUIDCORE_OBJECTDATA_H

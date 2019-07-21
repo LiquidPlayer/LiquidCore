@@ -14,11 +14,8 @@ Local<Value> ObjectData::New(const JSClassDefinition *def, JSContextRef ctx, JSC
     Isolate *isolate = Isolate::GetCurrent();
     EscapableHandleScope scope(isolate);
 
-    ObjectData *od = new ObjectData(def, ctx, cls);
-    char ptr[32];
-    sprintf(ptr, "%p", od);
-    Local<String> data =
-        String::NewFromUtf8(isolate, ptr, NewStringType::kNormal).ToLocalChecked();
+    auto od = new ObjectData(def, ctx, cls);
+    Local<External> data = External::New(isolate, od);
 
     UniquePersistent<Value> m_weak = UniquePersistent<Value>(isolate, data);
     m_weak.SetWeak<ObjectData>(
@@ -33,9 +30,7 @@ Local<Value> ObjectData::New(const JSClassDefinition *def, JSContextRef ctx, JSC
 
 ObjectData* ObjectData::Get(Local<Value> value)
 {
-    String::Utf8Value const str(value);
-    unsigned long n = strtoul(*str, NULL, 16);
-    return (ObjectData*) n;
+    return (ObjectData*) value.As<External>()->Value();
 }
 
 void ObjectData::SetContext(JSContextRef ctx)
@@ -54,7 +49,8 @@ void ObjectData::SetFunc(Local<Object> func)
 {
     Isolate *isolate = Isolate::GetCurrent();
 
-    m_func = Persistent<Object,CopyablePersistentTraits<Object>>(isolate, func);
+    m_func.Reset(isolate, func);
+    m_func.SetWeak();
 }
 
 ObjectData::~ObjectData()

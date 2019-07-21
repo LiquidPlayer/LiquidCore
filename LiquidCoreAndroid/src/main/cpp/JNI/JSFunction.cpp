@@ -74,7 +74,10 @@ boost::shared_ptr<JSValue> JSFunction::New(JNIEnv* env, jobject thiz,
 {
     auto ctx = SharedWrap<JSContext>::Shared(javaContext);
     auto p = boost::make_shared<JSFunction>(env, thiz, ctx, name_);
+
+    // Retain a reference to Java functions for the lifetime of the context
     ctx->retain(p);
+
     ctx->Group()->Manage(p);
     return p;
 }

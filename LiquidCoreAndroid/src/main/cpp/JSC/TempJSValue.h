@@ -25,7 +25,7 @@ class TempJSValue {
         }
         virtual ~TempJSValue() {
             if (m_value) {
-                const_cast<OpaqueJSValue *>(m_value)->Release(!m_value->IsClassObject());
+                const_cast<OpaqueJSValue *>(m_value)->Release();
             }
             m_value = nullptr;
         }
@@ -51,7 +51,7 @@ class TempJSValue {
         }
         void Reset() {
             if (m_value) {
-                const_cast<OpaqueJSValue *>(m_value)->Release(!m_value->IsClassObject());
+                const_cast<OpaqueJSValue *>(m_value)->Release();
             }
             m_didSet = false;
             m_value = nullptr;

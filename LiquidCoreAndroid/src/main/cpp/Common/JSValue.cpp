@@ -29,7 +29,6 @@ boost::shared_ptr<JSValue> JSValue::New(boost::shared_ptr<JSContext> context, Lo
         } else {
             // First time wrap.  Create it new and mark it
             value = boost::make_shared<JSValue>(context,val);
-            context->retain(value);
             value->m_wrapped = true;
 
             obj->SetPrivate(context->Value(), privateKey, Wrap(&* value));
