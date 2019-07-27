@@ -499,18 +499,16 @@ NATIVE(JNIJSObject,jlong,callAsConstructor) (STATIC, jlong objRef, jlongArray ar
 NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (STATIC, jlong objRef) {
     jobjectArray ret;
     jsize length;
-    const char **nameArray;
+    std::vector<String::Value*> nameArray;
 
     V8_ISOLATE_OBJ(objRef,object,isolate,context,o)
         Local<Array> names = o->GetPropertyNames(context).ToLocalChecked();
         length = names->Length();
-        nameArray = new const char * [length];
 
         for (uint32_t i=0; i<(uint32_t)length; i++) {
             Local<String> property =
                 names->Get(context, i).ToLocalChecked()->ToString(context).ToLocalChecked();
-            String::Utf8Value const str(property);
-            nameArray[i] = strdup(*str);
+            nameArray.push_back(new String::Value(property));
         }
     V8_UNLOCK()
 
@@ -518,11 +516,11 @@ NATIVE(JNIJSObject,jobjectArray,copyPropertyNames) (STATIC, jlong objRef) {
             length,
             env->FindClass("java/lang/String"),
             env->NewStringUTF(""));
-    for (uint32_t i=0; i<(uint32_t)length; i++) {
-        env->SetObjectArrayElement(ret, i, env->NewStringUTF(nameArray[i]));
-        delete nameArray[i];
+    int i=0;
+    for (auto iter=nameArray.begin(); iter!=nameArray.end(); ++i, ++iter) {
+        env->SetObjectArrayElement(ret, i, env->NewString(***iter, (*iter)->length()));
+        delete *iter;
     }
-    delete nameArray;
 
     return ret;
 }

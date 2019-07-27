@@ -221,7 +221,7 @@ NATIVE(JNIJSValue,jstring,toStringCopy) (STATIC, jlong valueRef) {
     jstring out = nullptr;
     auto value = SharedWrap<JSValue>::Shared(boost::shared_ptr<JSContext>(), valueRef);
     boost::shared_ptr<JSValue> exception;
-    const char *s = nullptr;
+    String::Value *v;
 
     V8_ISOLATE_CTX(value->Context(), isolate, context)
 
@@ -229,16 +229,19 @@ NATIVE(JNIJSValue,jstring,toStringCopy) (STATIC, jlong valueRef) {
 
         MaybeLocal<String> string = value->Value()->ToString(context);
         if (!string.IsEmpty()) {
-            String::Utf8Value const str(string.ToLocalChecked());
-            s = strdup(*str);
+            v = new String::Value(string.ToLocalChecked());
         } else {
-            s = strdup("");
+            v = nullptr;
             exception = JSValue::New(value->Context(), trycatch.Exception());
         }
     V8_UNLOCK()
 
-    out = env->NewStringUTF(s);
-    free((void*)s);
+    if (v) {
+        out = env->NewString(**v, v->length());
+        delete v;
+    } else {
+        out = env->NewStringUTF("");
+    }
 
     if (exception) {
         JNIJSException(env, SharedWrap<JSValue>::New(exception)).Throw();
