@@ -8,6 +8,7 @@
 #include "JSC/OpaqueJSContextGroup.h"
 #include "JSC/OpaqueJSContext.h"
 #include "JSC/OpaqueJSValue.h"
+#include "JSC/ObjectData.h"
 
 JSGlobalContextRef OpaqueJSContext::New(boost::shared_ptr<JSContext> ctx)
 {
@@ -45,6 +46,8 @@ void OpaqueJSContext::Dispose()
             ForceGC();
             //For testing only.  Must also specify --enable_gc flag in common.cpp
             //isolate->RequestGarbageCollectionForTesting(Isolate::kFullGarbageCollection);
+
+            ObjectData::Clean(this);
 
             m_gc_lock.lock();
 

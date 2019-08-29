@@ -15,6 +15,7 @@ class ObjectData {
         static Local<Value> New(const JSClassDefinition *def = nullptr, JSContextRef ctx = nullptr,
                                JSClassRef cls = nullptr);
         static ObjectData* Get(Local<Value> value);
+        static void Clean(JSContextRef ctx);
         void SetContext(JSContextRef ctx);
         void SetName(Local<Value> name);
         void SetFunc(Local<Object> func);

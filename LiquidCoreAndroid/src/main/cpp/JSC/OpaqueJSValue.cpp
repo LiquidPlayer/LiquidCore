@@ -64,8 +64,7 @@ OpaqueJSValue::~OpaqueJSValue()
                         o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS));
                 if (!clazz)
                     __android_log_assert("clazz", "OpaqueJSValue", "clazz is NULL");
-                if (clazz)
-                    clazz->release();
+                clazz->release();
                 o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_CLASS, nullptr);
                 o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_JSOBJECT, nullptr);
                 /* Note: A weak callback will only retain the first two internal fields
