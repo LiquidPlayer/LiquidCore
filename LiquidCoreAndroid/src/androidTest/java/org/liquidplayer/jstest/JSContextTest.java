@@ -8,7 +8,7 @@ package org.liquidplayer.jstest;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 import android.util.Log;
 
 import org.junit.Test;

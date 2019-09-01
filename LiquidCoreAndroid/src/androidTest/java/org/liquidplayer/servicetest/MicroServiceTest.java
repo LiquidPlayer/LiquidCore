@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.servicetest;
 
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import org.json.JSONArray;
 import org.json.JSONException;

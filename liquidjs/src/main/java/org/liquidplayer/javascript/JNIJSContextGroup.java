@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 class JNIJSContextGroup extends JNIObject {
     private JNIJSContextGroup(long ref) {

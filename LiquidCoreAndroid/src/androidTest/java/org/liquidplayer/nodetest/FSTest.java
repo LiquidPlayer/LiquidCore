@@ -9,8 +9,8 @@ package org.liquidplayer.nodetest;
 import android.Manifest;
 import android.content.Context;
 import android.os.Environment;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.rule.GrantPermissionRule;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Rule;
 import org.junit.Test;
