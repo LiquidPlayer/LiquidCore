@@ -7,7 +7,8 @@
 package org.liquidplayer.node;
 
 import android.content.Context;
-import android.support.annotation.Keep;
+
+import androidx.annotation.Keep;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;

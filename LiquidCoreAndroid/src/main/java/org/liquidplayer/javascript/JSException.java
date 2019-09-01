@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  *  A JSException is thrown for a number of different reasons, mostly by the JavaScriptCore

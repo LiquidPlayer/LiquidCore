@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 class JNIJSObject extends JNIJSValue {
     protected JNIJSObject(long ref) {

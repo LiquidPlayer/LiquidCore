@@ -9,7 +9,7 @@ package org.liquidplayer.service;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;

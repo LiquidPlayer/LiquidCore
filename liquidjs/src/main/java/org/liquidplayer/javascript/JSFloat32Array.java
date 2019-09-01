@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * A convenience class for handling JavaScript's Float32Array

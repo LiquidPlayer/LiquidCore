@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.javascript;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;

@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.JSCTest;
 
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import org.junit.Before;
 import org.junit.Test;

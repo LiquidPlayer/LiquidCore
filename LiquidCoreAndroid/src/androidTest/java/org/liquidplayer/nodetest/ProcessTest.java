@@ -6,7 +6,7 @@
  */
 package org.liquidplayer.nodetest;
 
-import android.support.test.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.liquidplayer.javascript.JSArray;
