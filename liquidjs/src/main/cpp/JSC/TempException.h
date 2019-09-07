@@ -19,13 +19,9 @@ class TempException : public TempJSValue {
                 *m_exceptionRef = m_value;
             }
             if (m_value && m_didSet) {
-                const_cast<OpaqueJSValue *>(m_value)->Release(!m_exceptionRef &&
-                    !m_value->IsClassObject());
+                const_cast<OpaqueJSValue *>(m_value)->Release();
             }
             m_value = nullptr;
-        }
-        void Reset() {
-            ASSERTJSC(false);
         }
         JSValueRef* operator&() { return &m_value; }
 

@@ -79,28 +79,32 @@ void customGlobalObjectClassTest(JSContextGroupRef contextGroup)
     size_t propertyCount = JSPropertyNameArrayGetCount(propertyNames);
     assertTrue(propertyCount == 1, "Property count == 1");
 
-    JSStringRef propertyNameRef = JSPropertyNameArrayGetNameAtIndex(propertyNames, 0);
-    size_t propertyNameLength = JSStringGetLength(propertyNameRef);
-    size_t bufferSize = sizeof(char) * (propertyNameLength + 1);
-    char* buffer = (char*)malloc(bufferSize);
-    JSStringGetUTF8CString(propertyNameRef, buffer, bufferSize);
-    buffer[propertyNameLength] = '\0';
-    assertTrue(!strncmp(buffer, "doSomething", propertyNameLength), "First property name is doSomething");
-    free(buffer);
+    if (propertyCount > 0) {
+        JSStringRef propertyNameRef = JSPropertyNameArrayGetNameAtIndex(propertyNames, 0);
+        size_t propertyNameLength = JSStringGetLength(propertyNameRef);
+        size_t bufferSize = sizeof(char) * (propertyNameLength + 1);
+        char *buffer = (char *) malloc(bufferSize);
+        JSStringGetUTF8CString(propertyNameRef, buffer, bufferSize);
+        buffer[propertyNameLength] = '\0';
+        assertTrue(!strncmp(buffer, "doSomething", propertyNameLength),
+                   "First property name is doSomething");
+        free(buffer);
 
-    bool hasMethod = JSObjectHasProperty(globalContext, globalObj, propertyNameRef);
-    assertTrue(hasMethod, "Property found by name");
+        bool hasMethod = JSObjectHasProperty(globalContext, globalObj, propertyNameRef);
+        assertTrue(hasMethod, "Property found by name");
 
-    JSValueRef doSomethingProperty =
-    JSObjectGetProperty(globalContext, globalObj, propertyNameRef, NULL);
-    assertTrue(!JSValueIsUndefined(globalContext, doSomethingProperty), "Property is defined");
+        JSValueRef doSomethingProperty =
+                JSObjectGetProperty(globalContext, globalObj, propertyNameRef, NULL);
+        assertTrue(!JSValueIsUndefined(globalContext, doSomethingProperty), "Property is defined");
 
-    bool globalObjectClassMatchesClassRef = JSValueIsObjectOfClass(globalContext, globalObj, bridgedObjectJsClassRef);
-    assertTrue(globalObjectClassMatchesClassRef, "Global object is the right class");
+        bool globalObjectClassMatchesClassRef = JSValueIsObjectOfClass(globalContext, globalObj,
+                                                                       bridgedObjectJsClassRef);
+        assertTrue(globalObjectClassMatchesClassRef, "Global object is the right class");
 
-    JSStringRef script = JSStringCreateWithUTF8CString("doSomething();");
-    JSEvaluateScript(globalContext, script, NULL, NULL, 1, NULL);
-    JSStringRelease(script);
+        JSStringRef script = JSStringCreateWithUTF8CString("doSomething();");
+        JSEvaluateScript(globalContext, script, NULL, NULL, 1, NULL);
+        JSStringRelease(script);
+    }
 
     assertTrue(executedCallback, "Executed custom global object callback");
 }

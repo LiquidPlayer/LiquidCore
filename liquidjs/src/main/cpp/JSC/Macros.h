@@ -17,8 +17,8 @@
 #endif
 
 /* Reserve position 0 -- node uses it for some objects */
-#define INSTANCE_OBJECT_CLASS    (1)
-#define INSTANCE_OBJECT_JSOBJECT (2)
+#define INSTANCE_OBJECT_JSOBJECT (1)
+#define INSTANCE_OBJECT_CLASS    (2)
 #define INSTANCE_OBJECT_FIELDS   (3)
 
 #define V8_ISOLATE_OBJ(ctx,object,isolate,context,o) \

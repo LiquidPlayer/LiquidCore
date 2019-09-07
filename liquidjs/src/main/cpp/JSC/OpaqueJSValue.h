@@ -22,15 +22,18 @@ struct OpaqueJSValue {
             return value ? scope.Escape(value->Value()) :
                    scope.Escape(Local<Value>::New(m_ctx->Context()->isolate(), weak));
         }
-        void Clean(bool fromGC=false) const;
+        bool Clean() const;
         int Retain();
-        int Release(bool cleanOnZero=true);
+        int Release();
         inline JSContextRef Context() const { return m_ctx; }
         bool SetPrivateData(void *data);
         inline void *GetPrivateData() { return m_private_data; }
         inline void SetFinalized() { m_finalized = true; }
         inline bool HasFinalized() const { return m_finalized; }
         inline bool IsClassObject() const { return m_fromClassDefinition != nullptr; }
+        inline bool IsDefunct() const { return m_count == 0; }
+        inline const JSClassDefinition *Definition() const { return m_fromClassDefinition; }
+        inline void ClearWeak() { weak.Reset(); }
 
     protected:
         OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass=0);

@@ -9,19 +9,19 @@
 #include "JSC/ObjectData.h"
 #include "JSC/OpaqueJSContext.h"
 
+static std::map<ObjectData*,JSContextRef> s_ObectDataMap;
+static std::recursive_mutex s_ObjectDataMapMutex;
+
 Local<Value> ObjectData::New(const JSClassDefinition *def, JSContextRef ctx, JSClassRef cls)
 {
     Isolate *isolate = Isolate::GetCurrent();
     EscapableHandleScope scope(isolate);
 
-    ObjectData *od = new ObjectData(def, ctx, cls);
-    char ptr[32];
-    sprintf(ptr, "%p", od);
-    Local<String> data =
-        String::NewFromUtf8(isolate, ptr, NewStringType::kNormal).ToLocalChecked();
+    auto od = new ObjectData(def, ctx, cls);
+    Local<External> data = External::New(isolate, od);
 
-    UniquePersistent<Value> m_weak = UniquePersistent<Value>(isolate, data);
-    m_weak.SetWeak<ObjectData>(
+    od->m_weak.Reset(isolate, data);
+    od->m_weak.SetWeak<ObjectData>(
         od,
         [](const WeakCallbackInfo<ObjectData>& info) {
 
@@ -33,9 +33,7 @@ Local<Value> ObjectData::New(const JSClassDefinition *def, JSContextRef ctx, JSC
 
 ObjectData* ObjectData::Get(Local<Value> value)
 {
-    String::Utf8Value const str(Isolate::GetCurrent(), value);
-    unsigned long n = strtoul(*str, NULL, 16);
-    return (ObjectData*) n;
+    return (ObjectData*) value.As<External>()->Value();
 }
 
 void ObjectData::SetContext(JSContextRef ctx)
@@ -54,7 +52,8 @@ void ObjectData::SetFunc(Local<Object> func)
 {
     Isolate *isolate = Isolate::GetCurrent();
 
-    m_func = Persistent<Object,CopyablePersistentTraits<Object>>(isolate, func);
+    m_func.Reset(isolate, func);
+    m_func.SetWeak();
 }
 
 ObjectData::~ObjectData()
@@ -63,9 +62,29 @@ ObjectData::~ObjectData()
     m_name = nullptr;
 
     m_func.Reset();
+    m_weak.Reset();
+
+    std::unique_lock<std::recursive_mutex> lk(s_ObjectDataMapMutex);
+    s_ObectDataMap.erase(this);
 }
 
 ObjectData::ObjectData(const JSClassDefinition *def, JSContextRef ctx, JSClassRef cls) :
     m_definition(def), m_context(ctx), m_class(cls), m_name(nullptr)
 {
+    std::unique_lock<std::recursive_mutex> lk(s_ObjectDataMapMutex);
+    s_ObectDataMap[this] = ctx;
+}
+
+void ObjectData::Clean(JSContextRef ctx)
+{
+    std::unique_lock<std::recursive_mutex> lk(s_ObjectDataMapMutex);
+    for (auto it=s_ObectDataMap.begin(); it!=s_ObectDataMap.end(); ) {
+        if (it->second == ctx) {
+            auto od = it->first;
+            s_ObectDataMap.erase(it++);
+            delete od;
+        } else {
+            ++it;
+        }
+    }
 }

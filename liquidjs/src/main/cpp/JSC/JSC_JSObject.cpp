@@ -81,7 +81,7 @@ static JSObjectRef SetUpFunction(JSContextRef ctx, JSStringRef name, JSClassDefi
                 OpaqueJSClass::HasInstanceFunctionCallHandler, data);
             Local<Function> function = ftempl->GetFunction(context).ToLocalChecked();
             Local<Object> Symbol =
-                context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject(context).ToLocalChecked();
+                    context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject(context).ToLocalChecked();
             Local<Value> hasInstance = Symbol->Get(String::NewFromUtf8(isolate, "hasInstance"));
             Local<Object> prototype = Object::New(isolate);
             prototype->Set(context, hasInstance, function);
@@ -142,7 +142,7 @@ JS_EXPORT JSObjectRef JSObjectMakeDate(JSContextRef ctx, size_t argumentCount,
         Local<Value> date;
         if (argumentCount==0) {
             Local<Object> DATE =
-                context->Global()->Get(String::NewFromUtf8(isolate, "Date"))->ToObject(context).ToLocalChecked();
+                    context->Global()->Get(String::NewFromUtf8(isolate, "Date"))->ToObject(context).ToLocalChecked();
             Local<Function> now = DATE->Get(String::NewFromUtf8(isolate, "now")).As<Function>();
 
             date = Date::New(isolate,
@@ -568,8 +568,8 @@ JS_EXPORT JSPropertyNameArrayRef JSObjectCopyPropertyNames(JSContextRef ctx, JSO
     JSPropertyNameArrayRef array;
 
     V8_ISOLATE_OBJ(CTX(ctx),object,isolate,context,o)
-        Local<Array> names = o->GetPropertyNames(context).ToLocalChecked();
-        array = const_cast<JSObjectRef>(OpaqueJSValue::New(ctx, names));
+        MaybeLocal<Array> names = o->GetPropertyNames(context);
+        array = const_cast<JSObjectRef>(OpaqueJSValue::New(ctx, names.ToLocalChecked()));
         array->Retain();
     V8_UNLOCK()
 

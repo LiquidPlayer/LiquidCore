@@ -40,7 +40,7 @@ static void setUpJSCFeatures(JSGlobalContextRef ctx) {
             context->Global()->GetPrototype()->ToObject(context).ToLocalChecked();
         Local<Object> console = Object::New(isolate);
         Local<Object> Symbol =
-            context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject(context).ToLocalChecked();
+                context->Global()->Get(String::NewFromUtf8(isolate, "Symbol"))->ToObject(context).ToLocalChecked();
         Local<Value> toStringTag = Symbol->Get(String::NewFromUtf8(isolate, "toStringTag"));
         Local<Object> consolePrototype = Object::New(isolate);
         consolePrototype->Set(context, toStringTag, String::NewFromUtf8(isolate, "Console"));
@@ -132,7 +132,7 @@ JS_EXPORT JSStringRef JSGlobalContextCopyName(JSGlobalContextRef ctx)
     JSStringRef n = nullptr;
     V8_ISOLATE_CTX(ctx->Context(),isolate,context)
         Local<Value> name = context->GetEmbedderData(1);
-        if (!name->IsUndefined()) {
+        if (name->IsString()) {
             String::Utf8Value str(isolate, name->ToString(context).ToLocalChecked());
             n = JSStringCreateWithUTF8CString(*str);
         }

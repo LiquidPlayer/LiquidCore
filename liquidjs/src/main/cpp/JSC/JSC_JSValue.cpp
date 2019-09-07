@@ -422,6 +422,6 @@ JS_EXPORT void JSValueProtect(JSContextRef, JSValueRef valueRef)
 JS_EXPORT void JSValueUnprotect(JSContextRef, JSValueRef valueRef)
 {
     if (valueRef) {
-        const_cast<OpaqueJSValue *>(valueRef)->Release(false);
+        const_cast<OpaqueJSValue *>(valueRef)->Release();
     }
 }

@@ -17,19 +17,25 @@ JSValueRef OpaqueJSValue::New(JSContextRef ctx, Local<Value> v,
     V8_ISOLATE(ctx->Context()->Group(), isolate)
         if (v->IsObject() && !fromClass) {
             Local<v8::Context> context = ctx->Context()->Value();
-            Context::Scope(ctx->Context()->Value());
+            Context::Scope context_scope(ctx->Context()->Value());
             Local<Object> o = v->ToObject(context).ToLocalChecked();
             o = o->StrictEquals(context->Global()) && \
                 !o->GetPrototype()->ToObject(context).IsEmpty() && \
-                o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()>
-                    INSTANCE_OBJECT_JSOBJECT ?
+                o->GetPrototype()->ToObject(context).ToLocalChecked()->InternalFieldCount()>=
+                    INSTANCE_OBJECT_FIELDS ?
                 o->GetPrototype()->ToObject(context).ToLocalChecked() : \
                 o;
-            if (o->InternalFieldCount() > INSTANCE_OBJECT_JSOBJECT) {
+            if (o->InternalFieldCount() >= INSTANCE_OBJECT_FIELDS) {
                 out=
                     reinterpret_cast<OpaqueJSValue*>(
                         o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_JSOBJECT));
-                out->Retain();
+                auto clazz = reinterpret_cast<OpaqueJSClass*>(
+                        o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS));
+                if (out) {
+                    out->Retain();
+                } else if (clazz) {
+                    clazz->retain();
+                }
             }
         }
     V8_UNLOCK()
@@ -53,9 +59,11 @@ OpaqueJSValue::~OpaqueJSValue()
         if (*v && v->IsObject()) {
             Local<v8::Context> context = m_ctx->Context()->Value();
             Local<Object> o = v->ToObject(context).ToLocalChecked();
-            if (o->InternalFieldCount() > INSTANCE_OBJECT_JSOBJECT) {
-                OpaqueJSClass* clazz =
-                    reinterpret_cast<OpaqueJSClass*>(o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS));
+            if (o->InternalFieldCount() >= INSTANCE_OBJECT_FIELDS) {
+                auto clazz = reinterpret_cast<OpaqueJSClass*>(
+                        o->GetAlignedPointerFromInternalField(INSTANCE_OBJECT_CLASS));
+                if (!clazz)
+                    __android_log_assert("clazz", "OpaqueJSValue", "clazz is NULL");
                 clazz->release();
                 o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_CLASS, nullptr);
                 o->SetAlignedPointerInInternalField(INSTANCE_OBJECT_JSOBJECT, nullptr);
@@ -72,22 +80,31 @@ OpaqueJSValue::~OpaqueJSValue()
     V8_UNLOCK()
 }
 
-void OpaqueJSValue::Clean(bool fromGC) const
+bool OpaqueJSValue::Clean() const
 {
     if (m_count <= 0) {
-        if (!HasFinalized()) {
-            const_cast<OpaqueJSValue *>(this)->m_finalized = true;
-            const JSClassDefinition * definition = m_fromClassDefinition;
-            while (definition) {
-                if (definition->finalize) {
-                    definition->finalize(const_cast<JSObjectRef>(this));
-                }
-                definition =
-                    definition->parentClass? definition->parentClass->Definition(): nullptr;
-            }
+        boost::shared_ptr<JSValue> value = m_value;
+        if (value) {
+            const_cast<OpaqueJSValue *>(this)->m_value = boost::shared_ptr<JSValue>();
+            value.reset();
         }
-        delete this;
+        const JSClassDefinition *definition = m_fromClassDefinition;
+        if (weak.IsEmpty()) {
+            if (definition && !HasFinalized()) {
+                const_cast<OpaqueJSValue *>(this)->m_finalized = true;
+                while (definition) {
+                    if (definition->finalize) {
+                        definition->finalize(const_cast<JSObjectRef>(this));
+                    }
+                    definition = definition->parentClass ?
+                            definition->parentClass->Definition() : nullptr;
+                }
+            }
+            delete this;
+        }
+        return true;
     }
+    return false;
 }
 
 int OpaqueJSValue::Retain()
@@ -95,21 +112,18 @@ int OpaqueJSValue::Retain()
     boost::shared_ptr<JSValue> value = m_value;
     if (!value) {
         V8_ISOLATE(m_ctx->Context()->Group(), isolate)
-            Context::Scope(m_ctx->Context()->Value());
+            Context::Scope context_scope(m_ctx->Context()->Value());
             m_value = JSValue::New(m_ctx->Context(), Local<Value>::New(isolate,weak));
-            weak.Reset();
         V8_UNLOCK()
     }
     return ++m_count;
 }
 
-int OpaqueJSValue::Release(bool cleanOnZero)
+int OpaqueJSValue::Release()
 {
     int count = --m_count;
     ASSERTJSC(count >= 0)
-    if (cleanOnZero) {
-        Clean();
-    }
+    Clean();
     return count;
 }
 
@@ -122,9 +136,9 @@ bool OpaqueJSValue::SetPrivateData(void *data)
 }
 
 OpaqueJSValue::OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClassDefinition* fromClass) :
-    m_value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass), m_count(1)
+    m_value(nullptr), m_ctx(context), m_fromClassDefinition(fromClass), m_count(0)
 {
-    weak = UniquePersistent<Value>(context->Context()->isolate(), v);
+    weak.Reset(context->Context()->isolate(), v);
     weak.SetWeak<OpaqueJSValue>(this, [](const WeakCallbackInfo<OpaqueJSValue> &info) {
         (info.GetParameter())->WeakCallback();
     }, v8::WeakCallbackType::kParameter);
@@ -133,4 +147,5 @@ OpaqueJSValue::OpaqueJSValue(JSContextRef context, Local<Value> v, const JSClass
 
 void OpaqueJSValue::WeakCallback() {
     weak.Reset();
+    Clean();
 }

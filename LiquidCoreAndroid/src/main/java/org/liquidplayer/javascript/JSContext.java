@@ -49,6 +49,7 @@ public class JSContext extends JSObject {
 
     /**
      * Returns the JSC context reference if this context was created using JSC.
+     * @return the JSC contect token
      */
     @SuppressWarnings("unused")
     public long getJSCContext() {

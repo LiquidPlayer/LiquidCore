@@ -8,6 +8,7 @@
 #include "JSC/OpaqueJSContextGroup.h"
 #include "JSC/OpaqueJSContext.h"
 #include "JSC/OpaqueJSValue.h"
+#include "JSC/ObjectData.h"
 
 JSGlobalContextRef OpaqueJSContext::New(boost::shared_ptr<JSContext> ctx)
 {
@@ -46,26 +47,24 @@ void OpaqueJSContext::Dispose()
             //For testing only.  Must also specify --enable_gc flag in common.cpp
             //isolate->RequestGarbageCollectionForTesting(Isolate::kFullGarbageCollection);
 
+            ObjectData::Clean(this);
+
             m_gc_lock.lock();
 
             // First, look for all values that have a zero reference and clean them
-            auto iterator = m_collection.begin();
-            while (iterator != m_collection.end()) {
-                const auto& v = *iterator;
-                ++iterator;
-                v->Clean(true);
-            }
-
             // Then, release everything that has a reference count > 0
-            bool isEmpty =  m_collection.empty();
+            bool isEmpty = m_collection.empty();
             while (!isEmpty) {
                 const auto& v = m_collection.front();
-                const_cast<OpaqueJSValue *>(v)->Release();
-                isEmpty =  m_collection.empty();
+                const_cast<OpaqueJSValue*>(v)->ClearWeak();
+                if (v->IsDefunct()) {
+                    v->Clean();
+                } else {
+                    const_cast<OpaqueJSValue*>(v)->Release();
+                }
+                isEmpty = m_collection.empty();
             }
             m_gc_lock.unlock();
-
-            ASSERTJSC(m_collection.empty());
 
             context.reset();
         V8_UNLOCK();
