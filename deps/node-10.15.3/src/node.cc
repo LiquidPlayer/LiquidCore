@@ -1080,7 +1080,7 @@ static void Exit(const FunctionCallbackInfo<Value>& args) {
   int code = args[0]->Int32Value(env->context()).FromMaybe(0);
   env->Exit(code);
 }
-
+/* LC
 extern "C" void node_module_register(void* m) {
   struct node_module* mp = reinterpret_cast<struct node_module*>(m);
 
@@ -1114,6 +1114,11 @@ inline struct node_module* FindModule(struct node_module* list,
   CHECK(mp == nullptr || (mp->nm_flags & flag) != 0);
   return mp;
 }
+*/
+struct node_module* FindModule(struct node_module* list,
+                               const char* name,
+                               int flag);
+/*--*/
 
 node_module* get_builtin_module(const char* name) {
   return FindModule(modlist_builtin, name, NM_F_BUILTIN);
@@ -1999,7 +2004,11 @@ void SetupProcessObject(Environment* env,
                    "_stopProfilerIdleNotifier",
                    StopProfilerIdleNotifier);
     env->SetMethod(process, "abort", Abort);
-    env->SetMethod(process, "chdir", Chdir);
+    /* LC */
+    //env->SetMethod(process, "chdir", Chdir);
+    env->SetMethod(process, "chdir", fs::Chdir);
+    /*--*/
+
     env->SetMethod(process, "umask", Umask);
   }
   env->SetMethod(process, "_getActiveRequests", GetActiveRequests);
@@ -2733,7 +2742,6 @@ int EmitExit(Environment* env) {
       ->Int32Value(env->context()).ToChecked();
 }
 
-
 ArrayBufferAllocator* CreateArrayBufferAllocator() {
   return new ArrayBufferAllocator();
 }
@@ -2742,7 +2750,6 @@ ArrayBufferAllocator* CreateArrayBufferAllocator() {
 void FreeArrayBufferAllocator(ArrayBufferAllocator* allocator) {
   delete allocator;
 }
-
 
 IsolateData* CreateIsolateData(Isolate* isolate, uv_loop_t* loop) {
   return new IsolateData(isolate, loop, nullptr);
@@ -2813,7 +2820,7 @@ void FreePlatform(MultiIsolatePlatform* platform) {
   delete platform;
 }
 
-
+/* LC
 Local<Context> NewContext(Isolate* isolate,
                           Local<ObjectTemplate> object_template) {
   auto context = Context::New(isolate, nullptr, object_template);
@@ -2836,7 +2843,6 @@ Local<Context> NewContext(Isolate* isolate,
 
   return context;
 }
-
 
 inline int Start(Isolate* isolate, IsolateData* isolate_data,
                  const std::vector<std::string>& args,
@@ -2906,6 +2912,12 @@ inline int Start(Isolate* isolate, IsolateData* isolate_data,
 
   return exit_code;
 }
+*/
+int Start(Isolate* isolate, IsolateData* isolate_data,
+                 const std::vector<std::string>& args,
+                 const std::vector<std::string>& exec_args);
+/*--*/
+
 
 bool AllowWasmCodeGenerationCallback(
     Local<Context> context, Local<String>) {
@@ -2940,6 +2952,9 @@ inline int Start(uv_loop_t* event_loop,
   std::unique_ptr<ArrayBufferAllocator, decltype(&FreeArrayBufferAllocator)>
       allocator(CreateArrayBufferAllocator(), &FreeArrayBufferAllocator);
   Isolate* const isolate = NewIsolate(allocator.get());
+  /* LC */
+  Isolate* node_isolate = nullptr;
+  /*---*/
   if (isolate == nullptr)
     return 12;  // Signal internal error.
 
@@ -2981,6 +2996,7 @@ inline int Start(uv_loop_t* event_loop,
   return exit_code;
 }
 
+/* LC
 int Start(int argc, char** argv) {
   atexit([] () { uv_tty_reset_mode(); });
   PlatformInit();
@@ -3041,6 +3057,7 @@ int Start(int argc, char** argv) {
 
   return exit_code;
 }
+ */
 
 // Call built-in modules' _register_<module name> function to
 // do module registration explicitly.

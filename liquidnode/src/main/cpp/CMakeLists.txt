@@ -1,0 +1,978 @@
+cmake_minimum_required(VERSION 3.4.1)
+
+set( SOURCES
+
+	# cares
+	../../../../deps/node-10.15.3/deps/cares/src/ares_android.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_cancel.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares__close_sockets.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_create_query.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_data.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_destroy.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_expand_name.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_expand_string.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_fds.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_free_hostent.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_free_string.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_gethostbyaddr.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_gethostbyname.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares__get_hostent.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_getnameinfo.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_getopt.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_getsock.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_init.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_library_init.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_llist.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_mkquery.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_nowarn.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_options.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_aaaa_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_a_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_mx_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_naptr_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_ns_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_ptr_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_soa_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_srv_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_parse_txt_reply.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_process.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_query.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares__read_line.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_search.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_send.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_strcasecmp.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_strdup.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_strerror.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_strsplit.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_timeout.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares__timeval.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_version.c
+	../../../../deps/node-10.15.3/deps/cares/src/ares_writev.c
+	../../../../deps/node-10.15.3/deps/cares/src/bitncmp.c
+	../../../../deps/node-10.15.3/deps/cares/src/inet_net_pton.c
+	../../../../deps/node-10.15.3/deps/cares/src/inet_ntop.c
+
+    # http_parser
+    ../../../../deps/node-10.15.3/deps/http_parser/http_parser.c
+
+    # nghttp2
+    ../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_buf.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_callbacks.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_debug.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_frame.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_hd.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_hd_huffman.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_hd_huffman_data.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_helper.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_http.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_map.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_mem.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_npn.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_option.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_outbound_item.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_pq.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_priority_spec.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_queue.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_rcbuf.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_session.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_stream.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_submit.c
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_version.c
+
+    # openssl
+    ../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/bio_ssl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/d1_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/d1_msg.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/d1_srtp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/methods.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/pqueue.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/record/dtls1_bitmap.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/record/rec_layer_d1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/record/rec_layer_s3.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/record/ssl3_buffer.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/record/ssl3_record.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/s3_cbc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/s3_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/s3_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/s3_msg.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_cert.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_ciph.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_conf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_init.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_mcnf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_rsa.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_sess.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_stat.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_txt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_utst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/statem/statem.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/statem/statem_clnt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/statem/statem_dtls.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/statem/statem_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/statem/statem_srvr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/t1_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/t1_ext.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/t1_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/t1_reneg.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/t1_trce.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/tls_srp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_cbc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_cfb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_core.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_ige.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_misc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_ofb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_wrap.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_bitstr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_d2i_fp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_digest.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_dup.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_gentm.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_i2d_fp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_int.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_mbstr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_object.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_octet.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_print.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_strex.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_strnid.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_time.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_type.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_utctm.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_utf8.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/a_verify.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/ameth_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn1_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn1_gen.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn1_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn1_par.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn_mime.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn_moid.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn_mstbl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/asn_pack.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/bio_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/bio_ndef.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/d2i_pr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/d2i_pu.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/evp_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/f_int.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/f_string.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/i2d_pr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/i2d_pu.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/n_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/nsseq.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/p5_pbe.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/p5_pbev2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/p5_scrypt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/p8_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/t_bitst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/t_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/t_spki.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_dec.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_fre.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_new.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_scn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_typ.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/tasn_utl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_algor.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_bignum.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_info.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_int64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_long.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_sig.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_spki.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/x_val.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_null.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_posix.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_win.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/async/async.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/async/async_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/async/async_wait.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_cfb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_ofb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_skey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/b_addr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/b_dump.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/b_print.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/b_sock.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/b_sock2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bf_buff.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bf_lbuf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bf_nbio.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bf_null.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bio_cb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bio_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bio_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bio_meth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_acpt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_bio.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_conn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_dgram.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_fd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_file.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_log.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_mem.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_null.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bio/bss_sock.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/blake2b.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/blake2s.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/m_blake2b.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/m_blake2s.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_add.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_asm.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_blind.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_const.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_ctx.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_depr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_dh.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_div.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_exp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_exp2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_gcd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_gf2m.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_intern.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_kron.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_mod.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_mont.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_mpi.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_mul.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_nist.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_prime.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_print.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_rand.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_recp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_shift.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_sqr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_sqrt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_srp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_word.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/bn/bn_x931p.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/buffer/buf_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/buffer/buffer.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/camellia.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/cmll_cbc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/cmll_cfb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/cmll_ctr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/cmll_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/cmll_misc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/cmll_ofb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cast/c_cfb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cast/c_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cast/c_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cast/c_ofb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cast/c_skey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/chacha/chacha_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cmac/cm_ameth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cmac/cm_pmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cmac/cmac.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_att.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_cd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_dd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_env.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_ess.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_io.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_kari.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_pwri.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_sd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cms/cms_smime.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_api.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_def.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_mall.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_mod.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_sap.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_ssl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cpt_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cryptlib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_b64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_log.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_oct.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_policy.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_sct.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_sct_ctx.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_vfy.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_x509v3.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/cversion.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/cbc_cksm.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/cbc_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/cfb64ede.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/cfb64enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/cfb_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/des_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/ecb3_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/ecb_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/fcrypt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/fcrypt_b.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/ofb64ede.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/ofb64enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/ofb_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/pcbc_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/qud_cksm.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/rand_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/rpc_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/set_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/str2key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/des/xcbc_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_ameth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_check.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_depr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_gen.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_kdf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_meth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_pmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_rfc5114.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_ameth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_depr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_gen.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_meth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_ossl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_pmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_vrf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_dl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_dlfcn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_openssl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_vms.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_win32.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ebcdic.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/curve25519.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec2_mult.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec2_oct.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec2_smpl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_ameth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_check.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_curve.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_cvt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_kmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_mult.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_oct.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_pmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_print.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecdh_kdf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecdh_ossl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecdsa_ossl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecdsa_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecdsa_vrf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/eck_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_mont.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_nist.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_nistp224.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_nistp256.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_nistp521.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_nistputil.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_oct.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_smpl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecx_meth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_all.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_cnf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_cryptodev.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_ctrl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_dyn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_fat.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_init.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_list.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_openssl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_rdrand.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_table.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_asnmth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_cipher.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_dh.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_digest.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_dsa.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_eckey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_pkmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_rand.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/engine/tb_rsa.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/err/err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/err/err_all.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/err/err_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/bio_b64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/bio_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/bio_md.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/bio_ok.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/c_allc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/c_alld.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/cmeth_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/digest.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_aes.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_aes_cbc_hmac_sha1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_aes_cbc_hmac_sha256.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_bf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_camellia.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_cast.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_chacha20_poly1305.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_des.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_des3.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_idea.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_null.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_old.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_rc2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_rc4.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_rc4_hmac_md5.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_rc5.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_seed.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/e_xcbc_d.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/encode.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_cnf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_pbe.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_md2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_md4.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_md5.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_md5_sha1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_mdc2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_null.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_ripemd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_sha1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_sigver.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/m_wp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/names.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p5_crpt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p5_crpt2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_dec.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_open.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_seal.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/p_verify.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/pmeth_fn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/pmeth_gn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/pmeth_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/evp/scrypt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ex_data.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/getenv.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/hmac/hm_ameth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/hmac/hm_pmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/hmac/hmac.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/idea/i_cbc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/idea/i_cfb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/idea/i_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/idea/i_ofb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/idea/i_skey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/init.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/kdf/hkdf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/kdf/kdf_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/kdf/tls1_prf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/lhash/lh_stats.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/lhash/lhash.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/md4/md4_dgst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/md4/md4_one.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/md5/md5_dgst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/md5/md5_one.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/mdc2/mdc2_one.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/mdc2/mdc2dgst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/mem.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/mem_clr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/mem_dbg.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/mem_sec.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/cbc128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/ccm128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/cfb128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/ctr128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/cts128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/gcm128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/ocb128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/ofb128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/wrap128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes/xts128.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/o_dir.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/o_fips.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/o_fopen.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/o_init.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/o_str.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/o_time.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/objects/o_names.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/objects/obj_dat.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/objects/obj_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/objects/obj_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/objects/obj_xref.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_asn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_cl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_ext.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_ht.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_srv.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/ocsp_vfy.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/v3_ocsp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_all.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_info.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_oth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_pk8.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_pkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_x509.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pem_xaux.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pem/pvkfmt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_add.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_asn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_attr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_crpt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_crt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_decr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_init.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_key.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_kiss.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_mutl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_npas.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_p8d.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_p8e.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_sbag.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_utl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/pk12err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/bio_pk7.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pk7_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pk7_attr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pk7_doit.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pk7_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pk7_mime.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pk7_smime.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/pkcs7err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/poly1305/poly1305.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/md_rand.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_egd.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_unix.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_vms.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_win.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rand/randfile.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2_cbc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2_skey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2cfb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2ofb64.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc4/rc4_enc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rc4/rc4_skey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ripemd/rmd_dgst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ripemd/rmd_one.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_ameth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_chk.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_crpt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_depr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_gen.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_meth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_none.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_null.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_oaep.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_ossl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_pk1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_pmeth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_pss.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_saos.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_ssl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_x931.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_x931g.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed_cbc.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed_cfb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed_ecb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed_ofb.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/sha/sha1_one.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/sha/sha1dgst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/sha/sha256.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/sha/sha512.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/srp/srp_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/srp/srp_vfy.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/stack/stack.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/threads_none.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/threads_pthread.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/threads_win.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_asn1.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_conf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_req_print.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_req_utils.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_rsp_print.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_rsp_sign.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_rsp_utils.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_rsp_verify.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_verify_ctx.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/txt_db/txt_db.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ui/ui_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ui/ui_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ui/ui_openssl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/ui/ui_util.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/uid.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/whrlpool/wp_block.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/whrlpool/wp_dgst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/by_dir.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/by_file.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/t_crl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/t_req.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/t_x509.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_att.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_cmp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_d2.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_def.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_ext.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_lu.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_meth.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_obj.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_r2x.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_req.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_set.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_trs.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_txt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_v3.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_vfy.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_vpm.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509cset.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509name.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509rset.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509spki.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509type.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_all.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_attrib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_crl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_exten.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_name.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_pubkey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_req.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_x509.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x_x509a.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/pcy_cache.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/pcy_data.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/pcy_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/pcy_map.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/pcy_node.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/pcy_tree.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_addr.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_akey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_akeya.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_alt.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_asid.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_bcons.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_bitst.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_conf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_cpols.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_crld.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_enum.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_extku.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_genn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_ia5.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_info.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_int.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_lib.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_ncons.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_pci.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_pcia.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_pcons.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_pku.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_pmaps.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_prn.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_purp.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_skey.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_sxnet.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_tlsf.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3_utl.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3err.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/engines/e_capi.c
+	../../../../deps/node-10.15.3/deps/openssl/openssl/engines/e_padlock.c
+
+    # node_lib
+	../../../../deps/node-10.15.3/src/async_wrap.cc
+	../../../../deps/node-10.15.3/src/bootstrapper.cc
+	../../../../deps/node-10.15.3/src/callback_scope.cc
+	../../../../deps/node-10.15.3/src/cares_wrap.cc
+	../../../../deps/node-10.15.3/src/connection_wrap.cc
+	../../../../deps/node-10.15.3/src/connect_wrap.cc
+	../../../../deps/node-10.15.3/src/debug_utils.cc
+	../../../../deps/node-10.15.3/src/env.cc
+	../../../../deps/node-10.15.3/src/exceptions.cc
+	../../../../deps/node-10.15.3/src/fs_event_wrap.cc
+	../../../../deps/node-10.15.3/src/handle_wrap.cc
+	../../../../deps/node-10.15.3/src/heap_utils.cc
+	../../../../deps/node-10.15.3/src/js_stream.cc
+	../../../../deps/node-10.15.3/src/module_wrap.cc
+#	../../../../deps/node-10.15.3/src/node.cc <--- We are overriding
+	../../../../deps/node-10.15.3/src/node_api.cc
+	../../../../deps/node-10.15.3/src/node_buffer.cc
+	../../../../deps/node-10.15.3/src/node_config.cc
+	../../../../deps/node-10.15.3/src/node_constants.cc
+	../../../../deps/node-10.15.3/src/node_contextify.cc
+	../../../../deps/node-10.15.3/src/node_domain.cc
+	../../../../deps/node-10.15.3/src/node_encoding.cc
+#	../../../../deps/node-10.15.3/src/node_file.cc <--- We are overriding
+	../../../../deps/node-10.15.3/src/node_http2.cc
+	../../../../deps/node-10.15.3/src/node_http_parser.cc
+	../../../../deps/node-10.15.3/src/node_messaging.cc
+	../../../../deps/node-10.15.3/src/node_options.cc
+	../../../../deps/node-10.15.3/src/node_os.cc
+	../../../../deps/node-10.15.3/src/node_platform.cc
+	../../../../deps/node-10.15.3/src/node_perf.cc
+	../../../../deps/node-10.15.3/src/node_postmortem_metadata.cc
+	../../../../deps/node-10.15.3/src/node_process.cc
+	../../../../deps/node-10.15.3/src/node_serdes.cc
+	../../../../deps/node-10.15.3/src/node_trace_events.cc
+	../../../../deps/node-10.15.3/src/node_types.cc
+	../../../../deps/node-10.15.3/src/node_url.cc
+	../../../../deps/node-10.15.3/src/node_util.cc
+	../../../../deps/node-10.15.3/src/node_v8.cc
+	../../../../deps/node-10.15.3/src/node_stat_watcher.cc
+	../../../../deps/node-10.15.3/src/node_watchdog.cc
+	../../../../deps/node-10.15.3/src/node_worker.cc
+	../../../../deps/node-10.15.3/src/node_zlib.cc
+	../../../../deps/node-10.15.3/src/node_i18n.cc
+	../../../../deps/node-10.15.3/src/pipe_wrap.cc
+#	../../../../deps/node-10.15.3/src/process_wrap.cc <--- We are overriding
+	../../../../deps/node-10.15.3/src/sharedarraybuffer_metadata.cc
+	../../../../deps/node-10.15.3/src/signal_wrap.cc
+	../../../../deps/node-10.15.3/src/spawn_sync.cc
+	../../../../deps/node-10.15.3/src/string_bytes.cc
+	../../../../deps/node-10.15.3/src/string_decoder.cc
+	../../../../deps/node-10.15.3/src/stream_base.cc
+	../../../../deps/node-10.15.3/src/stream_pipe.cc
+	../../../../deps/node-10.15.3/src/stream_wrap.cc
+	../../../../deps/node-10.15.3/src/tcp_wrap.cc
+	../../../../deps/node-10.15.3/src/timer_wrap.cc
+	../../../../deps/node-10.15.3/src/tracing/agent.cc
+	../../../../deps/node-10.15.3/src/tracing/node_trace_buffer.cc
+	../../../../deps/node-10.15.3/src/tracing/node_trace_writer.cc
+	../../../../deps/node-10.15.3/src/tracing/trace_event.cc
+	../../../../deps/node-10.15.3/src/tracing/traced_value.cc
+	../../../../deps/node-10.15.3/src/tty_wrap.cc
+	../../../../deps/node-10.15.3/src/udp_wrap.cc
+	../../../../deps/node-10.15.3/src/util.cc
+	../../../../deps/node-10.15.3/src/uv.cc
+	../../../../deps/node-10.15.3/src/node_code_cache_stub.cc
+	../../../../deps/node-10.15.3/src/node_crypto.cc
+	../../../../deps/node-10.15.3/src/node_crypto_bio.cc
+	../../../../deps/node-10.15.3/src/node_crypto_clienthello.cc
+	../../../../deps/node-10.15.3/src/tls_wrap.cc
+	gen/${ANDROID_ABI}/node_javascript.cc
+
+    # FIXME: This should have been in liquidjs
+    # v8platform
+    ../../../../deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-buffer.cc
+    ../../../../deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-writer.cc
+
+    # LiquidCore
+    compat.cc
+	jni_process.cc
+    node_instance.cc
+	liquid_file.cc
+	node_file.cc
+	process_wrap.cc
+)
+
+SET( NODESRC ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3)
+
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/gen/${ANDROID_ABI}/node_javascript.cc
+    DEPENDS ${NODESRC}/lib/internal/per_context.js ${NODESRC}/lib/internal/bootstrap/cache.js ${NODESRC}/lib/internal/bootstrap/loaders.js ${NODESRC}/lib/internal/bootstrap/node.js ${NODESRC}/lib/async_hooks.js ${NODESRC}/lib/assert.js ${NODESRC}/lib/buffer.js ${NODESRC}/lib/child_process.js ${NODESRC}/lib/console.js ${NODESRC}/lib/constants.js ${NODESRC}/lib/crypto.js ${NODESRC}/lib/cluster.js ${NODESRC}/lib/dgram.js ${NODESRC}/lib/dns.js ${NODESRC}/lib/domain.js ${NODESRC}/lib/events.js ${NODESRC}/lib/fs.js ${NODESRC}/lib/http.js ${NODESRC}/lib/http2.js ${NODESRC}/lib/_http_agent.js ${NODESRC}/lib/_http_client.js ${NODESRC}/lib/_http_common.js ${NODESRC}/lib/_http_incoming.js ${NODESRC}/lib/_http_outgoing.js ${NODESRC}/lib/_http_server.js ${NODESRC}/lib/https.js ${NODESRC}/lib/inspector.js ${NODESRC}/lib/module.js ${NODESRC}/lib/net.js ${NODESRC}/lib/os.js ${NODESRC}/lib/path.js ${NODESRC}/lib/perf_hooks.js ${NODESRC}/lib/process.js ${NODESRC}/lib/punycode.js ${NODESRC}/lib/querystring.js ${NODESRC}/lib/readline.js ${NODESRC}/lib/repl.js ${NODESRC}/lib/stream.js ${NODESRC}/lib/_stream_readable.js ${NODESRC}/lib/_stream_writable.js ${NODESRC}/lib/_stream_duplex.js ${NODESRC}/lib/_stream_transform.js ${NODESRC}/lib/_stream_passthrough.js ${NODESRC}/lib/_stream_wrap.js ${NODESRC}/lib/string_decoder.js ${NODESRC}/lib/sys.js ${NODESRC}/lib/timers.js ${NODESRC}/lib/tls.js ${NODESRC}/lib/_tls_common.js ${NODESRC}/lib/_tls_wrap.js ${NODESRC}/lib/trace_events.js ${NODESRC}/lib/tty.js ${NODESRC}/lib/url.js ${NODESRC}/lib/util.js ${NODESRC}/lib/v8.js ${NODESRC}/lib/vm.js ${NODESRC}/lib/worker_threads.js ${NODESRC}/lib/zlib.js ${NODESRC}/lib/internal/assert.js ${NODESRC}/lib/internal/async_hooks.js ${NODESRC}/lib/internal/bash_completion.js ${NODESRC}/lib/internal/buffer.js ${NODESRC}/lib/internal/cli_table.js ${NODESRC}/lib/internal/child_process.js ${NODESRC}/lib/internal/cluster/child.js ${NODESRC}/lib/internal/cluster/master.js ${NODESRC}/lib/internal/cluster/round_robin_handle.js ${NODESRC}/lib/internal/cluster/shared_handle.js ${NODESRC}/lib/internal/cluster/utils.js ${NODESRC}/lib/internal/cluster/worker.js ${NODESRC}/lib/internal/crypto/certificate.js ${NODESRC}/lib/internal/crypto/cipher.js ${NODESRC}/lib/internal/crypto/diffiehellman.js ${NODESRC}/lib/internal/crypto/hash.js ${NODESRC}/lib/internal/crypto/keygen.js ${NODESRC}/lib/internal/crypto/pbkdf2.js ${NODESRC}/lib/internal/crypto/random.js ${NODESRC}/lib/internal/crypto/scrypt.js ${NODESRC}/lib/internal/crypto/sig.js ${NODESRC}/lib/internal/crypto/util.js ${NODESRC}/lib/internal/constants.js ${NODESRC}/lib/internal/dgram.js ${NODESRC}/lib/internal/dns/promises.js ${NODESRC}/lib/internal/dns/utils.js ${NODESRC}/lib/internal/domexception.js ${NODESRC}/lib/internal/encoding.js ${NODESRC}/lib/internal/errors.js ${NODESRC}/lib/internal/error-serdes.js ${NODESRC}/lib/internal/fixed_queue.js ${NODESRC}/lib/internal/freelist.js ${NODESRC}/lib/internal/fs/promises.js ${NODESRC}/lib/internal/fs/read_file_context.js ${NODESRC}/lib/internal/fs/streams.js ${NODESRC}/lib/internal/fs/sync_write_stream.js ${NODESRC}/lib/internal/fs/utils.js ${NODESRC}/lib/internal/fs/watchers.js ${NODESRC}/lib/internal/http.js ${NODESRC}/lib/internal/inspector_async_hook.js ${NODESRC}/lib/internal/linkedlist.js ${NODESRC}/lib/internal/modules/cjs/helpers.js ${NODESRC}/lib/internal/modules/cjs/loader.js ${NODESRC}/lib/internal/modules/esm/loader.js ${NODESRC}/lib/internal/modules/esm/create_dynamic_module.js ${NODESRC}/lib/internal/modules/esm/default_resolve.js ${NODESRC}/lib/internal/modules/esm/module_job.js ${NODESRC}/lib/internal/modules/esm/module_map.js ${NODESRC}/lib/internal/modules/esm/translators.js ${NODESRC}/lib/internal/safe_globals.js ${NODESRC}/lib/internal/net.js ${NODESRC}/lib/internal/options.js ${NODESRC}/lib/internal/print_help.js ${NODESRC}/lib/internal/process/esm_loader.js ${NODESRC}/lib/internal/process/main_thread_only.js ${NODESRC}/lib/internal/process/next_tick.js ${NODESRC}/lib/internal/process/per_thread.js ${NODESRC}/lib/internal/process/promises.js ${NODESRC}/lib/internal/process/stdio.js ${NODESRC}/lib/internal/process/warning.js ${NODESRC}/lib/internal/process/worker_thread_only.js ${NODESRC}/lib/internal/querystring.js ${NODESRC}/lib/internal/process/write-coverage.js ${NODESRC}/lib/internal/process/coverage.js ${NODESRC}/lib/internal/readline.js ${NODESRC}/lib/internal/repl.js ${NODESRC}/lib/internal/repl/await.js ${NODESRC}/lib/internal/repl/recoverable.js ${NODESRC}/lib/internal/socket_list.js ${NODESRC}/lib/internal/test/binding.js ${NODESRC}/lib/internal/test/heap.js ${NODESRC}/lib/internal/test/unicode.js ${NODESRC}/lib/internal/timers.js ${NODESRC}/lib/internal/tls.js ${NODESRC}/lib/internal/trace_events_async_hooks.js ${NODESRC}/lib/internal/tty.js ${NODESRC}/lib/internal/url.js ${NODESRC}/lib/internal/util.js ${NODESRC}/lib/internal/util/comparisons.js ${NODESRC}/lib/internal/util/inspect.js ${NODESRC}/lib/internal/util/inspector.js ${NODESRC}/lib/internal/util/types.js ${NODESRC}/lib/internal/http2/core.js ${NODESRC}/lib/internal/http2/compat.js ${NODESRC}/lib/internal/http2/util.js ${NODESRC}/lib/internal/v8_prof_polyfill.js ${NODESRC}/lib/internal/v8_prof_processor.js ${NODESRC}/lib/internal/validators.js ${NODESRC}/lib/internal/stream_base_commons.js ${NODESRC}/lib/internal/vm/source_text_module.js ${NODESRC}/lib/internal/worker.js ${NODESRC}/lib/internal/streams/lazy_transform.js ${NODESRC}/lib/internal/streams/async_iterator.js ${NODESRC}/lib/internal/streams/buffer_list.js ${NODESRC}/lib/internal/streams/duplexpair.js ${NODESRC}/lib/internal/streams/legacy.js ${NODESRC}/lib/internal/streams/destroy.js ${NODESRC}/lib/internal/streams/state.js ${NODESRC}/lib/internal/streams/pipeline.js ${NODESRC}/lib/internal/streams/end-of-stream.js ${NODESRC}/lib/internal/wrap_js_stream.js ${NODESRC}/deps/v8/tools/splaytree.js ${NODESRC}/deps/v8/tools/codemap.js ${NODESRC}/deps/v8/tools/consarray.js ${NODESRC}/deps/v8/tools/csvparser.js ${NODESRC}/deps/v8/tools/profile.js ${NODESRC}/deps/v8/tools/profile_view.js ${NODESRC}/deps/v8/tools/logreader.js ${NODESRC}/deps/v8/tools/arguments.js ${NODESRC}/deps/v8/tools/tickprocessor.js ${NODESRC}/deps/v8/tools/SourceMap.js ${NODESRC}/deps/v8/tools/tickprocessor-driver.js ${NODESRC}/deps/node-inspect/lib/_inspect.js ${NODESRC}/deps/node-inspect/lib/internal/inspect_client.js ${NODESRC}/deps/node-inspect/lib/internal/inspect_repl.js ${NODESRC}/deps/acorn/dist/acorn.js ${NODESRC}/deps/acorn/dist/walk.js ${PROJECT_SOURCE_DIR}/config/${ANDROID_ABI}/config.gypi ${NODESRC}/tools/check_macros.py ${NODESRC}/src/notrace_macros.py ${NODESRC}/src/noperfctr_macros.py ${NODESRC}/tools/nodcheck_macros.py
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3
+    COMMAND cp ${PROJECT_SOURCE_DIR}/config/${ANDROID_ABI}/config.gypi ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3
+    COMMAND python tools/js2c.py "${PROJECT_SOURCE_DIR}/gen/${ANDROID_ABI}/node_javascript.cc" lib/internal/per_context.js lib/internal/bootstrap/cache.js lib/internal/bootstrap/loaders.js lib/internal/bootstrap/node.js lib/async_hooks.js lib/assert.js lib/buffer.js lib/child_process.js lib/console.js lib/constants.js lib/crypto.js lib/cluster.js lib/dgram.js lib/dns.js lib/domain.js lib/events.js lib/fs.js lib/http.js lib/http2.js lib/_http_agent.js lib/_http_client.js lib/_http_common.js lib/_http_incoming.js lib/_http_outgoing.js lib/_http_server.js lib/https.js lib/inspector.js lib/module.js lib/net.js lib/os.js lib/path.js lib/perf_hooks.js lib/process.js lib/punycode.js lib/querystring.js lib/readline.js lib/repl.js lib/stream.js lib/_stream_readable.js lib/_stream_writable.js lib/_stream_duplex.js lib/_stream_transform.js lib/_stream_passthrough.js lib/_stream_wrap.js lib/string_decoder.js lib/sys.js lib/timers.js lib/tls.js lib/_tls_common.js lib/_tls_wrap.js lib/trace_events.js lib/tty.js lib/url.js lib/util.js lib/v8.js lib/vm.js lib/worker_threads.js lib/zlib.js lib/internal/assert.js lib/internal/async_hooks.js lib/internal/bash_completion.js lib/internal/buffer.js lib/internal/cli_table.js lib/internal/child_process.js lib/internal/cluster/child.js lib/internal/cluster/master.js lib/internal/cluster/round_robin_handle.js lib/internal/cluster/shared_handle.js lib/internal/cluster/utils.js lib/internal/cluster/worker.js lib/internal/crypto/certificate.js lib/internal/crypto/cipher.js lib/internal/crypto/diffiehellman.js lib/internal/crypto/hash.js lib/internal/crypto/keygen.js lib/internal/crypto/pbkdf2.js lib/internal/crypto/random.js lib/internal/crypto/scrypt.js lib/internal/crypto/sig.js lib/internal/crypto/util.js lib/internal/constants.js lib/internal/dgram.js lib/internal/dns/promises.js lib/internal/dns/utils.js lib/internal/domexception.js lib/internal/encoding.js lib/internal/errors.js lib/internal/error-serdes.js lib/internal/fixed_queue.js lib/internal/freelist.js lib/internal/fs/promises.js lib/internal/fs/read_file_context.js lib/internal/fs/streams.js lib/internal/fs/sync_write_stream.js lib/internal/fs/utils.js lib/internal/fs/watchers.js lib/internal/http.js lib/internal/inspector_async_hook.js lib/internal/linkedlist.js lib/internal/modules/cjs/helpers.js lib/internal/modules/cjs/loader.js lib/internal/modules/esm/loader.js lib/internal/modules/esm/create_dynamic_module.js lib/internal/modules/esm/default_resolve.js lib/internal/modules/esm/module_job.js lib/internal/modules/esm/module_map.js lib/internal/modules/esm/translators.js lib/internal/safe_globals.js lib/internal/net.js lib/internal/options.js lib/internal/print_help.js lib/internal/process/esm_loader.js lib/internal/process/main_thread_only.js lib/internal/process/next_tick.js lib/internal/process/per_thread.js lib/internal/process/promises.js lib/internal/process/stdio.js lib/internal/process/warning.js lib/internal/process/worker_thread_only.js lib/internal/querystring.js lib/internal/process/write-coverage.js lib/internal/process/coverage.js lib/internal/readline.js lib/internal/repl.js lib/internal/repl/await.js lib/internal/repl/recoverable.js lib/internal/socket_list.js lib/internal/test/binding.js lib/internal/test/heap.js lib/internal/test/unicode.js lib/internal/timers.js lib/internal/tls.js lib/internal/trace_events_async_hooks.js lib/internal/tty.js lib/internal/url.js lib/internal/util.js lib/internal/util/comparisons.js lib/internal/util/inspect.js lib/internal/util/inspector.js lib/internal/util/types.js lib/internal/http2/core.js lib/internal/http2/compat.js lib/internal/http2/util.js lib/internal/v8_prof_polyfill.js lib/internal/v8_prof_processor.js lib/internal/validators.js lib/internal/stream_base_commons.js lib/internal/vm/source_text_module.js lib/internal/worker.js lib/internal/streams/lazy_transform.js lib/internal/streams/async_iterator.js lib/internal/streams/buffer_list.js lib/internal/streams/duplexpair.js lib/internal/streams/legacy.js lib/internal/streams/destroy.js lib/internal/streams/state.js lib/internal/streams/pipeline.js lib/internal/streams/end-of-stream.js lib/internal/wrap_js_stream.js deps/v8/tools/splaytree.js deps/v8/tools/codemap.js deps/v8/tools/consarray.js deps/v8/tools/csvparser.js deps/v8/tools/profile.js deps/v8/tools/profile_view.js deps/v8/tools/logreader.js deps/v8/tools/arguments.js deps/v8/tools/tickprocessor.js deps/v8/tools/SourceMap.js deps/v8/tools/tickprocessor-driver.js deps/node-inspect/lib/_inspect.js deps/node-inspect/lib/internal/inspect_client.js deps/node-inspect/lib/internal/inspect_repl.js deps/acorn/dist/acorn.js deps/acorn/dist/walk.js config.gypi tools/check_macros.py src/notrace_macros.py src/noperfctr_macros.py tools/nodcheck_macros.py
+)
+
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    set(SOURCES ${SOURCES}
+
+     # ../../androidTest/cpp/testapi.cpp
+     )
+endif()
+
+
+add_library( # Specifies the name of the library.
+             liquidnode
+
+             # Sets the library as a shared library.
+             SHARED
+
+             ${SOURCES}
+             )
+
+if(${ANDROID_ABI} STREQUAL armeabi-v7a)
+    SET( SSL_ARCH "linux-armv4" )
+    SET( NODE_ARCH "armv7a" )
+elseif(${ANDROID_ABI} STREQUAL x86)
+    SET( SSL_ARCH "linux-x32" )
+    SET( NODE_ARCH "x86" )
+elseif(${ANDROID_ABI} STREQUAL x86_64)
+    SET( SSL_ARCH "linux-x86_64" )
+    SET( NODE_ARCH "x64" )
+elseif(${ANDROID_ABI} STREQUAL arm64-v8a)
+    SET( SSL_ARCH "linux-aarch64" )
+    SET( NODE_ARCH "arm64" )
+endif()
+
+include_directories(
+		../../../../deps/JavaScriptCore/include
+		../../../../deps/node-10.15.3/deps/v8
+		../../../../deps/node-10.15.3/deps/v8/include
+		../../../../deps/node-10.15.3/deps/uv/include
+		../../../../deps/node-10.15.3/deps/uv/src
+
+		../../../../deps/node-10.15.3/deps/cares/config/android
+		../../../../deps/node-10.15.3/deps/cares/src
+		../../../../deps/node-10.15.3/deps/cares/include
+
+		../../../../deps/node-10.15.3/deps/http_parser
+
+		../../../../deps/node-10.15.3/deps/nghttp2/lib/includes
+
+		../../../../deps/node-10.15.3/src
+
+		../../../../deps/node-10.15.3/deps/openssl/openssl/include
+
+		../../../../deps/node-10.15.3/deps/openssl/openssl
+		../../../../deps/node-10.15.3/deps/openssl/openssl/include
+		../../../../deps/node-10.15.3/deps/openssl/openssl/crypto
+		../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/include
+		../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes
+		../../../../deps/node-10.15.3/deps/openssl/config
+		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm
+		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/include
+		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto
+		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto/include/internal
+
+		../../../../liquidjs/src/main/cpp/Common
+		../../../../liquidjs/src/main/cpp
+		../../../../deps/boost_1_66_0
+)
+
+unset(DEFS_RELEASE)
+unset(CFLAGS_RELEASE)
+unset(CPPFLAGS_RELEASE)
+
+list (APPEND DEFS_RELEASE
+	-DNODE_PLATFORM='"android"'
+	-DNODE_ARCH='"${NODE_ARCH}"'
+	-DNODE_WANT_INTERNALS=1
+	-DV8_DEPRECATION_WARNINGS=1
+	-DNODE_OPENSSL_SYSTEM_CERT_PATH='""'
+	-DHAVE_INSPECTOR=0
+	-DNODE_SHARED_MODE
+	-DNODE_USE_V8_PLATFORM=1
+	-DHAVE_OPENSSL=1
+	-DHTTP_PARSER_STRICT=0
+
+	-D__POSIX__
+    -D_REENTRANT=1
+	-D_DARWIN_USE_64_BIT_INODE=1
+	-D_LARGEFILE_SOURCE
+	-D_FILE_OFFSET_BITS=64
+	-D_GNU_SOURCE
+	-DHAVE_CONFIG_H
+	-D_GLIBCXX_USE_C99_MATH
+	-DANDROID_STL=c++_static
+
+    -DHTTP_MAX_HEADER_SIZE=8192
+	-DHTTP_PARSER_STRICT=0
+
+	-D_U_=
+	-DBUILDING_NGHTTP2
+	-DNGHTTP2_STATICLIB
+
+	-DOPENSSL_NO_HW
+	-DOPENSSL_NO_ASM
+	-DDSO_DLFCN
+	-DHAVE_DLFCN_H
+	-DOPENSSL_THREADS
+	-DOPENSSL_NO_DYNAMIC_ENGINE
+	-DOPENSSL_PIC
+	-DOPENSSLDIR='"/etc/ssl"'
+	-DENGINESDIR='"/dev/null"'
+	-DTERMIOS
+
+    )
+
+list (APPEND CFLAGS_RELEASE
+    -Wall
+    -Wextra
+    -Wno-unused-parameter
+    -fPIC
+    -O3
+    -fno-omit-frame-pointer
+    -fPIE
+    -Wno-strict-aliasing
+    -Wno-unused-variable
+    -Wno-mismatched-tags
+    -Wno-unused-result
+	-Wno-missing-field-initializers
+    )
+
+list (APPEND CPPFLAGS_RELEASE
+    -fno-rtti
+    -std=c++1y
+)
+
+if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    list (APPEND CFLAGS_RELEASE -DDEBUG)
+endif()
+
+string (REPLACE ";" " " C_FLAGS_STR "${CFLAGS_RELEASE} ${DEFS_RELEASE}")
+SET( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${C_FLAGS_STR}" )
+
+string (REPLACE ";" " " CPP_FLAGS_STR "${CFLAGS_RELEASE} ${CPPFLAGS_RELEASE} ${DEFS_RELEASE}")
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CPP_FLAGS_STR}" )
+
+find_library( log-lib log )
+find_library( z-lib z )
+
+add_library(
+        liquidjs-lib
+        SHARED
+        IMPORTED
+)
+set_target_properties(
+        liquidjs-lib
+        PROPERTIES IMPORTED_LOCATION
+        ${PROJECT_SOURCE_DIR}/../../../build/liquidjs_lib/jni/${ANDROID_ABI}/libliquidjs.so
+)
+
+target_link_libraries( liquidnode liquidjs-lib ${z-lib} ${log-lib} )

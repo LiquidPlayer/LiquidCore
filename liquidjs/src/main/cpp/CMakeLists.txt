@@ -161,15 +161,22 @@ list (APPEND CFLAGS_RELEASE
     -Wno-unused-variable
     -Wno-mismatched-tags
     -Wno-unused-result
-    -fno-rtti
-    -std=c++1y
     )
 
+list (APPEND CPPFLAGS_RELEASE
+	-fno-rtti
+	-std=c++1y
+	)
+
+
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    list (APPEND CFLAGS_RELEASE -DDEBUG)
+	list (APPEND CFLAGS_RELEASE -DDEBUG)
 endif()
 
-string (REPLACE ";" " " CPP_FLAGS_STR "${CFLAGS_RELEASE} ${DEFS_RELEASE}")
+string (REPLACE ";" " " C_FLAGS_STR "${CFLAGS_RELEASE} ${DEFS_RELEASE}")
+SET( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${C_FLAGS_STR}" )
+
+string (REPLACE ";" " " CPP_FLAGS_STR "${CFLAGS_RELEASE} ${CPPFLAGS_RELEASE} ${DEFS_RELEASE}")
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CPP_FLAGS_STR}" )
 
 target_link_libraries( liquidjs v8_libplatform v8_base v8_libbase v8_snapshot v8_libsampler ${log-lib} )

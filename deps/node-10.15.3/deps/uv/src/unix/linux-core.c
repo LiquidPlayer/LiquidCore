@@ -278,11 +278,18 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     if (sizeof(int32_t) == sizeof(long) && timeout >= max_safe_timeout)
       timeout = max_safe_timeout;
 
+#if defined(__ANDROID__) && __ANDROID_API__ >= 21
     nfds = epoll_pwait(loop->backend_fd,
                        events,
                        ARRAY_SIZE(events),
                        timeout,
                        psigset);
+#else
+    nfds = epoll_wait(loop->backend_fd,
+                       events,
+                       ARRAY_SIZE(events),
+                       timeout);
+#endif
 
     /* Update loop->time unconditionally. It's tempting to skip the update when
      * timeout == 0 (i.e. non-blocking poll) but there is no guarantee that the

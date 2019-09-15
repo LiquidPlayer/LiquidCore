@@ -59,7 +59,7 @@ int ContextGroup::s_init_count = 0;
 std::mutex ContextGroup::s_mutex;
 std::map<Isolate *, ContextGroup *> ContextGroup::s_isolate_map;
 
-void ContextGroup::init_v8()
+void ContextGroup::init_v8(bool managePlatform)
 {
     s_mutex.lock();
     if (s_init_count++ == 0) {
@@ -68,8 +68,10 @@ void ContextGroup::init_v8()
         V8::SetFlagsFromString(flags, strlen(flags));
         */
 
-        s_platform = platform::NewDefaultPlatform();
-        V8::InitializePlatform(&*s_platform);
+        if (managePlatform) {
+            s_platform = platform::NewDefaultPlatform();
+            V8::InitializePlatform(&*s_platform);
+        }
         V8::Initialize();
     }
 
@@ -82,7 +84,7 @@ void ContextGroup::dispose_v8()
     // FIXME: Once disposed, an attempt to re-init will crash
     // For now, init once and never dispose
     //--s_init_count;
-    if (s_init_count == 0) {
+    if (s_init_count == 0 && s_platform != nullptr) {
         V8::Dispose();
         V8::ShutdownPlatform();
         s_platform.reset();
