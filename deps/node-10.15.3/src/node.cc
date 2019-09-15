@@ -1220,6 +1220,7 @@ void InitModpendingOnce() {
   CHECK_EQ(0, uv_key_create(&thread_local_modpending));
 }
 
+/* LC
 // DLOpen is process.dlopen(module, filename, flags).
 // Used to load 'module.node' dynamically shared objects.
 //
@@ -1336,7 +1337,7 @@ static void DLOpen(const FunctionCallbackInfo<Value>& args) {
   // Tell coverity that 'handle' should not be freed when we return.
   // coverity[leaked_storage]
 }
-
+--*/
 
 static void OnFatalError(const char* location, const char* message) {
   if (location) {

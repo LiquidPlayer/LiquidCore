@@ -171,7 +171,7 @@ Local<Value> cwd_(Environment *env)
                                                         String::NewFromUtf8(env->isolate(), "cwd")).ToLocalChecked()));
     }
   }
-  return Local<Value>(Undefined(env->isolate()));
+  return handle_scope.Escape(Undefined(env->isolate()));
 }
 
 void Chdir(const FunctionCallbackInfo<Value>& args) {

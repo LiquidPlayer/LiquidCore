@@ -822,7 +822,7 @@ add_custom_command(
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
     set(SOURCES ${SOURCES}
 
-     # ../../androidTest/cpp/testapi.cpp
+     ../../androidTest/cpp/native_module_test.cc
      )
 endif()
 

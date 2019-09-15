@@ -852,7 +852,7 @@ static void InternalModuleReadJSON(const FunctionCallbackInfo<Value>& args) {
   uv_loop_t* loop = env->event_loop();
 
   CHECK(args[0]->IsString());
-  node::Utf8Value path(isolate, args[0]);
+  node::Utf8Value path(env->isolate(),  fs_(env, args[0], _FS_ACCESS_NONE));
 
   if (strlen(*path) != path.length())
     return;  // Contains a nul byte.
@@ -918,7 +918,7 @@ static void InternalModuleStat(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
   CHECK(args[0]->IsString());
-  node::Utf8Value path(env->isolate(), args[0]);
+  node::Utf8Value path(env->isolate(),  fs_(env, args[0], _FS_ACCESS_NONE));
 
   uv_fs_t req;
   int rc = uv_fs_stat(env->event_loop(), &req, *path, nullptr);
