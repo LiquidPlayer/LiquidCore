@@ -79,7 +79,10 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     memset((void*)impl, 0, sizeof(IsolateImpl));
     Isolate * isolate = ToIsolate(impl);
 
-    reinterpret_cast<internal::Isolate*>(isolate)->Init((v8::internal::Deserializer *)&params);
+    {
+        std::unique_lock<std::mutex> lock(IsolateImpl::s_isolate_mutex);
+        reinterpret_cast<internal::Isolate*>(isolate)->Init((v8::internal::Deserializer *)&params);
+    }
 
     HeapImpl* heap = static_cast<HeapImpl*>(impl->ii.heap());
     heap->m_heap_top = nullptr;

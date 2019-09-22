@@ -548,17 +548,19 @@ internal::GlobalHandles::GlobalHandles(internal::Isolate *isolate)
         }
     };
    
-    IsolateImpl::getIsolateFromGlobalHandle = [](v8::internal::Object **location) -> IsolateImpl* {
-        auto handle_loc = reinterpret_cast<Node*>(location);
-        int index = handle_loc->index_;
-        intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<internal::GlobalHandles::NodeBlock*>(16)->handles_) - 16;
-        intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
-        NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
-        v8::Isolate *isolate = reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate());
-        IsolateImpl *iso = ToIsolateImpl(isolate);
-        
-        return iso;
-    };
+    if (!IsolateImpl::getIsolateFromGlobalHandle) {
+        IsolateImpl::getIsolateFromGlobalHandle = [](v8::internal::Object **location) -> IsolateImpl* {
+            auto handle_loc = reinterpret_cast<Node*>(location);
+            int index = handle_loc->index_;
+            intptr_t offset = reinterpret_cast<intptr_t>(&reinterpret_cast<internal::GlobalHandles::NodeBlock*>(16)->handles_) - 16;
+            intptr_t handle_array = reinterpret_cast<intptr_t>(location) - index * sizeof(Node);
+            NodeBlock *block = reinterpret_cast<NodeBlock*>(handle_array - offset);
+            v8::Isolate *isolate = reinterpret_cast<v8::Isolate*>(block->global_handles_->isolate());
+            IsolateImpl *iso = ToIsolateImpl(isolate);
+            
+            return iso;
+        };
+    }
 }
 
 internal::Handle<internal::Object> internal::GlobalHandles::Create(Object* value)
