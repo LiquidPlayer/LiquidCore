@@ -80,7 +80,7 @@ public class JSContextGroup {
      * @return The written file
      * @throws IOException thrown if taking snapshot or writing to the file fails; check message
      */
-    public static File createSnapshot(String script, File snapshotToWrite) throws IOException
+    public static File createSnapshot(final String script, final File snapshotToWrite) throws IOException
     {
         int result = JNIJSContextGroup.createSnapshot(script, snapshotToWrite.getAbsolutePath());
         switch(result) {

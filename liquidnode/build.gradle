@@ -64,7 +64,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.annotation:annotation:1.1.0'
     liquidjs project(path: ':liquidjs', configuration: 'default')
-    implementation project(':liquidjs')
+    implementation project(path: ':liquidjs', configuration: 'default')
     debugImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'

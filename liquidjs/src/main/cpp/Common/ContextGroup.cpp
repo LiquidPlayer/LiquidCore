@@ -58,20 +58,25 @@ std::unique_ptr<Platform> ContextGroup::s_platform = NULL;
 int ContextGroup::s_init_count = 0;
 std::mutex ContextGroup::s_mutex;
 std::map<Isolate *, ContextGroup *> ContextGroup::s_isolate_map;
+bool ContextGroup::s_platform_init = false;
 
-void ContextGroup::init_v8(bool managePlatform)
+void ContextGroup::set_platform_init(v8::Platform *platform)
+{
+    s_platform_init = true;
+    s_platform.reset(platform);
+}
+
+void ContextGroup::init_v8()
 {
     s_mutex.lock();
-    if (s_init_count++ == 0) {
+    if (s_init_count++ == 0 && !s_platform_init) {
         /* Add any required flags here.
         const char *flags = "--expose_gc";
         V8::SetFlagsFromString(flags, strlen(flags));
         */
 
-        if (managePlatform) {
-            s_platform = platform::NewDefaultPlatform();
-            V8::InitializePlatform(&*s_platform);
-        }
+        s_platform = platform::NewDefaultPlatform();
+        V8::InitializePlatform(&*s_platform);
         V8::Initialize();
     }
 

@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import android.util.LongSparseArray;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.Semaphore;
 
@@ -20,7 +21,15 @@ public class JSContext extends JSObject {
 
     static {
         System.loadLibrary("liquidjs");
+        try {
+            System.loadLibrary("liquidnode");
+            long platform = getPlatform();
+            JNIJSContextGroup.SetPlatformInit(platform);
+        } catch (UnsatisfiedLinkError e) {
+            // This is ok, it just means node is not linked
+        }
     }
+    static native private long getPlatform();
 
     static void init() {
     }

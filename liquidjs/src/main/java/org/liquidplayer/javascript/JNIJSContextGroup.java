@@ -53,6 +53,8 @@ class JNIJSContextGroup extends JNIObject {
         TerminateExecution(reference);
     }
 
+    static void SetPlatformInit(long platformRef) { setPlatformInit(platformRef); }
+
     /* Natives */
     static native int createSnapshot(String script, String snapshotFile);
 
@@ -62,4 +64,5 @@ class JNIJSContextGroup extends JNIObject {
     private static native void runInContextGroup(long groupRef, Object thisObject, Runnable runnable);
     private static native void Finalize(long groupRef);
     private static native void TerminateExecution(long groupRef);
+    private static native void setPlatformInit(long platformRef);
 }

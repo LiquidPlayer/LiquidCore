@@ -23,12 +23,12 @@ namespace node {
 
 static std::recursive_mutex s_init_mutex;
 
-static void InitializeNode() {
+void InitializeNode() {
     std::unique_lock<std::recursive_mutex> lock(s_init_mutex);
     if (!v8_initialized) {
         v8_platform.Initialize(
                 per_process_opts->v8_thread_pool_size);
-        NodeInstance::Init();
+        V8::Initialize();
         performance::performance_v8_start = PERFORMANCE_NOW();
         v8_initialized = true;
     }
@@ -444,4 +444,11 @@ int Start(int argc, char** argv) {
     return exit_code;
 }
 
+v8::Platform * GetPlatform()
+{
+    return v8_platform.Platform();
 }
+
+
+}
+

@@ -16,6 +16,11 @@ NATIVE(JNIJSContextGroup,jlong,create) (STATIC)
     );
 }
 
+NATIVE(JNIJSContextGroup,void,setPlatformInit) (STATIC, jlong platformRef)
+{
+    ContextGroup::set_platform_init(reinterpret_cast<v8::Platform*>(platformRef));
+}
+
 NATIVE(JNIJSContextGroup,jboolean,isManaged) (STATIC, jlong grpRef)
 {
     auto group = SharedWrap<ContextGroup>::Shared(grpRef);

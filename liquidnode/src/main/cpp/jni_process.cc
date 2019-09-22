@@ -153,11 +153,6 @@ void AndroidInstance::NotifyStart(JSContextRef ctxRef, JSContextGroupRef groupRe
     }
 }
 
-void NodeInstance::Init()
-{
-    ContextGroup::init_v8(false);
-}
-
 v8::Local<v8::Context> NodeInstance::NewContext(v8::Isolate *isolate, JSContextGroupRef groupRef,
                                   JSGlobalContextRef *ctxRef)
 {
@@ -229,4 +224,15 @@ NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
         auto success = globalObj->SetPrivate(context, privateKey, fsObj).FromJust();
 
     V8_UNLOCK();
+}
+
+extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    node::InitializeNode();
+    return JNI_VERSION_1_6;
+}
+
+extern "C" jlong JNICALL Java_org_liquidplayer_javascript_JSContext_getPlatform (JNIEnv* env, jclass klass)
+{
+    return reinterpret_cast<jlong>(node::GetPlatform());
 }
