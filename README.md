@@ -5,7 +5,7 @@ LiquidCore enables [Node.js] virtual machines to run inside Android and iOS apps
 
 LiquidCore also provides a convenient way for Android developers to [execute raw JavaScript](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-as-a-Native-Javascript-Engine) inside of their apps, as iOS developers can already do natively with JavaScriptCore.
 
-For a description of how to use LiquidCore, please see the appropriate README under [LiquidCoreAndroid](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreAndroid) or [LiquidCoreiOS](https://github.com/LiquidPlayer/LiquidCore/tree/master/LiquidCoreiOS).
+For a description of how to use LiquidCore, please see the appropriate README for [Android](https://github.com/LiquidPlayer/LiquidCore/tree/master/doc/AndroidREADME.md) or [iOS](https://github.com/LiquidPlayer/LiquidCore/tree/master/doc/iOSREADME.md).
 
 Version
 -------
