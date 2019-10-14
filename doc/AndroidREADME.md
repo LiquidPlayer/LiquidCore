@@ -96,7 +96,7 @@ A micro service can communicate with the host app once the Node.js environment i
 MicroService service = new MicroService(
     androidContext,
     new URI("http://my.server.com/path/to/code.js"),
-    new MicroService.StartServiceListener() {
+    new MicroService.ServiceStartListener() {
         @Override
         public void onStart(MicroService service) {
             // .. The environment is live, but the startup JS code (from the URI)
@@ -118,7 +118,7 @@ On the Java side, the host app can listen for events:
 ```java
 // ... in the StartServiceListener.onStart() method:
 
-service.on("my_event", new MicroService.EventListener() {
+service.addEventListener("my_event", new MicroService.EventListener() {
     @Override
     public void onEvent(MicroService service, String event, JSONObject payload) {
         try {
