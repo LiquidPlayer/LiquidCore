@@ -22,6 +22,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 		cs.dependency 'LiquidCore/uv'
 		cs.source_files =
 			# cares
+			"deps/node-10.15.3/deps/cares/include/*.h",
 			"deps/node-10.15.3/deps/cares/src/ares_cancel.{c,h}",
 			"deps/node-10.15.3/deps/cares/src/ares__close_sockets.{c,h}",
 			"deps/node-10.15.3/deps/cares/src/ares_create_query.{c,h}",
@@ -74,6 +75,9 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 			"deps/node-10.15.3/deps/http_parser/http_parser.{c,h}",
 
 			# nghttp2
+			"deps/node-10.15.3/deps/nghttp2/lib/includes/*.h",
+			"deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h",
+			"deps/node-10.15.3/deps/nghttp2/lib/nghttp2_*.h",
 			"deps/node-10.15.3/deps/nghttp2/lib/nghttp2_buf.{c,h}",
 			"deps/node-10.15.3/deps/nghttp2/lib/nghttp2_callbacks.{c,h}",
 			"deps/node-10.15.3/deps/nghttp2/lib/nghttp2_debug.{c,h}",
@@ -133,6 +137,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 
 			# node_lib
 			"deps/node-10.15.3/src/async_wrap.{cc,h}",
+			"deps/node-10.15.3/src/*.h",
 			"deps/node-10.15.3/src/bootstrapper.{cc,h}",
 			"deps/node-10.15.3/src/callback_scope.{cc,h}",
 			"deps/node-10.15.3/src/cares_wrap.{cc,h}",
@@ -398,7 +403,8 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 			"deps/node-10.15.3/deps/uv/src/unix/fsevents.{c,h}",
 			"deps/node-10.15.3/deps/uv/src/unix/darwin-proctitle.{c,h}",
 			"deps/node-10.15.3/deps/uv/src/unix/bsd-ifaddrs.{c,h}",
-			"deps/node-10.15.3/deps/uv/src/unix/kqueue.{c,h}"
+			"deps/node-10.15.3/deps/uv/src/unix/kqueue.{c,h}",
+			"deps/node-10.15.3/deps/uv/include/uv.h"
 		us.private_header_files = [
 			"deps/node-10.15.3/deps/uv/include/pthread-barrier.h",
 			"deps/node-10.15.3/deps/uv/include/tree.h",
@@ -424,12 +430,16 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 					'-D__POSIX__',
 					'-D_REENTRANT=1',
 					'-D_GLIBCXX_USE_C99_MATH',
+					'-Wno-shorten-64-to-32',
+					'-Wno-unreachable-code',
+					'-Wno-comma',
 			].join(' '),
 		}
 	end
 
 	s.subspec 'openssl' do |os|
 		os.source_files =
+			"deps/node-10.15.3/deps/openssl/openssl/include/openssl/*.h",
 			"deps/node-10.15.3/deps/openssl/openssl/ssl/*.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/ssl/record/*.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/ssl/statem/*.{c,h}",
@@ -457,6 +467,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_mod.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_sap.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_ssl.{c,h}",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/conf/conf_lcl.h",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/cpt_err.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/cryptlib.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/cversion.{c,h}",
@@ -478,6 +489,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/threads_pthread.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/threads_win.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/uid.{c,h}",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/vms_rms.h",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/ct/*.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/des/*.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/dh/*.{c,h}",
@@ -520,6 +532,8 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 			"deps/node-10.15.3/deps/openssl/openssl/engines/e_padlock.{c,h}"
 		os.exclude_files = [
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/arm_arch.{c,h}",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ppc_arch.{c,h}",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/sparc_arch.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3conf.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/v3prin.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/tabtest.{c,h}",
@@ -529,9 +543,69 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_cbc.{c,h}",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/des/ncbc_enc.c",
 			"deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/tab.{c,h}",
+			"deps/node-10.15.3/deps/openssl/openssl/include/openssl/__DECC_INCLUDE_EPILOGUE.H",
+			"deps/node-10.15.3/deps/openssl/openssl/include/openssl/__DECC_INCLUDE_PROLOGUE.H",
 		]
 		os.private_header_files = [
-			"deps/node-10.15.3/deps/openssl/openssl/**/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/include/openssl/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/ssl/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/ssl/record/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/ssl/statem/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/aes/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/bf/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/bio/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/bn/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/buffer/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/cast/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/chacha/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/cmac/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/cms/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/conf/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ct/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/des/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/dh/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/dso/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ec/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/engine/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/err/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/evp/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/hmac/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/idea/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/kdf/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/lhash/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/md4/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/md5/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/mdc2/*,h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/modes/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/objects/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/pem/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs7/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/poly1305/poly1305.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/rand/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/rc4/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ripemd/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/seed/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/sha/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/srp/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/stack/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ts/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/txt_db/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/ui/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/whrlpool/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/x509/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/*.h",
+			"deps/node-10.15.3/deps/openssl/openssl/engines/e_capi.h",
+			"deps/node-10.15.3/deps/openssl/openssl/engines/e_padlock.h"
 		]
 		os.preserve_paths = [
 			"deps/node-10.15.3/deps/openssl/openssl/include",
