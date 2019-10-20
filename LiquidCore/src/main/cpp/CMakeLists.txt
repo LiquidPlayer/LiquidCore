@@ -941,6 +941,8 @@ list (APPEND CFLAGS_RELEASE
     -Wno-mismatched-tags
     -Wno-unused-result
 	-Wno-missing-field-initializers
+	-Wno-deprecated-declarations
+	-Wno-int-conversion
     )
 
 list (APPEND CPPFLAGS_RELEASE

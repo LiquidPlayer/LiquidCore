@@ -153,6 +153,7 @@ list (APPEND CFLAGS_RELEASE
     -Wall
     -Wextra
     -Wno-unused-parameter
+    -Wno-unused-function
     -fPIC
     -O3
     -fno-omit-frame-pointer
@@ -161,6 +162,8 @@ list (APPEND CFLAGS_RELEASE
     -Wno-unused-variable
     -Wno-mismatched-tags
     -Wno-unused-result
+	-Wno-sign-compare
+    -Wno-implicit-function-declaration
     )
 
 list (APPEND CPPFLAGS_RELEASE
