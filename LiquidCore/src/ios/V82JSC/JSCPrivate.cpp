@@ -385,6 +385,7 @@ JSObjectRef JSCPrivate::JSObjectGetProxyTarget(v8::Local<v8::Context> context, J
     v8::HandleScope scope(V82JSC::ToIsolate(V82JSC::ToContextImpl(context)));
     
     auto gCtx = V82JSC::ToGlobalContextImpl(V82JSC::FindGlobalContext(context));
+    assert(gCtx);
 
     JSValueRef args[] = {
         gCtx->m_proxy_targets,

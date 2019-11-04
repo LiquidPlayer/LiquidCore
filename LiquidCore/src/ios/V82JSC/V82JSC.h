@@ -297,7 +297,8 @@ inline v8::Local<v8::Context> FindGlobalContext(v8::Local<v8::Context> context)
     if (i->m_global_contexts.count(gctx) > 0) {
         return scope.Escape(i->m_global_contexts[gctx].Get(isolate));
     }
-    return v8::Local<v8::Context>();
+    return scope.Escape(i->m_nullContext.Get(isolate));
+//    return v8::Local<v8::Context>();
 }
 JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj);
 void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto,

@@ -140,6 +140,16 @@ Local<v8::String> v8::String::NewFromUtf8(Isolate* isolate, char const* str, Str
                                length).ToLocalChecked();
 }
 
+int v8::String::WriteUtf8(
+    char* buffer,
+    int length,
+    int* nchars_ref,
+    int options) const
+{
+    return v8::String::WriteUtf8(Isolate::GetCurrent(), buffer, length, nchars_ref, options);
+}
+
+
 Local<v8::Value> v8::Script::Run()
 {
     Isolate* isolate = ToIsolate(this);

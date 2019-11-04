@@ -45,6 +45,7 @@ v8::Local<v8::Value> fs_(node::Environment *env, v8::Local<v8::Value> path, int 
       Local<Object> fsObj = fsVal->ToObject(env->context()).ToLocalChecked();
 
       Local<Value> cwd = fsObj->Get(String::NewFromUtf8(env->isolate(), "cwd"));
+      Local<Value> fs = fsObj->Get(String::NewFromUtf8(env->isolate(), "fs"));
       BufferValue c(env->isolate(), cwd);
       char fullp[strlen(*c) + strlen(*p) + 8];
 
@@ -80,8 +81,7 @@ v8::Local<v8::Value> fs_(node::Environment *env, v8::Local<v8::Value> path, int 
                               pth);
         return rc;
       }
-      Local<Object> test = fsObj->Get(env->context(), String::NewFromUtf8(env->isolate(), "fs"))
-              .ToLocalChecked()->ToObject(env->context()).ToLocalChecked();
+      Local<Object> test = fs->ToObject(env->context()).ToLocalChecked();
       MaybeLocal<Value> tuple = test->CallAsFunction(env->context(), fsObj, 1, &rc);
       if (tuple.IsEmpty()) {
         access = 0;

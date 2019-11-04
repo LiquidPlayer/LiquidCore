@@ -10,15 +10,15 @@
 
 @protocol FileSystemExports <JSExport>
 @property (nonatomic, readwrite) NSString* cwd;
-@property (nonatomic, readwrite) JSManagedValue* fs;
-@property (nonatomic, readwrite) JSManagedValue* alias;
+@property (nonatomic, readwrite) JSValue* fs;
+@property (nonatomic, readwrite) JSValue* alias;
 
 @end
 
 @interface FileSystemImpl : FileSystem<FileSystemExports>
 @property (nonatomic, readwrite) NSString* cwd;
-@property (nonatomic, readwrite) JSManagedValue* fs;
-@property (nonatomic, readwrite) JSManagedValue* alias;
+@property (nonatomic, readwrite) JSValue* fs;
+@property (nonatomic, readwrite) JSValue* alias;
 
 @property (nonatomic, copy) NSString *uniqueID;
 @property (nonatomic, copy) NSString *sessionID;
@@ -297,8 +297,8 @@ static NSString* alias_code =
                    mask:mask];
 
     _cwd = @"/home";
-    _fs = [JSManagedValue managedValueWithValue:[context evaluateScript:fs_code]];
-    _alias = [JSManagedValue managedValueWithValue:[context evaluateScript:alias_code]];
+    _fs = [context evaluateScript:fs_code];
+    _alias = [context evaluateScript:alias_code];
     
     context[@"fs_"] = self;
     [context evaluateScript:js.js];

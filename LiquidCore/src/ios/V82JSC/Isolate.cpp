@@ -218,26 +218,22 @@ Isolate * Isolate::New(Isolate::CreateParams const&params)
     return reinterpret_cast<v8::Isolate*>(isolate);
 }
 
-#define EXTERNAL_MEMORY_SIZE (512 * 1024)
+#define EXTERNAL_MEMORY_SIZE (64 * 1024 * 1024)
 
 bool v8::internal::Heap::SetUp()
 {
     IsolateImpl* iso = reinterpret_cast<IsolateImpl*>(isolate());
     incremental_marking_ = &iso->incremental_marking_;
     
-    void *memptr;
-    posix_memalign(&memptr, EXTERNAL_MEMORY_SIZE, EXTERNAL_MEMORY_SIZE);
-    external_memory_ = reinterpret_cast<uint64_t>(memptr);
+    external_memory_ = 0;
     external_memory_limit_ = external_memory_ + EXTERNAL_MEMORY_SIZE;
+    external_memory_at_last_mark_compact_ = external_memory_;
     
     return true;
 }
 
 void v8::internal::Heap::TearDown()
 {
-    if (external_memory_) {
-        free(reinterpret_cast<void*>(external_memory_));
-    }
 }
 
 bool IsolateImpl::PollForInterrupts(JSContextRef ctx, void* context)
