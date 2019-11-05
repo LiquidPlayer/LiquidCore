@@ -337,6 +337,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
         '-D_DARWIN_USE_64_BIT_INODE=1',
         '-D_LARGEFILE_SOURCE',
         '-D_FILE_OFFSET_BITS=64',
+        '-DHAVE_CONFIG_H',
       ].join(' '),
     }
   end
@@ -393,6 +394,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
         '-DBUILDING_NGHTTP2',
         '-DNGHTTP2_STATICLIB',
       ].join(' '),
+      :CLANG_WARN_DOCUMENTATION_COMMENTS => 'NO',
     }
   end
 

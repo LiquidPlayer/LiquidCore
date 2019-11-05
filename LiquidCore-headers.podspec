@@ -1,9 +1,9 @@
 Pod::Spec.new do |s|
   s.name = "LiquidCore-headers"
   s.version = "0.7.0"
-  s.summary = "Provides Node.js virtual machines to run inside iOS apps."
+  s.summary = "Header include files for LiquidCore."
   s.description = <<-DESC
-LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system.
+Header include files for LiquidCore.  To use in a native addon, add "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders" to your header search path.
   DESC
   s.homepage = "https://github.com/LiquidPlayer/LiquidCore"
   s.license = {:type => "MIT", :file => "LICENSE.md"}

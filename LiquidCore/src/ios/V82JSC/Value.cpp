@@ -611,7 +611,8 @@ MaybeLocal<v8::Int32> v8::Value::ToInt32(Local<v8::Context> context) const
 
 bool v8::Value::IsModuleNamespaceObject() const
 {
-    assert(0);
+    //assert(0);
+    return false;
 }
 
 
