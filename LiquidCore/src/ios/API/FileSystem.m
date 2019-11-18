@@ -231,6 +231,11 @@ static NSString* alias_code =
     
     // Set up /home (read-only)
     [js mkdir:@"/home" ios:[NSString stringWithFormat:@"%@/home", sessionPath] mask:PermissionsRead];
+    // This is a hack for OSX Catalina
+    // Starting with this release, there is now a /home directory on OSX which causes conflicts
+    // with our aliased /home.  This should only be an issue with the simulator.  To workaround it,
+    // we alias the destination symlink back to our desired home directory.
+    [js alias:@"/System/Volumes/Data/home" ios:[NSString stringWithFormat:@"%@/home", sessionPath] mask:PermissionsRead];
 
     // Set up /home/module (read-only)
     NSError *error;
