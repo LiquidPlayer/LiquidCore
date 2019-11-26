@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 set( SOURCES
-
 	# cares
 	../../../../deps/node-10.15.3/deps/cares/src/ares_android.c
 	../../../../deps/node-10.15.3/deps/cares/src/ares_cancel.c
@@ -52,11 +51,11 @@ set( SOURCES
 	../../../../deps/node-10.15.3/deps/cares/src/inet_net_pton.c
 	../../../../deps/node-10.15.3/deps/cares/src/inet_ntop.c
 
-    # http_parser
-    ../../../../deps/node-10.15.3/deps/http_parser/http_parser.c
+	# http_parser
+	../../../../deps/node-10.15.3/deps/http_parser/http_parser.c
 
-    # nghttp2
-    ../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_buf.c
+	# nghttp2
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_buf.c
 	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_callbacks.c
 	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_debug.c
 	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_frame.c
@@ -79,8 +78,8 @@ set( SOURCES
 	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_submit.c
 	../../../../deps/node-10.15.3/deps/nghttp2/lib/nghttp2_version.c
 
-    # openssl
-    ../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/bio_ssl.c
+	# openssl
+	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/bio_ssl.c
 	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/d1_lib.c
 	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/d1_msg.c
 	../../../../deps/node-10.15.3/deps/openssl/openssl/ssl/d1_srtp.c
@@ -723,7 +722,7 @@ set( SOURCES
 	../../../../deps/node-10.15.3/deps/openssl/openssl/engines/e_capi.c
 	../../../../deps/node-10.15.3/deps/openssl/openssl/engines/e_padlock.c
 
-    # node_lib
+  # node_lib
 	../../../../deps/node-10.15.3/src/async_wrap.cc
 	../../../../deps/node-10.15.3/src/bootstrapper.cc
 	../../../../deps/node-10.15.3/src/callback_scope.cc
@@ -792,15 +791,15 @@ set( SOURCES
 	../../../../deps/node-10.15.3/src/tls_wrap.cc
 	gen/${ANDROID_ABI}/node_javascript.cc
 
-    # FIXME: This should have been in liquidjs
-    # v8platform
-    ../../../../deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-buffer.cc
-    ../../../../deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-writer.cc
+	# FIXME: This should have been in liquidjs
+	# v8platform
+	../../../../deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-buffer.cc
+	../../../../deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-writer.cc
 
-    # LiquidCore
-    compat.cc
+	# LiquidCore
+	compat.cc
 	jni_process.cc
-    ../../common/node_instance.cc
+	../../common/node_instance.cc
 	../../common/liquid_file.cc
 	../../common/node_file.cc
 	../../common/process_wrap.cc
@@ -809,77 +808,69 @@ set( SOURCES
 SET( NODESRC ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3)
 
 add_custom_command(
-    OUTPUT ${PROJECT_SOURCE_DIR}/gen/${ANDROID_ABI}/node_javascript.cc
-    DEPENDS ${NODESRC}/lib/internal/per_context.js ${NODESRC}/lib/internal/bootstrap/cache.js ${NODESRC}/lib/internal/bootstrap/loaders.js ${NODESRC}/lib/internal/bootstrap/node.js ${NODESRC}/lib/async_hooks.js ${NODESRC}/lib/assert.js ${NODESRC}/lib/buffer.js ${NODESRC}/lib/child_process.js ${NODESRC}/lib/console.js ${NODESRC}/lib/constants.js ${NODESRC}/lib/crypto.js ${NODESRC}/lib/cluster.js ${NODESRC}/lib/dgram.js ${NODESRC}/lib/dns.js ${NODESRC}/lib/domain.js ${NODESRC}/lib/events.js ${NODESRC}/lib/fs.js ${NODESRC}/lib/http.js ${NODESRC}/lib/http2.js ${NODESRC}/lib/_http_agent.js ${NODESRC}/lib/_http_client.js ${NODESRC}/lib/_http_common.js ${NODESRC}/lib/_http_incoming.js ${NODESRC}/lib/_http_outgoing.js ${NODESRC}/lib/_http_server.js ${NODESRC}/lib/https.js ${NODESRC}/lib/inspector.js ${NODESRC}/lib/module.js ${NODESRC}/lib/net.js ${NODESRC}/lib/os.js ${NODESRC}/lib/path.js ${NODESRC}/lib/perf_hooks.js ${NODESRC}/lib/process.js ${NODESRC}/lib/punycode.js ${NODESRC}/lib/querystring.js ${NODESRC}/lib/readline.js ${NODESRC}/lib/repl.js ${NODESRC}/lib/stream.js ${NODESRC}/lib/_stream_readable.js ${NODESRC}/lib/_stream_writable.js ${NODESRC}/lib/_stream_duplex.js ${NODESRC}/lib/_stream_transform.js ${NODESRC}/lib/_stream_passthrough.js ${NODESRC}/lib/_stream_wrap.js ${NODESRC}/lib/string_decoder.js ${NODESRC}/lib/sys.js ${NODESRC}/lib/timers.js ${NODESRC}/lib/tls.js ${NODESRC}/lib/_tls_common.js ${NODESRC}/lib/_tls_wrap.js ${NODESRC}/lib/trace_events.js ${NODESRC}/lib/tty.js ${NODESRC}/lib/url.js ${NODESRC}/lib/util.js ${NODESRC}/lib/v8.js ${NODESRC}/lib/vm.js ${NODESRC}/lib/worker_threads.js ${NODESRC}/lib/zlib.js ${NODESRC}/lib/internal/assert.js ${NODESRC}/lib/internal/async_hooks.js ${NODESRC}/lib/internal/bash_completion.js ${NODESRC}/lib/internal/buffer.js ${NODESRC}/lib/internal/cli_table.js ${NODESRC}/lib/internal/child_process.js ${NODESRC}/lib/internal/cluster/child.js ${NODESRC}/lib/internal/cluster/master.js ${NODESRC}/lib/internal/cluster/round_robin_handle.js ${NODESRC}/lib/internal/cluster/shared_handle.js ${NODESRC}/lib/internal/cluster/utils.js ${NODESRC}/lib/internal/cluster/worker.js ${NODESRC}/lib/internal/crypto/certificate.js ${NODESRC}/lib/internal/crypto/cipher.js ${NODESRC}/lib/internal/crypto/diffiehellman.js ${NODESRC}/lib/internal/crypto/hash.js ${NODESRC}/lib/internal/crypto/keygen.js ${NODESRC}/lib/internal/crypto/pbkdf2.js ${NODESRC}/lib/internal/crypto/random.js ${NODESRC}/lib/internal/crypto/scrypt.js ${NODESRC}/lib/internal/crypto/sig.js ${NODESRC}/lib/internal/crypto/util.js ${NODESRC}/lib/internal/constants.js ${NODESRC}/lib/internal/dgram.js ${NODESRC}/lib/internal/dns/promises.js ${NODESRC}/lib/internal/dns/utils.js ${NODESRC}/lib/internal/domexception.js ${NODESRC}/lib/internal/encoding.js ${NODESRC}/lib/internal/errors.js ${NODESRC}/lib/internal/error-serdes.js ${NODESRC}/lib/internal/fixed_queue.js ${NODESRC}/lib/internal/freelist.js ${NODESRC}/lib/internal/fs/promises.js ${NODESRC}/lib/internal/fs/read_file_context.js ${NODESRC}/lib/internal/fs/streams.js ${NODESRC}/lib/internal/fs/sync_write_stream.js ${NODESRC}/lib/internal/fs/utils.js ${NODESRC}/lib/internal/fs/watchers.js ${NODESRC}/lib/internal/http.js ${NODESRC}/lib/internal/inspector_async_hook.js ${NODESRC}/lib/internal/linkedlist.js ${NODESRC}/lib/internal/modules/cjs/helpers.js ${NODESRC}/lib/internal/modules/cjs/loader.js ${NODESRC}/lib/internal/modules/esm/loader.js ${NODESRC}/lib/internal/modules/esm/create_dynamic_module.js ${NODESRC}/lib/internal/modules/esm/default_resolve.js ${NODESRC}/lib/internal/modules/esm/module_job.js ${NODESRC}/lib/internal/modules/esm/module_map.js ${NODESRC}/lib/internal/modules/esm/translators.js ${NODESRC}/lib/internal/safe_globals.js ${NODESRC}/lib/internal/net.js ${NODESRC}/lib/internal/options.js ${NODESRC}/lib/internal/print_help.js ${NODESRC}/lib/internal/process/esm_loader.js ${NODESRC}/lib/internal/process/main_thread_only.js ${NODESRC}/lib/internal/process/next_tick.js ${NODESRC}/lib/internal/process/per_thread.js ${NODESRC}/lib/internal/process/promises.js ${NODESRC}/lib/internal/process/stdio.js ${NODESRC}/lib/internal/process/warning.js ${NODESRC}/lib/internal/process/worker_thread_only.js ${NODESRC}/lib/internal/querystring.js ${NODESRC}/lib/internal/process/write-coverage.js ${NODESRC}/lib/internal/process/coverage.js ${NODESRC}/lib/internal/readline.js ${NODESRC}/lib/internal/repl.js ${NODESRC}/lib/internal/repl/await.js ${NODESRC}/lib/internal/repl/recoverable.js ${NODESRC}/lib/internal/socket_list.js ${NODESRC}/lib/internal/test/binding.js ${NODESRC}/lib/internal/test/heap.js ${NODESRC}/lib/internal/test/unicode.js ${NODESRC}/lib/internal/timers.js ${NODESRC}/lib/internal/tls.js ${NODESRC}/lib/internal/trace_events_async_hooks.js ${NODESRC}/lib/internal/tty.js ${NODESRC}/lib/internal/url.js ${NODESRC}/lib/internal/util.js ${NODESRC}/lib/internal/util/comparisons.js ${NODESRC}/lib/internal/util/inspect.js ${NODESRC}/lib/internal/util/inspector.js ${NODESRC}/lib/internal/util/types.js ${NODESRC}/lib/internal/http2/core.js ${NODESRC}/lib/internal/http2/compat.js ${NODESRC}/lib/internal/http2/util.js ${NODESRC}/lib/internal/v8_prof_polyfill.js ${NODESRC}/lib/internal/v8_prof_processor.js ${NODESRC}/lib/internal/validators.js ${NODESRC}/lib/internal/stream_base_commons.js ${NODESRC}/lib/internal/vm/source_text_module.js ${NODESRC}/lib/internal/worker.js ${NODESRC}/lib/internal/streams/lazy_transform.js ${NODESRC}/lib/internal/streams/async_iterator.js ${NODESRC}/lib/internal/streams/buffer_list.js ${NODESRC}/lib/internal/streams/duplexpair.js ${NODESRC}/lib/internal/streams/legacy.js ${NODESRC}/lib/internal/streams/destroy.js ${NODESRC}/lib/internal/streams/state.js ${NODESRC}/lib/internal/streams/pipeline.js ${NODESRC}/lib/internal/streams/end-of-stream.js ${NODESRC}/lib/internal/wrap_js_stream.js ${NODESRC}/deps/v8/tools/splaytree.js ${NODESRC}/deps/v8/tools/codemap.js ${NODESRC}/deps/v8/tools/consarray.js ${NODESRC}/deps/v8/tools/csvparser.js ${NODESRC}/deps/v8/tools/profile.js ${NODESRC}/deps/v8/tools/profile_view.js ${NODESRC}/deps/v8/tools/logreader.js ${NODESRC}/deps/v8/tools/arguments.js ${NODESRC}/deps/v8/tools/tickprocessor.js ${NODESRC}/deps/v8/tools/SourceMap.js ${NODESRC}/deps/v8/tools/tickprocessor-driver.js ${NODESRC}/deps/node-inspect/lib/_inspect.js ${NODESRC}/deps/node-inspect/lib/internal/inspect_client.js ${NODESRC}/deps/node-inspect/lib/internal/inspect_repl.js ${NODESRC}/deps/acorn/dist/acorn.js ${NODESRC}/deps/acorn/dist/walk.js ${PROJECT_SOURCE_DIR}/config/${ANDROID_ABI}/config.gypi ${NODESRC}/tools/check_macros.py ${NODESRC}/src/notrace_macros.py ${NODESRC}/src/noperfctr_macros.py ${NODESRC}/tools/nodcheck_macros.py
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3
-    COMMAND cp ${PROJECT_SOURCE_DIR}/config/${ANDROID_ABI}/config.gypi ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3
-    COMMAND python tools/js2c.py "${PROJECT_SOURCE_DIR}/gen/${ANDROID_ABI}/node_javascript.cc" lib/internal/per_context.js lib/internal/bootstrap/cache.js lib/internal/bootstrap/loaders.js lib/internal/bootstrap/node.js lib/async_hooks.js lib/assert.js lib/buffer.js lib/child_process.js lib/console.js lib/constants.js lib/crypto.js lib/cluster.js lib/dgram.js lib/dns.js lib/domain.js lib/events.js lib/fs.js lib/http.js lib/http2.js lib/_http_agent.js lib/_http_client.js lib/_http_common.js lib/_http_incoming.js lib/_http_outgoing.js lib/_http_server.js lib/https.js lib/inspector.js lib/module.js lib/net.js lib/os.js lib/path.js lib/perf_hooks.js lib/process.js lib/punycode.js lib/querystring.js lib/readline.js lib/repl.js lib/stream.js lib/_stream_readable.js lib/_stream_writable.js lib/_stream_duplex.js lib/_stream_transform.js lib/_stream_passthrough.js lib/_stream_wrap.js lib/string_decoder.js lib/sys.js lib/timers.js lib/tls.js lib/_tls_common.js lib/_tls_wrap.js lib/trace_events.js lib/tty.js lib/url.js lib/util.js lib/v8.js lib/vm.js lib/worker_threads.js lib/zlib.js lib/internal/assert.js lib/internal/async_hooks.js lib/internal/bash_completion.js lib/internal/buffer.js lib/internal/cli_table.js lib/internal/child_process.js lib/internal/cluster/child.js lib/internal/cluster/master.js lib/internal/cluster/round_robin_handle.js lib/internal/cluster/shared_handle.js lib/internal/cluster/utils.js lib/internal/cluster/worker.js lib/internal/crypto/certificate.js lib/internal/crypto/cipher.js lib/internal/crypto/diffiehellman.js lib/internal/crypto/hash.js lib/internal/crypto/keygen.js lib/internal/crypto/pbkdf2.js lib/internal/crypto/random.js lib/internal/crypto/scrypt.js lib/internal/crypto/sig.js lib/internal/crypto/util.js lib/internal/constants.js lib/internal/dgram.js lib/internal/dns/promises.js lib/internal/dns/utils.js lib/internal/domexception.js lib/internal/encoding.js lib/internal/errors.js lib/internal/error-serdes.js lib/internal/fixed_queue.js lib/internal/freelist.js lib/internal/fs/promises.js lib/internal/fs/read_file_context.js lib/internal/fs/streams.js lib/internal/fs/sync_write_stream.js lib/internal/fs/utils.js lib/internal/fs/watchers.js lib/internal/http.js lib/internal/inspector_async_hook.js lib/internal/linkedlist.js lib/internal/modules/cjs/helpers.js lib/internal/modules/cjs/loader.js lib/internal/modules/esm/loader.js lib/internal/modules/esm/create_dynamic_module.js lib/internal/modules/esm/default_resolve.js lib/internal/modules/esm/module_job.js lib/internal/modules/esm/module_map.js lib/internal/modules/esm/translators.js lib/internal/safe_globals.js lib/internal/net.js lib/internal/options.js lib/internal/print_help.js lib/internal/process/esm_loader.js lib/internal/process/main_thread_only.js lib/internal/process/next_tick.js lib/internal/process/per_thread.js lib/internal/process/promises.js lib/internal/process/stdio.js lib/internal/process/warning.js lib/internal/process/worker_thread_only.js lib/internal/querystring.js lib/internal/process/write-coverage.js lib/internal/process/coverage.js lib/internal/readline.js lib/internal/repl.js lib/internal/repl/await.js lib/internal/repl/recoverable.js lib/internal/socket_list.js lib/internal/test/binding.js lib/internal/test/heap.js lib/internal/test/unicode.js lib/internal/timers.js lib/internal/tls.js lib/internal/trace_events_async_hooks.js lib/internal/tty.js lib/internal/url.js lib/internal/util.js lib/internal/util/comparisons.js lib/internal/util/inspect.js lib/internal/util/inspector.js lib/internal/util/types.js lib/internal/http2/core.js lib/internal/http2/compat.js lib/internal/http2/util.js lib/internal/v8_prof_polyfill.js lib/internal/v8_prof_processor.js lib/internal/validators.js lib/internal/stream_base_commons.js lib/internal/vm/source_text_module.js lib/internal/worker.js lib/internal/streams/lazy_transform.js lib/internal/streams/async_iterator.js lib/internal/streams/buffer_list.js lib/internal/streams/duplexpair.js lib/internal/streams/legacy.js lib/internal/streams/destroy.js lib/internal/streams/state.js lib/internal/streams/pipeline.js lib/internal/streams/end-of-stream.js lib/internal/wrap_js_stream.js deps/v8/tools/splaytree.js deps/v8/tools/codemap.js deps/v8/tools/consarray.js deps/v8/tools/csvparser.js deps/v8/tools/profile.js deps/v8/tools/profile_view.js deps/v8/tools/logreader.js deps/v8/tools/arguments.js deps/v8/tools/tickprocessor.js deps/v8/tools/SourceMap.js deps/v8/tools/tickprocessor-driver.js deps/node-inspect/lib/_inspect.js deps/node-inspect/lib/internal/inspect_client.js deps/node-inspect/lib/internal/inspect_repl.js deps/acorn/dist/acorn.js deps/acorn/dist/walk.js config.gypi tools/check_macros.py src/notrace_macros.py src/noperfctr_macros.py tools/nodcheck_macros.py
+	OUTPUT ${PROJECT_SOURCE_DIR}/gen/${ANDROID_ABI}/node_javascript.cc
+	DEPENDS ${NODESRC}/lib/internal/per_context.js ${NODESRC}/lib/internal/bootstrap/cache.js ${NODESRC}/lib/internal/bootstrap/loaders.js ${NODESRC}/lib/internal/bootstrap/node.js ${NODESRC}/lib/async_hooks.js ${NODESRC}/lib/assert.js ${NODESRC}/lib/buffer.js ${NODESRC}/lib/child_process.js ${NODESRC}/lib/console.js ${NODESRC}/lib/constants.js ${NODESRC}/lib/crypto.js ${NODESRC}/lib/cluster.js ${NODESRC}/lib/dgram.js ${NODESRC}/lib/dns.js ${NODESRC}/lib/domain.js ${NODESRC}/lib/events.js ${NODESRC}/lib/fs.js ${NODESRC}/lib/http.js ${NODESRC}/lib/http2.js ${NODESRC}/lib/_http_agent.js ${NODESRC}/lib/_http_client.js ${NODESRC}/lib/_http_common.js ${NODESRC}/lib/_http_incoming.js ${NODESRC}/lib/_http_outgoing.js ${NODESRC}/lib/_http_server.js ${NODESRC}/lib/https.js ${NODESRC}/lib/inspector.js ${NODESRC}/lib/module.js ${NODESRC}/lib/net.js ${NODESRC}/lib/os.js ${NODESRC}/lib/path.js ${NODESRC}/lib/perf_hooks.js ${NODESRC}/lib/process.js ${NODESRC}/lib/punycode.js ${NODESRC}/lib/querystring.js ${NODESRC}/lib/readline.js ${NODESRC}/lib/repl.js ${NODESRC}/lib/stream.js ${NODESRC}/lib/_stream_readable.js ${NODESRC}/lib/_stream_writable.js ${NODESRC}/lib/_stream_duplex.js ${NODESRC}/lib/_stream_transform.js ${NODESRC}/lib/_stream_passthrough.js ${NODESRC}/lib/_stream_wrap.js ${NODESRC}/lib/string_decoder.js ${NODESRC}/lib/sys.js ${NODESRC}/lib/timers.js ${NODESRC}/lib/tls.js ${NODESRC}/lib/_tls_common.js ${NODESRC}/lib/_tls_wrap.js ${NODESRC}/lib/trace_events.js ${NODESRC}/lib/tty.js ${NODESRC}/lib/url.js ${NODESRC}/lib/util.js ${NODESRC}/lib/v8.js ${NODESRC}/lib/vm.js ${NODESRC}/lib/worker_threads.js ${NODESRC}/lib/zlib.js ${NODESRC}/lib/internal/assert.js ${NODESRC}/lib/internal/async_hooks.js ${NODESRC}/lib/internal/bash_completion.js ${NODESRC}/lib/internal/buffer.js ${NODESRC}/lib/internal/cli_table.js ${NODESRC}/lib/internal/child_process.js ${NODESRC}/lib/internal/cluster/child.js ${NODESRC}/lib/internal/cluster/master.js ${NODESRC}/lib/internal/cluster/round_robin_handle.js ${NODESRC}/lib/internal/cluster/shared_handle.js ${NODESRC}/lib/internal/cluster/utils.js ${NODESRC}/lib/internal/cluster/worker.js ${NODESRC}/lib/internal/crypto/certificate.js ${NODESRC}/lib/internal/crypto/cipher.js ${NODESRC}/lib/internal/crypto/diffiehellman.js ${NODESRC}/lib/internal/crypto/hash.js ${NODESRC}/lib/internal/crypto/keygen.js ${NODESRC}/lib/internal/crypto/pbkdf2.js ${NODESRC}/lib/internal/crypto/random.js ${NODESRC}/lib/internal/crypto/scrypt.js ${NODESRC}/lib/internal/crypto/sig.js ${NODESRC}/lib/internal/crypto/util.js ${NODESRC}/lib/internal/constants.js ${NODESRC}/lib/internal/dgram.js ${NODESRC}/lib/internal/dns/promises.js ${NODESRC}/lib/internal/dns/utils.js ${NODESRC}/lib/internal/domexception.js ${NODESRC}/lib/internal/encoding.js ${NODESRC}/lib/internal/errors.js ${NODESRC}/lib/internal/error-serdes.js ${NODESRC}/lib/internal/fixed_queue.js ${NODESRC}/lib/internal/freelist.js ${NODESRC}/lib/internal/fs/promises.js ${NODESRC}/lib/internal/fs/read_file_context.js ${NODESRC}/lib/internal/fs/streams.js ${NODESRC}/lib/internal/fs/sync_write_stream.js ${NODESRC}/lib/internal/fs/utils.js ${NODESRC}/lib/internal/fs/watchers.js ${NODESRC}/lib/internal/http.js ${NODESRC}/lib/internal/inspector_async_hook.js ${NODESRC}/lib/internal/linkedlist.js ${NODESRC}/lib/internal/modules/cjs/helpers.js ${NODESRC}/lib/internal/modules/cjs/loader.js ${NODESRC}/lib/internal/modules/esm/loader.js ${NODESRC}/lib/internal/modules/esm/create_dynamic_module.js ${NODESRC}/lib/internal/modules/esm/default_resolve.js ${NODESRC}/lib/internal/modules/esm/module_job.js ${NODESRC}/lib/internal/modules/esm/module_map.js ${NODESRC}/lib/internal/modules/esm/translators.js ${NODESRC}/lib/internal/safe_globals.js ${NODESRC}/lib/internal/net.js ${NODESRC}/lib/internal/options.js ${NODESRC}/lib/internal/print_help.js ${NODESRC}/lib/internal/process/esm_loader.js ${NODESRC}/lib/internal/process/main_thread_only.js ${NODESRC}/lib/internal/process/next_tick.js ${NODESRC}/lib/internal/process/per_thread.js ${NODESRC}/lib/internal/process/promises.js ${NODESRC}/lib/internal/process/stdio.js ${NODESRC}/lib/internal/process/warning.js ${NODESRC}/lib/internal/process/worker_thread_only.js ${NODESRC}/lib/internal/querystring.js ${NODESRC}/lib/internal/process/write-coverage.js ${NODESRC}/lib/internal/process/coverage.js ${NODESRC}/lib/internal/readline.js ${NODESRC}/lib/internal/repl.js ${NODESRC}/lib/internal/repl/await.js ${NODESRC}/lib/internal/repl/recoverable.js ${NODESRC}/lib/internal/socket_list.js ${NODESRC}/lib/internal/test/binding.js ${NODESRC}/lib/internal/test/heap.js ${NODESRC}/lib/internal/test/unicode.js ${NODESRC}/lib/internal/timers.js ${NODESRC}/lib/internal/tls.js ${NODESRC}/lib/internal/trace_events_async_hooks.js ${NODESRC}/lib/internal/tty.js ${NODESRC}/lib/internal/url.js ${NODESRC}/lib/internal/util.js ${NODESRC}/lib/internal/util/comparisons.js ${NODESRC}/lib/internal/util/inspect.js ${NODESRC}/lib/internal/util/inspector.js ${NODESRC}/lib/internal/util/types.js ${NODESRC}/lib/internal/http2/core.js ${NODESRC}/lib/internal/http2/compat.js ${NODESRC}/lib/internal/http2/util.js ${NODESRC}/lib/internal/v8_prof_polyfill.js ${NODESRC}/lib/internal/v8_prof_processor.js ${NODESRC}/lib/internal/validators.js ${NODESRC}/lib/internal/stream_base_commons.js ${NODESRC}/lib/internal/vm/source_text_module.js ${NODESRC}/lib/internal/worker.js ${NODESRC}/lib/internal/streams/lazy_transform.js ${NODESRC}/lib/internal/streams/async_iterator.js ${NODESRC}/lib/internal/streams/buffer_list.js ${NODESRC}/lib/internal/streams/duplexpair.js ${NODESRC}/lib/internal/streams/legacy.js ${NODESRC}/lib/internal/streams/destroy.js ${NODESRC}/lib/internal/streams/state.js ${NODESRC}/lib/internal/streams/pipeline.js ${NODESRC}/lib/internal/streams/end-of-stream.js ${NODESRC}/lib/internal/wrap_js_stream.js ${NODESRC}/deps/v8/tools/splaytree.js ${NODESRC}/deps/v8/tools/codemap.js ${NODESRC}/deps/v8/tools/consarray.js ${NODESRC}/deps/v8/tools/csvparser.js ${NODESRC}/deps/v8/tools/profile.js ${NODESRC}/deps/v8/tools/profile_view.js ${NODESRC}/deps/v8/tools/logreader.js ${NODESRC}/deps/v8/tools/arguments.js ${NODESRC}/deps/v8/tools/tickprocessor.js ${NODESRC}/deps/v8/tools/SourceMap.js ${NODESRC}/deps/v8/tools/tickprocessor-driver.js ${NODESRC}/deps/node-inspect/lib/_inspect.js ${NODESRC}/deps/node-inspect/lib/internal/inspect_client.js ${NODESRC}/deps/node-inspect/lib/internal/inspect_repl.js ${NODESRC}/deps/acorn/dist/acorn.js ${NODESRC}/deps/acorn/dist/walk.js ${PROJECT_SOURCE_DIR}/config/${ANDROID_ABI}/config.gypi ${NODESRC}/tools/check_macros.py ${NODESRC}/src/notrace_macros.py ${NODESRC}/src/noperfctr_macros.py ${NODESRC}/tools/nodcheck_macros.py
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3
+	COMMAND cp ${PROJECT_SOURCE_DIR}/config/${ANDROID_ABI}/config.gypi ${PROJECT_SOURCE_DIR}/../../../../deps/node-10.15.3
+	COMMAND python tools/js2c.py "${PROJECT_SOURCE_DIR}/gen/${ANDROID_ABI}/node_javascript.cc" lib/internal/per_context.js lib/internal/bootstrap/cache.js lib/internal/bootstrap/loaders.js lib/internal/bootstrap/node.js lib/async_hooks.js lib/assert.js lib/buffer.js lib/child_process.js lib/console.js lib/constants.js lib/crypto.js lib/cluster.js lib/dgram.js lib/dns.js lib/domain.js lib/events.js lib/fs.js lib/http.js lib/http2.js lib/_http_agent.js lib/_http_client.js lib/_http_common.js lib/_http_incoming.js lib/_http_outgoing.js lib/_http_server.js lib/https.js lib/inspector.js lib/module.js lib/net.js lib/os.js lib/path.js lib/perf_hooks.js lib/process.js lib/punycode.js lib/querystring.js lib/readline.js lib/repl.js lib/stream.js lib/_stream_readable.js lib/_stream_writable.js lib/_stream_duplex.js lib/_stream_transform.js lib/_stream_passthrough.js lib/_stream_wrap.js lib/string_decoder.js lib/sys.js lib/timers.js lib/tls.js lib/_tls_common.js lib/_tls_wrap.js lib/trace_events.js lib/tty.js lib/url.js lib/util.js lib/v8.js lib/vm.js lib/worker_threads.js lib/zlib.js lib/internal/assert.js lib/internal/async_hooks.js lib/internal/bash_completion.js lib/internal/buffer.js lib/internal/cli_table.js lib/internal/child_process.js lib/internal/cluster/child.js lib/internal/cluster/master.js lib/internal/cluster/round_robin_handle.js lib/internal/cluster/shared_handle.js lib/internal/cluster/utils.js lib/internal/cluster/worker.js lib/internal/crypto/certificate.js lib/internal/crypto/cipher.js lib/internal/crypto/diffiehellman.js lib/internal/crypto/hash.js lib/internal/crypto/keygen.js lib/internal/crypto/pbkdf2.js lib/internal/crypto/random.js lib/internal/crypto/scrypt.js lib/internal/crypto/sig.js lib/internal/crypto/util.js lib/internal/constants.js lib/internal/dgram.js lib/internal/dns/promises.js lib/internal/dns/utils.js lib/internal/domexception.js lib/internal/encoding.js lib/internal/errors.js lib/internal/error-serdes.js lib/internal/fixed_queue.js lib/internal/freelist.js lib/internal/fs/promises.js lib/internal/fs/read_file_context.js lib/internal/fs/streams.js lib/internal/fs/sync_write_stream.js lib/internal/fs/utils.js lib/internal/fs/watchers.js lib/internal/http.js lib/internal/inspector_async_hook.js lib/internal/linkedlist.js lib/internal/modules/cjs/helpers.js lib/internal/modules/cjs/loader.js lib/internal/modules/esm/loader.js lib/internal/modules/esm/create_dynamic_module.js lib/internal/modules/esm/default_resolve.js lib/internal/modules/esm/module_job.js lib/internal/modules/esm/module_map.js lib/internal/modules/esm/translators.js lib/internal/safe_globals.js lib/internal/net.js lib/internal/options.js lib/internal/print_help.js lib/internal/process/esm_loader.js lib/internal/process/main_thread_only.js lib/internal/process/next_tick.js lib/internal/process/per_thread.js lib/internal/process/promises.js lib/internal/process/stdio.js lib/internal/process/warning.js lib/internal/process/worker_thread_only.js lib/internal/querystring.js lib/internal/process/write-coverage.js lib/internal/process/coverage.js lib/internal/readline.js lib/internal/repl.js lib/internal/repl/await.js lib/internal/repl/recoverable.js lib/internal/socket_list.js lib/internal/test/binding.js lib/internal/test/heap.js lib/internal/test/unicode.js lib/internal/timers.js lib/internal/tls.js lib/internal/trace_events_async_hooks.js lib/internal/tty.js lib/internal/url.js lib/internal/util.js lib/internal/util/comparisons.js lib/internal/util/inspect.js lib/internal/util/inspector.js lib/internal/util/types.js lib/internal/http2/core.js lib/internal/http2/compat.js lib/internal/http2/util.js lib/internal/v8_prof_polyfill.js lib/internal/v8_prof_processor.js lib/internal/validators.js lib/internal/stream_base_commons.js lib/internal/vm/source_text_module.js lib/internal/worker.js lib/internal/streams/lazy_transform.js lib/internal/streams/async_iterator.js lib/internal/streams/buffer_list.js lib/internal/streams/duplexpair.js lib/internal/streams/legacy.js lib/internal/streams/destroy.js lib/internal/streams/state.js lib/internal/streams/pipeline.js lib/internal/streams/end-of-stream.js lib/internal/wrap_js_stream.js deps/v8/tools/splaytree.js deps/v8/tools/codemap.js deps/v8/tools/consarray.js deps/v8/tools/csvparser.js deps/v8/tools/profile.js deps/v8/tools/profile_view.js deps/v8/tools/logreader.js deps/v8/tools/arguments.js deps/v8/tools/tickprocessor.js deps/v8/tools/SourceMap.js deps/v8/tools/tickprocessor-driver.js deps/node-inspect/lib/_inspect.js deps/node-inspect/lib/internal/inspect_client.js deps/node-inspect/lib/internal/inspect_repl.js deps/acorn/dist/acorn.js deps/acorn/dist/walk.js config.gypi tools/check_macros.py src/notrace_macros.py src/noperfctr_macros.py tools/nodcheck_macros.py
 )
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    set(SOURCES ${SOURCES}
-
-     ../../androidTest/cpp/native_module_test.cc
-     )
+	set(
+		SOURCES ${SOURCES}
+		../../androidTest/cpp/native_module_test.cc
+	)
 endif()
 
-
-add_library( # Specifies the name of the library.
-             liquidnode
-
-             # Sets the library as a shared library.
-             SHARED
-
-             ${SOURCES}
-             )
+add_library( liquidnode SHARED ${SOURCES} )
 
 if(${ANDROID_ABI} STREQUAL armeabi-v7a)
-    SET( SSL_ARCH "linux-armv4" )
-    SET( NODE_ARCH "armv7a" )
+	SET( SSL_ARCH "linux-armv4" )
+	SET( NODE_ARCH "armv7a" )
 elseif(${ANDROID_ABI} STREQUAL x86)
-    SET( SSL_ARCH "linux-x32" )
-    SET( NODE_ARCH "x86" )
+	SET( SSL_ARCH "linux-x32" )
+	SET( NODE_ARCH "x86" )
 elseif(${ANDROID_ABI} STREQUAL x86_64)
-    SET( SSL_ARCH "linux-x86_64" )
-    SET( NODE_ARCH "x64" )
+	SET( SSL_ARCH "linux-x86_64" )
+	SET( NODE_ARCH "x64" )
 elseif(${ANDROID_ABI} STREQUAL arm64-v8a)
-    SET( SSL_ARCH "linux-aarch64" )
-    SET( NODE_ARCH "arm64" )
+	SET( SSL_ARCH "linux-aarch64" )
+	SET( NODE_ARCH "arm64" )
 endif()
 
 include_directories(
-		../../../../deps/JavaScriptCore/include
-		../../../../deps/node-10.15.3/deps/v8
-		../../../../deps/node-10.15.3/deps/v8/include
-		../../../../deps/node-10.15.3/deps/uv/include
-		../../../../deps/node-10.15.3/deps/uv/src
+	../../../../deps/JavaScriptCore/include
+	../../../../deps/node-10.15.3/deps/v8
+	../../../../deps/node-10.15.3/deps/v8/include
+	../../../../deps/node-10.15.3/deps/uv/include
+	../../../../deps/node-10.15.3/deps/uv/src
 
-		../../../../deps/node-10.15.3/deps/cares/config/android
-		../../../../deps/node-10.15.3/deps/cares/src
-		../../../../deps/node-10.15.3/deps/cares/include
+	../../../../deps/node-10.15.3/deps/cares/config/android
+	../../../../deps/node-10.15.3/deps/cares/src
+	../../../../deps/node-10.15.3/deps/cares/include
 
-		../../../../deps/node-10.15.3/deps/http_parser
+	../../../../deps/node-10.15.3/deps/http_parser
 
-		../../../../deps/node-10.15.3/deps/nghttp2/lib/includes
+	../../../../deps/node-10.15.3/deps/nghttp2/lib/includes
 
-		../../../../deps/node-10.15.3/src
+	../../../../deps/node-10.15.3/src
 
-		../../../../deps/node-10.15.3/deps/openssl/openssl/include
+	../../../../deps/node-10.15.3/deps/openssl/openssl/include
 
-		../../../../deps/node-10.15.3/deps/openssl/openssl
-		../../../../deps/node-10.15.3/deps/openssl/openssl/include
-		../../../../deps/node-10.15.3/deps/openssl/openssl/crypto
-		../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/include
-		../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes
-		../../../../deps/node-10.15.3/deps/openssl/config
-		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm
-		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/include
-		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto
-		../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto/include/internal
+	../../../../deps/node-10.15.3/deps/openssl/openssl
+	../../../../deps/node-10.15.3/deps/openssl/openssl/include
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/include
+	../../../../deps/node-10.15.3/deps/openssl/openssl/crypto/modes
+	../../../../deps/node-10.15.3/deps/openssl/config
+	../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm
+	../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/include
+	../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto
+	../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto/include/internal
 
-		../../common
-		../../../../LiquidV8/src/main/cpp
-		../../../../deps/boost_1_66_0
+	../../common
+	../../../../LiquidV8/src/main/cpp
+	../../../../deps/boost_1_66_0
 )
 
 unset(DEFS_RELEASE)
@@ -899,7 +890,7 @@ list (APPEND DEFS_RELEASE
 	-DHTTP_PARSER_STRICT=0
 
 	-D__POSIX__
-    -D_REENTRANT=1
+  -D_REENTRANT=1
 	-D_DARWIN_USE_64_BIT_INODE=1
 	-D_LARGEFILE_SOURCE
 	-D_FILE_OFFSET_BITS=64
@@ -908,7 +899,7 @@ list (APPEND DEFS_RELEASE
 	-D_GLIBCXX_USE_C99_MATH
 	-DANDROID_STL=c++_static
 
-    -DHTTP_MAX_HEADER_SIZE=8192
+  -DHTTP_MAX_HEADER_SIZE=8192
 	-DHTTP_PARSER_STRICT=0
 
 	-D_U_=
@@ -925,33 +916,32 @@ list (APPEND DEFS_RELEASE
 	-DOPENSSLDIR='"/etc/ssl"'
 	-DENGINESDIR='"/dev/null"'
 	-DTERMIOS
-
-    )
+)
 
 list (APPEND CFLAGS_RELEASE
-    -Wall
-    -Wextra
-    -Wno-unused-parameter
-    -fPIC
-    -O3
-    -fno-omit-frame-pointer
-    -fPIE
-    -Wno-strict-aliasing
-    -Wno-unused-variable
-    -Wno-mismatched-tags
-    -Wno-unused-result
+	-Wall
+	-Wextra
+	-Wno-unused-parameter
+	-fPIC
+	-O3
+	-fno-omit-frame-pointer
+	-fPIE
+	-Wno-strict-aliasing
+	-Wno-unused-variable
+	-Wno-mismatched-tags
+	-Wno-unused-result
 	-Wno-missing-field-initializers
 	-Wno-deprecated-declarations
 	-Wno-int-conversion
-    )
+)
 
 list (APPEND CPPFLAGS_RELEASE
-    -fno-rtti
-    -std=c++1y
+	-fno-rtti
+	-std=c++1y
 )
 
 if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
-    list (APPEND CFLAGS_RELEASE -DDEBUG)
+	list (APPEND CFLAGS_RELEASE -DDEBUG)
 endif()
 
 string (REPLACE ";" " " C_FLAGS_STR "${CFLAGS_RELEASE} ${DEFS_RELEASE}")
@@ -964,14 +954,14 @@ find_library( log-lib log )
 find_library( z-lib z )
 
 add_library(
-        liquidjs-lib
-        SHARED
-        IMPORTED
+	liquidjs-lib
+	SHARED
+	IMPORTED
 )
 set_target_properties(
-        liquidjs-lib
-        PROPERTIES IMPORTED_LOCATION
-        ${PROJECT_SOURCE_DIR}/../../../build/liquidjs_lib/jni/${ANDROID_ABI}/libliquidjs.so
+	liquidjs-lib
+	PROPERTIES IMPORTED_LOCATION
+	${PROJECT_SOURCE_DIR}/../../../build/liquidjs_lib/jni/${ANDROID_ABI}/libliquidjs.so
 )
 
 target_link_libraries( liquidnode liquidjs-lib ${z-lib} ${log-lib} )

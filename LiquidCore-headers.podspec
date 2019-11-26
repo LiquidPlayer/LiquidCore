@@ -1,6 +1,11 @@
+require "json"
+
+lcpackage = JSON.parse(File.read(File.join(__dir__, "package.json")))
+version = lcpackage['version']
+
 Pod::Spec.new do |s|
   s.name = "LiquidCore-headers"
-  s.version = "0.7.0"
+  s.version = version
   s.summary = "Header include files for LiquidCore."
   s.description = <<-DESC
 Header include files for LiquidCore.  To use in a native addon, add "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders" to your header search path.

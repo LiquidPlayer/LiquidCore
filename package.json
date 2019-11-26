@@ -1,0 +1,49 @@
+{
+  "name": "liquidcore",
+  "version": "0.7.0",
+  "description": "LiquidCore enables Node.js virtual machines to run inside Android and iOS apps. It provides a complete runtime environment, including a virtual file system.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiquidPlayer/LiquidCore.git"
+  },
+  "keywords": [
+    "LiquidCore",
+    "v8",
+    "JavaScriptCore",
+    "node"
+  ],
+  "author": "Eric Lange <eric@flicket.tv>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/LiquidPlayer/LiquidCore/issues"
+  },
+  "homepage": "https://github.com/LiquidPlayer/LiquidCore",
+  "liquidcore-addon": {
+    "android": [
+      "release/LiquidCore-release",
+      "release/LiquidV8-release"
+    ],
+    "android-dev": [
+      "LiquidCore",
+      "LiquidV8"
+    ],
+    "ios": [{
+      "name": "LiquidCore",
+      "specs": "https://github.com/LiquidPlayer/Specs.git"
+    },{
+      "name": "LiquidCore-headers",
+      "specs": "https://github.com/LiquidPlayer/Specs.git"
+    }],
+    "ios-dev": [{
+      "name": "LiquidCore",
+      "path": "LiquidCore.podspec"
+    },{
+      "name": "LiquidCore-headers",
+      "path": "LiquidCore-headers.podspec"
+    }]
+  }
+}

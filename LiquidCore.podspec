@@ -1,6 +1,11 @@
+require "json"
+
+lcpackage = JSON.parse(File.read(File.join(__dir__, "package.json")))
+version = lcpackage['version']
+
 Pod::Spec.new do |s|
   s.name = "LiquidCore"
-  s.version = "0.7.0"
+  s.version = version
   s.summary = "Provides Node.js virtual machines to run inside iOS apps."
   s.description = <<-DESC
 LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides a complete runtime environment, including a virtual file system.
