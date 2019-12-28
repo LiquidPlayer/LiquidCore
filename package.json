@@ -31,19 +31,29 @@
       "LiquidCore",
       "LiquidV8"
     ],
-    "ios": [{
-      "name": "LiquidCore",
-      "specs": "https://github.com/LiquidPlayer/Specs.git"
-    },{
-      "name": "LiquidCore-headers",
-      "specs": "https://github.com/LiquidPlayer/Specs.git"
-    }],
-    "ios-dev": [{
-      "name": "LiquidCore",
-      "path": "LiquidCore.podspec"
-    },{
-      "name": "LiquidCore-headers",
-      "path": "LiquidCore-headers.podspec"
-    }]
+    "ios": [
+      {
+        "name": "LiquidCore",
+        "specs": "https://github.com/LiquidPlayer/Specs.git"
+      },
+      {
+        "name": "LiquidCore-headers",
+        "specs": "https://github.com/LiquidPlayer/Specs.git"
+      }
+    ],
+    "ios-dev": [
+      {
+        "name": "LiquidCore",
+        "path": "LiquidCore.podspec"
+      },
+      {
+        "name": "LiquidCore-headers",
+        "path": "LiquidCore-headers.podspec"
+      }
+    ]
+  },
+  "dependencies": {
+    "metro": "^0.57.0",
+    "metro-core": "^0.57.0"
   }
 }

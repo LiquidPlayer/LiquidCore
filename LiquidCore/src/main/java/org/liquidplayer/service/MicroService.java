@@ -781,6 +781,7 @@ public class MicroService implements Process.EventListener {
         };
         bindings.prototype(require);
         context.property("require", bindings);
+        emitter.property("require", bindings);
 
         try {
             fetchService();

@@ -71,7 +71,7 @@ Mutex environ_mutex;
 void Abort(const FunctionCallbackInfo<Value>& args) {
   Abort();
 }
-/* LC
+#ifndef __LIQUIDCORE
 void Chdir(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   CHECK(env->is_main_thread());
@@ -84,7 +84,7 @@ void Chdir(const FunctionCallbackInfo<Value>& args) {
   if (err)
     return env->ThrowUVException(err, "chdir", nullptr, *path, nullptr);
 }
-*/
+#endif
 // CPUUsage use libuv's uv_getrusage() this-process resource usage accessor,
 // to access ru_utime (user CPU time used) and ru_stime (system CPU time used),
 // which are uv_timeval_t structs (long tv_sec, long tv_usec).

@@ -98,7 +98,7 @@ if [ -f "configure" ]; then
     ./configure \
         --dest-cpu=$DEST_CPU \
         --dest-os=android \
-        --without-intl \
+        --with-intl=small-icu \
         --openssl-no-asm \
         --cross-compiling \
         --shared
