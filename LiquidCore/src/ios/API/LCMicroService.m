@@ -244,6 +244,7 @@ static NSMapTable* _serviceMap = nil;
                          JSValueToObject([context JSGlobalContextRef], [bindings JSValueRef], 0),
                          [require.value JSValueRef]);
     context[@"require"] = bindings;
+    self.emitter.value[@"require"] = bindings;
     
     @try
     {

@@ -818,9 +818,10 @@ public class JSArrayTest {
 
         // Array.prototype.toLocaleString()
         JSDate date = new JSDate(context);
-        JSArray<JSValue> locale = JSArray.of(context,1337,date,"foo");
+        JSArray<JSValue> locale = JSArray.of(context,337,date,"foo");
         String dateLocale = date.property("toLocaleString").toFunction().call(date).toString();
-        assertEquals(locale.toLocaleString(),"1337," + dateLocale + ",foo");
+        String toLocale = locale.toLocaleString();
+        assertEquals(toLocale,"337," + dateLocale + ",foo");
     }
 
     @org.junit.Test

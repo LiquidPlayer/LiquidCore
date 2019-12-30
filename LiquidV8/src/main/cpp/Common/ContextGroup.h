@@ -65,6 +65,7 @@ public:
     void schedule_java_runnable(JNIEnv *env, jobject thiz, jobject runnable);
 
     static void set_platform_init(v8::Platform*);
+    static void init_icu();
     static void init_v8();
     static void dispose_v8();
     static inline std::mutex *Mutex() { return &s_mutex; }

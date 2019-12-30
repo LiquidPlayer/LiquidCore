@@ -228,6 +228,7 @@ NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
 
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
+    ContextGroup::init_icu();
     node::InitializeNode();
     return JNI_VERSION_1_6;
 }

@@ -101,5 +101,6 @@ if [ -f "configure" ]; then
         --with-intl=small-icu \
         --openssl-no-asm \
         --cross-compiling \
+        --with-snapshot \
         --shared
 fi

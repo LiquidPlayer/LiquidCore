@@ -868,6 +868,9 @@ include_directories(
 	../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto
 	../../../../deps/node-10.15.3/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto/include/internal
 
+	../../../../deps/node-10.15.3/deps/icu-small/source/common
+	../../../../deps/node-10.15.3/deps/icu-small/source/i18n
+
 	../../common
 	../../../../LiquidV8/src/main/cpp
 	../../../../deps/boost_1_66_0
@@ -878,6 +881,7 @@ unset(CFLAGS_RELEASE)
 unset(CPPFLAGS_RELEASE)
 
 list (APPEND DEFS_RELEASE
+	-D__LIQUIDCORE
 	-DNODE_PLATFORM='"android"'
 	-DNODE_ARCH='"${NODE_ARCH}"'
 	-DNODE_WANT_INTERNALS=1
@@ -886,11 +890,13 @@ list (APPEND DEFS_RELEASE
 	-DHAVE_INSPECTOR=0
 	-DNODE_SHARED_MODE
 	-DNODE_USE_V8_PLATFORM=1
+    -DNODE_HAVE_I18N_SUPPORT=1
+    -DNODE_HAVE_SMALL_ICU=1
 	-DHAVE_OPENSSL=1
 	-DHTTP_PARSER_STRICT=0
 
-	-D__POSIX__
-  -D_REENTRANT=1
+    -D__POSIX__
+    -D_REENTRANT=1
 	-D_DARWIN_USE_64_BIT_INODE=1
 	-D_LARGEFILE_SOURCE
 	-D_FILE_OFFSET_BITS=64
@@ -899,7 +905,7 @@ list (APPEND DEFS_RELEASE
 	-D_GLIBCXX_USE_C99_MATH
 	-DANDROID_STL=c++_static
 
-  -DHTTP_MAX_HEADER_SIZE=8192
+    -DHTTP_MAX_HEADER_SIZE=8192
 	-DHTTP_PARSER_STRICT=0
 
 	-D_U_=
