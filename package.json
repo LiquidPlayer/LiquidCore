@@ -22,14 +22,18 @@
     "url": "https://github.com/LiquidPlayer/LiquidCore/issues"
   },
   "homepage": "https://github.com/LiquidPlayer/LiquidCore",
-  "liquidcore-addon": {
+  "liquidcore": {
     "android": [
-      "release/LiquidCore-release",
-      "release/LiquidV8-release"
-    ],
-    "android-dev": [
-      "LiquidCore",
-      "LiquidV8"
+      {
+        "name": "Nodejs",
+        "aar": "release/LiquidCore-release",
+        "dev": "LiquidCore"
+      },
+      {
+        "name": "V8",
+        "aar": "release/LiquidV8-release",
+        "dev": "LiquidV8"
+      }
     ],
     "ios": [
       {

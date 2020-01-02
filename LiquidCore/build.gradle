@@ -82,8 +82,8 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.annotation:annotation:1.1.0'
-    liquidjs project(configuration: 'default', path: ':LiquidV8')
-    implementation project(path: ':LiquidV8')
+    liquidjs project(configuration: 'default', path: ':liquidcore-V8')
+    implementation project(path: ':liquidcore-V8')
     debugImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
@@ -143,10 +143,10 @@ artifacts {
 }
 
 task copyHeadersToAARRelease(type: Zip) {
-    baseName = 'LiquidCore-release'
+    baseName = 'liquidcore-Nodejs-release'
     extension = 'aar.in'
     destinationDir = file('build/outputs/aar')
-    def aarNameO = "build/outputs/aar/LiquidCore-release.aar"
+    def aarNameO = "build/outputs/aar/liquidcore-Nodejs-release.aar"
 
     from zipTree(aarNameO)
     from("../deps/node-10.15.3/deps/cares/include") {
@@ -175,13 +175,13 @@ task copyHeadersToAARRelease(type: Zip) {
     }
 }
 task removeOldAARRelease(type: Delete) {
-    delete file('build/outputs/aar/LiquidCore-release.aar.in')
+    delete file('build/outputs/aar/liquidcore-Nodejs-release.aar.in')
 }
 task renameAARRelease (type: Copy) {
     from ('build/outputs/aar/')
-    include 'LiquidCore-release.aar.in'
+    include 'liquidcore-Nodejs-release.aar.in'
     destinationDir file('build/outputs/aar/')
-    rename "LiquidCore-release.aar.in", "LiquidCore-release.aar"
+    rename "liquidcore-Nodejs-release.aar.in", "liquidcore-Nodejs-release.aar"
 }
 
 afterEvaluate {

@@ -103,10 +103,10 @@ artifacts {
 }
 
 task copyHeadersToAARRelease(type: Zip) {
-    baseName = 'LiquidV8-release'
+    baseName = 'liquidcore-V8-release'
     extension = 'aar.in'
     destinationDir = file('build/outputs/aar')
-    def aarNameO = "build/outputs/aar/LiquidV8-release.aar"
+    def aarNameO = "build/outputs/aar/liquidcore-V8-release.aar"
 
     from zipTree(aarNameO)
     from("../deps/node-10.15.3/deps/v8/include") {
@@ -123,13 +123,13 @@ task copyHeadersToAARRelease(type: Zip) {
     }
 }
 task removeOldAARRelease(type: Delete) {
-    delete file('build/outputs/aar/LiquidV8-release.aar.in')
+    delete file('build/outputs/aar/liquidcore-V8-release.aar.in')
 }
 task renameAARRelease (type: Copy) {
     from ('build/outputs/aar/')
-    include 'LiquidV8-release.aar.in'
+    include 'liquidcore-V8-release.aar.in'
     destinationDir file('build/outputs/aar/')
-    rename "LiquidV8-release.aar.in", "LiquidV8-release.aar"
+    rename "liquidcore-V8-release.aar.in", "liquidcore-V8-release.aar"
 }
 
 afterEvaluate {

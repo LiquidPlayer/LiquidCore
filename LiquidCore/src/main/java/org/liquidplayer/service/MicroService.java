@@ -7,8 +7,10 @@
 package org.liquidplayer.service;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Build;
+
 import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
@@ -31,7 +33,9 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -142,6 +146,93 @@ public class MicroService implements Process.EventListener {
             fileName = fileName.concat(".bundle");
         }
         return URI.create("http://10.0.2.2:" + port + "/" + fileName + "?platform=android&dev=true");
+    }
+
+    public static class BundleOptions {
+        @Nullable Integer port;
+        @Nullable URL server_url;
+        @Nullable Map<String,String> request_params;
+    }
+
+    public static URI Bundle(Context context, @Nullable String bundleName,
+                             @Nullable BundleOptions bundleOptions) {
+        if (bundleName == null) {
+            bundleName = "index";
+        }
+        if (bundleOptions == null) {
+            bundleOptions = new BundleOptions();
+        }
+        boolean isDebuggable =
+                (0!=(context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
+        if (isDebuggable) {
+            if (bundleOptions.server_url == null) {
+                if (bundleName.endsWith(".js"))
+                    bundleName = bundleName.substring(0,bundleName.length()-3);
+                if (!bundleName.endsWith((".bundle"))) {
+                    bundleName = bundleName.concat(".bundle");
+                }
+                try {
+                    bundleOptions.server_url = new URL("http://10.0.2.2");
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                if (bundleOptions.port == null) {
+                    bundleOptions.port = 8082;
+                }
+                bundleOptions.request_params = new HashMap<>();
+                bundleOptions.request_params.put("platform", "android");
+                bundleOptions.request_params.put("dev", "true");
+            }
+        }
+        if (bundleOptions.server_url != null) {
+            try {
+                int port = bundleOptions.server_url.getPort();
+                if (bundleOptions.port != null) port = bundleOptions.port;
+
+                URL url = new URL(
+                        bundleOptions.server_url.getProtocol(),
+                        bundleOptions.server_url.getHost(),
+                        port,
+                        bundleName);
+                String params = "";
+                if (bundleOptions.request_params != null) {
+                    for (String param : bundleOptions.request_params.keySet()) {
+                        String p = param + "=" +
+                                URLEncoder.encode(bundleOptions.request_params.get(param), "UTF-8");
+                        if ("".equals((params))) {
+                            params += "?" + p;
+                        } else {
+                            params += "&" + p;
+                        }
+                    }
+                }
+                return new URI(url.toString() + params);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                bundleName = bundleName.split("\\.")[0];
+                return new URI("android.resource://" + context.getPackageName() +
+                        "/raw" + bundleName);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
+    }
+
+    public static URI Bundle(Context context, String bundleName) {
+        return Bundle(context, bundleName, null);
+    }
+
+    public static URI Bundle(Context context) {
+        return Bundle(context, null, null);
     }
 
     /**
@@ -635,17 +726,37 @@ public class MicroService implements Process.EventListener {
             String userAgent = "LiquidCore/" + version + " (" + info + ")";
             android.util.Log.d("MicroService", "User-Agent : " + userAgent);
             connection.setRequestProperty("User-Agent", userAgent);
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
-                if (connection.getHeaderField("Content-Encoding") != null &&
-                        connection.getHeaderField("Content-Encoding").equals("gzip")) {
-                    in = new GZIPInputStream(connection.getInputStream());
-                } else {
-                    in = connection.getInputStream();
+            connection.setConnectTimeout(2000);
+            try {
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 200) {
+                    if (connection.getHeaderField("Content-Encoding") != null &&
+                            connection.getHeaderField("Content-Encoding").equals("gzip")) {
+                        in = new GZIPInputStream(connection.getInputStream());
+                    } else {
+                        in = connection.getInputStream();
+                    }
+                } else if (responseCode != 304) { // 304 just means the file has not changed
+                    android.util.Log.e("FileNotFound", "responseCode = " + responseCode);
+                    throw new FileNotFoundException();
                 }
-            } else if (responseCode != 304) { // 304 just means the file has not changed
-                android.util.Log.e("FileNotFound", "responseCode = " + responseCode);
-                throw new FileNotFoundException();
+            } catch (IOException err) {
+                // Special case: If we are in debug mode, using the loopback address and the
+                // bundler cannot be found, fetch the packaged bundle
+                boolean isDebuggable =
+                        (0!=(androidCtx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
+                if (isDebuggable && "10.0.2.2".equals(url.getHost())) {
+                    try {
+                        String new_path = serviceURI.getPath().split("\\.")[0];
+                        URI localBundle = new URI("android.resource://" + androidCtx.getPackageName() +
+                                "/raw" + new_path);
+                        in = androidCtx.getContentResolver().openInputStream(Uri.parse(localBundle.toString()));
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    throw err;
+                }
             }
         } else if ("jarfile".equals(scheme)) {
             int loc = serviceURI.getPath().lastIndexOf("/");

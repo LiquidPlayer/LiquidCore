@@ -12,3 +12,4 @@
 .DS_Store
 *.DS_Store
 .settings
+/node_modules
