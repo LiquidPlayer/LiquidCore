@@ -1,6 +1,7 @@
 const events = require('events')
 const fs = require('fs')
 const path = require('path')
+const join = path.join
 
 let lc = global && global.LiquidCore
 
@@ -18,7 +19,7 @@ if (!lc) {
    * Algorithm borrowed from the `bindings` project: https://github.com/TooTallNate/node-bindings
    * Copyright (c) 2012 Nathan Rajlich <nathan@tootallnate.net>
    */
-  const native_require = require
+  const native_require = global.require
   const defaults = {
       arrow: process.env.NODE_BINDINGS_ARROW || ' → '
       , compiled: process.env.NODE_BINDINGS_COMPILED_DIR || 'compiled'
@@ -26,6 +27,7 @@ if (!lc) {
       , arch: process.arch
       , version: process.versions.node
       , bindings: 'bindings.node'
+      , bindingsjs: 'bindings.node.js'
       , try: [
         // node-gyp's linked version in the "build" dir
         [ 'module_root', 'build', 'bindings' ]
@@ -42,6 +44,8 @@ if (!lc) {
         , [ 'module_root', 'build', 'default', 'bindings' ]
         // Production "Release" buildtype binary (meh...)
         , [ 'module_root', 'compiled', 'version', 'platform', 'arch', 'bindings' ]
+        // LiquidCore mock implementation
+        , [ 'module_root', 'mocks', 'bindingsjs']
         ]
       }
 
@@ -62,6 +66,7 @@ if (!lc) {
     if (path.extname(opts.bindings) != '.node') {
       opts.bindings += '.node'
     }
+    opts.bindingsjs = opts.bindings + '.js'
 
     var requireFunc = native_require
     var tries = []
@@ -71,7 +76,11 @@ if (!lc) {
         , b
         , err
 
-    let modules = fs.readdirSync(path.resolve('.', 'node_modules'))
+    let modules = []
+    let mods = fs.readdirSync(path.resolve('.', 'node_modules'))
+    mods.forEach(m => m.startsWith('@') ?
+      modules = modules.concat(fs.readdirSync(path.resolve('.', 'node_modules', m)).map(f=>m+'/'+f) ) :
+      modules.push(m) )
     for (var j=0; j<modules.length; j++) {
       opts.module_root = modules[j]
       for (i=0; i<l; i++) {
@@ -94,7 +103,7 @@ if (!lc) {
     }
 
     err = new Error('Could not locate the bindings file. Tried:\n'
-        + tries.map(function (a) { return opts.arrow + a }).join('\n'))
+        + tries.map(function (a) { return opts.arrow + a }).join('\n') )
     err.tries = tries
     throw err
   }
@@ -109,7 +118,7 @@ if (!lc) {
 
     return native_require(module)
   }
-  lc.require.__proto__ = native.require.__proto__
+  lc.require.__proto__ = native_require.__proto__
 
   if (global) {
     global.LiquidCore = lc

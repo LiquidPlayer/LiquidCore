@@ -57,7 +57,9 @@
     ]
   },
   "dependencies": {
+    "filecompare": "^1.0.4",
     "metro": "^0.57.0",
-    "metro-core": "^0.57.0"
+    "metro-core": "^0.57.0",
+    "tmp": "^0.1.0"
   }
 }
