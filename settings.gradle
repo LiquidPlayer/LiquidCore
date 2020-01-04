@@ -1,1 +1,8 @@
-include ':LiquidV8', ':LiquidCore'
+include ':liquidcore-V8', ':liquidcore-Nodejs'
+
+project(':liquidcore-Nodejs').projectDir = new File(
+        rootProject.projectDir, 'LiquidCore')
+project(':liquidcore-V8').projectDir = new File(
+        rootProject.projectDir, 'LiquidV8')
+
+
