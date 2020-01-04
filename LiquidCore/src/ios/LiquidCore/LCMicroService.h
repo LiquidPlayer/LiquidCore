@@ -140,6 +140,27 @@
 + (NSURL * _Nonnull) devServer;
 
 /**
+ Generates a URL for fetching from the LiquidCore.bundle.  If compiled in DEBUG mode, this
+ will attempt to first download from the development server.  If the server is unreachable, then
+ it will default to the packaged bundle.  In release mode, this will always reference the packaged
+ bundle.
+ @param bundleName The name of the bundled file (ex. 'index' or 'example.js')
+ @param options Development server options
+ @return A service URL for use in the 'LCMicroService' constructor
+ */
++ (NSURL * _Nonnull) bundle:(NSString* _Nullable)bundleName options:(NSDictionary* _Nullable)options;
+
+/**
+ Generates a URL for fetching from the LiquidCore.bundle.  If compiled in DEBUG mode, this
+ will attempt to first download from the development server.  If the server is unreachable, then
+ it will default to the packaged bundle.  In release mode, this will always reference the packaged
+ bundle.
+ @param bundleName The name of the bundled file (ex. 'index' or 'example.js')
+ @return A service URL for use in the 'LCMicroService' constructor
+*/
++ (NSURL * _Nonnull) bundle:(NSString* _Nullable)bundleName;
+
+/**
  Creates a new instance of the micro service referenced by `serviceURI`.
  @param serviceURI  The URI (can be a network URL or local file/resource) of the micro service
  code

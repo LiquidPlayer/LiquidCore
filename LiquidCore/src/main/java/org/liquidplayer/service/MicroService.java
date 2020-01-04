@@ -133,6 +133,7 @@ public class MicroService implements Process.EventListener {
      * @param port The server's port (default: 8082)
      * @return A service URI for use in the MicroService constructor
      */
+    @Deprecated
     public static URI DevServer(@Nullable String fileName, @Nullable Integer port) {
         if (fileName == null) {
             fileName = "liquid.js";
@@ -148,12 +149,45 @@ public class MicroService implements Process.EventListener {
         return URI.create("http://10.0.2.2:" + port + "/" + fileName + "?platform=android&dev=true");
     }
 
+    /**
+     * Generates a URI for fetching from a development server on the loopback address (10.0.2.2).
+     * Assumes the entry js file is 'liquid.js' and is served from port 8082 on the emulator's host
+     * machine.
+     * @return A service URI for use in the MicroService constructor
+     */
+    @Deprecated
+    public static URI DevServer() {
+        return DevServer(null, null);
+    }
+
+    /**
+     * Defines options for the development server
+     */
     public static class BundleOptions {
+        /**
+         * The port on which the server resides
+         */
         @Nullable Integer port;
+        /**
+         * An alternate server URL
+         */
         @Nullable URL server_url;
+        /**
+         * A map containing parameters to be added to the GET request
+         */
         @Nullable Map<String,String> request_params;
     }
 
+    /**
+     *  Generates a URL for fetching from a LiquidCore bundle.  If built in Debug mode, this
+     *  will attempt to first download from the development server.  If the server is unreachable,
+     *  then it will default to the packaged bundle.  In release mode, this will always reference
+     *  the packaged bundle.
+     * @param context The current android context
+     * @param bundleName The name of the bundled file (ex. 'index' or 'example.js')
+     * @param bundleOptions Development server options
+     * @return A service URI for use in the 'MicroService' constructor
+     */
     public static URI Bundle(Context context, @Nullable String bundleName,
                              @Nullable BundleOptions bundleOptions) {
         if (bundleName == null) {
@@ -227,22 +261,29 @@ public class MicroService implements Process.EventListener {
         return null;
     }
 
+    /**
+     *  Generates a URL for fetching from a LiquidCore bundle.  If built in Debug mode, this
+     *  will attempt to first download from the development server.  If the server is unreachable,
+     *  then it will default to the packaged bundle.  In release mode, this will always reference
+     *  the packaged bundle.
+     * @param context The current android context
+     * @param bundleName The name of the bundled file (ex. 'index' or 'example.js')
+     * @return A service URI for use in the 'MicroService' constructor
+     */
     public static URI Bundle(Context context, String bundleName) {
         return Bundle(context, bundleName, null);
     }
 
+    /**
+     *  Generates a URL for fetching from a LiquidCore bundle.  If built in Debug mode, this
+     *  will attempt to first download from the development server.  If the server is unreachable,
+     *  then it will default to the packaged bundle.  In release mode, this will always reference
+     *  the packaged bundle.  Assumes the entry point is 'index.js'.
+     * @param context The current android context
+     * @return A service URI for use in the 'MicroService' constructor
+     */
     public static URI Bundle(Context context) {
         return Bundle(context, null, null);
-    }
-
-    /**
-     * Generates a URI for fetching from a development server on the loopback address (10.0.2.2).
-     * Assumes the entry js file is 'liquid.js' and is served from port 8082 on the emulator's host
-     * machine.
-     * @return A service URI for use in the MicroService constructor
-     */
-    public static URI DevServer() {
-        return DevServer(null, null);
     }
 
     private ServiceStartListener startListener;
