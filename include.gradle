@@ -1,6 +1,18 @@
 apply plugin: 'de.undercouch.download'
+import groovy.json.JsonSlurper
+
+def getLiquidCoreVersionFromNpm() {
+    def inputFile = new File(buildscript.getSourceFile().getParent(), "package.json")
+    def packageJson = new JsonSlurper().parseText(inputFile.text)
+
+    return packageJson["version"]
+}
 
 if (!project.hasProperty('liquidcore_include_gradle')) {
+
+  def _v8_aar = "liquidcore-V8-" + getLiquidCoreVersionFromNpm() + ".aar"
+  def _Nodejs_aar = "liquidcore-Nodejs-" + getLiquidCoreVersionFromNpm() + ".aar"
+
   project.ext.set('liquidcore_include_gradle', true)
 
   def downloadsDir_liquidcore = new File(rootProject.projectDir, ".liquidcore")
@@ -12,34 +24,34 @@ if (!project.hasProperty('liquidcore_include_gradle')) {
       if (findProject(':liquidcore-Nodejs') != null) {
           implementation project(':liquidcore-Nodejs')
       } else {
-          implementation fileTree(include:['liquidcore-Nodejs-0.7.0-rc0.aar'], dir:downloadsDir_liquidcore)
+          implementation fileTree(include:[_Nodejs_aar], dir:downloadsDir_liquidcore)
       }
 
       /* liquidcore-V8 */
       if (findProject(':liquidcore-V8') != null) {
           implementation project(':liquidcore-V8')
       } else {
-          implementation fileTree(include:['liquidcore-V8-0.7.0-rc0.aar'], dir:downloadsDir_liquidcore)
+          implementation fileTree(include:[_v8_aar], dir:downloadsDir_liquidcore)
       }
   }
   if (findProject(':liquidcore-Nodejs') == null) {
     android { tasks.withType(JavaCompile) {
         compileTask -> compileTask.dependsOn download_liquidcore_Nodejs }}
     task download_liquidcore_Nodejs(dependsOn: createDownloadsDir_liquidcore, type: Download) {
-        src 'https://liquidplayer.github.io/packages/liquidcore-Nodejs-0.7.0-rc0.aar'
+        src 'https://liquidplayer.github.io/packages/' + _Nodejs_aar
         onlyIfNewer true
         overwrite false
-        dest new File(downloadsDir_liquidcore, 'liquidcore-Nodejs-0.7.0-rc0.aar')
+        dest new File(downloadsDir_liquidcore, _Nodejs_aar)
     }
   }
   if (findProject(':liquidcore-V8') == null) {
     android { tasks.withType(JavaCompile) {
         compileTask -> compileTask.dependsOn download_liquidcore_V8 }}
     task download_liquidcore_V8(dependsOn: createDownloadsDir_liquidcore, type: Download) {
-        src 'https://liquidplayer.github.io/packages/liquidcore-V8-0.7.0-rc0.aar'
+        src 'https://liquidplayer.github.io/packages/' + _v8_aar
         onlyIfNewer true
         overwrite false
-        dest new File(downloadsDir_liquidcore, 'liquidcore-V8-0.7.0-rc0.aar')
+        dest new File(downloadsDir_liquidcore, _v8_aar)
     }
   }
 }
