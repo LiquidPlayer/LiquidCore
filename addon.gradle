@@ -1,0 +1,35 @@
+configurations {
+    liquidcore {}
+}
+
+task extractAddOnLibsAndHeaders(type: Sync) {
+    dependsOn configurations.liquidcore
+
+    from {
+        configurations.liquidcore.collect {zipTree(it)}
+    }
+    include "jni/**/*.so", "include/**/*"
+    into "build/liquidcore-addon"
+}
+
+afterEvaluate {
+    def addon = file('build/liquidcore-addon')
+    if (!addon.exists()) {
+        if (project.hasProperty("externalNativeBuildDebug")) {
+            externalNativeBuildDebug.dependsOn extractAddOnLibsAndHeaders
+        }
+        if (project.hasProperty("externalNativeBuildRelease")) {
+            externalNativeBuildRelease.dependsOn extractAddOnLibsAndHeaders
+        }
+    }
+}
+
+dependencies {
+    if (findProject(':liquidcore-Nodejs') != null) {
+        liquidcore project(path: ':liquidcore-V8', configuration: 'default')
+        liquidcore project(path: ':liquidcore-Nodejs', configuration: 'default')
+    } else {
+        liquidcore fileTree(include:['liquidcore-Nodejs-0.7.0-rc0.aar'], dir:new File(rootProject.projectDir, ".liquidcore"))
+        liquidcore fileTree(include:['liquidcore-V8-0.7.0-rc0.aar'], dir:new File(rootProject.projectDir, ".liquidcore"))
+    }
+}

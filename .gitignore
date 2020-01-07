@@ -13,3 +13,4 @@
 *.DS_Store
 .settings
 /node_modules
+/github.properties

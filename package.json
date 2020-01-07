@@ -26,12 +26,12 @@
     "android": [
       {
         "name": "Nodejs",
-        "aar": "release/LiquidCore-release",
+        "include": "include.gradle",
         "dev": "LiquidCore"
       },
       {
         "name": "V8",
-        "aar": "release/LiquidV8-release",
+        "include": "include.gradle",
         "dev": "LiquidV8"
       }
     ],

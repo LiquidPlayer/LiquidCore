@@ -1,5 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'maven-publish'
 
 import groovy.json.JsonSlurper
 
@@ -72,36 +72,6 @@ dependencies {
     androidTestImplementation 'org.hamcrest:hamcrest-library:1.3'
 }
 
-// build a jar with source files
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    failOnError  false
-    source = android.sourceSets.main.java.sourceFiles
-    configurations.implementation.setCanBeResolved(true)
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator)) +
-            configurations.implementation
-    android.libraryVariants.all { variant ->
-        if (variant.name == 'release') {
-            owner.classpath += variant.javaCompileProvider.get().classpath
-        }
-    }
-}
-
-// build a jar with javadoc
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
-
 task copyHeadersToAARRelease(type: Zip) {
     baseName = 'liquidcore-V8-release'
     extension = 'aar.in'
@@ -140,4 +110,30 @@ afterEvaluate {
     }
 }
 
-group='com.github.liquidplayer'
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
+
+def getArtifactId = { ->
+    return "liquidcore-V8"
+}
+publishing {
+    publications {
+        bar(MavenPublication) {
+            groupId 'org.liquidplayer'
+            artifactId getArtifactId()
+            version '0.7.0-rc0' //getVersionFromNpm()
+            artifact("$buildDir/outputs/aar/${getArtifactId()}-release.aar")
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/LiquidPlayer/LiquidCore")
+            credentials {
+                username = githubProperties['gpr.user'] ?: System.getenv("GPR_USER")
+                password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+            }
+        }
+    }
+}
