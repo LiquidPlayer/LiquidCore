@@ -9,11 +9,9 @@ def getLiquidCoreVersionFromNpm() {
 }
 
 if (!project.hasProperty('liquidcore_include_gradle')) {
-
-  def _v8_aar = "liquidcore-V8-" + getLiquidCoreVersionFromNpm() + ".aar"
-  def _Nodejs_aar = "liquidcore-Nodejs-" + getLiquidCoreVersionFromNpm() + ".aar"
-
   project.ext.set('liquidcore_include_gradle', true)
+
+  def _Nodejs_aar = "liquidcore-Nodejs-" + getLiquidCoreVersionFromNpm() + ".aar"
 
   def downloadsDir_liquidcore = new File(rootProject.projectDir, ".liquidcore")
   task createDownloadsDir_liquidcore {
@@ -26,13 +24,6 @@ if (!project.hasProperty('liquidcore_include_gradle')) {
       } else {
           implementation fileTree(include:[_Nodejs_aar], dir:downloadsDir_liquidcore)
       }
-
-      /* liquidcore-V8 */
-      if (findProject(':liquidcore-V8') != null) {
-          implementation project(':liquidcore-V8')
-      } else {
-          implementation fileTree(include:[_v8_aar], dir:downloadsDir_liquidcore)
-      }
   }
   if (findProject(':liquidcore-Nodejs') == null) {
     android { tasks.withType(JavaCompile) {
@@ -44,14 +35,6 @@ if (!project.hasProperty('liquidcore_include_gradle')) {
         dest new File(downloadsDir_liquidcore, _Nodejs_aar)
     }
   }
-  if (findProject(':liquidcore-V8') == null) {
-    android { tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn download_liquidcore_V8 }}
-    task download_liquidcore_V8(dependsOn: createDownloadsDir_liquidcore, type: Download) {
-        src 'https://liquidplayer.github.io/packages/' + _v8_aar
-        onlyIfNewer true
-        overwrite false
-        dest new File(downloadsDir_liquidcore, _v8_aar)
-    }
-  }
 }
+
+apply from: new File(buildscript.getSourceFile(), '../include.V8.gradle')

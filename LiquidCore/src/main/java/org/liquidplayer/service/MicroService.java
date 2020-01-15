@@ -167,15 +167,15 @@ public class MicroService implements Process.EventListener {
         /**
          * The port on which the server resides
          */
-        @Nullable Integer port;
+        @Nullable public Integer port;
         /**
          * An alternate server URL
          */
-        @Nullable URL server_url;
+        @Nullable public URL server_url;
         /**
          * A map containing parameters to be added to the GET request
          */
-        @Nullable Map<String,String> request_params;
+        @Nullable public Map<String,String> request_params;
     }
 
     /**

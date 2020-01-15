@@ -129,7 +129,8 @@
  @param port The server's port (default: 8082)
  @return A service URL for use in the `LCMicroService` constructor
  */
-+ (NSURL * _Nonnull) devServer:(NSString* _Nullable)fileName port:(NSNumber* _Nullable)port;
++ (NSURL * _Nonnull) devServer:(NSString* _Nullable)fileName port:(NSNumber* _Nullable)port
+__attribute__((deprecated));
 
 /**
  Generates a URL for fetching from a development server on the loopback address (localhost).
@@ -137,7 +138,8 @@
  machine.
  @return A service URL for use in the `LCMicroService` constructor
  */
-+ (NSURL * _Nonnull) devServer;
++ (NSURL * _Nonnull) devServer
+__attribute__((deprecated));
 
 /**
  Generates a URL for fetching from the LiquidCore.bundle.  If compiled in DEBUG mode, this
