@@ -1,7 +1,5 @@
 # The LiquidCore Project
 
-# NOTE: Version 0.7.0 is not yet stable, please be patient ...
-
 [![Download](https://img.shields.io/npm/dt/liquidcore.svg)](https://www.npmjs.com/package/liquidcore)
 
 [![NPM](https://nodei.co/npm/liquidcore.png)](https://nodei.co/npm/liquidcore/)
