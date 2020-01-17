@@ -21,6 +21,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     bash LiquidCore/src/ios/generate_javascript_polyfills.sh
   CMD
   s.default_subspec = 'Core'
+  s.dependency 'LiquidCore-headers'
 
   s.subspec 'Core' do |cs|
     cs.dependency 'LiquidCore/uv'
@@ -256,12 +257,27 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/uv/src/unix/fsevents.c",
       "deps/node-10.15.3/deps/uv/src/unix/darwin-proctitle.c",
       "deps/node-10.15.3/deps/uv/src/unix/bsd-ifaddrs.c",
-      "deps/node-10.15.3/deps/uv/src/unix/kqueue.c"
-    us.xcconfig = {
+      "deps/node-10.15.3/deps/uv/src/unix/kqueue.c",
+      "deps/node-10.15.3/deps/uv/src/uv-common.h",
+      "deps/node-10.15.3/deps/uv/src/unix/internal.h",
+      "deps/node-10.15.3/deps/uv/src/queue.h",
+      "deps/node-10.15.3/deps/uv/src/heap-inl.h",
+      "deps/node-10.15.3/deps/uv/src/unix/atomic-ops.h",
+      "deps/node-10.15.3/deps/uv/src/unix/spinlock.h"
+      us.private_header_files = [
+        "deps/node-10.15.3/deps/uv/src/uv-common.h",
+        "deps/node-10.15.3/deps/uv/src/unix/internal.h",
+        "deps/node-10.15.3/deps/uv/src/queue.h",
+        "deps/node-10.15.3/deps/uv/src/heap-inl.h",
+        "deps/node-10.15.3/deps/uv/src/unix/atomic-ops.h",
+        "deps/node-10.15.3/deps/uv/src/unix/spinlock.h"
+      ]
+      us.xcconfig = {
       :HEADER_SEARCH_PATHS => [
-          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/include",
-          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/src",
-          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/src/unix",
+#          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/include",
+#          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/src",
+#          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/src/unix",
+           "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
       ].join(' '),
       :OTHER_CFLAGS => [
           '-D_DARWIN_USE_64_BIT_INODE=1',
@@ -327,9 +343,15 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/cares/src/bitncmp.c",
       "deps/node-10.15.3/deps/cares/src/inet_net_pton.c",
       "deps/node-10.15.3/deps/cares/src/inet_ntop.c",
-      "deps/node-10.15.3/deps/cares/include/*.h"
+      "deps/node-10.15.3/deps/cares/include/*.h",
+      "deps/node-10.15.3/deps/cares/src/ares_setup.h",
+      "deps/node-10.15.3/deps/cares/config/darwin/ares_config.h",
+      "deps/node-10.15.3/deps/cares/src/*.h"
     as.private_header_files = [
-      "deps/node-10.15.3/deps/cares/include/*.h"
+      "deps/node-10.15.3/deps/cares/include/*.h",
+      "deps/node-10.15.3/deps/cares/src/ares_setup.h",
+      "deps/node-10.15.3/deps/cares/config/darwin/ares_config.h",
+      "deps/node-10.15.3/deps/cares/src/*.h"
     ]
     as.xcconfig = {
       :HEADER_SEARCH_PATHS => [
@@ -376,11 +398,13 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_stream.c",
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_submit.c",
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_version.c",
+      "deps/node-10.15.3/deps/nghttp2/lib/*.h",
       "deps/node-10.15.3/deps/http_parser/*.h",
       "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h"
     hs.private_header_files = [
       "deps/node-10.15.3/deps/http_parser/*.h",
       "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h",
+      "deps/node-10.15.3/deps/nghttp2/lib/*.h"
     ]
     hs.xcconfig = {
       :HEADER_SEARCH_PATHS => [
@@ -494,7 +518,11 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/openssl/openssl/crypto/x509/*.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/*.c",
       "deps/node-10.15.3/deps/openssl/openssl/engines/e_capi.c",
-      "deps/node-10.15.3/deps/openssl/openssl/engines/e_padlock.c"
+      "deps/node-10.15.3/deps/openssl/openssl/engines/e_padlock.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/des_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/cryptlib.h",
+      "deps/node-10.15.3/deps/openssl/openssl/e_os.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/include/openssl/opensslconf.h"
     os.exclude_files = [
       "deps/node-10.15.3/deps/openssl/openssl/crypto/arm_arch.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/ppc_arch.c",
@@ -509,14 +537,17 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ncbc_enc.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/tab.c",
     ]
+    os.private_header_files = [
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/des_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/cryptlib.h",
+      "deps/node-10.15.3/deps/openssl/openssl/e_os.h",
+    ]
     os.xcconfig = {
       # System Header Search Paths
       :HEADER_SEARCH_PATHS => [
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/include",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/crypto/include",
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/crypto/modes",
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto",
+        "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
       ].join(' '),
       :OTHER_CFLAGS => [
         '-DOPENSSL_NO_HW',

@@ -26,3 +26,4 @@ gradle.properties
 settings.gradle
 .project
 build.gradle
+*.tgz

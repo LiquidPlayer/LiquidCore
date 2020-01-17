@@ -25,5 +25,6 @@ do
    rsync -a --prune-empty-dirs --include '*/' --include '*.h' --exclude '*' "$INDIR/" "$OUTPUT_DIR/"
 done
 rm -rf "$OUTPUT_DIR/internal"
+cp "$DEPS_DIR/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/include/openssl/opensslconf.h" "$OUTPUT_DIR/openssl"
 
 echo "Copied headers to: $OUTPUT_DIR";
