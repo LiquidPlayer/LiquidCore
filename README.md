@@ -56,7 +56,7 @@ where `<target>` is your XCode project target, and `<podfile>` is the path of yo
 </td></tr></tbody>
 </table>
 
-Note: On iOS, LiquidCore requires the use of [Cocoapods](https://cocoapods.org/), so make sure you've set up your project to use a [`Podfile`](https://guides.cocoapods.org/using/the-podfile.html) first.
+Note: On iOS, LiquidCore requires the use of [Cocoapods](https://cocoapods.org/), so make sure you've set up your project to use a [`Podfile`](https://guides.cocoapods.org/using/the-podfile.html) first.  **Important**: Your `Podfile` must contain the `use_frameworks!` directive.
 
 ## Automatic Bundling
 
@@ -119,7 +119,7 @@ service.start()
 import LiquidCore
 ...
 let url = LCMicroService.bundle("example")
-let service = LCMicroService(url: url!)
+let service = LCMicroService(url: url)
 service?.start()
 ```
 
@@ -150,8 +150,10 @@ service.start()
 ```
 </td><td>
 
+Conform to `LCMicroServiceDelegate`
+
 ```swift
-let service = LCMicroService(url:url!,
+let service = LCMicroService(url:url,
                         delegate:self)
 service?.start()
 ...
@@ -191,6 +193,8 @@ service.addEventListener("my_event", listener)
 ```
 
 </td><td>
+
+Conform to `LCMicroServiceEventListener`
 
 ```swift
 service.addEventListener("my_event", listener:self)
@@ -238,6 +242,99 @@ LiquidCore.on('host_event', function(msg) {
    console.log('Hallo, ' + msg.hallo)
 })
 ```
+
+Full example using the packaged `example.js` file:
+
+<table ><tbody><tr><td>
+
+#### Android Kotlin
+</td><td>
+
+#### iOS Swift
+</td></tr><tr><td>
+
+```kotlin
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.widget.TextView
+import org.liquidplayer.service.MicroService
+
+class MainActivity : AppCompatActivity() {
+
+  override fun onCreate(savedInstanceState:
+                        Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+    val hello = findViewById<TextView>(
+        R.id.hello_text)
+
+    val readyListener = MicroService.EventListener {
+      service, _, _ -> service.emit("ping")
+    }
+    val pongListener = MicroService.EventListener { 
+      _, _, jsonObject ->
+      val message = jsonObject.getString("message")
+      runOnUiThread { hello.text = message }
+    }
+    val startListener = 
+        MicroService.ServiceStartListener{
+      service ->
+      service.addEventListener("ready", readyListener)
+      service.addEventListener("pong", pongListener)
+    }
+    val uri = MicroService.Bundle(this, "example")
+    val service = MicroService(this, uri,
+                               startListener)
+    service.start()
+  }
+}
+```
+
+</td><td>
+
+```swift
+import UIKit
+import LiquidCore
+
+class ViewController: UIViewController,
+  LCMicroServiceDelegate,
+  LCMicroServiceEventListener {
+    
+  @IBOutlet weak var textBox: UITextField!
+    
+  override func viewDidLoad() {
+    super.viewDidLoad()
+        
+    let url = LCMicroService.bundle("example")
+    let service = LCMicroService(url: url, 
+                                delegate: self)
+    service?.start()
+  }
+
+  func onStart(_ service: LCMicroService) {
+    service.addEventListener("ready",listener: self)
+    service.addEventListener("pong", listener: self)
+  }
+    
+  func onEvent(_ service: LCMicroService, 
+                   event: String,
+                 payload: Any?) {
+    if event == "ready" {
+      service.emit("ping")
+    } else if event == "pong" {
+      let p = (payload as! Dictionary<String,AnyObject>)
+      let message = p["message"] as! String
+      DispatchQueue.main.async {
+        self.textBox.text = message
+      }
+    }
+  }
+}
+```
+
+</td></tr></tbody>
+</table>
+
 
 LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the Android/iOS filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
 
