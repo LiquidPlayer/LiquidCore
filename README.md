@@ -243,7 +243,37 @@ LiquidCore.on('host_event', function(msg) {
 })
 ```
 
-Full example using the packaged `example.js` file:
+LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the Android/iOS filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
+
+
+## Playing with `example.js`
+
+When you follow the directions above, LiquidCore will automatically bundle a file called
+`example.js`, which looks like this:
+
+```javascript
+const {LiquidCore} = require('liquidcore')
+
+// A micro service will exit when it has nothing left to do.  So to
+// avoid a premature exit, set an indefinite timer.  When we
+// exit() later, the timer will get invalidated.
+setInterval(()=>{}, 1000)
+
+console.log('Hello, World!')
+
+// Listen for a request from the host for the 'ping' event
+LiquidCore.on( 'ping', () => {
+    // When we get the ping from the host, respond with "Hello, World!"
+    // and then exit.
+    LiquidCore.emit( 'pong', { message: 'Hello, World from LiquidCore!' } )
+    process.exit(0)
+})
+
+// Ok, we are all set up.  Let the host know we are ready to talk
+LiquidCore.emit( 'ready' )
+```
+
+Below is an example of how to interact with this JavaScript code from the app.  Note that `hello_text` on Android and `textBox` on iOS are UI elements whose setup is not shown here.
 
 <table ><tbody><tr><td>
 
@@ -335,8 +365,7 @@ class ViewController: UIViewController,
 </td></tr></tbody>
 </table>
 
-
-LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the Android/iOS filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
+You can use this as a guide for how to create your own services.  You can use `npm install` to install most JS-only (non-native) modules and `require` them as normal.  The bundler will package all of the code into a single file.
 
 ## API Documentation
 
