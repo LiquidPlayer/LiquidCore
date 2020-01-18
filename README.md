@@ -49,6 +49,7 @@ where `<app>` is the name of your application module (the default in Android Stu
 
 ```bash
 $ npm run pod-config -- --target=<target> --podfile=<podfile>
+$ pod install
 ```
 
 where `<target>` is your XCode project target, and `<podfile>` is the path of your application's `Podfile`
