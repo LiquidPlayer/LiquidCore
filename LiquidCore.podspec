@@ -21,7 +21,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     bash LiquidCore/src/ios/generate_javascript_polyfills.sh
   CMD
   s.default_subspec = 'Core'
-  s.dependency 'LiquidCore-headers'
+  s.dependency 'LiquidCore-headers', version
 
   s.subspec 'Core' do |cs|
     cs.dependency 'LiquidCore/uv'
@@ -40,6 +40,9 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/v8/src/libplatform/tracing/trace-writer.cc",
       "deps/node-10.15.3/deps/v8/src/libplatform/tracing/tracing-controller.cc",
       "deps/node-10.15.3/deps/v8/src/libplatform/worker-thread.cc",
+      "deps/node-10.15.3/deps/v8/src/libplatform/worker-thread.h",
+      "deps/node-10.15.3/deps/v8/include/libplatform/*.h",
+      "deps/node-10.15.3/deps/v8/include/*.h",
 
       # v8_libbase
       "deps/node-10.15.3/deps/v8/src/base/bits.cc",
@@ -62,6 +65,8 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/v8/src/base/platform/platform-macos.cc",
       "deps/node-10.15.3/deps/v8/src/base/platform/platform-posix.cc",
       "deps/node-10.15.3/deps/v8/src/base/platform/platform-posix-time.cc",
+      "deps/node-10.15.3/deps/v8/src/base/platform/platform*.h",
+      "deps/node-10.15.3/deps/v8/src/base/compiler*.h",
 
       # node_lib
       "deps/node-10.15.3/src/async_wrap.cc",
@@ -130,26 +135,53 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/src/node_crypto_bio.cc",
       "deps/node-10.15.3/src/node_crypto_clienthello.cc",
       "deps/node-10.15.3/src/tls_wrap.cc",
+      "deps/node-10.15.3/src/**/*.h",
 
       # V82JSC
-      "LiquidCore/src/ios/V82JSC/**/*.cpp",
+      "LiquidCore/src/ios/V82JSC/**/*.{cpp,h}",
       "deps/node-10.15.3/deps/v8/src/assert-scope.cc",
 
       # generated files
       "LiquidCore/src/ios/gen/*.{c,cc}",
 
       # LiquidCore node modifications
-      "LiquidCore/src/common/*.{cc,c}",
-      "LiquidCore/src/ios/node_bridge.cc",
+      "LiquidCore/src/common/*.{cc,c,h}",
+      "LiquidCore/src/ios/node_bridge.{cc,h}",
 
       # API
       "LiquidCore/src/ios/LiquidCore/*.h",
-      "LiquidCore/src/ios/API/*.m"
+      "LiquidCore/src/ios/API/*.{m,h}"
 
     cs.public_header_files = [ "LiquidCore/src/ios/LiquidCore/*.h" ]
+    cs.private_header_files = [
+      "deps/node-10.15.3/deps/v8/src/libplatform/worker-thread.h",
+      "deps/node-10.15.3/deps/v8/include/libplatform/*.h",
+      "deps/node-10.15.3/deps/v8/src/base/platform/platform*.h",
+      "deps/node-10.15.3/deps/v8/src/base/compiler*.h",
+      "deps/node-10.15.3/deps/v8/include/*.h",
+      "deps/node-10.15.3/src/**/*.h",
+      "LiquidCore/src/ios/V82JSC/**/*.h",
+      "LiquidCore/src/common/*.h",
+      "LiquidCore/src/ios/node_bridge.h",
+      "LiquidCore/src/ios/API/*.h"
+    ]
+    cs.preserve_paths = "deps/node-10.15.3/deps/v8/src/base/**/*.h",
+      "deps/node-10.15.3/deps/v8/src/**/*.h",
+      "deps/node-10.15.3/deps/v8/base/trace_event/common/trace_event_common.h",
+      "deps/node-10.15.3/deps/v8/src/libplatform/*.h",
+      "deps/node-10.15.3/deps/v8/src/libplatform/tracing/*.h",
+      "deps/node-10.15.3/deps/v8/testing/gtest/include/gtest/gtest_prod.h",
+      "deps/node-10.15.3/deps/v8/third_party/googletest/src/googletest/include/gtest/gtest_prod.h",
+      "deps/node-10.15.3/src/node.cc",
+      "deps/node-10.15.3/deps/v8/test/cctest/**/*.h",
+      "LiquidCore/src/ios/torque-generated/*.h",
+      "deps/Apple/**/*.h",
+      "deps/utfcpp/**/*.h",
+      "deps/JavaScriptCore/private/*.h"
     cs.frameworks = "JavaScriptCore"
     cs.xcconfig = {
       :HEADER_SEARCH_PATHS => [
+        "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/v8/include",
         "${PODS_TARGET_SRCROOT}/deps/node-10.15.3/deps/v8",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/v8/src/libplatform",
@@ -274,9 +306,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       ]
       us.xcconfig = {
       :HEADER_SEARCH_PATHS => [
-#          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/include",
-#          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/src",
-#          "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/uv/src/unix",
            "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
       ].join(' '),
       :OTHER_CFLAGS => [
@@ -406,6 +435,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h",
       "deps/node-10.15.3/deps/nghttp2/lib/*.h"
     ]
+    hs.preserve_paths = "deps/node-10.15.3/deps/nghttp2/lib/includes/config.h"
     hs.xcconfig = {
       :HEADER_SEARCH_PATHS => [
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/nghttp2/lib/includes",
@@ -480,7 +510,26 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/openssl/openssl/crypto/threads_win.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/uid.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/ct/*.c",
-      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/*.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/cbc_cksm.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/cbc_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/cfb64ede.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/cfb64enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/cfb_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/des_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ecb3_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ecb_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/fcrypt.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/fcrypt_b.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ofb64ede.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ofb64enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ofb_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/pcbc_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/qud_cksm.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/rand_key.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/rpc_enc.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/set_key.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/str2key.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/xcbc_enc.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/dh/*.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/*.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/dso/*.c",
@@ -522,7 +571,61 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/openssl/openssl/crypto/des/des_locl.h",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/cryptlib.h",
       "deps/node-10.15.3/deps/openssl/openssl/e_os.h",
-      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/include/openssl/opensslconf.h"
+      "deps/node-10.15.3/deps/openssl/openssl/include/internal/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/modes/modes_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/whrlpool/wp_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ui/ui_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_int.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/record/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/statem/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/sha/sha_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/bn/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ripemd/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rc4/rc4_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/objects/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/md5/md5_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/md4/md4_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/idea/idea_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/lhash/lhash_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/hmac/hmac_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_locl.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/include/internal/dso_conf.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/include/internal/bn_conf.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_locl.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/buildinf.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/conf/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/bio/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/cast/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/comp/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/cms/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/bf/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/async_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_posix.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_null.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_win.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_locl.h"
+    os.preserve_paths = "deps/node-10.15.3/deps/openssl/openssl/crypto/LPdir_unix.c",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ncbc_enc.c"
     os.exclude_files = [
       "deps/node-10.15.3/deps/openssl/openssl/crypto/arm_arch.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/ppc_arch.c",
@@ -534,20 +637,80 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ecp_nistz*.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_x86core.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/bf/bf_cbc.c",
-      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/ncbc_enc.c",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/tab.c",
+      "deps/node-10.15.3/deps/openssl/openssl/include/internal/__DECC_INCLUDE_EPILOGUE.H",
+      "deps/node-10.15.3/deps/openssl/openssl/include/internal/__DECC_INCLUDE_PROLOGUE.H",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/__DECC_INCLUDE_EPILOGUE.H",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/__DECC_INCLUDE_PROLOGUE.H",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/dso_conf.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/bn_conf.h",
     ]
     os.private_header_files = [
       "deps/node-10.15.3/deps/openssl/openssl/crypto/des/des_locl.h",
       "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/cryptlib.h",
       "deps/node-10.15.3/deps/openssl/openssl/e_os.h",
+      "deps/node-10.15.3/deps/openssl/openssl/include/internal/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/include/internal/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/modes/modes_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/asn1/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/x509/x509_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/whrlpool/wp_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/x509v3/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ocsp/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ui/ui_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ts/ts_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/ssl_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/engine/eng_int.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/record/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/statem/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/ssl/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/sha/sha_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/seed/seed_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/bn/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rsa/rsa_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/des/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ripemd/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rc2/rc2_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rc4/rc4_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/rand/rand_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/evp/evp_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/pkcs12/p12_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/objects/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/md5/md5_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/md4/md4_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/idea/idea_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/lhash/lhash_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/blake2/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/hmac/hmac_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ec/ec_lcl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/dso/dso_locl.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/include/internal/dso_conf.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/include/internal/bn_conf.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/dsa/dsa_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/dh/dh_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/ct/ct_locl.h",
+      "deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/buildinf.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/conf/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/bio/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/cast/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/comp/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/cms/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/camellia/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/bf/*.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/async_locl.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_posix.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_null.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/async/arch/async_win.h",
+      "deps/node-10.15.3/deps/openssl/openssl/crypto/aes/aes_locl.h"
     ]
     os.xcconfig = {
       # System Header Search Paths
       :HEADER_SEARCH_PATHS => [
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/crypto/include",
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto",
         "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
+        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/crypto/include",
+        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/include",
+        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto",
+        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/include",
       ].join(' '),
       :OTHER_CFLAGS => [
         '-DOPENSSL_NO_HW',
