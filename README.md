@@ -49,13 +49,34 @@ where `<app>` is the name of your application module (the default in Android Stu
 
 ```bash
 $ npm run pod-config -- --target=<target> --podfile=<podfile>
+$ npm run bundler -- --platform=ios
+$ pod install
 ```
 
 where `<target>` is your XCode project target, and `<podfile>` is the path of your application's `Podfile`
 </td></tr></tbody>
 </table>
 
-Note: On iOS, LiquidCore requires the use of [Cocoapods](https://cocoapods.org/), so make sure you've set up your project to use a [`Podfile`](https://guides.cocoapods.org/using/the-podfile.html) first.
+### Notes on iOS
+
+LiquidCore requires the use of [Cocoapods](https://cocoapods.org/), so make sure you've set up your project to use a [`Podfile`](https://guides.cocoapods.org/using/the-podfile.html) first.  **Important**: Your `Podfile` must contain the `use_frameworks!` directive.  If you are not yet using Cocoapods, you can create a simple one like this:
+
+```ruby
+platform :ios, '11.0'
+use_frameworks!
+
+target '<TARGET>' do
+end
+```
+
+where `<TARGET>` is the name of your `xcodeproj` (without the `.xcodeproj` extension).
+
+Also, any time you add a new `liquidcore.entry` point in `package.json`, you must first run the bundler and then run `pod install` again.  This is a quirk of how Cocoapods works with finding files.  Those files must exist at installation time, or they will not be available in the pod, even if they are created later.  So after adding a new `entry`, just do this part again:
+
+```bash
+$ npm run bundler -- --platform=ios
+$ pod install
+```
 
 ## Automatic Bundling
 
@@ -118,7 +139,7 @@ service.start()
 import LiquidCore
 ...
 let url = LCMicroService.bundle("example")
-let service = LCMicroService(url: url!)
+let service = LCMicroService(url: url)
 service?.start()
 ```
 
@@ -149,8 +170,10 @@ service.start()
 ```
 </td><td>
 
+Conform to `LCMicroServiceDelegate`
+
 ```swift
-let service = LCMicroService(url:url!,
+let service = LCMicroService(url:url,
                         delegate:self)
 service?.start()
 ...
@@ -190,6 +213,8 @@ service.addEventListener("my_event", listener)
 ```
 
 </td><td>
+
+Conform to `LCMicroServiceEventListener`
 
 ```swift
 service.addEventListener("my_event", listener:self)
@@ -239,6 +264,128 @@ LiquidCore.on('host_event', function(msg) {
 ```
 
 LiquidCore creates a convenient virtual file system so that instances of micro services do not unintentionally or maliciously interfere with each other or the rest of the Android/iOS filesystem.  The file system is described in detail [here](https://github.com/LiquidPlayer/LiquidCore/wiki/LiquidCore-File-System).
+
+
+## Playing with `example.js`
+
+When you follow the directions above, LiquidCore will automatically bundle a file called
+`example.js`, which looks like this:
+
+```javascript
+const {LiquidCore} = require('liquidcore')
+
+// A micro service will exit when it has nothing left to do.  So to
+// avoid a premature exit, set an indefinite timer.  When we
+// exit() later, the timer will get invalidated.
+setInterval(()=>{}, 1000)
+
+console.log('Hello, World!')
+
+// Listen for a request from the host for the 'ping' event
+LiquidCore.on( 'ping', () => {
+    // When we get the ping from the host, respond with "Hello, World!"
+    // and then exit.
+    LiquidCore.emit( 'pong', { message: 'Hello, World from LiquidCore!' } )
+    process.exit(0)
+})
+
+// Ok, we are all set up.  Let the host know we are ready to talk
+LiquidCore.emit( 'ready' )
+```
+
+Below is an example of how to interact with this JavaScript code from the app.  Note that `hello_text` on Android and `textBox` on iOS are UI elements whose setup is not shown here.
+
+<table ><tbody><tr><td>
+
+#### Android Kotlin
+</td><td>
+
+#### iOS Swift
+</td></tr><tr><td>
+
+```kotlin
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.widget.TextView
+import org.liquidplayer.service.MicroService
+
+class MainActivity : AppCompatActivity() {
+
+  override fun onCreate(savedInstanceState:
+                        Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+    val hello = findViewById<TextView>(
+        R.id.hello_text)
+
+    val readyListener = MicroService.EventListener {
+      service, _, _ -> service.emit("ping")
+    }
+    val pongListener = MicroService.EventListener { 
+      _, _, jsonObject ->
+      val message = jsonObject.getString("message")
+      runOnUiThread { hello.text = message }
+    }
+    val startListener = 
+        MicroService.ServiceStartListener{
+      service ->
+      service.addEventListener("ready", readyListener)
+      service.addEventListener("pong", pongListener)
+    }
+    val uri = MicroService.Bundle(this, "example")
+    val service = MicroService(this, uri,
+                               startListener)
+    service.start()
+  }
+}
+```
+
+</td><td>
+
+```swift
+import UIKit
+import LiquidCore
+
+class ViewController: UIViewController,
+  LCMicroServiceDelegate,
+  LCMicroServiceEventListener {
+    
+  @IBOutlet weak var textBox: UITextField!
+    
+  override func viewDidLoad() {
+    super.viewDidLoad()
+        
+    let url = LCMicroService.bundle("example")
+    let service = LCMicroService(url: url, 
+                                delegate: self)
+    service?.start()
+  }
+
+  func onStart(_ service: LCMicroService) {
+    service.addEventListener("ready",listener: self)
+    service.addEventListener("pong", listener: self)
+  }
+    
+  func onEvent(_ service: LCMicroService, 
+                   event: String,
+                 payload: Any?) {
+    if event == "ready" {
+      service.emit("ping")
+    } else if event == "pong" {
+      let p = (payload as! Dictionary<String,AnyObject>)
+      let message = p["message"] as! String
+      DispatchQueue.main.async {
+        self.textBox.text = message
+      }
+    }
+  }
+}
+```
+
+</td></tr></tbody>
+</table>
+
+You can use this as a guide for how to create your own services.  You can use `npm install` to install most JS-only (non-native) modules and `require` them as normal.  The bundler will package all of the code into a single file.
 
 ## API Documentation
 
