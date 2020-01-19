@@ -49,6 +49,7 @@ where `<app>` is the name of your application module (the default in Android Stu
 
 ```bash
 $ npm run pod-config -- --target=<target> --podfile=<podfile>
+$ npm run bundler -- --platform=ios
 $ pod install
 ```
 
@@ -56,7 +57,26 @@ where `<target>` is your XCode project target, and `<podfile>` is the path of yo
 </td></tr></tbody>
 </table>
 
-Note: On iOS, LiquidCore requires the use of [Cocoapods](https://cocoapods.org/), so make sure you've set up your project to use a [`Podfile`](https://guides.cocoapods.org/using/the-podfile.html) first.  **Important**: Your `Podfile` must contain the `use_frameworks!` directive.
+### Notes on iOS
+
+LiquidCore requires the use of [Cocoapods](https://cocoapods.org/), so make sure you've set up your project to use a [`Podfile`](https://guides.cocoapods.org/using/the-podfile.html) first.  **Important**: Your `Podfile` must contain the `use_frameworks!` directive.  If you are not yet using Cocoapods, you can create a simple one like this:
+
+```ruby
+platform :ios, '11.0'
+use_frameworks!
+
+target '<TARGET>' do
+end
+```
+
+where `<TARGET>` is the name of your `xcodeproj` (without the `.xcodeproj` extension).
+
+Also, any time you add a new `liquidcore.entry` point in `package.json`, you must first run the bundler and then run `pod install` again.  This is a quirk of how Cocoapods works with finding files.  Those files must exist at installation time, or they will not be available in the pod, even if they are created later.  So after adding a new `entry`, just do this part again:
+
+```bash
+$ npm run bundler -- --platform=ios
+$ pod install
+```
 
 ## Automatic Bundling
 
