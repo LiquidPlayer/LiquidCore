@@ -161,7 +161,7 @@ afterEvaluate {
         renameAARRelease.finalizedBy removeOldAARRelease
     }
 }
-
+/*
 def githubProperties = new Properties()
 githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
 
@@ -189,3 +189,4 @@ publishing {
         }
     }
 }
+*/
