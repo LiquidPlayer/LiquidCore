@@ -37,12 +37,10 @@
     ],
     "ios": [
       {
-        "name": "LiquidCore",
-        "specs": "https://github.com/LiquidPlayer/Specs.git"
+        "name": "LiquidCore"
       },
       {
-        "name": "LiquidCore-headers",
-        "specs": "https://github.com/LiquidPlayer/Specs.git"
+        "name": "LiquidCore-headers"
       }
     ],
     "ios-dev": [
