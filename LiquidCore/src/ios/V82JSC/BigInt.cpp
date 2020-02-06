@@ -146,7 +146,7 @@ void BigInt::ToWordsArray(int* sign_bit, int* word_count, uint64_t* words) const
     "for (let i=0; i < padn; i++) s = '0'.concat(s); "
     "let words = [];"
     "while (s.length > 0) {"
-    "  let w = s.substr(0,16); s = substr(16);"
+    "  let w = s.substr(0,16); s = s.substr(16);"
     "  words.push(parseInt(w,16));"
     "}"
     "return [sign_bit, words.length, words];";
