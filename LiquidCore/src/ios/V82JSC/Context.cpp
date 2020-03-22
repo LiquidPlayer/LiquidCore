@@ -412,9 +412,9 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
                 }
 
                 if (SetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj, proto)) {
-                    info.GetReturnValue().Set(True(info.GetIsolate()));
+                    info.GetReturnValue().Set(proto);
                 } else {
-                    info.GetReturnValue().Set(False(info.GetIsolate()));
+                    info.GetReturnValue().Set(Null(info.GetIsolate()));
                 }
             });
         Local<FunctionTemplate> getPrototypeOf = FunctionTemplate::New(
