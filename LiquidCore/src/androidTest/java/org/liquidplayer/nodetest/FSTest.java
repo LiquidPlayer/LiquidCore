@@ -9,7 +9,7 @@ package org.liquidplayer.nodetest;
 import android.Manifest;
 import android.content.Context;
 import android.os.Environment;
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Rule;
@@ -23,6 +23,8 @@ import org.liquidplayer.javascript.JSValue;
 import org.liquidplayer.node.Process;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
@@ -50,7 +52,7 @@ public class FSTest {
         Script(String script, OnDone onDone) {
             this.script = script;
             this.onDone = onDone;
-            new Process(InstrumentationRegistry.getContext(),"_",
+            new Process(InstrumentationRegistry.getInstrumentation().getTargetContext(),"_",
                     Process.kMediaAccessPermissionsRW,this);
         }
 
@@ -107,7 +109,7 @@ public class FSTest {
 
     @Test
     public void testFileSystem1() throws Throwable {
-        Context context = InstrumentationRegistry.getContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         String dirx = context.getFilesDir() + "/__org.liquidplayer.node__/__/local";
 
         final String script = "" +
@@ -205,7 +207,7 @@ public class FSTest {
         assertTrue(scr.processCompleted.await(10L, TimeUnit.SECONDS));
         if (scr.exception != null) throw scr.exception;
 
-        Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
+        Process.uninstall(InstrumentationRegistry.getInstrumentation().getTargetContext(), "_", Process.UninstallScope.Local);
     }
 
     /**
@@ -230,7 +232,7 @@ public class FSTest {
 
         final Contexts contexts = new Contexts();
 
-        new Process(InstrumentationRegistry.getContext(), "_",
+        new Process(InstrumentationRegistry.getInstrumentation().getTargetContext(), "_",
                 Process.kMediaAccessPermissionsRW, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
@@ -244,7 +246,7 @@ public class FSTest {
             @Override public void onProcessFailed(Process process, Exception error) {}
         });
 
-        new Process(InstrumentationRegistry.getContext(), "_",
+        new Process(InstrumentationRegistry.getInstrumentation().getTargetContext(), "_",
                 Process.kMediaAccessPermissionsRW, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
@@ -274,7 +276,7 @@ public class FSTest {
         contexts.p1.release();
         contexts.p2.release();
 
-        Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Local);
+        Process.uninstall(InstrumentationRegistry.getInstrumentation().getTargetContext(), "_", Process.UninstallScope.Local);
     }
 
     @Test
@@ -313,7 +315,7 @@ public class FSTest {
         assertTrue(s.processCompleted.await(10L, TimeUnit.SECONDS));
         if (s.exception != null) throw s.exception;
 
-        File external = InstrumentationRegistry.getContext().getExternalFilesDir(null);
+        File external = InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null);
         if (external != null) {
             assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_").exists());
             assertTrue(new File(external.getAbsolutePath() + "/LiquidPlayer/_/test.txt").exists());
@@ -330,7 +332,7 @@ public class FSTest {
             }
         }
 
-        Process.uninstall(InstrumentationRegistry.getContext(), "_", Process.UninstallScope.Global);
+        Process.uninstall(InstrumentationRegistry.getInstrumentation().getTargetContext(), "_", Process.UninstallScope.Global);
 
         if (external != null) {
             assertFalse(new File(external.getAbsolutePath() + "/LiquidPlayer/_").exists());
@@ -348,7 +350,7 @@ public class FSTest {
         final CountDownLatch cdl2 = new CountDownLatch(1);
         final CountDownLatch cdl3 = new CountDownLatch(1);
 
-        new Process(InstrumentationRegistry.getContext(), "__fsTest1__",
+        new Process(InstrumentationRegistry.getInstrumentation().getTargetContext(), "__fsTest1__",
                 Process.kMediaAccessPermissionsWrite, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
@@ -374,7 +376,7 @@ public class FSTest {
 
         assertTrue(cdl.await(10, TimeUnit.SECONDS));
 
-        new Process(InstrumentationRegistry.getContext(), "__fsTest1__",
+        new Process(InstrumentationRegistry.getInstrumentation().getTargetContext(), "__fsTest1__",
                 Process.kMediaAccessPermissionsRead, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
@@ -403,7 +405,7 @@ public class FSTest {
 
         assertTrue(cdl2.await(10, TimeUnit.SECONDS));
 
-        new Process(InstrumentationRegistry.getContext(), "__fsTest1__",
+        new Process(InstrumentationRegistry.getInstrumentation().getTargetContext(), "__fsTest1__",
                 Process.kMediaAccessPermissionsNone, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
@@ -436,5 +438,79 @@ public class FSTest {
         });
 
         assertTrue(cdl3.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testExposeHostFS() throws Exception {
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch endLatch = new CountDownLatch(1);
+        final String testId = "__fsTest2__";
+
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Process.uninstall(context, testId, Process.UninstallScope.Global);
+
+        final String filename = "testExposeHostFS.txt";
+
+        final String fileContents = "These are the file contents";
+        try (FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE)) {
+            fos.write(fileContents.getBytes());
+        }
+        final String dir = context.getFilesDir().getAbsolutePath();
+
+        File f = new File(dir + "/" + filename);
+        String s = new Scanner(new FileReader(f)).useDelimiter("\\Z").next();
+        assertEquals(fileContents, s);
+
+        class ContextHold {
+            JSContext context;
+            JSContextGroup.LoopPreserver preserver;
+        }
+        final ContextHold hold = new ContextHold();
+
+        Process process = new Process(context,
+                testId,
+                Process.kMediaAccessPermissionsRead, new Process.EventListener() {
+            @Override
+            public void onProcessStart(Process process, JSContext context) {
+                hold.context = context;
+                hold.preserver = process.keepAlive();
+                startLatch.countDown();
+            }
+
+            @Override public void onProcessAboutToExit(Process process, int exitCode) {}
+            @Override public void onProcessExit(Process process, int exitCode) { endLatch.countDown(); }
+            @Override public void onProcessFailed(Process process, Exception error) { error.printStackTrace(); }
+        });
+
+        assertTrue(startLatch.await(10, TimeUnit.SECONDS));
+
+        // First, test that by default accesses will throw ENOACCES
+        boolean didFail = false;
+        final String script = "fs.readFileSync('" + dir + "/" + filename + "')";
+        try {
+            hold.context.evaluateScript(script);
+        } catch (JSException e) {
+            didFail = true;
+        }
+        assertTrue(didFail);
+
+        // Now expose the directory
+        process.exposeHostDirectory(dir, Process.kMediaAccessPermissionsRW);
+
+        // This time it should work
+        try {
+            hold.context.evaluateScript(script);
+            didFail = false;
+        } catch (JSException e) {
+            android.util.Log.d("testExposeFS", e.toString());
+            didFail = true;
+        }
+        assertFalse(didFail);
+        JSValue in = hold.context.evaluateScript("String(" + script + ")");
+        assertTrue(in.isString());
+        assertEquals(fileContents, in.toString());
+        hold.preserver.release();
+
+        assertTrue(endLatch.await(10, TimeUnit.SECONDS));
     }
 }

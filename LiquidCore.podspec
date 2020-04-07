@@ -23,6 +23,11 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   s.default_subspec = 'Core'
   s.dependency 'LiquidCore-headers', version
 
+  s.test_spec 'Tests' do |test_spec|
+    test_spec.source_files = "LiquidCore/src/ios/Tests/*.{h,m}"
+    test_spec.resource = "LiquidCore/src/ios/Tests/server.js"
+  end
+
   s.subspec 'Core' do |cs|
     cs.dependency 'LiquidCore/uv'
     cs.dependency 'LiquidCore/ares'

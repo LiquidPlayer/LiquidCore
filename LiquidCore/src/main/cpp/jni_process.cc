@@ -221,9 +221,25 @@ NATIVE(Process,void,setFileSystem) (PARAMS, jlong contextRef, jlong fsObjectRef)
 
         Local<Private> privateKey = v8::Private::ForApi(isolate,
                                                         String::NewFromUtf8(isolate, "__fs"));
-        auto success = globalObj->SetPrivate(context, privateKey, fsObj).FromJust();
+        globalObj->SetPrivate(context, privateKey, fsObj).FromJust();
 
     V8_UNLOCK();
+}
+
+NATIVE(Process,void,exposeRawFS) (PARAMS, jlong contextRef, jstring dir, jint mediaAccessMask)
+{
+    auto ctx = SharedWrap<JSContext>::Shared(contextRef);
+    const char *c_string = env->GetStringUTFChars(dir, nullptr);
+    V8_ISOLATE_CTX(ctx,isolate,context)
+        auto globalObj = context->Global();
+        auto privateKey = v8::Private::ForApi(isolate, String::NewFromUtf8(isolate, "__fs"));
+        auto fs = globalObj->GetPrivate(context, privateKey).ToLocalChecked();
+        auto access_ = fs.As<Object>()->Get(context,
+                String::NewFromUtf8(isolate, "access_")).ToLocalChecked();
+        access_.As<Object>()->Set(String::NewFromUtf8(isolate,c_string),
+                Int32::New(isolate,mediaAccessMask));
+    V8_UNLOCK();
+    env->ReleaseStringUTFChars(dir, c_string);
 }
 
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)

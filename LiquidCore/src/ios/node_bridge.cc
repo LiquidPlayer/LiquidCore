@@ -318,3 +318,20 @@ extern "C" void process_let_die(void *token, void *preserver)
     iOSInstance *instance = reinterpret_cast<iOSInstance*>(token);
     return instance->let_die(reinterpret_cast<uv_async_t*>(preserver));
 }
+
+extern "C" void expose_host_directory(JSContextRef ctx, const char* dir, int mediaAccessMask)
+{
+    Isolate *isolate = V82JSC::ToIsolate(IsolateImpl::s_context_to_isolate_map[JSContextGetGlobalContext(ctx)]);
+    HandleScope scope(isolate);
+    
+    v8::Local<v8::Context> context = V82JSC::LocalContext::New(isolate, ctx);
+    Context::Scope context_scope(context);
+    
+    auto globalObj = context->Global();
+    auto privateKey = v8::Private::ForApi(isolate, String::NewFromUtf8(isolate, "__fs"));
+    auto fs = globalObj->GetPrivate(context, privateKey).ToLocalChecked();
+    auto access_ = fs.As<Object>()->Get(context,
+            String::NewFromUtf8(isolate, "access_")).ToLocalChecked();
+    access_.As<Object>()->Set(String::NewFromUtf8(isolate,dir),
+            v8::Int32::New(isolate,mediaAccessMask));
+}
