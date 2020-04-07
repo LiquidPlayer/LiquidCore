@@ -23,7 +23,7 @@ and following the steps in the wizard.
 
 ```bash
 $ npm i liquidcore
-$ node node_modules/liquidcore/lib/cli.js init
+$ npx liquidcore init
 ```
 
 The `init` step will add some utility scripts and the `liquidcore` object to your `package.json` file.  It will also create an example service called `example.js`, which will get packaged into your app.  You can change / add files to be packaged by editing the `liquidcore.entry` property in your `package.json`.
@@ -41,15 +41,15 @@ The `init` step will add some utility scripts and the `liquidcore` object to you
 </td></tr><tr><td>
 
 ```bash
-$ npm run gradle-config -- --module=<app>
+$ npx liquidcore gradle-config -- --module=<app>
 ```
 
 where `<app>` is the name of your application module (the default in Android Studio is 'app').
 </td><td>
 
 ```bash
-$ npm run pod-config -- --target=<target> --podfile=<podfile>
-$ npm run bundler -- --platform=ios
+$ npx liquidcore pod-config -- --target=<target> --podfile=<podfile>
+$ npx liquidcore bundler -- --platform=ios
 $ pod install
 ```
 
@@ -74,7 +74,7 @@ where `<TARGET>` is the name of your `xcodeproj` (without the `.xcodeproj` exten
 Also, any time you add a new `liquidcore.entry` point in `package.json`, you must first run the bundler and then run `pod install` again.  This is a quirk of how Cocoapods works with finding files.  Those files must exist at installation time, or they will not be available in the pod, even if they are created later.  So after adding a new `entry`, just do this part again:
 
 ```bash
-$ npm run bundler -- --platform=ios
+$ npx liquidcore bundler -- --platform=ios
 $ pod install
 ```
 
@@ -109,7 +109,7 @@ To include a new bundle, simply put the entry point JavaScript file in the `entr
 
 If you have a non-standard configuration for your app, you may have to change some of these values.  For example, `bundler_output` for Android assumes that your resources directory is at `<app-module>/src/main/res`.  This is the Android Studio default.  If you have changed this to something else, you will need to update this property.
 
-Bundling is a convenient way to test and package your JavaScript projects.  The bundler uses [Metro](https://facebook.github.io/metro/) to package up all of your required node modules into a single file that can be packaged as a resource in your app.  If you are running on the Android Emulator or iOS Simulator, you can run a local server on your development machine and hot-edit your JavaScript code by `npm run server` in your project root.  If you are using the `Bundle` API (described below), and your app is built in debug mode, it will first attempt to get the bundles from the server.  If the server is not available, it will use the automated bundle packaged at build time.  In release mode, it will always use the packaged bundle.
+Bundling is a convenient way to test and package your JavaScript projects.  The bundler uses [Metro](https://facebook.github.io/metro/) to package up all of your required node modules into a single file that can be packaged as a resource in your app.  If you are running on the Android Emulator or iOS Simulator, you can run a local server on your development machine and hot-edit your JavaScript code by `npx liquidcore server` in your project root.  If you are using the `Bundle` API (described below), and your app is built in debug mode, it will first attempt to get the bundles from the server.  If the server is not available, it will use the automated bundle packaged at build time.  In release mode, it will always use the packaged bundle.
 
 ## Usage
 
@@ -203,7 +203,7 @@ On the app side, the host app can listen for events:
 </td></tr><tr><td>
 
 ```kotlin
-val listener = MicroService.EventListener { 
+val listener = MicroService.EventListener {
     service, event, payload ->
     android.util.Log.i("Event:" + event,
         payload.getString("foo"))
@@ -219,12 +219,12 @@ Conform to `LCMicroServiceEventListener`
 ```swift
 service.addEventListener("my_event", listener:self)
 ...
-func onEvent(_ service: LCMicroService, event: String, 
+func onEvent(_ service: LCMicroService, event: String,
                payload: Any?) {
     var p = (payload as! Dictionary<String,AnyObject>)
     NSLog(format:"Event: %@: %@", args:event, p["foo"]);
     // logs: Event:my_event: hello, world
-} 
+}
 ```
 </td></tr></tbody>
 </table>
@@ -321,12 +321,12 @@ class MainActivity : AppCompatActivity() {
     val readyListener = MicroService.EventListener {
       service, _, _ -> service.emit("ping")
     }
-    val pongListener = MicroService.EventListener { 
+    val pongListener = MicroService.EventListener {
       _, _, jsonObject ->
       val message = jsonObject.getString("message")
       runOnUiThread { hello.text = message }
     }
-    val startListener = 
+    val startListener =
         MicroService.ServiceStartListener{
       service ->
       service.addEventListener("ready", readyListener)
@@ -349,14 +349,14 @@ import LiquidCore
 class ViewController: UIViewController,
   LCMicroServiceDelegate,
   LCMicroServiceEventListener {
-    
+
   @IBOutlet weak var textBox: UITextField!
-    
+
   override func viewDidLoad() {
     super.viewDidLoad()
-        
+
     let url = LCMicroService.bundle("example")
-    let service = LCMicroService(url: url, 
+    let service = LCMicroService(url: url,
                                 delegate: self)
     service?.start()
   }
@@ -365,8 +365,8 @@ class ViewController: UIViewController,
     service.addEventListener("ready",listener: self)
     service.addEventListener("pong", listener: self)
   }
-    
-  func onEvent(_ service: LCMicroService, 
+
+  func onEvent(_ service: LCMicroService,
                    event: String,
                  payload: Any?) {
     if event == "ready" {
