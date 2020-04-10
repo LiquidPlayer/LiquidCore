@@ -21,7 +21,7 @@ and following the steps in the wizard.
 
 ```bash
 $ npm i liquidcore
-$ node node_modules/liquidcore/lib/cli.js init
+$ npx liquidcore init
 ```
 
 The `init` step will add some utility scripts and the `liquidcore` object to your `package.json` file.  It will also create an example service called `example.js`, which will get packaged into your app.  You can change / add files to be packaged by editing the `liquidcore.entry` property in your `package.json`.
@@ -29,8 +29,8 @@ The `init` step will add some utility scripts and the `liquidcore` object to you
 #### Step 3: Configure your mobile app project
 
 ```bash
-$ npm run pod-config -- --target=<target> --podfile=<podfile>
-$ npm run bundler -- --platform=ios
+$ npx liquidcore pod-config -- --target=<target> --podfile=<podfile>
+$ npx liquidcore bundler -- --platform=ios
 $ pod install
 ```
 
@@ -53,7 +53,7 @@ where `<TARGET>` is the name of your `xcodeproj` (without the `.xcodeproj` exten
 Also, any time you add a new `liquidcore.entry` point in `package.json`, you must first run the bundler and then run `pod install` again.  This is a quirk of how Cocoapods works with finding files.  Those files must exist at installation time, or they will not be available in the pod, even if they are created later.  So after adding a new `entry`, just do this part again:
 
 ```bash
-$ npm run bundler -- --platform=ios
+$ npx liquidcore bundler -- --platform=ios
 $ pod install
 ```
 
