@@ -26,11 +26,11 @@ using namespace v8;
  */
 void V8::SetNativesDataBlob(StartupData* startup_blob)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 void V8::SetSnapshotDataBlob(StartupData* startup_blob)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -41,8 +41,7 @@ void V8::SetSnapshotDataBlob(StartupData* startup_blob)
  */
 StartupData V8::CreateSnapshotDataBlob(const char* embedded_source)
 {
-    assert(0);
-    return StartupData();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -56,8 +55,7 @@ StartupData V8::CreateSnapshotDataBlob(const char* embedded_source)
 StartupData V8::WarmUpSnapshotDataBlob(StartupData cold_startup_blob,
                                           const char* warmup_source)
 {
-    assert(0);
-    return StartupData();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -114,7 +112,7 @@ void V8::SetEntropySource(EntropySource source)
 void V8::SetReturnAddressLocationResolver(
         ReturnAddressLocationResolver return_address_resolver)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -202,8 +200,7 @@ void V8::ShutdownPlatform()
  */
 bool V8::RegisterDefaultSignalHandler()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 v8::Value* V8::Eternalize(Isolate* isolate, Value* handle)
@@ -220,21 +217,21 @@ v8::Value* V8::Eternalize(Isolate* isolate, Value* handle)
 void V8::RegisterExternallyReferencedObject(internal::Object** object,
                                                internal::Isolate* isolate)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void V8::FromJustIsNothing()
 {
     printf ("FIXME! V8::FromJustIsNothing()\n");
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 void V8::ToLocalEmpty()
 {
     printf ("FIXME! V8::ToLocalEmpty()\n");
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 void V8::InternalFieldOutOfBounds(int index)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 

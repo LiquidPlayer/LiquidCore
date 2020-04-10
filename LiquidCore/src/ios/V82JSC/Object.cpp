@@ -312,14 +312,14 @@ Maybe<v8::PropertyAttribute> Object::GetPropertyAttributes(Local<Context> contex
         ToJSValueRef(key, context),
     };
     JSValueRef ret = exec(ctx,
-                                  "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
-                                  "var d = Object.getOwnPropertyDescriptor(_1, _2); "
-                                  "var attr = None; if (!d) return attr; "
-                                  "attr += (d.writable===true) ? 0 : ReadOnly; "
-                                  "attr += (d.enumerable===true) ? 0 : DontEnum; "
-                                  "attr += (d.configurable===true) ? 0 : DontDelete; "
-                                  "return attr"
-                                  , 2, args, &exception);
+      "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
+      "var d = Object.getOwnPropertyDescriptor(_1, _2); "
+      "var attr = None; if (!d) return attr; "
+      "attr += (d.writable===true) ? 0 : ReadOnly; "
+      "attr += (d.enumerable===true) ? 0 : DontEnum; "
+      "attr += (d.configurable===true) ? 0 : DontDelete; "
+      "return attr"
+      , 2, args, &exception);
 
     _maybe<PropertyAttribute> out;
     if (!exception.ShouldThrow()) {
@@ -1548,15 +1548,13 @@ Maybe<v8::PropertyAttribute> Object::GetRealNamedPropertyAttributes(Local<Contex
 /** Tests for a named lookup interceptor.*/
 bool Object::HasNamedLookupInterceptor()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /** Tests for an index lookup interceptor.*/
 bool Object::HasIndexedLookupInterceptor()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**

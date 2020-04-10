@@ -194,13 +194,12 @@ ScriptCompiler::CachedData::~CachedData()
 
 bool ScriptCompiler::ExternalSourceStream::SetBookmark()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 void ScriptCompiler::ExternalSourceStream::ResetToBookmark()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 struct internal::ScriptStreamingData
@@ -303,15 +302,15 @@ MaybeLocal<v8::UnboundScript> ScriptCompiler::CompileUnboundScript(Isolate* isol
         src = JSValueToStringCopy(ctx, s, 0);
         
         JSValueRef surl = exec(ctx,
-                                       "var re = /\\/\\/[#@] sourceURL=[\\s]*([A-Za-z0-9_\\.]*)\\s*\(\\n|$)/g;"
-                                       "var match = re.exec(_1);"
-                                       "var out = null;"
-                                       "while (match != null) {"
-                                       "    out = match[1];"
-                                       "    match = re.exec(_1);"
-                                       "}"
-                                       "return out;",
-                                       1, &s);
+           "var re = /\\/\\/[#@] sourceURL=[\\s]*([A-Za-z0-9_\\.]*)\\s*\(\\n|$)/g;"
+           "var match = re.exec(_1);"
+           "var out = null;"
+           "while (match != null) {"
+           "    out = match[1];"
+           "    match = re.exec(_1);"
+           "}"
+           "return out;",
+           1, &s);
         if (!JSValueIsNull(ctx, surl)) {
             url = JSValueToStringCopy(ctx, surl, 0);
             impl->m_sourceURL.Reset(isolate, V82JSC::Value::New(ToContextImpl(context), surl));
@@ -319,15 +318,15 @@ MaybeLocal<v8::UnboundScript> ScriptCompiler::CompileUnboundScript(Isolate* isol
             impl->m_sourceURL.Reset(isolate, Undefined(isolate));
         }
         JSValueRef smurl = exec(ctx,
-                                        "var re = /\\/\\/[#@] sourceMappingURL=[\\s]*([A-Za-z0-9_\\.]*)\\s*(\\n|$)/g;"
-                                        "var match = re.exec(_1);"
-                                        "var out = null;"
-                                        "while (match != null) {"
-                                        "    out = match[1];"
-                                        "    match = re.exec(_1);"
-                                        "}"
-                                        "return out;",
-                                        1, &s);
+           "var re = /\\/\\/[#@] sourceMappingURL=[\\s]*([A-Za-z0-9_\\.]*)\\s*(\\n|$)/g;"
+           "var match = re.exec(_1);"
+           "var out = null;"
+           "while (match != null) {"
+           "    out = match[1];"
+           "    match = re.exec(_1);"
+           "}"
+           "return out;",
+           1, &s);
         if (!JSValueIsNull(ctx, smurl)) {
             impl->m_sourceMappingURL.Reset(isolate, V82JSC::Value::New(ToContextImpl(context), smurl));
         } else if (!source->source_map_url.IsEmpty()) {
@@ -511,8 +510,7 @@ uint32_t ScriptCompiler::CachedDataVersionTag()
  */
 MaybeLocal<Module> ScriptCompiler::CompileModule(Isolate* isolate, Source* source)
 {
-    assert(0);
-    return MaybeLocal<Module>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -532,8 +530,7 @@ MaybeLocal<Function> ScriptCompiler::CompileFunctionInContext(
       CompileOptions options,
       NoCacheReason no_cache_reason)
 {
-    assert(0);
-    return MaybeLocal<Function>();
+    NOT_IMPLEMENTED;
 }
 
 
@@ -559,7 +556,6 @@ v8::ScriptCompiler::CachedData* ScriptCompiler::CreateCodeCacheForFunction(Local
  */
 Local<PrimitiveArray> ScriptOrModule::GetHostDefinedOptions()
 {
-    assert(0);
-    return Local<PrimitiveArray>();
+    NOT_IMPLEMENTED;
 }
 

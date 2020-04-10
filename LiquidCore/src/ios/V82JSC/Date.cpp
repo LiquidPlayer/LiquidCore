@@ -48,5 +48,5 @@ double Date::ValueOf() const
  */
 void Date::DateTimeConfigurationChangeNotification(Isolate* isolate)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }

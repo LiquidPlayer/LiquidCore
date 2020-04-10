@@ -204,7 +204,7 @@ Maybe<int> v8::Message::GetLineNumber(Local<Context> context) const
 int v8::Message::GetStartPosition() const
 {
     // Not supported
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -214,7 +214,7 @@ int v8::Message::GetStartPosition() const
 int v8::Message::GetEndPosition() const
 {
     // Not supported
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -447,25 +447,6 @@ v8::Local<v8::StackTrace> StackTrace::New(IsolateImpl* iso, Local<v8::Value> val
     
     stack_trace->m_stack_frame_array = (JSObjectRef) exec(ctx, parse_error_frames, 1, &stack);
     JSValueProtect(ctx, stack_trace->m_stack_frame_array);
-
-    /*
-    JSValueRef s = exec(ctx, "return JSON.stringify(_1)", 1, &stack_trace->m_stack_frame_array);
-    JSStringRef ss = JSValueToStringCopy(ctx, s, 0);
-    char foo[JSStringGetMaximumUTF8CStringSize(ss)];
-    JSStringGetUTF8CString(ss, foo, JSStringGetMaximumUTF8CStringSize(ss));
-    printf ("Captured stack = %s\n", foo);
-
-    JSStringRef stacks = JSValueToStringCopy(ctx, stack, 0);
-    char bar[JSStringGetMaximumUTF8CStringSize(stacks)];
-    JSStringGetUTF8CString(stacks, bar, JSStringGetMaximumUTF8CStringSize(stacks));
-    printf (".stack = %s\n", bar);
-
-    if (back_trace) {
-        char mutt[JSStringGetMaximumUTF8CStringSize(back_trace)];
-        JSStringGetUTF8CString(back_trace, mutt, JSStringGetMaximumUTF8CStringSize(back_trace));
-        printf ("back_trace = %s\n", mutt);
-    }
-    */
 
     return scope.Escape(local);
 }

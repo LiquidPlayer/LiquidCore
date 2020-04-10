@@ -364,8 +364,7 @@ ArrayBuffer::Contents ArrayBuffer::GetContents()
 size_t SharedArrayBuffer::ByteLength() const
 {
     // SharedArrayBuffer is implemented but not compatible
-    assert(0);
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -377,8 +376,7 @@ size_t SharedArrayBuffer::ByteLength() const
 Local<SharedArrayBuffer> SharedArrayBuffer::New(Isolate* isolate, size_t byte_length)
 {
     // SharedArrayBuffer is implemented but not compatible
-    assert(0);
-    return Local<SharedArrayBuffer>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -392,8 +390,7 @@ Local<SharedArrayBuffer> SharedArrayBuffer::New(
                                     ArrayBufferCreationMode mode)
 {
     // Not supported in JSC
-    assert(0);
-    return Local<SharedArrayBuffer>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -403,7 +400,7 @@ Local<SharedArrayBuffer> SharedArrayBuffer::New(
 bool SharedArrayBuffer::IsExternal() const
 {
     // Not supported in JSC
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -421,7 +418,7 @@ bool SharedArrayBuffer::IsExternal() const
 SharedArrayBuffer::Contents SharedArrayBuffer::Externalize()
 {
     // Not supported in JSC
-    return SharedArrayBuffer::Contents();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -439,7 +436,7 @@ SharedArrayBuffer::Contents SharedArrayBuffer::Externalize()
 SharedArrayBuffer::Contents SharedArrayBuffer::GetContents()
 {
     // Not supported in JSC
-    return SharedArrayBuffer::Contents();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -503,8 +500,7 @@ size_t ArrayBufferView::ByteLength()
  */
 size_t ArrayBufferView::CopyContents(void* dest, size_t byte_length)
 {
-    assert(0);
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -513,8 +509,7 @@ size_t ArrayBufferView::CopyContents(void* dest, size_t byte_length)
  */
 bool ArrayBufferView::HasBuffer() const
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 Local<DataView> DataView::New(Local<ArrayBuffer> array_buffer,
@@ -537,7 +532,6 @@ Local<DataView> DataView::New(Local<SharedArrayBuffer> shared_array_buffer,
                            size_t byte_offset, size_t length)
 {
     // SharedArrayBuffer is implemented but not compatible
-    assert(0);
-    return Local<DataView>();
+    NOT_IMPLEMENTED;
 }
 

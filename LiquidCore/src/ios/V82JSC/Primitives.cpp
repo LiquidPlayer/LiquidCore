@@ -69,6 +69,7 @@ bool v8::Boolean::Value() const
  */
 int Name::GetIdentityHash()
 {
+    // FIXME
     return 1;
 }
 

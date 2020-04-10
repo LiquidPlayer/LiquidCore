@@ -683,8 +683,7 @@ MaybeLocal<Object> v8::Context::NewRemoteContext(
                                            Isolate* isolate, Local<ObjectTemplate> global_template,
                                            MaybeLocal<Value> global_object)
 {
-    assert(0);
-    return MaybeLocal<Object>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -708,7 +707,7 @@ void v8::Context::SetSecurityToken(Local<Value> token)
 /** Restores the security token to the default value. */
 void v8::Context::UseDefaultSecurityToken()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /** Returns the security token of this context.*/

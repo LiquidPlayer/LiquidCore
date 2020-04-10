@@ -12,62 +12,6 @@ using v8::EscapableHandleScope;
 using v8::Maybe;
 using v8::MaybeLocal;
 using v8::Isolate;
-/*
-using v8::NativeWeakMap;
-
-Local<v8::NativeWeakMap> v8::NativeWeakMap::New(Isolate* isolate)
-{
-    Local<Context> context = OperatingContext(isolate);
-    
-    Local<v8::Value> nwm = V82JSC::Value::New(ToContextImpl(context),
-        exec(ToContextRef(context),
-        "return new WeakMap()", 0, 0));
-    
-    Local<NativeWeakMap> loc = * (reinterpret_cast<Local<NativeWeakMap> *>(&nwm));
-    return loc;
-}
-void v8::NativeWeakMap::Set(Local<Value> key, Local<Value> value)
-{
-    Local<Context> context = ToCurrentContext(this);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef args[] = {
-        ToJSValueRef(this, context),
-        ToJSValueRef(key, context),
-        ToJSValueRef(value, context)
-    };
-    exec(ctx, "_1[_2] = _3", 3, args);
-}
-Local<v8::Value> NativeWeakMap::Get(Local<Value> key) const
-{
-    Local<Context> context = ToCurrentContext(this);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef args[] = {
-        ToJSValueRef(this, context),
-        ToJSValueRef(key, context),
-    };
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return _1[_2]", 2, args));
-}
-bool NativeWeakMap::Has(Local<Value> key)
-{
-    Local<Context> context = ToCurrentContext(this);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef args[] = {
-        ToJSValueRef(this, context),
-        ToJSValueRef(key, context),
-    };
-    return JSValueToBoolean(ctx, exec(ctx, "return Object.getOwnPropertyDescriptor(_1,_2) !== undefined", 2, args));
-}
-bool NativeWeakMap::Delete(Local<Value> key)
-{
-    Local<Context> context = ToCurrentContext(this);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef args[] = {
-        ToJSValueRef(this, context),
-        ToJSValueRef(key, context),
-    };
-    return JSValueToBoolean(ctx, exec(ctx, "return delete _1[_2]", 2, args));
-}
-*/
 
 size_t v8::Map::Size() const
 {

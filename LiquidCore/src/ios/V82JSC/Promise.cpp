@@ -152,8 +152,7 @@ MaybeLocal<Promise> Promise::Then(Local<Context> context, Local<Function> handle
  */
 bool Promise::HasHandler()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**

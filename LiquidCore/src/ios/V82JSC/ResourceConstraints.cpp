@@ -11,5 +11,5 @@ using namespace v8;
 ResourceConstraints::ResourceConstraints()
 {
     // FIXME
-    //assert(0);
+    //NOT_IMPLEMENTED;
 }

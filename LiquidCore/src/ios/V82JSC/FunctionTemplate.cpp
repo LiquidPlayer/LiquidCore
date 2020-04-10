@@ -299,8 +299,7 @@ MaybeLocal<Function> V82JSC::FunctionTemplate::GetFunction(v8::FunctionTemplate 
  */
 MaybeLocal<Object> v8::FunctionTemplate::NewRemoteInstance()
 {
-    assert(0);
-    return MaybeLocal<Object>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -417,7 +416,7 @@ void v8::FunctionTemplate::SetClassName(Local<String> name)
  */
 void v8::FunctionTemplate::SetAcceptAnyReceiver(bool value)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**

@@ -37,8 +37,7 @@ template <typename T>
 v8::Local<T> NewSharedTypedArray(JSTypedArrayType arrayType, v8::Local<v8::SharedArrayBuffer> shared_array_buffer,
                 size_t byte_offset, size_t byte_length)
 {
-    assert(0);
-    return v8::Local<T>();
+    NOT_IMPLEMENTED;
 }
 
 #define TYPEDARRAY_CONSTRUCTORS(T,type) \

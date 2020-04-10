@@ -36,7 +36,7 @@ void v8::Template::Set(Local<Name> name, Local<Data> value, PropertyAttribute at
 }
 void v8::Template::SetPrivate(Local<Private> name, Local<Data> value, PropertyAttribute attributes)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void v8::Template::SetAccessorProperty(
@@ -123,7 +123,7 @@ void v8::Template::SetLazyDataProperty(Local<Name> name, AccessorNameGetterCallb
                          Local<Value> data,
                          PropertyAttribute attribute)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -374,20 +374,20 @@ MaybeLocal<Object> V82JSC::Template::InitInstance(Local<v8::Context> context, JS
         
         if (wrap->m_isHiddenPrototype) {
             exec(ctx,
-                         "_5[_2] = _3; "
-                         "Object.defineProperty(_1, _2, "
-                         "{ enumerable : !(_4&(1<<1)), "
-                         "  configurable : !(_4&(1<<2)), "
-                         "  set(v) { return _5[_2] = v; }, "
-                         "  get()  { return _5[_2] } "
-                         "})", 5, args, &exception);
+             "_5[_2] = _3; "
+             "Object.defineProperty(_1, _2, "
+             "{ enumerable : !(_4&(1<<1)), "
+             "  configurable : !(_4&(1<<2)), "
+             "  set(v) { return _5[_2] = v; }, "
+             "  get()  { return _5[_2] } "
+             "})", 5, args, &exception);
         } else {
             exec(ctx,
-                         "Object.defineProperty(_1, _2, "
-                         "{ writable : !(_4&(1<<0)), "
-                         "  enumerable : !(_4&(1<<1)), "
-                         "  configurable : !(_4&(1<<2)), "
-                         "  value: _3 })", 4, args, &exception);
+             "Object.defineProperty(_1, _2, "
+             "{ writable : !(_4&(1<<0)), "
+             "  enumerable : !(_4&(1<<1)), "
+             "  configurable : !(_4&(1<<2)), "
+             "  value: _3 })", 4, args, &exception);
         }
         if (exception.ShouldThrow()) return MaybeLocal<Object>();
     }

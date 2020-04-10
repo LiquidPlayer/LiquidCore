@@ -22,8 +22,7 @@ using v8::CpuProfile;
  */
 CpuProfiler* CpuProfiler::New(Isolate* isolate)
 {
-    assert(0);
-    return nullptr;
+    NOT_IMPLEMENTED;
 }
     
 /**
@@ -31,7 +30,7 @@ CpuProfiler* CpuProfiler::New(Isolate* isolate)
  */
 void CpuProfiler::Dispose()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -41,7 +40,7 @@ void CpuProfiler::Dispose()
  */
 void CpuProfiler::SetSamplingInterval(int us)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -57,7 +56,7 @@ void CpuProfiler::SetSamplingInterval(int us)
  */
 void CpuProfiler::StartProfiling(Local<String> title, bool record_samples)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -66,8 +65,7 @@ void CpuProfiler::StartProfiling(Local<String> title, bool record_samples)
  */
 CpuProfile* CpuProfiler::StopProfiling(Local<String> title)
 {
-    assert(0);
-    return nullptr;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -77,7 +75,7 @@ CpuProfile* CpuProfiler::StopProfiling(Local<String> title)
  */
 void CpuProfiler::CollectSample()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -85,5 +83,5 @@ void CpuProfiler::CollectSample()
  */
 void CpuProfiler::SetIdle(bool is_idle)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }

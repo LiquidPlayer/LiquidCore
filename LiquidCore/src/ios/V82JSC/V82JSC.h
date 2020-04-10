@@ -345,4 +345,6 @@ inline IsolateImpl* IsolateFromCtx(JSContextRef lctx)
 
 } /* namespace V82JSC */
 
+#define NOT_IMPLEMENTED FATAL("Not implemented.")
+
 #endif /* V82JSC_h */

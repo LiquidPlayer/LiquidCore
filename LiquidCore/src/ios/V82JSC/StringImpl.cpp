@@ -354,7 +354,8 @@ bool v8::String::IsExternal() const
     typedef internal::Internals I;
     O* obj = *reinterpret_cast<O* const*>(this);
     int representation = (I::GetInstanceType(obj) & I::kFullStringRepresentationMask);
-    return representation == I::kExternalOneByteRepresentationTag | representation==I::kExternalTwoByteRepresentationTag;
+    return representation == I::kExternalOneByteRepresentationTag ||
+        representation==I::kExternalTwoByteRepresentationTag;
 }
 
 /**

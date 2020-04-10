@@ -124,8 +124,7 @@ Local<v8::ObjectTemplate> v8::ObjectTemplate::New(
 MaybeLocal<v8::ObjectTemplate> v8::ObjectTemplate::FromSnapshot(Isolate* isolate,
                                                size_t index)
 {
-    assert(0);
-    return MaybeLocal<ObjectTemplate>();
+    NOT_IMPLEMENTED;
 }
 
 /** Creates a new instance of this template.*/

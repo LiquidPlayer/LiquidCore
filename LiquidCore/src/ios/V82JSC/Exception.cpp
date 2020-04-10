@@ -11,56 +11,22 @@ using namespace V82JSC;
 using v8::Local;
 using v8::Exception;
 
-Local<v8::Value> Exception::RangeError(Local<String> message)
-{
-    IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message));
-    Isolate *isolate = ToIsolate(iso);
-    Local<Context> context = OperatingContext(isolate);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef msg = ToJSValueRef(message, context);
-    
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new RangeError(_1)", 1, &msg));
+#define CREATE_ERROR(type) \
+Local<v8::Value> Exception::type(Local<String> message) \
+{ \
+    IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message)); \
+    Isolate *isolate = ToIsolate(iso); \
+    Local<Context> context = OperatingContext(isolate); \
+    JSContextRef ctx = ToContextRef(context); \
+    JSValueRef msg = ToJSValueRef(message, context); \
+    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new " #type "(_1)", 1, &msg)); \
 }
-Local<v8::Value> Exception::ReferenceError(Local<String> message)
-{
-    IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message));
-    Isolate *isolate = ToIsolate(iso);
-    Local<Context> context = OperatingContext(isolate);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef msg = ToJSValueRef(message, context);
-    
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new ReferenceError(_1)", 1, &msg));
-}
-Local<v8::Value> Exception::SyntaxError(Local<String> message)
-{
-    IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message));
-    Isolate *isolate = ToIsolate(iso);
-    Local<Context> context = OperatingContext(isolate);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef msg = ToJSValueRef(message, context);
-    
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new SyntaxError(_1)", 1, &msg));
-}
-Local<v8::Value> Exception::TypeError(Local<String> message)
-{
-    IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message));
-    Isolate *isolate = ToIsolate(iso);
-    Local<Context> context = OperatingContext(isolate);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef msg = ToJSValueRef(message, context);
-    
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new TypeError(_1)", 1, &msg));
-}
-Local<v8::Value> Exception::Error(Local<String> message)
-{
-    IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message));
-    Isolate *isolate = ToIsolate(iso);
-    Local<Context> context = OperatingContext(isolate);
-    JSContextRef ctx = ToContextRef(context);
-    JSValueRef msg = ToJSValueRef(message, context);
-    
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new Error(_1)", 1, &msg));
-}
+
+CREATE_ERROR(RangeError)
+CREATE_ERROR(ReferenceError)
+CREATE_ERROR(SyntaxError)
+CREATE_ERROR(TypeError)
+CREATE_ERROR(Error)
 
 /**
  * Creates an error message for the given exception.

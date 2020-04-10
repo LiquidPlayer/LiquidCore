@@ -316,11 +316,6 @@ void IsolateImpl::CollectExternalStrings()
 JSGlobalContextRef H::HeapObject::GetNullContext()
 {
     IsolateImpl* iso = GetIsolate();
-    /*
-    HandleScope(ToIsolate(iso));
-    Local<v8::Context> ctx = iso->m_nullContext.Get(ToIsolate(iso));
-    return JSContextGetGlobalContext(ToContextRef(ctx));
-    */
     return iso->m_nullContextRef;
 }
 
@@ -415,7 +410,7 @@ void Isolate::SetAbortOnUncaughtExceptionCallback(AbortOnUncaughtExceptionCallba
  */
 void Isolate::SetHostImportModuleDynamicallyCallback(HostImportModuleDynamicallyCallback callback)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -657,7 +652,7 @@ void Isolate::DumpAndResetStats()
  */
 void Isolate::DiscardThreadSpecificMetadata()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -688,8 +683,7 @@ size_t v8::internal::Heap::SizeOfObjects()
  */
 size_t Isolate::NumberOfHeapSpaces()
 {
-    assert(0);
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -704,8 +698,7 @@ size_t Isolate::NumberOfHeapSpaces()
 bool Isolate::GetHeapSpaceStatistics(HeapSpaceStatistics* space_statistics,
                             size_t index)
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -713,8 +706,7 @@ bool Isolate::GetHeapSpaceStatistics(HeapSpaceStatistics* space_statistics,
  */
 size_t Isolate::NumberOfTrackedHeapObjectTypes()
 {
-    assert(0);
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -729,8 +721,7 @@ size_t Isolate::NumberOfTrackedHeapObjectTypes()
 bool Isolate::GetHeapObjectStatisticsAtLastGC(HeapObjectStatistics* object_statistics,
                                      size_t type_index)
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -742,8 +733,7 @@ bool Isolate::GetHeapObjectStatisticsAtLastGC(HeapObjectStatistics* object_stati
  */
 bool Isolate::GetHeapCodeAndMetadataStatistics(HeapCodeStatistics* object_statistics)
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -761,7 +751,7 @@ bool Isolate::GetHeapCodeAndMetadataStatistics(HeapCodeStatistics* object_statis
 void Isolate::GetStackSample(const RegisterState& state, void** frames,
                     size_t frames_limit, SampleInfo* sample_info)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -770,8 +760,7 @@ void Isolate::GetStackSample(const RegisterState& state, void** frames,
  */
 size_t Isolate::NumberOfPhantomHandleResetsSinceLastCall()
 {
-    assert(0);
-    return 0;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -780,7 +769,7 @@ size_t Isolate::NumberOfPhantomHandleResetsSinceLastCall()
  */
 v8::HeapProfiler* Isolate::GetHeapProfiler()
 {
-    // FIXME: assert(0);
+    // NOT_IMPLEMENTED;
     return nullptr;
 }
 
@@ -810,8 +799,7 @@ Local<v8::Context> Isolate::GetCurrentContext()
 /** Returns the last context entered through V8's C++ API. */
 Local<v8::Context> Isolate::GetEnteredContext()
 {
-    assert(0);
-    return Local<Context>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -822,8 +810,7 @@ Local<v8::Context> Isolate::GetEnteredContext()
  */
 Local<v8::Context> Isolate::GetEnteredOrMicrotaskContext()
 {
-    assert(0);
-    return Local<Context>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -832,8 +819,7 @@ Local<v8::Context> Isolate::GetEnteredOrMicrotaskContext()
  */
 Local<v8::Context> Isolate::GetIncumbentContext()
 {
-    assert(0);
-    return Local<Context>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -919,7 +905,7 @@ void Isolate::RemoveGCPrologueCallback(GCCallback callback)
  */
 void Isolate::SetEmbedderHeapTracer(EmbedderHeapTracer* tracer)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -988,7 +974,7 @@ void Isolate::RemoveGCEpilogueCallback(GCCallback callback)
 void Isolate::SetGetExternallyAllocatedMemoryInBytesCallback(
                                                     GetExternallyAllocatedMemoryInBytesCallback callback)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1035,7 +1021,7 @@ bool Isolate::IsExecutionTerminating()
  */
 void Isolate::CancelTerminateExecution()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1171,7 +1157,7 @@ void Isolate::RemoveCallCompletedCallback(CallCompletedCallback callback)
  */
 void Isolate::SetPromiseHook(PromiseHook hook)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1180,7 +1166,7 @@ void Isolate::SetPromiseHook(PromiseHook hook)
  */
 void Isolate::SetPromiseRejectCallback(PromiseRejectCallback callback)
 {
-    //FIXME! assert(0);
+    //FIXME! NOT_IMPLEMENTED;
 }
 
 /**
@@ -1391,7 +1377,7 @@ bool Isolate::IdleNotificationDeadline(double deadline_in_seconds)
  */
 void Isolate::LowMemoryNotification()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1414,7 +1400,7 @@ int Isolate::ContextDisposedNotification(bool dependant_context)
  */
 void Isolate::IsolateInForegroundNotification()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1423,7 +1409,7 @@ void Isolate::IsolateInForegroundNotification()
  */
 void Isolate::IsolateInBackgroundNotification()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1435,7 +1421,7 @@ void Isolate::IsolateInBackgroundNotification()
  */
 void Isolate::SetRAILMode(RAILMode rail_mode)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 #if 0
@@ -1497,7 +1483,7 @@ bool Isolate::IsHeapLimitIncreasedForDebugging()
 void Isolate::SetJitCodeEventHandler(JitCodeEventOptions options,
                             JitCodeEventHandler event_handler)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1529,7 +1515,7 @@ void Isolate::SetStackLimit(uintptr_t stack_limit)
  */
 void Isolate::GetCodeRange(void** start, size_t* length_in_bytes)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /** Set the callback to invoke in case of fatal errors. */
@@ -1542,7 +1528,7 @@ void Isolate::SetFatalErrorHandler(FatalErrorCallback that)
 /** Set the callback to invoke in case of OOM errors. */
 void Isolate::SetOOMErrorHandler(OOMErrorCallback that)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1582,8 +1568,7 @@ void Isolate::SetWasmCompileStreamingCallback(ApiImplementationCallback callback
  */
 bool Isolate::IsDead()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1699,7 +1684,7 @@ void Isolate::VisitExternalResources(ExternalResourceVisitor* visitor)
  */
 void Isolate::VisitHandlesWithClassIds(PersistentHandleVisitor* visitor)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1711,7 +1696,7 @@ void Isolate::VisitHandlesWithClassIds(PersistentHandleVisitor* visitor)
  */
 void Isolate::VisitHandlesForPartialDependence(PersistentHandleVisitor* visitor)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1721,7 +1706,7 @@ void Isolate::VisitHandlesForPartialDependence(PersistentHandleVisitor* visitor)
  */
 void Isolate::VisitWeakHandles(PersistentHandleVisitor* visitor)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -1730,8 +1715,7 @@ void Isolate::VisitWeakHandles(PersistentHandleVisitor* visitor)
  */
 bool Isolate::IsInUse()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**

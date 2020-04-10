@@ -69,8 +69,7 @@ bool TryCatch::HasCaught() const
  */
 bool TryCatch::CanContinue() const
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -212,5 +211,5 @@ bool TryCatch::IsVerbose() const
  */
 void TryCatch::SetCaptureMessage(bool value)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
