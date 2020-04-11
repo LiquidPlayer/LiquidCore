@@ -82,6 +82,8 @@
                 NSLog(@"dir_contents = %@", files);
             };
             
+            XCTAssertEqual(context, process.context);
+            
             [context evaluateScript:
                                    @"(function() {"
                                    @"  var fs = require('fs');"

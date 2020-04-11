@@ -10,6 +10,7 @@ import android.content.Context;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
@@ -229,6 +230,15 @@ public class Process {
         if (isActive && ctx != null) {
             exposeRawFS(contextRef, dir, mediaAccessMask);
         }
+    }
+
+    /**
+     * Returns the JavaScript context of the process.
+     * @return The JSContext of the Node process.  Note: if the process is defunct, this will
+     * return null.
+     */
+    public @Nullable JSContext getJSContext() {
+        return jscontext.get();
     }
 
     /**

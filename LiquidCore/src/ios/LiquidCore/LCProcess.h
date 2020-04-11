@@ -142,6 +142,11 @@ MediaAccessMask;
 @property (nonatomic, readonly, copy) NSString* node_modulesPath;
 
 /**
+ The JavaScript context in which this process runs
+ */
+@property (atomic, readonly) JSContext* context;
+
+/**
  Creates a node.js process and attaches a delegate
  
  @param delegate The process delegate.

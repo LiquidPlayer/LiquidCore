@@ -58,7 +58,7 @@
 
 @interface LCProcess()
 @property(atomic) bool active;
-@property(atomic) JSContext* context;
+@property(atomic, readwrite) JSContext* context;
 @property(nonatomic, strong) JSContext* hold_;
 @property(nonatomic, strong) NSHashTable *delegates;
 - (void)onNodeStarted:(JSContext*)context group:(JSContextGroupRef)group;
@@ -232,7 +232,6 @@ static void onNodeExit(void *data, int code)
 {
     [self setActive:false];
     [self eventOnExit:code];
-    //process_dispose(self->processRef_);
 }
 
 - (void)eventOnStart:(JSContext *)context
