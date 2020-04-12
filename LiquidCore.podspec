@@ -19,7 +19,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   s.prepare_command = <<-CMD
     bash LiquidCore/src/ios/generate_node_javascript.sh
     bash LiquidCore/src/ios/generate_javascript_polyfills.sh
-    bash LiquidCore/LiquidCore/src/ios/copy_headers.sh
+    bash LiquidCore/src/ios/copy_headers.sh
   CMD
   s.default_subspec = 'Core'
 
