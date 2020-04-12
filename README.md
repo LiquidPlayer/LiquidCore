@@ -41,15 +41,15 @@ The `init` step will add some utility scripts and the `liquidcore` object to you
 </td></tr><tr><td>
 
 ```bash
-$ npx liquidcore gradle-config -- --module=<app>
+$ npx liquidcore gradle-config --module=<app>
 ```
 
 where `<app>` is the name of your application module (the default in Android Studio is 'app').
 </td><td>
 
 ```bash
-$ npx liquidcore pod-config -- --target=<target> --podfile=<podfile>
-$ npx liquidcore bundler -- --platform=ios
+$ npx liquidcore pod-config --target=<target> --podfile=<podfile>
+$ npx liquidcore bundler --platform=ios
 $ pod install
 ```
 
@@ -74,7 +74,7 @@ where `<TARGET>` is the name of your `xcodeproj` (without the `.xcodeproj` exten
 Also, any time you add a new `liquidcore.entry` point in `package.json`, you must first run the bundler and then run `pod install` again.  This is a quirk of how Cocoapods works with finding files.  Those files must exist at installation time, or they will not be available in the pod, even if they are created later.  So after adding a new `entry`, just do this part again:
 
 ```bash
-$ npx liquidcore bundler -- --platform=ios
+$ npx liquidcore bundler --platform=ios
 $ pod install
 ```
 
