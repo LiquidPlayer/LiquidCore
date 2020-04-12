@@ -330,6 +330,14 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     }
   end
 
+  s.subspec 'addon' do |addon|
+    addon.dependency 'LiquidCore/headers'
+    addon.source_files = "LiquidCore/src/ios/gen/include/uv/uv/errno.h"
+    addon.private_header_files = [
+      "LiquidCore/src/ios/gen/include/uv/uv/errno.h"
+    ]
+  end
+
   s.subspec 'uv' do |us|
     us.dependency 'LiquidCore/headers'
     us.source_files =
@@ -378,9 +386,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/uv/src/unix/spinlock.h"
     ]
     us.xcconfig = {
-#      :HEADER_SEARCH_PATHS => [
-#        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include",
-#      ].join(' '),
       :OTHER_CFLAGS => [
           '-D_DARWIN_USE_64_BIT_INODE=1',
           '-D_DARWIN_UNLIMITED_SELECT=1',
