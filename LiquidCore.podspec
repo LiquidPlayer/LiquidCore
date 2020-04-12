@@ -19,9 +19,9 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   s.prepare_command = <<-CMD
     bash LiquidCore/src/ios/generate_node_javascript.sh
     bash LiquidCore/src/ios/generate_javascript_polyfills.sh
+    bash LiquidCore/LiquidCore/src/ios/copy_headers.sh
   CMD
   s.default_subspec = 'Core'
-  s.dependency 'LiquidCore-headers', version
 
   s.test_spec 'Tests' do |test_spec|
     test_spec.source_files = "LiquidCore/src/ios/Tests/*.{h,m}"
@@ -29,6 +29,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   end
 
   s.subspec 'Core' do |cs|
+    cs.dependency 'LiquidCore/headers'
     cs.dependency 'LiquidCore/uv'
     cs.dependency 'LiquidCore/ares'
     cs.dependency 'LiquidCore/http'
@@ -159,12 +160,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
 
     cs.public_header_files = [ "LiquidCore/src/ios/LiquidCore/*.h" ]
     cs.private_header_files = [
-      "deps/node-10.15.3/deps/v8/src/libplatform/worker-thread.h",
-      "deps/node-10.15.3/deps/v8/include/libplatform/*.h",
-      "deps/node-10.15.3/deps/v8/src/base/platform/platform*.h",
-      "deps/node-10.15.3/deps/v8/src/base/compiler*.h",
-      "deps/node-10.15.3/deps/v8/include/*.h",
-      "deps/node-10.15.3/src/**/*.h",
       "LiquidCore/src/ios/V82JSC/**/*.h",
       "LiquidCore/src/common/*.h",
       "LiquidCore/src/ios/node_bridge.h",
@@ -186,7 +181,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     cs.frameworks = "JavaScriptCore"
     cs.xcconfig = {
       :HEADER_SEARCH_PATHS => [
-        "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/v8/include",
         "${PODS_TARGET_SRCROOT}/deps/node-10.15.3/deps/v8",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/v8/src/libplatform",
@@ -263,7 +257,81 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     }
   end
 
+  s.subspec 'headers' do |headers|
+    headers.source_files =
+      "LiquidCore/src/ios/gen/include/*.h",
+      "LiquidCore/src/ios/gen/include/uv/*.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/aix.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/android-ifaddrs.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/bsd.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/darwin.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/linux.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/os390.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/posix.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/stdint-msvc2008.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/sunos.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/threadpool.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/tree.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/unix.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/version.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/win.h",
+      "LiquidCore/src/ios/gen/include/node/*.h",
+      "LiquidCore/src/ios/gen/include/node/inspector/**/*.h",
+      "LiquidCore/src/ios/gen/include/node/large_pages/**/*.h",
+      "LiquidCore/src/ios/gen/include/node/tracing/**/*.h",
+      "LiquidCore/src/ios/gen/include/v8/*.h",
+      "LiquidCore/src/ios/gen/include/v8/libplatform/**/*.h",
+      "LiquidCore/src/ios/gen/include/openssl/**/*.h",
+      "LiquidCore/src/ios/gen/include/http_parser/*.h",
+      "LiquidCore/src/ios/gen/include/nghttp2/*.h",
+      "LiquidCore/src/ios/gen/include/cares/*.h",
+      "LiquidCore/src/ios/header-dummy.cc"
+    headers.private_header_files = [
+      "LiquidCore/src/ios/gen/include/*.h",
+      "LiquidCore/src/ios/gen/include/uv/*.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/aix.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/android-ifaddrs.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/bsd.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/darwin.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/linux.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/os390.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/posix.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/stdint-msvc2008.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/sunos.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/threadpool.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/tree.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/unix.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/version.h",
+      "LiquidCore/src/ios/gen/include/uv/uv/win.h",
+      "LiquidCore/src/ios/gen/include/node/*.h",
+      "LiquidCore/src/ios/gen/include/node/inspector/**/*.h",
+      "LiquidCore/src/ios/gen/include/node/large_pages/**/*.h",
+      "LiquidCore/src/ios/gen/include/node/tracing/**/*.h",
+      "LiquidCore/src/ios/gen/include/v8/*.h",
+      "LiquidCore/src/ios/gen/include/v8/libplatform/**/*.h",
+      "LiquidCore/src/ios/gen/include/openssl/**/*.h",
+      "LiquidCore/src/ios/gen/include/http_parser/*.h",
+      "LiquidCore/src/ios/gen/include/nghttp2/*.h",
+      "LiquidCore/src/ios/gen/include/cares/*.h",
+    ]
+    headers.header_mappings_dir = "LiquidCore/src/ios/gen/include"
+    headers.preserve_paths = "LiquidCore/src/ios/gen/include/uv/uv/errno.h"
+    headers.xcconfig = {
+      :CLANG_WARN_DOCUMENTATION_COMMENTS => 'NO',
+      :HEADER_SEARCH_PATHS => [
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include",
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/uv",
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/v8",
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/cares",
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/http_parser",
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/nghttp2",
+        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/node",
+      ].join(' ')
+    }
+  end
+
   s.subspec 'uv' do |us|
+    us.dependency 'LiquidCore/headers'
     us.source_files =
       "deps/node-10.15.3/deps/uv/src/fs-poll.c",
       "deps/node-10.15.3/deps/uv/src/inet.c",
@@ -301,18 +369,18 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/uv/src/heap-inl.h",
       "deps/node-10.15.3/deps/uv/src/unix/atomic-ops.h",
       "deps/node-10.15.3/deps/uv/src/unix/spinlock.h"
-      us.private_header_files = [
-        "deps/node-10.15.3/deps/uv/src/uv-common.h",
-        "deps/node-10.15.3/deps/uv/src/unix/internal.h",
-        "deps/node-10.15.3/deps/uv/src/queue.h",
-        "deps/node-10.15.3/deps/uv/src/heap-inl.h",
-        "deps/node-10.15.3/deps/uv/src/unix/atomic-ops.h",
-        "deps/node-10.15.3/deps/uv/src/unix/spinlock.h"
-      ]
-      us.xcconfig = {
-      :HEADER_SEARCH_PATHS => [
-           "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
-      ].join(' '),
+    us.private_header_files = [
+      "deps/node-10.15.3/deps/uv/src/uv-common.h",
+      "deps/node-10.15.3/deps/uv/src/unix/internal.h",
+      "deps/node-10.15.3/deps/uv/src/queue.h",
+      "deps/node-10.15.3/deps/uv/src/heap-inl.h",
+      "deps/node-10.15.3/deps/uv/src/unix/atomic-ops.h",
+      "deps/node-10.15.3/deps/uv/src/unix/spinlock.h"
+    ]
+    us.xcconfig = {
+#      :HEADER_SEARCH_PATHS => [
+#        "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include",
+#      ].join(' '),
       :OTHER_CFLAGS => [
           '-D_DARWIN_USE_64_BIT_INODE=1',
           '-D_DARWIN_UNLIMITED_SELECT=1',
@@ -329,6 +397,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   end
 
   s.subspec 'ares' do |as|
+    as.dependency 'LiquidCore/headers'
     as.source_files =
       "deps/node-10.15.3/deps/cares/src/ares_cancel.c",
       "deps/node-10.15.3/deps/cares/src/ares__close_sockets.c",
@@ -377,19 +446,16 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/cares/src/bitncmp.c",
       "deps/node-10.15.3/deps/cares/src/inet_net_pton.c",
       "deps/node-10.15.3/deps/cares/src/inet_ntop.c",
-      "deps/node-10.15.3/deps/cares/include/*.h",
       "deps/node-10.15.3/deps/cares/src/ares_setup.h",
       "deps/node-10.15.3/deps/cares/config/darwin/ares_config.h",
       "deps/node-10.15.3/deps/cares/src/*.h"
     as.private_header_files = [
-      "deps/node-10.15.3/deps/cares/include/*.h",
       "deps/node-10.15.3/deps/cares/src/ares_setup.h",
       "deps/node-10.15.3/deps/cares/config/darwin/ares_config.h",
       "deps/node-10.15.3/deps/cares/src/*.h"
     ]
     as.xcconfig = {
       :HEADER_SEARCH_PATHS => [
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/cares/include",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/cares/config/darwin",
       ].join(' '),
       :OTHER_CFLAGS => [
@@ -405,6 +471,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   end
 
   s.subspec 'http' do |hs|
+    hs.dependency 'LiquidCore/headers'
     hs.source_files =
       # http_parser
       "deps/node-10.15.3/deps/http_parser/http_parser.c",
@@ -432,11 +499,9 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_stream.c",
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_submit.c",
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_version.c",
-      "deps/node-10.15.3/deps/nghttp2/lib/*.h",
-      "deps/node-10.15.3/deps/http_parser/*.h",
+      "deps/node-10.15.3/deps/nghttp2/lib/*.h"
       "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h"
     hs.private_header_files = [
-      "deps/node-10.15.3/deps/http_parser/*.h",
       "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h",
       "deps/node-10.15.3/deps/nghttp2/lib/*.h"
     ]
@@ -444,7 +509,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     hs.xcconfig = {
       :HEADER_SEARCH_PATHS => [
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/nghttp2/lib/includes",
-        "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/http_parser",
       ].join(' '),
       :OTHER_CFLAGS => [
         '-D_DARWIN_UNLIMITED_SELECT=1',
@@ -464,6 +528,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
   end
 
   s.subspec 'openssl' do |os|
+    os.dependency 'LiquidCore/headers'
     os.source_files =
       "deps/node-10.15.3/deps/openssl/openssl/ssl/*.c",
       "deps/node-10.15.3/deps/openssl/openssl/ssl/record/*.c",
@@ -711,7 +776,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     os.xcconfig = {
       # System Header Search Paths
       :HEADER_SEARCH_PATHS => [
-        "${PODS_CONFIGURATION_BUILD_DIR}/LiquidCore-headers/LiquidCore_headers.framework/PrivateHeaders",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/crypto/include",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/openssl/include",
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto",
