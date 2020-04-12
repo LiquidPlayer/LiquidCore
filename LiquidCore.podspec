@@ -500,9 +500,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_submit.c",
       "deps/node-10.15.3/deps/nghttp2/lib/nghttp2_version.c",
       "deps/node-10.15.3/deps/nghttp2/lib/*.h"
-      "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h"
     hs.private_header_files = [
-      "deps/node-10.15.3/deps/nghttp2/lib/includes/nghttp2/*.h",
       "deps/node-10.15.3/deps/nghttp2/lib/*.h"
     ]
     hs.preserve_paths = "deps/node-10.15.3/deps/nghttp2/lib/includes/config.h"
