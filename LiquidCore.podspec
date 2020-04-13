@@ -318,6 +318,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
     headers.preserve_paths = "LiquidCore/src/ios/gen/include/uv/uv/errno.h"
     headers.xcconfig = {
       :CLANG_WARN_DOCUMENTATION_COMMENTS => 'NO',
+      :GCC_WARN_UNUSED_FUNCTION => 'NO',
       :HEADER_SEARCH_PATHS => [
         "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include",
         "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/uv",
@@ -328,14 +329,6 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
         "$(PODS_TARGET_SRCROOT)/LiquidCore/src/ios/gen/include/node",
       ].join(' ')
     }
-  end
-
-  s.subspec 'addon' do |addon|
-    addon.dependency 'LiquidCore/headers'
-    addon.source_files = "LiquidCore/src/ios/gen/include/uv/uv/errno.h"
-    addon.private_header_files = [
-      "LiquidCore/src/ios/gen/include/uv/uv/errno.h"
-    ]
   end
 
   s.subspec 'uv' do |us|

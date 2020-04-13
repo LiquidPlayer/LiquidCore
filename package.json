@@ -1,6 +1,6 @@
 {
   "name": "liquidcore",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "description": "LiquidCore enables Node.js virtual machines to run inside Android and iOS apps. It provides a complete runtime environment, including a virtual file system.",
   "main": "index.js",
   "bin": "lib/cli.js",
@@ -39,12 +39,19 @@
     "ios": [
       {
         "name": "LiquidCore"
+      },
+      {
+        "name": "LiquidCore-headers"
       }
     ],
     "ios-dev": [
       {
         "name": "LiquidCore",
         "path": "LiquidCore.podspec"
+      },
+      {
+        "name": "LiquidCore-headers",
+        "path": "LiquidCore-headers.podspec"
       }
     ]
   },

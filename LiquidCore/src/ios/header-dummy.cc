@@ -1,5 +1,5 @@
 #include "addon.h"
 
-void LiquidCoreHeader_dummy() {
+static void LiquidCoreHeader_dummy() {
 
 }
