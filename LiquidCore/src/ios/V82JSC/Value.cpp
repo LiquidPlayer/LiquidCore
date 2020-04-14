@@ -251,22 +251,22 @@ IS(IsArgumentsObject, "return Object.prototype.toString.call( _1 ) === '[object 
 /**
  * Returns true if this value is a Boolean object.
  */
-IS(IsBooleanObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'boolean');")
+IS(IsBooleanObject, "return (typeof _1 === 'object' && _1 !== null && typeof Object.prototype.valueOf(_1) === 'boolean');")
 
 /**
  * Returns true if this value is a Number object.
  */
-IS(IsNumberObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'number');")
+IS(IsNumberObject, "return (typeof _1 === 'object' && _1 !== null && typeof Object.prototype.valueOf(_1) === 'number');")
 
 /**
  * Returns true if this value is a String object.
  */
-IS(IsStringObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'string');")
+IS(IsStringObject, "return (typeof _1 === 'object' && _1 !== null && typeof Object.prototype.valueOf(_1) === 'string');")
 
 /**
  * Returns true if this value is a Symbol object.
  */
-IS(IsSymbolObject, "return (typeof _1 === 'object' && _1 !== null && typeof _1.valueOf() === 'symbol');")
+IS(IsSymbolObject, "return (typeof _1 === 'object' && _1 !== null && typeof Object.prototype.valueOf(_1) === 'symbol');")
 
 /**
  * Returns true if this value is a NativeError.
@@ -396,7 +396,7 @@ IS(IsDataView, "return _1 && Object.prototype.toString.call(_1) === '[object Dat
 IS(IsBigInt, "return _1 && (typeof _1 === 'bigint' || _1 instanceof BigInt.__proto__");
 IS(IsBigInt64Array, "return _1 && Object.prototype.toString.call(_1) === '[object BigInt64Array]'")
 IS(IsBigUint64Array, "return _1 && Object.prototype.toString.call(_1) === '[object BigUint64Array]'")
-IS(IsBigIntObject, "return (typeof _1 === 'object' && _1 !== null && (typeof _1.valueOf() === 'number' || _1.valueOf() instanceof BigInt.__proto__) );")
+IS(IsBigIntObject, "return _1 && typeof _1 === 'object' && (typeof Object.prototype.valueOf(_1) === 'bigint' || Object.prototype.valueOf(_1) instanceof BigInt.__proto__)")
 
 
 /**
