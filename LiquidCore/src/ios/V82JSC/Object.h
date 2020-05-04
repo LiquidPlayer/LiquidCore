@@ -38,6 +38,7 @@ struct TrackedObject : HeapObject {
     bool m_isDetached;
     JSObjectRef m_reattached_global;
     JSObjectRef m_bound_function;
+    JSObjectRef m_accessors;
     
     ArrayBufferInfo * m_array_buffer_info;
     
@@ -57,6 +58,7 @@ struct TrackedObject : HeapObject {
         if (obj->m_global_object_access_proxies) JSValueUnprotect(obj->GetNullContext(), obj->m_global_object_access_proxies);
         if (obj->m_reattached_global) JSValueUnprotect(obj->GetNullContext(), obj->m_reattached_global);
         if (obj->m_bound_function) JSValueUnprotect(obj->GetNullContext(), obj->m_bound_function);
+        if (obj->m_accessors) JSValueUnprotect(obj->GetNullContext(), obj->m_accessors);
         return freed;
     }
     

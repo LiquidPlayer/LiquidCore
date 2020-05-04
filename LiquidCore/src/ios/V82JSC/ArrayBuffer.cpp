@@ -67,6 +67,8 @@ ArrayBuffer::Allocator * ArrayBuffer::Allocator::NewDefaultAllocator()
 
 size_t ArrayBuffer::ByteLength() const
 {
+    HandleScope scope(ToIsolate(this));
+    
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef value = ToJSValueRef(this, context);
@@ -105,6 +107,7 @@ void V82JSC::proxyArrayBuffer(GlobalContext *ctx)
     handler_func("construct", [](CALLBACK_PARAMS) -> JSValueRef
     {
         Isolate* isolate = (Isolate*) JSObjectGetPrivate(function);
+        v8::HandleScope scope(isolate);
         assert(argumentCount>1);
         size_t byte_length = 0;
         if (JSValueIsArray(ctx, arguments[1])) {
@@ -187,6 +190,7 @@ std::mutex ArrayBufferInfo::s_array_buffer_info_mutex;
  */
 Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
 {
+    EscapableHandleScope scope(isolate);
     IsolateImpl* isolateimpl = ToIsolateImpl(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
@@ -203,7 +207,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
 
     JSObjectRef array_buffer = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,  wrap->m_array_buffer_info->buffer,
                                                                       byte_length, ArrayBufferInfo::Deallocate,
-                                                                      (void*) wrap->m_array_buffer_info, &exception);
+                                                                      (void*) wrap->m_array_buffer_info->isolate_id, &exception);
     
     V82JSC::TrackedObject::setPrivateInstance(isolateimpl, ctx, wrap, array_buffer);
 
@@ -223,7 +227,7 @@ Local<ArrayBuffer> ArrayBuffer::New(Isolate* isolate, size_t byte_length)
     auto impl = ToImpl<Value>(buffer);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(false);
-    return buffer;
+    return scope.Escape(buffer);
 }
 
 /**
@@ -239,6 +243,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
                               Isolate* isolate, void* data, size_t byte_length,
                               ArrayBufferCreationMode mode)
 {
+    EscapableHandleScope scope(isolate);
     IsolateImpl* isolateimpl = ToIsolateImpl(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
@@ -256,7 +261,7 @@ Local<ArrayBuffer> ArrayBuffer::New(
 
     JSObjectRef array_buffer = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,  wrap->m_array_buffer_info->buffer,
                                                                       byte_length, ArrayBufferInfo::Deallocate,
-                                                                      (void*) wrap->m_array_buffer_info, &exception);
+                                                                      (void*) wrap->m_array_buffer_info->isolate_id, &exception);
     
     V82JSC::TrackedObject::setPrivateInstance(isolateimpl, ctx, wrap, array_buffer);
     
@@ -276,13 +281,14 @@ Local<ArrayBuffer> ArrayBuffer::New(
     auto impl = ToImpl<Value>(buffer);
     i::Handle<i::JSArrayBuffer> buf = v8::Utils::OpenHandle(reinterpret_cast<ArrayBuffer*>(impl));
     buf->set_is_neuterable(false);
-    return buffer;
+    return scope.Escape(buffer);
 }
 
 TrackedObject * GetTrackedObject(const ArrayBuffer *ab)
 {
     auto impl = ToImpl<Value,ArrayBuffer>(ab);
     auto isolate = ToIsolate(ab);
+    v8::HandleScope scope(isolate);
     Local<v8::Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
 
@@ -331,6 +337,7 @@ void ArrayBuffer::Neuter()
  */
 ArrayBuffer::Contents ArrayBuffer::Externalize()
 {
+    HandleScope(ToIsolate(this));
     auto wrap = GetTrackedObject(this);
     ArrayBuffer::Contents contents;
     contents.data_ = wrap->m_array_buffer_info->buffer;
@@ -351,6 +358,7 @@ ArrayBuffer::Contents ArrayBuffer::Externalize()
  */
 ArrayBuffer::Contents ArrayBuffer::GetContents()
 {
+    HandleScope(ToIsolate(this));
     auto wrap = GetTrackedObject(this);
     ArrayBuffer::Contents contents;
     contents.data_ = wrap->m_array_buffer_info->buffer;
@@ -444,29 +452,32 @@ SharedArrayBuffer::Contents SharedArrayBuffer::GetContents()
  */
 Local<ArrayBuffer> ArrayBufferView::Buffer()
 {
+    auto isolate = ToIsolate(this);
+    EscapableHandleScope scope(isolate);
+    
     Local<Context> context = ToCurrentContext(this);
     JSValueRef value = ToJSValueRef(this, context);
     
-    JSStringRef sbuffer = JSStringCreateWithUTF8CString("buffer");
+    JSString sbuffer = "buffer";
     JSValueRef excp = 0;
-    JSValueRef buffer = JSObjectGetProperty(ToContextRef(context), (JSObjectRef)value, sbuffer, &excp);
+    JSValueRef buffer = JSObjectGetProperty(ToContextRef(context), (JSObjectRef)value, *sbuffer, &excp);
     assert(excp==0);
-    JSStringRelease(sbuffer);
-    return V82JSC::Value::New(ToContextImpl(context), buffer).As<ArrayBuffer>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), buffer).As<ArrayBuffer>());
 }
 /**
  * Byte offset in |Buffer|.
  */
 size_t ArrayBufferView::ByteOffset()
 {
+    auto isolate = ToIsolate(this);
+    HandleScope scope(isolate);
     Local<Context> context = ToCurrentContext(this);
     JSValueRef value = ToJSValueRef(this, context);
     
-    JSStringRef soffset = JSStringCreateWithUTF8CString("byteOffset");
+    JSString soffset = "byteOffset";
     JSValueRef excp = 0;
-    JSValueRef offset = JSObjectGetProperty(ToContextRef(context), (JSObjectRef)value, soffset, &excp);
+    JSValueRef offset = JSObjectGetProperty(ToContextRef(context), (JSObjectRef)value, *soffset, &excp);
     assert(excp==0);
-    JSStringRelease(soffset);
     size_t byte_offset = JSValueToNumber(ToContextRef(context), offset, &excp);
     assert(excp==0);
     return byte_offset;
@@ -476,14 +487,16 @@ size_t ArrayBufferView::ByteOffset()
  */
 size_t ArrayBufferView::ByteLength()
 {
+    auto isolate = ToIsolate(this);
+    HandleScope scope(isolate);
+
     Local<Context> context = ToCurrentContext(this);
     JSValueRef value = ToJSValueRef(this, context);
 
-    JSStringRef slength = JSStringCreateWithUTF8CString("byteLength");
+    JSString slength = "byteLength";
     JSValueRef excp = 0;
-    JSValueRef length = JSObjectGetProperty(ToContextRef(context), (JSObjectRef)value, slength, &excp);
+    JSValueRef length = JSObjectGetProperty(ToContextRef(context), (JSObjectRef)value, *slength, &excp);
     assert(excp==0);
-    JSStringRelease(slength);
     size_t byte_length = JSValueToNumber(ToContextRef(context), length, &excp);
     assert(excp==0);
     return byte_length;
@@ -515,6 +528,7 @@ bool ArrayBufferView::HasBuffer() const
 Local<DataView> DataView::New(Local<ArrayBuffer> array_buffer,
                            size_t byte_offset, size_t length)
 {
+    EscapableHandleScope scope(Isolate::GetCurrent());
     Local<Context> context = ToCurrentContext(*array_buffer);
     JSValueRef ab = ToJSValueRef(array_buffer, context);
 
@@ -526,7 +540,7 @@ Local<DataView> DataView::New(Local<ArrayBuffer> array_buffer,
     };
     JSObjectRef data_view = (JSObjectRef) exec(ctx, "return new DataView(_1,_2,_3)", 3, args);
     Local<DataView> view = V82JSC::Value::New(ToContextImpl(context), data_view).As<DataView>();
-    return view;
+    return scope.Escape(view);
 }
 Local<DataView> DataView::New(Local<SharedArrayBuffer> shared_array_buffer,
                            size_t byte_offset, size_t length)

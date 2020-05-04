@@ -86,21 +86,24 @@ inline v8::Local<v8::Context> OperatingContext(v8::Isolate* isolate);
 template <class T>
 inline v8::Local<T> CreateLocal(v8::internal::Isolate *isolate, V82JSC::HeapObject *o)
 {
+    v8::EscapableHandleScope scope((v8::Isolate*)isolate);
     v8::internal::Object ** handle =
         v8::internal::HandleScope::CreateHandle(isolate,
             reinterpret_cast<v8::internal::Object*>(reinterpret_cast<intptr_t>(o) + v8::internal::kHeapObjectTag));
-    return __local<T>(handle).toLocal();
+    return scope.Escape(__local<T>(handle).toLocal());
 }
 template <class T>
 inline v8::Local<T> CreateLocal(v8::Isolate *isolate, V82JSC::HeapObject *o)
 {
-    return CreateLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o);
+    v8::EscapableHandleScope scope(isolate);
+    return scope.Escape(CreateLocal<T>(reinterpret_cast<v8::internal::Isolate*>(isolate), o));
 }
 template <class T>
 inline v8::Local<T> CreateLocalSmi(v8::internal::Isolate *isolate, v8::internal::Smi* smi)
 {
+    v8::EscapableHandleScope scope((v8::Isolate*)isolate);
     v8::internal::Object ** handle = v8::internal::HandleScope::CreateHandle(isolate, smi);
-    return __local<T>(handle).toLocal();
+    return scope.Escape(__local<T>(handle).toLocal());
 }
 
 template<class T>
@@ -298,7 +301,6 @@ inline v8::Local<v8::Context> FindGlobalContext(v8::Local<v8::Context> context)
         return scope.Escape(i->m_global_contexts[gctx].Get(isolate));
     }
     return scope.Escape(i->m_nullContext.Get(isolate));
-//    return v8::Local<v8::Context>();
 }
 JSValueRef GetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj);
 void SetRealPrototype(v8::Local<v8::Context> context, JSObjectRef obj, JSValueRef proto,
@@ -313,9 +315,11 @@ inline void * PersistentData(v8::Isolate *isolate, v8::Local<T> d)
     // copy the contents of the handle (which is just one pointer) to our data parameter
     // and then delete the C++ handle _without calling the destructor_.  We will reset the
     // handle, then, in the finalize phase.
-    v8::Persistent<T> * persistent = new v8::Persistent<T>(isolate, d);
-    void * data = * reinterpret_cast<void**>(persistent);
-    operator delete(persistent);
+    v8::HandleScope scope(isolate);
+    typename v8::NonCopyablePersistentTraits<T>::NonCopyablePersistent persistent(isolate,d);
+    //v8::Persistent<T> * persistent = new v8::Persistent<T>(isolate, d);
+    void * data = * reinterpret_cast<void**>(&persistent);
+    //operator delete(persistent);
     return data;
 }
 template<typename T>

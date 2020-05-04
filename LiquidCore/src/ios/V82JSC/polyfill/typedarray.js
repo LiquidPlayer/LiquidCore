@@ -76,15 +76,42 @@
           newTarget
         );
       }
+    },
+
+    get(target, prop, receiver) {
+      if (prop === 'from') {
+        return function from() {
+          let arr = target.from(...arguments)
+          let buffer = new ArrayBuffer(arr.buffer.byteLength)
+          let typedarray =  Reflect.construct(
+            target,
+            [buffer]
+          );
+          typedarray.set(arr);
+          return typedarray;
+        }
+      } else if (prop === 'of') {
+        return function from() {
+          let arr = target.of(...arguments)
+          let buffer = new ArrayBuffer(arr.buffer.byteLength)
+          let typedarray =  Reflect.construct(
+            target,
+            [buffer]
+          );
+          typedarray.set(arr);
+          return typedarray;
+        }
+      } else return Reflect.get(target, prop, receiver)
     }
-  };
-  Uint8Array = new Proxy(Uint8Array, handler);
-  Uint16Array = new Proxy(Uint16Array, handler);
-  Uint32Array = new Proxy(Uint32Array, handler);
-  Uint8ClampedArray = new Proxy(Uint8ClampedArray, handler);
-  Int8Array = new Proxy(Int8Array, handler);
-  Int16Array = new Proxy(Int16Array, handler);
-  Int32Array = new Proxy(Int32Array, handler);
-  Float32Array = new Proxy(Float32Array, handler);
-  Float64Array = new Proxy(Float64Array, handler);
+  }
+
+  Uint8Array = new Proxy(Uint8Array, handler)
+  Uint16Array = new Proxy(Uint16Array,handler)
+  Uint32Array = new Proxy(Uint32Array,handler)
+  Uint8ClampedArray = new Proxy(Uint8ClampedArray,handler)
+  Int8Array = new Proxy(Int8Array,handler)
+  Int16Array = new Proxy(Int16Array,handler)
+  Int32Array = new Proxy(Int32Array,handler)
+  Float32Array = new Proxy(Float32Array,handler)
+  Float64Array = new Proxy(Float64Array,handler)
 })));

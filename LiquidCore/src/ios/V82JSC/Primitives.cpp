@@ -11,6 +11,7 @@ using namespace v8;
 
 double Number::Value() const
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef value = ToJSValueRef(this, context);
@@ -53,6 +54,7 @@ uint32_t Uint32::Value() const
 
 bool v8::Boolean::Value() const
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef value = ToJSValueRef(this, context);

@@ -15,6 +15,7 @@ using v8::Isolate;
 
 size_t v8::Map::Size() const
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -28,6 +29,7 @@ size_t v8::Map::Size() const
 
 void v8::Map::Clear()
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -36,6 +38,7 @@ void v8::Map::Clear()
 
 MaybeLocal<v8::Value> v8::Map::Get(Local<Context> context, Local<Value> key)
 {
+    EscapableHandleScope scope(ToIsolate(this));
     IsolateImpl* iso = ToIsolateImpl(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -46,13 +49,14 @@ MaybeLocal<v8::Value> v8::Map::Get(Local<Context> context, Local<Value> key)
     };
     JSValueRef r = exec(ctx, "return _1.get(_2)", 2, args, &exception);
     if (exception.ShouldThrow()) return MaybeLocal<Value>();
-    return V82JSC::Value::New(ToContextImpl(context), r);
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), r));
 }
 
 MaybeLocal<v8::Map> v8::Map::Set(Local<v8::Context> context,
                                  Local<v8::Value> key,
                                  Local<v8::Value> value)
 {
+    EscapableHandleScope scope(ToIsolate(this));
     IsolateImpl* iso = ToIsolateImpl(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -65,11 +69,12 @@ MaybeLocal<v8::Map> v8::Map::Set(Local<v8::Context> context,
     };
     exec(ctx, "_1.set(_2, _3)", 3, args, &exception);
     if (exception.ShouldThrow()) return MaybeLocal<Map>();
-    return CreateLocal<v8::Map>(ToIsolate(iso), impl);
+    return scope.Escape(CreateLocal<v8::Map>(ToIsolate(iso), impl));
 }
 
 Maybe<bool> v8::Map::Has(Local<v8::Context> context, Local<v8::Value> key)
 {
+    HandleScope scope(ToIsolate(this));
     IsolateImpl* iso = ToIsolateImpl(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -86,6 +91,7 @@ Maybe<bool> v8::Map::Has(Local<v8::Context> context, Local<v8::Value> key)
 Maybe<bool> v8::Map::Delete(Local<v8::Context> context,
                             Local<v8::Value> key)
 {
+    HandleScope scope(ToIsolate(this));
     IsolateImpl* iso = ToIsolateImpl(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -105,12 +111,13 @@ Maybe<bool> v8::Map::Delete(Local<v8::Context> context,
  */
 Local<v8::Array> v8::Map::AsArray() const
 {
+    EscapableHandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx,
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), exec(ctx,
             "var r = []; _1.forEach((v,k,m)=>r.push(k,v)); return r",
-            1, &obj)).As<Array>();
+            1, &obj)).As<Array>());
 }
 
 /**
@@ -118,8 +125,9 @@ Local<v8::Array> v8::Map::AsArray() const
  */
 Local<v8::Map> v8::Map::New(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ToContextRef(context), "return new Map()", 0, 0)).As<Map>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ToContextRef(context), "return new Map()", 0, 0)).As<Map>());
 }

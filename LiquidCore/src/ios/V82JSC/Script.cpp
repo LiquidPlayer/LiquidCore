@@ -114,7 +114,9 @@ Local<v8::UnboundScript> v8::Script::GetUnboundScript()
 {
     auto impl = ToImpl<V82JSC::Script>(this);
     Isolate *isolate = ToIsolate(impl->GetIsolate());
-    return impl->m_unbound_script.Get(isolate);
+    EscapableHandleScope scope(isolate);
+
+    return scope.Escape(impl->m_unbound_script.Get(isolate));
 }
 
 Local<v8::Script> v8::UnboundScript::BindToCurrentContext()
@@ -122,17 +124,19 @@ Local<v8::Script> v8::UnboundScript::BindToCurrentContext()
     auto impl = ToImpl<V82JSC::UnboundScript>(this);
     IsolateImpl *iso = impl->GetIsolate();
     Isolate *isolate = ToIsolate(iso);
-    
+    EscapableHandleScope scope(isolate);
+
     auto scr = static_cast<V82JSC::Script*>(HeapAllocator::Alloc(iso, iso->m_script_map));
 
     scr->m_unbound_script.Reset(isolate, CreateLocal<UnboundScript>(&iso->ii, impl));
     scr->m_context.Reset(isolate, isolate->GetCurrentContext());
     
-    return CreateLocal<Script>(&iso->ii, scr);
+    return scope.Escape(CreateLocal<Script>(&iso->ii, scr));
 }
 
 int v8::UnboundScript::GetId()
 {
+    HandleScope scope(ToIsolate(this));
     auto impl = ToImpl<V82JSC::UnboundScript>(this);
     if (impl->m_id.IsEmpty()) {
         return kNoScriptId;
@@ -141,8 +145,9 @@ int v8::UnboundScript::GetId()
 }
 Local<v8::Value> v8::UnboundScript::GetScriptName()
 {
+    EscapableHandleScope scope(ToIsolate(this));
     auto impl = ToImpl<V82JSC::UnboundScript>(this);
-    return impl->m_resource_name.Get(ToIsolate(impl->GetIsolate()));
+    return scope.Escape(impl->m_resource_name.Get(ToIsolate(impl->GetIsolate())));
 }
 
 /**
@@ -150,16 +155,18 @@ Local<v8::Value> v8::UnboundScript::GetScriptName()
  */
 Local<v8::Value> v8::UnboundScript::GetSourceURL()
 {
+    EscapableHandleScope scope(ToIsolate(this));
     auto impl = ToImpl<V82JSC::UnboundScript>(this);
-    return impl->m_sourceURL.Get(ToIsolate(impl->GetIsolate()));
+    return scope.Escape(impl->m_sourceURL.Get(ToIsolate(impl->GetIsolate())));
 }
 /**
  * Data read from magic sourceMappingURL comments.
  */
 Local<v8::Value> v8::UnboundScript::GetSourceMappingURL()
 {
+    EscapableHandleScope scope(ToIsolate(this));
     auto impl = ToImpl<V82JSC::UnboundScript>(this);
-    return impl->m_sourceMappingURL.Get(ToIsolate(impl->GetIsolate()));
+    return scope.Escape(impl->m_sourceMappingURL.Get(ToIsolate(impl->GetIsolate())));
 }
 
 /**
@@ -168,6 +175,7 @@ Local<v8::Value> v8::UnboundScript::GetSourceMappingURL()
  */
 int v8::UnboundScript::GetLineNumber(int code_pos)
 {
+    HandleScope scope(ToIsolate(this));
     if (code_pos == 0) {
         auto impl = ToImpl<V82JSC::UnboundScript>(this);
         Local<Integer> line = impl->m_resource_line_offset.Get(ToIsolate(impl->GetIsolate()));
@@ -405,6 +413,7 @@ MaybeLocal<v8::Script> ScriptCompiler::Compile(Local<Context> context, Source* s
                                            CompileOptions options, NoCacheReason no_cache_reason)
 {
     Isolate *isolate = ToIsolate(ToContextImpl(context));
+    EscapableHandleScope scope(isolate);
     Context::Scope context_scope(context);
 
     Local<String> backup;
@@ -433,7 +442,7 @@ MaybeLocal<v8::Script> ScriptCompiler::Compile(Local<Context> context, Source* s
                 source->cached_data = new CachedData((uint8_t*)data, (int)strlen(*str));
             }
         }
-        return unbound.ToLocalChecked()->BindToCurrentContext();
+        return scope.Escape(unbound.ToLocalChecked()->BindToCurrentContext());
     }
     
     if (source->GetCachedData()) source->cached_data->rejected = true;

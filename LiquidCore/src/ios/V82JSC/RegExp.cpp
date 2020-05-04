@@ -23,6 +23,7 @@ MaybeLocal<RegExp> RegExp::New(Local<Context> context,
                               Local<String> pattern,
                               Flags flags)
 {
+    EscapableHandleScope scope(ToIsolate(ToContextImpl(context)));
     JSContextRef ctx = ToContextRef(context);
     
     char sflags[16] = {0};
@@ -44,7 +45,7 @@ MaybeLocal<RegExp> RegExp::New(Local<Context> context,
     if (exception.ShouldThrow()) {
         return MaybeLocal<RegExp>();
     }
-    return V82JSC::Value::New(ToContextImpl(context), regexp).As<RegExp>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), regexp).As<RegExp>());
 }
 
 /**
@@ -53,11 +54,12 @@ MaybeLocal<RegExp> RegExp::New(Local<Context> context,
  */
 Local<v8::String> RegExp::GetSource() const
 {
+    EscapableHandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     auto impl = ToImpl<V82JSC::Value>(this);
     JSValueRef source = exec(ctx, "return _1.source", 1, &impl->m_value);
-    return V82JSC::Value::New(ToContextImpl(context), source).As<String>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), source).As<String>());
 }
 
 /**
@@ -65,6 +67,7 @@ Local<v8::String> RegExp::GetSource() const
  */
 RegExp::Flags RegExp::GetFlags() const
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     auto impl = ToImpl<V82JSC::Value>(this);

@@ -78,6 +78,8 @@ MaybeLocal<BigInt> BigInt::NewFromWords(Local<v8::Context> context, int sign_bit
  */
 uint64_t BigInt::Uint64Value(bool* lossless) const
 {
+    HandleScope scope(ToIsolate(this));
+    
     auto context = ToCurrentContext(this);
     auto ctx = ToContextRef(context);
     auto value = ToJSValueRef(this, context);
@@ -98,6 +100,8 @@ uint64_t BigInt::Uint64Value(bool* lossless) const
  */
 int64_t BigInt::Int64Value(bool* lossless) const
 {
+    HandleScope scope(ToIsolate(this));
+
     auto context = ToCurrentContext(this);
     auto ctx = ToContextRef(context);
     auto value = ToJSValueRef(this, context);
@@ -117,6 +121,8 @@ int64_t BigInt::Int64Value(bool* lossless) const
  */
 int BigInt::WordCount() const
 {
+    HandleScope scope(ToIsolate(this));
+
     auto context = ToCurrentContext(this);
     auto ctx = ToContextRef(context);
     auto value = ToJSValueRef(this, context);
@@ -134,6 +140,8 @@ int BigInt::WordCount() const
  */
 void BigInt::ToWordsArray(int* sign_bit, int* word_count, uint64_t* words) const
 {
+    HandleScope scope(ToIsolate(this));
+
     auto context = ToCurrentContext(this);
     auto ctx = ToContextRef(context);
     auto value = ToJSValueRef(this, context);

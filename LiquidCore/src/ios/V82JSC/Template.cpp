@@ -374,12 +374,12 @@ MaybeLocal<Object> V82JSC::Template::InitInstance(Local<v8::Context> context, JS
         
         if (wrap->m_isHiddenPrototype) {
             exec(ctx,
-             "_5[_2] = _3; "
+             "Reflect.set(_5,_2,_3); "
              "Object.defineProperty(_1, _2, "
              "{ enumerable : !(_4&(1<<1)), "
              "  configurable : !(_4&(1<<2)), "
-             "  set(v) { return _5[_2] = v; }, "
-             "  get()  { return _5[_2] } "
+             "  set(v) { return Reflect.set(_5,_2,v); }, "
+             "  get()  { return Reflect.get(_5,_2) } "
              "})", 5, args, &exception);
         } else {
             exec(ctx,
@@ -448,31 +448,31 @@ MaybeLocal<Object> V82JSC::Template::InitInstance(Local<v8::Context> context, JS
         };
         switch(intrinsic->value) {
             case Intrinsic::kIteratorPrototype: {
-                exec(ctx, "_1[_2] = [][Symbol.iterator]().__proto__.__proto__", 2, args, &exception);
+                exec(ctx, "Reflect.set(_1,_2,[][Symbol.iterator]().__proto__.__proto__)", 2, args, &exception);
                 break;
             }
             case Intrinsic::kErrorPrototype: {
-                exec(ctx, "_1[_2] = Error.prototype", 2, args, &exception);
+                exec(ctx, "Reflect.set(_1,_2,Error.prototype)", 2, args, &exception);
                 break;
             }
             case Intrinsic::kArrayProto_keys: {
-                exec(ctx, "_1[_2] = Array.prototype.keys", 2, args, &exception);
+                exec(ctx, "Reflect.set(_1,_2,Array.prototype.keys)", 2, args, &exception);
                 break;
             }
             case Intrinsic::kArrayProto_values: {
-                exec(ctx, "_1[_2] = Array.prototype[Symbol.iterator]", 2, args, &exception);
+                exec(ctx, "Reflect.set(_1,_2,Array.prototype[Symbol.iterator])", 2, args, &exception);
                 break;
             }
             case Intrinsic::kArrayProto_entries: {
-                exec(ctx, "_1[_2] = Array.prototype.entries", 2, args, &exception);
+                exec(ctx, "Reflect.set(_1,_2,Array.prototype.entries)", 2, args, &exception);
                 break;
             }
             case Intrinsic::kArrayProto_forEach: {
-                exec(ctx, "_1[_2] = Array.prototype.forEach", 2, args, &exception);
+                exec(ctx, "Reflect.set(_1,_2,Array.prototype.forEach)", 2, args, &exception);
                 break;
             }
             default: {
-                assert(0);
+                NOT_IMPLEMENTED;
             }
         }
     }

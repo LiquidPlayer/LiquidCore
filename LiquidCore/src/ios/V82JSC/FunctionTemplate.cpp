@@ -396,6 +396,7 @@ void v8::FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> 
 {
     auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     Isolate* isolate = ToIsolate(ToIsolateImpl(impl));
+    HandleScope scope(isolate);
     impl->m_prototype_provider.Reset(isolate, prototype_provider);
 }
 
@@ -406,6 +407,7 @@ void v8::FunctionTemplate::SetPrototypeProviderTemplate(Local<FunctionTemplate> 
  */
 void v8::FunctionTemplate::SetClassName(Local<String> name)
 {
+    HandleScope scope(ToIsolate(this));
     auto impl = ToImpl<V82JSC::FunctionTemplate>(this);
     impl->m_name.Reset(ToIsolate(this), name);
 }
@@ -533,17 +535,6 @@ JSValueRef FunctionTemplate::callAsConstructorCallback(JSContextRef ctx,
         if (otempl->m_callback) {
             def.callAsFunction = Template::callAsFunctionCallback;
             def.callAsConstructor = Template::callAsConstructorCallback;
-        } else {
-            def.callAsFunction = [](JSContextRef ctx,
-                                    JSObjectRef function,
-                                    JSObjectRef thisObject,
-                                    size_t argumentCount,
-                                    const JSValueRef *arguments,
-                                    JSValueRef *exception) -> JSValueRef
-            {
-                *exception = exec(ctx, "return new TypeError('object is not a function')", 0, 0);
-                return 0;
-            };
         }
 
         data_ = PersistentData(isolate, instance_template);

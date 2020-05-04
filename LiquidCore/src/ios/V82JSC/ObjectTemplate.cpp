@@ -380,10 +380,10 @@ static JSValueRef proxy_get(CALLBACK_PARAMS)
                 temp1,
                 arguments[1]
             };
-            return exec(ctx, "return _1[_2]", 2, args, exception);
+            return exec(ctx, "return Reflect.get(_1,_2)", 2, args, exception);
         }
         
-        return exec(ctx, "return _1[_2]", 2, arguments, exception);
+        return exec(ctx, "return Reflect.get(_1,_2)", 2, arguments, exception);
     }
     return ret;
 }
@@ -429,9 +429,9 @@ static JSValueRef proxy_set(CALLBACK_PARAMS)
             };
             args[4] = JSObjectMake(ctx, 0, 0);
             JSObjectSetPrototype(ctx, (JSObjectRef)args[4], arguments[0]);
-            return exec(ctx, "_5[_2] = _3; return _1[_2] = _3", 5, args, exception);
+            return exec(ctx, "Reflect.set(_5,_2,_3); return Reflect.set(_1,_2,_3)", 5, args, exception);
         }
-        return exec(ctx, "return _1[_2] = _3", 3, arguments, exception);
+        return exec(ctx, "return Reflect.set(_1,_2,_3)", 3, arguments, exception);
     }
     return JSValueMakeBoolean(ctx, true);
 }
@@ -509,7 +509,7 @@ static JSValueRef proxy_deleteProperty(CALLBACK_PARAMS)
      [](INDEXED_PARAMS(v8::Boolean)) { config.deleter(index, info); });
     if (!*exception && ret == NULL) {
         assert(argumentCount>1);
-        return exec(ctx, "return delete _1[_2]", 2, arguments, exception);
+        return exec(ctx, "return Reflect.deleteProperty(_1,_2)", 2, arguments, exception);
     }
     return ret;
 }

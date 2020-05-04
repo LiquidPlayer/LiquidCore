@@ -92,6 +92,7 @@ ScriptOrigin v8::Message::GetScriptOrigin() const
 {
     // Do not create a handle scope here.  We are returning more than one handle.
     Isolate *isolate = ToIsolate(this);
+    HandleScope scope(isolate);
     auto impl = ToImpl<V82JSC::Message>(this);
     Local<v8::Context> context = OperatingContext(isolate);
     

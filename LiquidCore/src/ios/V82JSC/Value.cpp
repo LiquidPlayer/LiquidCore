@@ -436,6 +436,7 @@ template <typename T>
 Maybe<T> toValue(const v8::Value* thiz, Local<v8::Context> context, bool isNaNZero=false)
 {
     auto ctx = ToContextImpl(context);
+    v8::HandleScope scope(ToIsolate(ctx));
     JSValueRef value = ToJSValueRef<v8::Value>(thiz, context);
     IsolateImpl* i = ToIsolateImpl(ctx);
 

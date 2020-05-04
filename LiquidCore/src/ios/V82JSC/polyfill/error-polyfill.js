@@ -111,6 +111,8 @@
             var message = error.message || "";
             var name = error.name || "";
             var stackString = this.getStackString(error);
+            console.log("stackString")
+            console.log(stackString)
             if (stackString === undefined)
                 return;
             var stackStringChunks = stackString.split("\n");

@@ -7,7 +7,6 @@ SOURCE_DIR=$(cd "$CURRENT_DIR/.."; pwd)
 mkdir -p "$SOURCE_DIR/ios/gen"
 
 INPUT_FILES=(
-    "promise-polyfill.js"
     "typedarray.js"
     "error-polyfill.js"
     "jsbi.js"

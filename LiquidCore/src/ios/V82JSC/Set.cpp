@@ -11,6 +11,7 @@ using namespace v8;
 
 size_t Set::Size() const
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -27,6 +28,7 @@ void Set::Clear()
 }
 MaybeLocal<Set> Set::Add(Local<Context> context, Local<Value> key)
 {
+    EscapableHandleScope scope(ToIsolate(this));
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
     IsolateImpl* iso = ToIsolateImpl(this);
@@ -39,7 +41,7 @@ MaybeLocal<Set> Set::Add(Local<Context> context, Local<Value> key)
     };
     exec(ctx, "_1.add(_2)", 2, args, &exception);
     if (exception.ShouldThrow()) return MaybeLocal<Set>();
-    return CreateLocal<Set>(ToIsolate(iso), impl);
+    return scope.Escape(CreateLocal<Set>(ToIsolate(iso), impl));
 }
 Maybe<bool> Set::Has(Local<Context> context, Local<Value> key)
 {
@@ -55,11 +57,12 @@ Maybe<bool> Set::Delete(Local<Context> context, Local<Value> key)
  */
 Local<Array> Set::AsArray() const
 {
+    EscapableHandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "var r = []; _1.forEach((v)=>r.push(v)); return r", 1, &obj)).As<Array>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "var r = []; _1.forEach((v)=>r.push(v)); return r", 1, &obj)).As<Array>());
 }
 
 /**
@@ -67,7 +70,8 @@ Local<Array> Set::AsArray() const
  */
 Local<Set> Set::New(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ToContextRef(context), "return new Set()", 0, 0)).As<Set>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ToContextRef(context), "return new Set()", 0, 0)).As<Set>());
 }

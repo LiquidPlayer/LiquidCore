@@ -55,6 +55,7 @@ struct GlobalContext : Context {
     v8::Persistent<v8::Function> ObjectSetPrototypeOf;
     v8::Persistent<v8::Function> ObjectGetPrototypeOf;
     v8::Persistent<v8::Function> ObjectPrototypeToString;
+    v8::Persistent<v8::Function> ObjectGetOwnDescriptor;
     v8::Persistent<v8::Function> FunctionPrototypeBind;
     v8::Persistent<v8::Function> Eval;
     v8::Persistent<v8::String> m_code_gen_error;

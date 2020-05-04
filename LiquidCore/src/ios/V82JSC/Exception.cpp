@@ -16,10 +16,11 @@ Local<v8::Value> Exception::type(Local<String> message) \
 { \
     IsolateImpl *iso = ToIsolateImpl(ToImpl<Value>(message)); \
     Isolate *isolate = ToIsolate(iso); \
+    EscapableHandleScope scope(isolate); \
     Local<Context> context = OperatingContext(isolate); \
     JSContextRef ctx = ToContextRef(context); \
     JSValueRef msg = ToJSValueRef(message, context); \
-    return V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new " #type "(_1)", 1, &msg)); \
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), exec(ctx, "return new " #type "(_1)", 1, &msg))); \
 }
 
 CREATE_ERROR(RangeError)
@@ -35,6 +36,8 @@ CREATE_ERROR(Error)
  */
 Local<v8::Message> Exception::CreateMessage(Isolate* isolate, Local<Value> exception)
 {
+    EscapableHandleScope scope(isolate);
+    
     IsolateImpl *iso = ToIsolateImpl(isolate);
     Local<Context> context = OperatingContext(isolate);
     auto thread = IsolateImpl::PerThreadData::Get(iso);
@@ -47,7 +50,7 @@ Local<v8::Message> Exception::CreateMessage(Isolate* isolate, Local<Value> excep
     auto msgi = V82JSC::Message::New(iso, ToJSValueRef(exception, context), script);
     Local<v8::Message> msg = CreateLocal<v8::Message>(&iso->ii, msgi);
 
-    return msg;
+    return scope.Escape(msg);
 }
 
 /**

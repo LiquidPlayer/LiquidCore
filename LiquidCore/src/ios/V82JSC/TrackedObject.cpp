@@ -117,7 +117,7 @@ V82JSC::TrackedObject* V82JSC::TrackedObject::getPrivateInstance(JSContextRef ct
 
 Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v8::Context> toContext)
 {
-    Isolate* isolate = Isolate::GetCurrent();
+    Isolate* isolate = ToIsolate(*in);
     EscapableHandleScope scope(isolate);
 
 #if USE_JAVASCRIPTCORE_PRIVATE_API

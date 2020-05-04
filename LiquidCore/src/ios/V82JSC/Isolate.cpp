@@ -493,7 +493,6 @@ void IsolateImpl::EnterContext(Local<v8::Context> ctx)
     auto thread = IsolateImpl::PerThreadData::Get(this);
     v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context>> persist(ToIsolate(this), ctx);
     thread->m_context_stack.push(persist);
-    persist.Reset();
 }
 
 void IsolateImpl::ExitContext(Local<v8::Context> ctx)
@@ -788,12 +787,13 @@ bool Isolate::InContext()
 Local<v8::Context> Isolate::GetCurrentContext()
 {
     IsolateImpl* impl = reinterpret_cast<IsolateImpl*>(this);
+    EscapableHandleScope scope(ToIsolate(impl));
     auto thread = IsolateImpl::PerThreadData::Get(impl);
     if (!thread->m_context_stack.size()) {
         return Local<Context>();
     }
     
-    return Local<Context>::New(this, thread->m_context_stack.top());
+    return scope.Escape(Local<Context>::New(this, thread->m_context_stack.top()));
 }
 
 /** Returns the last context entered through V8's C++ API. */
@@ -831,6 +831,7 @@ Local<v8::Context> Isolate::GetIncumbentContext()
 Local<v8::Value> Isolate::ThrowException(Local<Value> exception)
 {
     IsolateImpl* impl = ToIsolateImpl(this);
+    EscapableHandleScope scope(this);
     auto thread = IsolateImpl::PerThreadData::Get(impl);
     
     if (exception.IsEmpty()) {
@@ -839,7 +840,7 @@ Local<v8::Value> Isolate::ThrowException(Local<Value> exception)
         thread->m_scheduled_exception = * reinterpret_cast<internal::Object**>(*exception);
     }
 
-    return exception;
+    return scope.Escape(exception);
 }
 
 /**
@@ -1550,16 +1551,16 @@ void Isolate::SetAllowCodeGenerationFromStringsCallback(
  */
 void Isolate::SetWasmModuleCallback(ExtensionCallback callback)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 void Isolate::SetWasmInstanceCallback(ExtensionCallback callback)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void Isolate::SetWasmCompileStreamingCallback(ApiImplementationCallback callback)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
