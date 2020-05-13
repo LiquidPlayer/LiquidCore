@@ -1,15 +1,3 @@
-<!--
-//
-// Boost.Pointer Container
-//
-//  Copyright Thorsten Ottosen 2003-2005. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-//
-// For more information, see http://www.boost.org/libs/ptr_container/
-//
--->
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE library PUBLIC "-//Boost//DTD BoostBook XML V1.0//EN"
 "http://www.boost.org/tools/boostbook/dtd/boostbook.dtd">
@@ -34,8 +22,9 @@
                                 on object basis instead of making/adding pointer based variants.</listitem>
                <listitem> No memory-overhead as containers of smart_pointers can have.</listitem>
                <listitem> Faster than using containers of smart pointers.</listitem>
-               <listitem> Provides an elegant solution to <code> vector< vector<T> > </code> performance
-                               problems; simply use  <code>ptr_vector< vector<T> ></code></listtem>
+               <listitem> Provides an elegant solution to <code> vector&lt; vector&lt;T&gt; &gt; </code> performance
+                               problems; simply use  <code>ptr_vector&lt; vector&lt;T&gt; &gt;</code></listitem>
+          </itemizedlist>
 	</para>
 	<para>		
          Below is given some example that show how the usage compares to a container of smart pointers:
@@ -59,24 +48,24 @@
     //
     // one doesn't need to introduce new names or live with long ones
     //                                                         
-    typedef shared_ptr<Poly> PolyPtr;
+    typedef shared_ptr&lt;Poly&gt; PolyPtr;
     
     //
     // one doesn't need to write this anymore
     //                   
     struct PolyPtrOps 
     {
-      void operator()( const PolyPtr & a )
+      void operator()( const PolyPtr &amp; a )
         { a->foo(); }
     };
     
     int main()
     {
         enum { size = 2000000 };
-        vector<PolyPtr>    svec   
-        ptr_vector<Poly>   pvec;
+        vector&lt;PolyPtr&gt;    svec
+        ptr_vector&lt;Poly&gt;   pvec;
         
-        for( int i = 0; i < size; ++i ) 
+        for( int i = 0; i &lt;size; ++i )
         {
             svec.push_back( PolyPtr( new Poly ) ); 
             pvec.push_back( new Poly );  // no extra syntax      
@@ -84,7 +73,7 @@
                        
         for_each( svec.begin(), svec.end(), PolyPtrOps() );
 
-        for_each( pvec.begin(), pvec.end(), mem_fun_ref( &Poly::foo ) );
+        for_each( pvec.begin(), pvec.end(), mem_fun_ref( &amp;Poly::foo ) );
      }
          </programlisting>                     
 	</para>

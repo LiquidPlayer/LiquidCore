@@ -1,15 +1,3 @@
-<!-- 
-//
-// Boost.Pointer Container
-//
-//  Copyright Thorsten Ottosen 2003-2005. Use, modification and
-//  distribution is subject to the Boost Software License, Version
-//  1.0. (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-//
-// For more information, see http://www.boost.org/libs/ptr_container/
-//
--->
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE library PUBLIC "-//Boost//DTD BoostBook XML V1.0//EN"
 "http://www.boost.org/tools/boostbook/dtd/boostbook.dtd">
