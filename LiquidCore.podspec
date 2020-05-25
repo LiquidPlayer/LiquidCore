@@ -778,6 +778,7 @@ LiquidCore enables Node.js virtual machines to run inside iOS apps. It provides 
         "$(PODS_TARGET_SRCROOT)/deps/node-10.15.3/deps/openssl/config/archs/darwin64-x86_64-cc/no-asm/crypto/include",
       ].join(' '),
       :OTHER_CFLAGS => [
+        '-DOPENSSL_NO_ASYNC',
         '-DOPENSSL_NO_HW',
         '-DOPENSSL_NO_ASM',
         '-DDSO_DLFCN',
