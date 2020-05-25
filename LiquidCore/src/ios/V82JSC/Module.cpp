@@ -13,7 +13,7 @@ using namespace v8;
  */
 Module::Status Module::GetStatus() const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -21,7 +21,7 @@ Module::Status Module::GetStatus() const
  */
 Local<v8::Value> Module::GetException() const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -29,7 +29,7 @@ Local<v8::Value> Module::GetException() const
  */
 int Module::GetModuleRequestsLength() const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -38,7 +38,7 @@ int Module::GetModuleRequestsLength() const
  */
 Local<String> Module::GetModuleRequest(int i) const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -47,7 +47,7 @@ Local<String> Module::GetModuleRequest(int i) const
  */
 Location Module::GetModuleRequestLocation(int i) const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -55,7 +55,7 @@ Location Module::GetModuleRequestLocation(int i) const
  */
 int Module::GetIdentityHash() const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -67,7 +67,7 @@ int Module::GetIdentityHash() const
  */
 Maybe<bool> Module::InstantiateModule(Local<Context> context, ResolveCallback callback)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -78,7 +78,7 @@ Maybe<bool> Module::InstantiateModule(Local<Context> context, ResolveCallback ca
  */
 MaybeLocal<v8::Value> Module::Evaluate(Local<Context> context)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -87,6 +87,6 @@ MaybeLocal<v8::Value> Module::Evaluate(Local<Context> context)
  */
 Local<v8::Value> Module::GetModuleNamespace()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 

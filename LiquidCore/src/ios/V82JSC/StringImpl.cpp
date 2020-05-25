@@ -335,12 +335,13 @@ int v8::String::WriteUtf8(Isolate *isolate,
     // FIXME: This is an annoying inefficiency.  JSC needs the null-terminator to be
     // part of buffer length, but V8 does not.  So we allocate one additional byte and
     // then copy back the correct number.
-    char temp[length + 1];
+    char *temp = (char *) malloc(length + 1);
     size_t chars = JSStringGetUTF8CString(*s, temp, length+1);
     memcpy(buffer, temp, length);
     if (nchars_ref) {
         *nchars_ref = (int) s.Length();
     }
+    free(temp);
     return (int) chars - 1;
 }
 
@@ -353,7 +354,8 @@ bool v8::String::IsExternal() const
     typedef internal::Internals I;
     O* obj = *reinterpret_cast<O* const*>(this);
     int representation = (I::GetInstanceType(obj) & I::kFullStringRepresentationMask);
-    return representation == I::kExternalOneByteRepresentationTag | representation==I::kExternalTwoByteRepresentationTag;
+    return representation == I::kExternalOneByteRepresentationTag ||
+        representation==I::kExternalTwoByteRepresentationTag;
 }
 
 /**

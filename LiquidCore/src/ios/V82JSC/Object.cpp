@@ -37,7 +37,7 @@ Maybe<bool> Object::Set(Local<Context> context, Local<Value> key, Local<Value> v
         ToJSValueRef(value, context)
     };
     
-    JSValueRef ret = exec(ctx, "return _3 == (_1[_2] = _3)", 3, args, &exception);
+    JSValueRef ret = exec(ctx, "return Reflect.set(_1, _2, _3)", 3, args, &exception);
     
     _maybe<bool> out;
     if (!exception.ShouldThrow()) {
@@ -312,14 +312,14 @@ Maybe<v8::PropertyAttribute> Object::GetPropertyAttributes(Local<Context> contex
         ToJSValueRef(key, context),
     };
     JSValueRef ret = exec(ctx,
-                                  "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
-                                  "var d = Object.getOwnPropertyDescriptor(_1, _2); "
-                                  "var attr = None; if (!d) return attr; "
-                                  "attr += (d.writable===true) ? 0 : ReadOnly; "
-                                  "attr += (d.enumerable===true) ? 0 : DontEnum; "
-                                  "attr += (d.configurable===true) ? 0 : DontDelete; "
-                                  "return attr"
-                                  , 2, args, &exception);
+      "const None = 0, ReadOnly = 1 << 0, DontEnum = 1 << 1, DontDelete = 1 << 2; "
+      "var d = Object.getOwnPropertyDescriptor(_1, _2); "
+      "var attr = None; if (!d) return attr; "
+      "attr += (d.writable===true) ? 0 : ReadOnly; "
+      "attr += (d.enumerable===true) ? 0 : DontEnum; "
+      "attr += (d.configurable===true) ? 0 : DontDelete; "
+      "return attr"
+      , 2, args, &exception);
 
     _maybe<PropertyAttribute> out;
     if (!exception.ShouldThrow()) {
@@ -418,7 +418,7 @@ Maybe<bool> Object::Delete(Local<Context> context, Local<Value> key)
         ToJSValueRef(key, context)
     };
 
-    JSValueRef ret = exec(ctx, "return delete _1[_2]", 2, args, &exception);
+    JSValueRef ret = exec(ctx, "return Reflect.deleteProperty(_1,_2)", 2, args, &exception);
 
     _maybe<bool> out;
     if (!exception.ShouldThrow()) {
@@ -685,6 +685,12 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
     JSObjectRef obj = (JSObjectRef) ToJSValueRef(thiz, context);
     JSValueRef prop = ToJSValueRef(name, context);
 
+    auto wrap = V82JSC::TrackedObject::makePrivateInstance(iso, ctx, obj);
+    if (!wrap->m_accessors) {
+        wrap->m_accessors = JSObjectMake(ctx, nullptr, nullptr);
+        JSValueProtect(ctx, wrap->m_accessors);
+    }
+
     LocalException exception(iso);
     
     if (settings != AccessControl::DEFAULT) {
@@ -698,7 +704,7 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
             prop,
             JSValueMakeNumber(ctx, settings)
         };
-        exec(ctx, "_1[_2] = _3", 3, args);
+        exec(ctx, "Reflect.set(_1, _2, _3)", 3, args);
     }
 
     JSValueRef args[] = {
@@ -706,7 +712,8 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
         prop,
         !getter.IsEmpty() ? ToJSValueRef(getter, context) : 0,
         !setter.IsEmpty() ? ToJSValueRef(setter, context) : 0,
-        JSValueMakeNumber(ctx, attribute)
+        JSValueMakeNumber(ctx, attribute),
+        wrap->m_accessors
     };
     
     /* None = 0,
@@ -715,16 +722,18 @@ void Object::SetAccessorProperty(Local<Name> name, Local<Function> getter,
      DontDelete = 1 << 2
      */
     exec(ctx,
-                 "delete _1[_2]; "
-                 "var desc = "
-                 "{ "
-                 "  enumerable : !(_5&(1<<1)), "
-                 "  configurable : !(_5&(1<<2))}; "
-                 "if (_4===null) { desc.get = _3; desc.set = function(v) { delete this[_2]; this[_2] = v; }; }"
-                 "else if (_3===null) { desc.set = _4; }"
-                 "else { desc.get = _3; desc.set = _4; }"
-                 "Object.defineProperty(_1, _2, desc);",
-                 5, args, &exception);
+         "Reflect.deleteProperty(_1,_2); "
+         "var desc = "
+         "{ "
+         "  enumerable : !(_5&(1<<1)), "
+         "  configurable : !(_5&(1<<2))}; "
+         "if (_4===null) { "
+         "   desc.get = _3; desc.set = function(v) { Reflect.deleteProperty(this,_2); return Reflect.set(this,_2,v); }; }"
+         "else if (_3===null) { desc.set = _4; }"
+         "else { desc.get = _3; desc.set = _4; }"
+         "Object.defineProperty(_1, _2, desc); "
+         "Reflect.set(_6, _2, desc); ",
+         6, args, &exception);
 }
 
 /**
@@ -787,7 +796,7 @@ Maybe<bool> Object::SetPrivate(Local<Context> context, Local<Private> key,
         ToJSValueRef(value, context)
     };
     LocalException exception(iso);
-    exec(ctx, "_1[_2] = _3", 3, args, &exception);
+    exec(ctx, "Reflect.set(_1,_2,_3)", 3, args, &exception);
     if (exception.ShouldThrow()) return Nothing<bool>();
     return _maybe<bool>(true).toMaybe();
 }
@@ -805,7 +814,7 @@ Maybe<bool> Object::DeletePrivate(Local<Context> context, Local<Private> key)
             ToJSValueRef(key, context)
         };
         LocalException exception(iso);
-        exec(ctx, "return delete _1[_2]", 2, args, &exception);
+        exec(ctx, "return Reflect.deleteProperty(_1,_2)", 2, args, &exception);
         if (exception.ShouldThrow()) return Nothing<bool>();
         return _maybe<bool>(true).toMaybe();
     }
@@ -825,7 +834,7 @@ MaybeLocal<v8::Value> Object::GetPrivate(Local<Context> context, Local<Private> 
             ToJSValueRef(key, context)
         };
         LocalException exception(iso);
-        JSValueRef ret = exec(ctx, "return _1[_2]", 2, args);
+        JSValueRef ret = exec(ctx, "return Reflect.get(_1,_2)", 2, args);
         if (exception.ShouldThrow()) return MaybeLocal<Value>();
         return scope.Escape(V82JSC::Value::New(ToContextImpl(context), ret));
     }
@@ -1067,8 +1076,8 @@ void HiddenObject::PropagateOwnPropertyToChild(v8::Local<v8::Context> context, v
                  "    d = Object.getOwnPropertyDescriptor(_1, _2);"
                  "    if (d === undefined) return false;"
                  "    Object.defineProperty( _3, _2, {"
-                 "        get()  { return _1[_2]; },"
-                 "        set(v) { return _1[_2] = v; },"
+                 "        get()  { return Reflect.get(_1,_2); },"
+                 "        set(v) { return Reflect.set(_1,_2,v); },"
                  "        configurable : d.configurable,"
                  "        enumerable : d.enumerable"
                  "    });"
@@ -1548,15 +1557,13 @@ Maybe<v8::PropertyAttribute> Object::GetRealNamedPropertyAttributes(Local<Contex
 /** Tests for a named lookup interceptor.*/
 bool Object::HasNamedLookupInterceptor()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /** Tests for an index lookup interceptor.*/
 bool Object::HasIndexedLookupInterceptor()
 {
-    assert(0);
-    return false;
+    NOT_IMPLEMENTED;
 }
 
 /**

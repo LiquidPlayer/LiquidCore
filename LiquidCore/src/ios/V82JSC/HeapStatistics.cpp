@@ -23,27 +23,27 @@ HeapStatistics::HeapStatistics()
 
 HeapSpaceStatistics::HeapSpaceStatistics()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 HeapObjectStatistics::HeapObjectStatistics()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 HeapCodeStatistics::HeapCodeStatistics()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void HeapSnapshot::Delete()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void v8::HeapSnapshot::Serialize(v8::OutputStream*, v8::HeapSnapshot::SerializationFormat) const
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void v8::HeapProfiler::AddBuildEmbedderGraphCallback(
@@ -60,5 +60,5 @@ void v8::HeapProfiler::RemoveBuildEmbedderGraphCallback(
 
 const HeapSnapshot* v8::HeapProfiler::TakeHeapSnapshot(v8::ActivityControl*, v8::HeapProfiler::ObjectNameResolver*)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }

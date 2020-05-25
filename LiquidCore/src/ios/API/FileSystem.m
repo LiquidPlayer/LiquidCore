@@ -377,8 +377,10 @@ static NSString* alias_code =
 {
     bool needClean = [FileSystemImpl.activeSessions containsObject:self.sessionID];
     if (needClean) {
-        [FileSystemImpl.activeSessions removeObject:self.sessionID];
-        [FileSystemImpl uninstallSession:self.sessionID];
+        if (FileSystemImpl.activeSessions.count > 0) {
+            [FileSystemImpl.activeSessions removeObject:self.sessionID];
+            [FileSystemImpl uninstallSession:self.sessionID];
+        }
     }
 }
 

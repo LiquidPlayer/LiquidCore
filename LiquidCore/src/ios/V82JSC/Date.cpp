@@ -14,13 +14,15 @@ using v8::Local;
 MaybeLocal<v8::Value> Date::New(Local<v8::Context> context, double time)
 {
     auto c = ToContextRef(context);
+    EscapableHandleScope scope(ToIsolate(c));
+    
     auto t = JSValueMakeNumber(c, time);
     IsolateImpl* iso = ToIsolateImpl(ToContextImpl(context));
 
     LocalException exception(iso);
     auto r = JSObjectMakeDate(c, 1, &t, &exception);
     if (!exception.ShouldThrow()) {
-        return V82JSC::Value::New(ToContextImpl(context), r);
+        return scope.Escape(V82JSC::Value::New(ToContextImpl(context), r));
     }
     return MaybeLocal<Value>();
 }
@@ -48,5 +50,5 @@ double Date::ValueOf() const
  */
 void Date::DateTimeConfigurationChangeNotification(Isolate* isolate)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }

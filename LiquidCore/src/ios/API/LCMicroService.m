@@ -75,6 +75,67 @@ static NSMapTable* _serviceMap = nil;
     return [LCMicroService devServer:nil port:nil];
 }
 
++ (NSURL *)bundle:(NSString*)bundleName options:(NSDictionary*)options
+{
+    if (bundleName == nil) {
+        bundleName = @"index";
+    }
+    if (options == nil) {
+        options = [[NSMutableDictionary alloc] init];
+    }
+    NSURL *server_url = options[@"server_url"];
+    NSNumber *port = options[@"port"];
+    NSDictionary *request_params = options[@"request_params"];
+    
+#ifdef DEBUG
+    if (server_url == nil) {
+        if ([bundleName hasSuffix:@".js"]) {
+            bundleName = [bundleName substringToIndex:bundleName.length-3];
+        }
+        if (![bundleName hasSuffix:@".bundle"]) {
+            bundleName = [NSString stringWithFormat:@"%@.bundle", bundleName];
+        }
+        server_url = [NSURL URLWithString:@"http://localhost"];
+        if (port == nil) {
+            port = @8082;
+        }
+        request_params = @{
+            @"platform": @"ios",
+            @"dev" : @"true"
+        };
+    }
+#endif
+    if (server_url != nil) {
+        NSURL *url;
+        if (port == nil) {
+            url = [NSURL URLWithString:[NSString stringWithFormat:@"%@://%@/%@",
+                                        server_url.scheme, server_url.host, bundleName]];
+        } else {
+            url = [NSURL URLWithString:[NSString stringWithFormat:@"%@://%@:%@/%@",
+                                        server_url.scheme, server_url.host, port, bundleName]];
+        }
+        if (request_params != nil) {
+            NSString* params = @"";
+            for (NSString* param in request_params) {
+                NSString *p = [NSString stringWithFormat:@"%@%@=%@", params.length==0?@"?":@"&",param,request_params[param]];
+                params = [params stringByAppendingString:p];
+            }
+            url = [NSURL URLWithString:[[url absoluteString] stringByAppendingString:params]];
+        }
+        return url;
+    }
+    bundleName = [bundleName componentsSeparatedByString:@"."][0];
+    NSBundle *bundle = [NSBundle mainBundle];
+    NSURL *bundleURL = [[bundle resourceURL] URLByAppendingPathComponent:@"LiquidCore.bundle"];
+    NSURL *fileURL = [NSBundle URLForResource:bundleName withExtension:@"js" subdirectory:nil inBundleWithURL:bundleURL];
+    return fileURL;
+}
+
++ (NSURL *)bundle:(NSString*)bundleName
+{
+    return [LCMicroService bundle:bundleName options:nil];
+}
+
 - (id) initWithURL:(NSURL*)serviceURI
 {
     return [self initWithURL:serviceURI delegate:nil];
@@ -168,16 +229,43 @@ static NSMapTable* _serviceMap = nil;
                    completionHandler:^(NSURL *location, NSURLResponse *response, NSError *e)
         {
             NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
-            error = nil;
-            if (http.statusCode == 200) {
+            error = e;
+            if (error == nil && http.statusCode == 200) {
                 if ([[NSFileManager defaultManager] fileExistsAtPath:localPath]) {
                     [[NSFileManager defaultManager] removeItemAtPath:localPath error:nil];
                 }
                 [[NSFileManager defaultManager] moveItemAtURL:location
                                                         toURL:[NSURL fileURLWithPath:localPath]
                                                         error:nil];
-            } else if (http.statusCode != 304) { // 304 just means the file has not changed
-                error = e;
+#ifdef DEBUG
+            } else if (error != nil) {
+                // Special case: If we are in debug mode, using the loopback address and the
+                // bundler cannot be found, fetch the packaged bundle
+                if ([[self.serviceURI host] isEqualToString:@"localhost"]) {
+                    error = nil;
+                    NSString *bundleName = [[self.serviceURI.path componentsSeparatedByString:@"."][0] substringFromIndex:1];
+                    NSBundle *bundle = [NSBundle mainBundle];
+                    NSURL *bundleURL = [[bundle resourceURL] URLByAppendingPathComponent:@"LiquidCore.bundle"];
+                    NSURL *fileURL = [NSBundle URLForResource:bundleName withExtension:@"js" subdirectory:nil inBundleWithURL:bundleURL];
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:localPath]) {
+                        [[NSFileManager defaultManager] removeItemAtPath:localPath error:&error];
+                    }
+                    if (error == nil) {
+                        [[NSFileManager defaultManager] copyItemAtURL:fileURL
+                                                                toURL:[NSURL fileURLWithPath:localPath]
+                                                                error:&error];
+                    }
+                    if (error == nil) {
+                        self.fetched = true;
+                        return;
+                    }
+                }
+#endif
+            }
+            if (error != nil || (http.statusCode != 304 && http.statusCode != 200)) { // 304 just means the file has not changed
+                if (error == nil) {
+                    error = [NSError errorWithDomain:NSURLErrorDomain code:http.statusCode userInfo:nil];
+                }
             }
             self.fetched = true;
         }];
@@ -244,6 +332,7 @@ static NSMapTable* _serviceMap = nil;
                          JSValueToObject([context JSGlobalContextRef], [bindings JSValueRef], 0),
                          [require.value JSValueRef]);
     context[@"require"] = bindings;
+    self.emitter.value[@"require"] = bindings;
     
     @try
     {

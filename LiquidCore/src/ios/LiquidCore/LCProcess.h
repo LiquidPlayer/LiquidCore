@@ -142,6 +142,11 @@ MediaAccessMask;
 @property (nonatomic, readonly, copy) NSString* node_modulesPath;
 
 /**
+ The JavaScript context in which this process runs
+ */
+@property (atomic, readonly) JSContext* context;
+
+/**
  Creates a node.js process and attaches a delegate
  
  @param delegate The process delegate.
@@ -203,6 +208,16 @@ MediaAccessMask;
  @return A preserver object
  */
 - (id<LoopPreserver>) keepAlive;
+
+/**
+ Can be used by an embedder to expose a directory in the underlying iOS  filesystem
+ that is accessible from the host app.  The directory must not be root (/) or /home,
+ and it must be absolute (not relative pathing).
+ @param dir The directory to expose
+ @param mediaAccessMask The access rights given to the Process
+ */
+- (void) exposeHostDirectory:(NSString * _Nonnull)dir
+             mediaAccessMask:(MediaAccessMask)mediaAccessMask;
 
 /**
  Uninstalls a given process class identified by its `uniqueID`

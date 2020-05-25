@@ -26,5 +26,6 @@ EXTERNC void process_sync(void* token, ProcessThreadCallback runnable, void* dat
 EXTERNC void process_async(void * token, ProcessThreadCallback runnable, void* data);
 EXTERNC void * process_keep_alive(void *token);
 EXTERNC void process_let_die(void *token, void* preserver);
+EXTERNC void expose_host_directory(JSContextRef ctx, const char* dir, int mediaAccessMask);
 
 #endif /* NodeBridge_h */

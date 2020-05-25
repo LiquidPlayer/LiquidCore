@@ -1,8 +1,9 @@
 {
   "name": "liquidcore",
-  "version": "0.7.0",
+  "version": "0.7.8",
   "description": "LiquidCore enables Node.js virtual machines to run inside Android and iOS apps. It provides a complete runtime environment, including a virtual file system.",
   "main": "index.js",
+  "bin": "lib/cli.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -22,23 +23,25 @@
     "url": "https://github.com/LiquidPlayer/LiquidCore/issues"
   },
   "homepage": "https://github.com/LiquidPlayer/LiquidCore",
-  "liquidcore-addon": {
+  "liquidcore": {
     "android": [
-      "release/LiquidCore-release",
-      "release/LiquidV8-release"
-    ],
-    "android-dev": [
-      "LiquidCore",
-      "LiquidV8"
+      {
+        "name": "Nodejs",
+        "include": "include.gradle",
+        "dev": "LiquidCore"
+      },
+      {
+        "name": "V8",
+        "include": "include.V8.gradle",
+        "dev": "LiquidV8"
+      }
     ],
     "ios": [
       {
-        "name": "LiquidCore",
-        "specs": "https://github.com/LiquidPlayer/Specs.git"
+        "name": "LiquidCore"
       },
       {
-        "name": "LiquidCore-headers",
-        "specs": "https://github.com/LiquidPlayer/Specs.git"
+        "name": "LiquidCore-headers"
       }
     ],
     "ios-dev": [
@@ -53,7 +56,9 @@
     ]
   },
   "dependencies": {
-    "metro": "^0.57.0",
-    "metro-core": "^0.57.0"
+    "filecompare": "^1.0.4",
+    "metro": "0.57.0",
+    "metro-core": "0.57.0",
+    "tmp": "^0.1.0"
   }
 }

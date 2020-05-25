@@ -87,7 +87,7 @@ HandleScope::~HandleScope()
 // Deallocates any extensions used by the current scope.
 void internal::HandleScope::DeleteExtensions(Isolate* isolate)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 // Counts the number of allocated handles.
@@ -177,8 +177,7 @@ void IsolateImpl::GetActiveLocalHandles(HeapContext& context)
 
 internal::Object** internal::CanonicalHandleScope::Lookup(Object* object)
 {
-    assert(0);
-    return nullptr;
+    NOT_IMPLEMENTED;
 }
 
 int HandleScope::NumberOfHandles(Isolate* isolate)
@@ -724,7 +723,7 @@ void V8::MakeWeak(internal::Object** location, void* data,
                   WeakCallbackInfo<void>::Callback weak_callback)
 {
     // FIXME:  Is this even being used?  If not, get rid of it.
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 void V8::MakeWeak(internal::Object*** location_addr)
 {

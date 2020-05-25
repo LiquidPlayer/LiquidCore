@@ -12,15 +12,17 @@ using namespace v8;
 
 Local<v8::Value> Proxy::GetTarget()
 {
+    EscapableHandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSValueRef obj = ToJSValueRef(this, context);
 
     JSObjectRef target = JSCPrivate::JSObjectGetProxyTarget(context, (JSObjectRef)obj);
-    return V82JSC::Value::New(ToContextImpl(context), target);
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), target));
 }
 
 Local<v8::Value> Proxy::GetHandler()
 {
+    EscapableHandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     IsolateImpl* iso = ToIsolateImpl(ToContextImpl(context));
     JSValueRef obj = ToJSValueRef(this, context);
@@ -32,11 +34,12 @@ Local<v8::Value> Proxy::GetHandler()
     JSValueRef exception = 0;
     JSValueRef handler = exec(ctx, "return _1[_2]['handler']", 2, args, &exception);
     if (exception) return Null(ToIsolate(iso));
-    return V82JSC::Value::New(ToContextImpl(context), handler);
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), handler));
 }
 
 bool Proxy::IsRevoked()
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef obj = ToJSValueRef(this, context);
@@ -48,6 +51,7 @@ bool Proxy::IsRevoked()
 
 void Proxy::Revoke()
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     IsolateImpl* iso = ToIsolateImpl(ToContextImpl(context));
     JSValueRef obj = ToJSValueRef(this, context);
@@ -67,6 +71,8 @@ MaybeLocal<Proxy> Proxy::New(Local<Context> context,
                              Local<Object> local_handler)
 {
     IsolateImpl* iso = ToIsolateImpl(ToContextImpl(context));
+    EscapableHandleScope scope(ToIsolate(iso));
+
     JSContextRef ctx = ToContextRef(context);
     JSValueRef args[] = {
         ToJSValueRef(local_target, context),
@@ -77,7 +83,7 @@ MaybeLocal<Proxy> Proxy::New(Local<Context> context,
     JSValueRef proxy = exec(ctx, "var revocable = Proxy.revocable(_1, _2); revocable.handler = _2;"
                                     "_3[revocable.proxy] = revocable; return revocable.proxy", 3, args, &exception);
     if (!exception.ShouldThrow()) {
-        return V82JSC::Value::New(ToContextImpl(context), proxy).As<Proxy>();
+        return scope.Escape(V82JSC::Value::New(ToContextImpl(context), proxy).As<Proxy>());
     }
     return MaybeLocal<Proxy>();
 }

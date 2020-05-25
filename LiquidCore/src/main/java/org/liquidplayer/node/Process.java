@@ -9,6 +9,8 @@ package org.liquidplayer.node;
 import android.content.Context;
 
 import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.liquidplayer.javascript.JSContext;
 import org.liquidplayer.javascript.JSContextGroup;
@@ -16,6 +18,8 @@ import org.liquidplayer.javascript.JSException;
 import org.liquidplayer.javascript.JSFunction;
 import org.liquidplayer.javascript.JSObject;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -193,6 +197,51 @@ public class Process {
     }
 
     /**
+     * Can be used by an embedder to expose a directory in the underlying Android filesystem
+     * that is accessible from the host app.  The directory must not be root (/) or /home,
+     * and it must be absolute (not relative pathing).
+     * @param dir The directory to expose
+     * @param mediaAccessMask The access rights given to the Process
+     *                        (default is kMediaAccessPermissionsRW)
+     */
+    public void exposeHostDirectory(@NonNull String dir, Integer mediaAccessMask) {
+        if (!dir.startsWith("/")) {
+            throw new RuntimeException("Exposed directory must be absolute (starts with '/')");
+        }
+        if (dir.trim().equals("/")) {
+            throw new RuntimeException("Exposed directory must not be root");
+        }
+        if (dir.contains("..")) {
+            throw new RuntimeException("Exposed directory must be absolute (no '..')");
+        }
+        if (dir.startsWith("/home")) {
+            throw new RuntimeException("Cannot override /home");
+        }
+        if (mediaAccessMask == null) {
+            mediaAccessMask = kMediaAccessPermissionsRW;
+        }
+        JSContext ctx = jscontext.get();
+        File f = new File(dir);
+        try {
+            dir = f.getCanonicalPath();
+        } catch (IOException e) {
+            throw new RuntimeException("Path not found");
+        }
+        if (isActive && ctx != null) {
+            exposeRawFS(contextRef, dir, mediaAccessMask);
+        }
+    }
+
+    /**
+     * Returns the JavaScript context of the process.
+     * @return The JSContext of the Node process.  Note: if the process is defunct, this will
+     * return null.
+     */
+    public @Nullable JSContext getJSContext() {
+        return jscontext.get();
+    }
+
+    /**
      * Determines the scope of an uninstallation.  A Local uninstallation will only clear
      * data and files related to instances on this host.  A Global uninstallation will
      * clear also public data shared between hosts.
@@ -287,6 +336,7 @@ public class Process {
             return;
         }
         jscontext = new WeakReference<>(holdContext);
+        contextRef = mainContext;
 
         // Hold the context until we get our callback.
         isActive = true;
@@ -383,6 +433,7 @@ public class Process {
     private final String uniqueID;
     private final Context androidCtx;
     private final int mediaAccessMask;
+    private Long contextRef;
 
     /* Ensure the shared libraries get loaded first */
     static {
@@ -400,4 +451,5 @@ public class Process {
     private native void runInThread(long processRef);
     private native void dispose(long processRef);
     private native void setFileSystem(long contextRef, long fsObject);
+    private native void exposeRawFS(long contextRef, String dir, int mediaAccessMask);
 }

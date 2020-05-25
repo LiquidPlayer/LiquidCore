@@ -6,7 +6,9 @@
  */
 package org.liquidplayer.nodetest;
 
-import androidx.test.InstrumentationRegistry;
+import android.content.Context;
+
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.liquidplayer.javascript.JSArray;
@@ -25,6 +27,7 @@ public class ProcessTest {
 
     private final Object mutex = new Object();
     private int count = 0;
+    private Context androidContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Test
     public void multiProcessTest() throws Exception {
@@ -64,12 +67,9 @@ public class ProcessTest {
             public void onProcessFailed(final Process process, Exception error) {
             }
         };
-        new Process(InstrumentationRegistry.getContext(),"_1",
-                Process.kMediaAccessPermissionsRW,listener);
-        new Process(InstrumentationRegistry.getContext(),"_2",
-                Process.kMediaAccessPermissionsRW,listener);
-        new Process(InstrumentationRegistry.getContext(),"_3",
-                Process.kMediaAccessPermissionsRW,listener);
+        new Process(androidContext,"_1", Process.kMediaAccessPermissionsRW,listener);
+        new Process(androidContext,"_2", Process.kMediaAccessPermissionsRW,listener);
+        new Process(androidContext,"_3", Process.kMediaAccessPermissionsRW,listener);
 
         // Hang out here until the processes all finish
         assertTrue(cdl.await(10L, TimeUnit.SECONDS));
@@ -80,7 +80,7 @@ public class ProcessTest {
 
         final CountDownLatch cdl = new CountDownLatch(1);
 
-        new Process(InstrumentationRegistry.getContext(),"_",
+        new Process(androidContext,"_",
                 Process.kMediaAccessPermissionsRW,new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
@@ -134,7 +134,7 @@ public class ProcessTest {
     public void testForceExit() throws Exception {
         final CountDownLatch cdl = new CountDownLatch(1);
 
-        new Process(InstrumentationRegistry.getContext(),"forceExitTest",
+        new Process(androidContext,"forceExitTest",
                 Process.kMediaAccessPermissionsRW,new Process.EventListener() {
             @Override
             public void onProcessStart(final Process process, final JSContext context) {
@@ -160,7 +160,7 @@ public class ProcessTest {
         // Hang out here until the process finishes
         assertTrue(cdl.await(10L, TimeUnit.SECONDS));
 
-        Process.uninstall(InstrumentationRegistry.getContext(), "forceExitTest",
+        Process.uninstall(androidContext, "forceExitTest",
                 Process.UninstallScope.Global);
 
     }
@@ -170,7 +170,7 @@ public class ProcessTest {
         final CountDownLatch cdl = new CountDownLatch(2);
         final CountDownLatch cdl2 = new CountDownLatch(1);
 
-        Process process = new Process(InstrumentationRegistry.getContext(), "_",
+        Process process = new Process(androidContext, "_",
                 Process.kMediaAccessPermissionsWrite, new Process.EventListener() {
             @Override
             public void onProcessStart(Process process, JSContext context) {
@@ -213,6 +213,31 @@ public class ProcessTest {
         process.removeEventListener(newListener);
 
         assertTrue(cdl2.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testContext() throws Exception {
+        final CountDownLatch started = new CountDownLatch(1);
+        final CountDownLatch ended = new CountDownLatch(1);
+        final JSContextGroup.LoopPreserver [] preserver = new JSContextGroup.LoopPreserver[1];
+        final JSContext [] contexts = new JSContext[1];
+        final Process process = new Process(androidContext, "__testContext__",
+                Process.kMediaAccessPermissionsRW, new Process.EventListener() {
+            @Override
+            public void onProcessStart(Process process, JSContext context) {
+                preserver[0] = process.keepAlive();
+                contexts[0] = context;
+                started.countDown();
+            }
+            @Override public void onProcessAboutToExit(Process process, int exitCode) {}
+            @Override public void onProcessExit(Process process, int exitCode) { ended.countDown();}
+            @Override public void onProcessFailed(Process process, Exception error) {}
+        });
+
+        started.await(10, TimeUnit.SECONDS);
+        assertEquals(process.getJSContext(), contexts[0]);
+        preserver[0].release();
+        ended.await(10, TimeUnit.SECONDS);
     }
 
     @org.junit.After

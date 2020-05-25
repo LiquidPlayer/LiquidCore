@@ -24,6 +24,7 @@ MaybeLocal<Function> Function::New(Local<Context> context, FunctionCallback call
                                 SideEffectType side_effect_type)
 {
     Isolate* isolate = ToIsolate(ToContextImpl(context));
+    HandleScope scope(isolate);
     Local<FunctionTemplate> templ = FunctionTemplate::New(isolate, callback, data, Local<Signature>(), length, behavior);
     return templ->GetFunction(context);
 }
@@ -129,6 +130,7 @@ MaybeLocal<v8::Value> Function::Call(Local<Context> context,
 
 void Function::SetName(Local<String> name)
 {
+    HandleScope scope(ToIsolate(this));
     IsolateImpl* iso = ToIsolateImpl(this);
     Isolate* isolate = ToIsolate(iso);
     

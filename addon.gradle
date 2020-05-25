@@ -1,0 +1,53 @@
+import groovy.json.JsonSlurper
+
+apply from: new File(buildscript.getSourceFile(), '../include.gradle')
+
+configurations {
+    liquidcore {}
+}
+
+def getAddOnVersionFromNpm() {
+    def inputFile = new File(buildscript.getSourceFile().getParent(), "package.json")
+    def packageJson = new JsonSlurper().parseText(inputFile.text)
+
+    return packageJson["version"]
+}
+
+if (!project.hasProperty('liquidcore_addon_include_gradle')) {
+    project.ext.set('liquidcore_addon_include_gradle', true)
+
+    def __v8_aar = "liquidcore-V8-" + getAddOnVersionFromNpm() + ".aar"
+    def __nodejs_aar = "liquidcore-Nodejs-" + getAddOnVersionFromNpm() + ".aar"
+
+    task extractAddOnLibsAndHeaders(type: Sync) {
+        dependsOn configurations.liquidcore
+
+        from {
+            configurations.liquidcore.collect { zipTree(it) }
+        }
+        include "jni/**/*.so", "include/**/*"
+        into "build/liquidcore-addon"
+    }
+
+    afterEvaluate {
+        def addon = file('build/liquidcore-addon')
+        if (!addon.exists()) {
+            if (project.hasProperty("externalNativeBuildDebug")) {
+                externalNativeBuildDebug.dependsOn extractAddOnLibsAndHeaders
+            }
+            if (project.hasProperty("externalNativeBuildRelease")) {
+                externalNativeBuildRelease.dependsOn extractAddOnLibsAndHeaders
+            }
+        }
+    }
+
+    dependencies {
+        if (findProject(':liquidcore-Nodejs') != null) {
+            liquidcore project(path: ':liquidcore-V8', configuration: 'default')
+            liquidcore project(path: ':liquidcore-Nodejs', configuration: 'default')
+        } else {
+            liquidcore fileTree(include: [__nodejs_aar], dir: new File(rootProject.projectDir, ".liquidcore"))
+            liquidcore fileTree(include: [__v8_aar], dir: new File(rootProject.projectDir, ".liquidcore"))
+        }
+    }
+}

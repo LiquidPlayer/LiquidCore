@@ -58,7 +58,7 @@
 
 @interface LCProcess()
 @property(atomic) bool active;
-@property(atomic) JSContext* context;
+@property(atomic, readwrite) JSContext* context;
 @property(nonatomic, strong) JSContext* hold_;
 @property(nonatomic, strong) NSHashTable *delegates;
 - (void)onNodeStarted:(JSContext*)context group:(JSContextGroupRef)group;
@@ -232,7 +232,6 @@ static void onNodeExit(void *data, int code)
 {
     [self setActive:false];
     [self eventOnExit:code];
-    //process_dispose(self->processRef_);
 }
 
 - (void)eventOnStart:(JSContext *)context
@@ -315,6 +314,37 @@ static void callback_(void *data)
 {
     return [[LoopPreserver alloc] init:processRef_];
 }
+
+- (void) exposeHostDirectory:(NSString * _Nonnull)dir
+             mediaAccessMask:(MediaAccessMask)mediaAccessMask
+{
+    NSString *trimmed = [dir stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    if (![[trimmed substringWithRange:NSMakeRange(0, 1)] isEqualToString:@"/"]) {
+        @throw [NSException exceptionWithName:@"IO Error"
+                                       reason:@"Exposed directory must be absolute (starts with '/')"
+                                     userInfo:nil];
+    }
+    if ([trimmed isEqualToString:@"/"]) {
+        @throw [NSException exceptionWithName:@"IO Error"
+                                       reason:@"Exposed directory must not be root"
+                                     userInfo:nil];
+    }
+    if ([trimmed containsString:@".."]) {
+        @throw [NSException exceptionWithName:@"IO Error"
+                                       reason:@"Exposed directory must be absolute (no '..')"
+                                     userInfo:nil];
+    }
+    if ([[trimmed substringWithRange:NSMakeRange(0, 5)] isEqualToString:@"/home"]) {
+        @throw [NSException exceptionWithName:@"IO Error"
+                                       reason:@"Cannot override /home"
+                                     userInfo:nil];
+    }
+    NSString *path = [dir stringByResolvingSymlinksInPath];
+    expose_host_directory([self.context JSGlobalContextRef],
+                          [path cStringUsingEncoding:NSUTF8StringEncoding],
+                          mediaAccessMask);
+}
+
 
 + (void) uninstall:(NSString*)uniqueID scope:(UninstallScope)scope
 {

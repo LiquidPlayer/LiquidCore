@@ -1,0 +1,40 @@
+apply plugin: 'de.undercouch.download'
+import groovy.json.JsonSlurper
+
+def getLiquidCoreVersionFromNpm() {
+    def inputFile = new File(buildscript.getSourceFile().getParent(), "package.json")
+    def packageJson = new JsonSlurper().parseText(inputFile.text)
+
+    return packageJson["version"]
+}
+
+if (!project.hasProperty('liquidcore_include_gradle')) {
+  project.ext.set('liquidcore_include_gradle', true)
+
+  def _Nodejs_aar = "liquidcore-Nodejs-" + getLiquidCoreVersionFromNpm() + ".aar"
+
+  def downloadsDir_liquidcore = new File(rootProject.projectDir, ".liquidcore")
+  task createDownloadsDir_liquidcore {
+      downloadsDir_liquidcore.mkdirs()
+  }
+  dependencies {
+      /* liquidcore-Nodejs */
+      if (findProject(':liquidcore-Nodejs') != null) {
+          implementation project(':liquidcore-Nodejs')
+      } else {
+          implementation fileTree(include:[_Nodejs_aar], dir:downloadsDir_liquidcore)
+      }
+  }
+  if (findProject(':liquidcore-Nodejs') == null) {
+    android { tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn download_liquidcore_Nodejs }}
+    task download_liquidcore_Nodejs(dependsOn: createDownloadsDir_liquidcore, type: Download) {
+        src 'https://liquidplayer.github.io/packages/' + _Nodejs_aar
+        onlyIfNewer true
+        overwrite false
+        dest new File(downloadsDir_liquidcore, _Nodejs_aar)
+    }
+  }
+}
+
+apply from: new File(buildscript.getSourceFile(), '../include.V8.gradle')

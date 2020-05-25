@@ -11,13 +11,14 @@ using namespace v8;
 
 Local<v8::Value> Symbol::Name() const
 {
+    EscapableHandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef symbol = ToJSValueRef(this, context);
     JSValueRef name = exec(ctx,
                                    "return /^Symbol\\((.*)\\)/.exec(_1.toString())[1]",
                                    1, &symbol);
-    return V82JSC::Value::New(ToContextImpl(context), name);
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), name));
 }
 
 /**
@@ -25,6 +26,7 @@ Local<v8::Value> Symbol::Name() const
  */
 Local<Symbol> Symbol::New(Isolate* isolate, Local<String> name)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
 
@@ -35,7 +37,7 @@ Local<Symbol> Symbol::New(Isolate* isolate, Local<String> name)
         name_ = JSValueMakeUndefined(ctx);
     }
     JSValueRef symbol = exec(ctx, "return Symbol(_1)", 1, &name_);
-    return V82JSC::Value::New(ToContextImpl(context), symbol).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), symbol).As<Symbol>());
 }
 
 /**
@@ -47,12 +49,13 @@ Local<Symbol> Symbol::New(Isolate* isolate, Local<String> name)
  */
 Local<Symbol> Symbol::For(Isolate *isolate, Local<String> name)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef name_value = ToJSValueRef(name, context);
     JSValueRef symbol = exec(ctx, "return Symbol.for(_1)", 1, &name_value);
 
-    return V82JSC::Value::New(ToContextImpl(context), symbol).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), symbol).As<Symbol>());
 }
 
 /**
@@ -61,6 +64,7 @@ Local<Symbol> Symbol::For(Isolate *isolate, Local<String> name)
  */
 Local<Symbol> Symbol::ForApi(Isolate *isolate, Local<String> name)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
     IsolateImpl* impl = ToIsolateImpl(isolate);
@@ -71,79 +75,89 @@ Local<Symbol> Symbol::ForApi(Isolate *isolate, Local<String> name)
         JSValueProtect(ctx, impl->m_global_symbols[*symbol_name]);
     }
     JSValueRef symbol = impl->m_global_symbols[*symbol_name];
-    return V82JSC::Value::New(ToContextImpl(context), symbol).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), symbol).As<Symbol>());
 }
 
 // Well-known symbols
 Local<Symbol> Symbol::GetHasInstance(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.hasInstance", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.hasInstance", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetIsConcatSpreadable(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.isConcatSpreadable", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.isConcatSpreadable", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetIterator(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.iterator", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.iterator", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetMatch(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.match", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.match", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetReplace(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.replace", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.replace", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetSearch(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.search", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.search", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetSplit(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.split", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.split", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetToPrimitive(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.toPrimitive", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.toPrimitive", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetToStringTag(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.toStringTag", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.toStringTag", 0, 0)).As<Symbol>());
 }
 Local<Symbol> Symbol::GetUnscopables(Isolate* isolate)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
-    return V82JSC::Value::New(ToContextImpl(context),
-                          exec(ctx, "return Symbol.unscopables", 0, 0)).As<Symbol>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context),
+                          exec(ctx, "return Symbol.unscopables", 0, 0)).As<Symbol>());
 }
 
 Local<v8::Value> Private::Name() const
@@ -157,8 +171,9 @@ Local<v8::Value> Private::Name() const
 Local<Private> Private::New(Isolate* isolate,
                           Local<String> name)
 {
+    EscapableHandleScope scope(isolate);
     Local<Symbol> symbol = Symbol::New(isolate, name);
-    return * reinterpret_cast<Local<Private>*>(&symbol);
+    return scope.Escape(* reinterpret_cast<Local<Private>*>(&symbol));
 }
 
 /**
@@ -172,6 +187,7 @@ Local<Private> Private::New(Isolate* isolate,
  */
 Local<Private> Private::ForApi(Isolate* isolate, Local<String> name)
 {
+    EscapableHandleScope scope(isolate);
     Local<Context> context = OperatingContext(isolate);
     JSContextRef ctx = ToContextRef(context);
     IsolateImpl* impl = ToIsolateImpl(isolate);
@@ -183,5 +199,5 @@ Local<Private> Private::ForApi(Isolate* isolate, Local<String> name)
     }
     JSValueRef symbol = impl->m_private_symbols[*symbol_name];
     Local<Value> priv = V82JSC::Value::New(ToContextImpl(context), symbol);
-    return * reinterpret_cast<Local<Private>*>(&priv);
+    return scope.Escape(* reinterpret_cast<Local<Private>*>(&priv));
 }

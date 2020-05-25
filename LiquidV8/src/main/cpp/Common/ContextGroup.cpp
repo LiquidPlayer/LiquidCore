@@ -66,15 +66,32 @@ void ContextGroup::set_platform_init(v8::Platform *platform)
     s_platform.reset(platform);
 }
 
+#include <unicode/utypes.h>
+#include <unicode/udata.h>
+#include <unicode/uversion.h>
+
+#define SMALL_ICUDATA_ENTRY_POINT \
+  SMALL_DEF2(U_ICU_VERSION_MAJOR_NUM, U_LIB_SUFFIX_C_NAME)
+#define SMALL_DEF2(major, suff) SMALL_DEF(major, suff)
+#ifndef U_LIB_SUFFIX_C_NAME
+#define SMALL_DEF(major, suff) icusmdt##major##_dat
+#else
+#define SMALL_DEF(major, suff) icusmdt##suff##major##_dat
+#endif
+
+extern "C" const char U_DATA_API SMALL_ICUDATA_ENTRY_POINT[];
+
+void ContextGroup::init_icu()
+{
+    UErrorCode status = U_ZERO_ERROR;
+    udata_setCommonData(&SMALL_ICUDATA_ENTRY_POINT, &status);
+}
+
 void ContextGroup::init_v8()
 {
     s_mutex.lock();
     if (s_init_count++ == 0 && !s_platform_init) {
-        /* Add any required flags here.
-        const char *flags = "--expose_gc";
-        V8::SetFlagsFromString(flags, strlen(flags));
-        */
-
+        init_icu();
         s_platform = platform::NewDefaultPlatform();
         V8::InitializePlatform(&*s_platform);
         V8::Initialize();

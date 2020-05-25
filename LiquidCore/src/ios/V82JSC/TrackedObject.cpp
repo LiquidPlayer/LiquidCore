@@ -117,7 +117,7 @@ V82JSC::TrackedObject* V82JSC::TrackedObject::getPrivateInstance(JSContextRef ct
 
 Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v8::Context> toContext)
 {
-    Isolate* isolate = Isolate::GetCurrent();
+    Isolate* isolate = ToIsolate(*in);
     EscapableHandleScope scope(isolate);
 
 #if USE_JAVASCRIPTCORE_PRIVATE_API
@@ -377,16 +377,16 @@ Local<v8::Value> V82JSC::TrackedObject::SecureValue(Local<v8::Value> in, Local<v
                 JSValueRef desc = 0;
                 if (wrap && wrap->m_isGlobalObject) {
                     desc = exec(ctx,
-                                        "var d = Object.getOwnPropertyDescriptor(_1, _2); "
-                                        "if (d!==undefined) { d.configurable = true; return d; }"
-                                        "d = Object.getOwnPropertyDescriptor(_3, _2); "
-                                        "if (d!==undefined) {return {"
-                                        "   value: _1[_2],"
-                                        "   writable: (_4&2)==2,"
-                                        "   enumerable: d.enumerable,"
-                                        "   configurable: true"
-                                        "}} else { return undefined; }",
-                                        4, args);
+                        "var d = Object.getOwnPropertyDescriptor(_1, _2); "
+                        "if (d!==undefined) { d.configurable = true; return d; }"
+                        "d = Object.getOwnPropertyDescriptor(_3, _2); "
+                        "if (d!==undefined) {return {"
+                        "   value: _1[_2],"
+                        "   writable: (_4&2)==2,"
+                        "   enumerable: d.enumerable,"
+                        "   configurable: true"
+                        "}} else { return undefined; }",
+                        4, args);
                 } else {
                     desc = exec(ctx, "return Object.getOwnPropertyDescriptor(_1, _2)", 2, args);
                 }

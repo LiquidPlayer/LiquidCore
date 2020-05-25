@@ -1,5 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'maven-publish'
 
 import groovy.json.JsonSlurper
 
@@ -82,8 +82,8 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.annotation:annotation:1.1.0'
-    liquidjs project(configuration: 'default', path: ':LiquidV8')
-    implementation project(path: ':LiquidV8')
+    liquidjs project(configuration: 'default', path: ':liquidcore-V8')
+    implementation project(path: ':liquidcore-V8')
     debugImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
@@ -112,41 +112,11 @@ afterEvaluate {
     }
 }
 
-// build a jar with source files
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    failOnError  false
-    source = android.sourceSets.main.java.sourceFiles
-    configurations.implementation.setCanBeResolved(true)
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator)) +
-            configurations.implementation
-    android.libraryVariants.all { variant ->
-        if (variant.name == 'release') {
-            owner.classpath += variant.javaCompileProvider.get().classpath
-        }
-    }
-}
-
-// build a jar with javadoc
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
-
 task copyHeadersToAARRelease(type: Zip) {
-    baseName = 'LiquidCore-release'
+    baseName = 'liquidcore-Nodejs-release'
     extension = 'aar.in'
     destinationDir = file('build/outputs/aar')
-    def aarNameO = "build/outputs/aar/LiquidCore-release.aar"
+    def aarNameO = "build/outputs/aar/liquidcore-Nodejs-release.aar"
 
     from zipTree(aarNameO)
     from("../deps/node-10.15.3/deps/cares/include") {
@@ -175,13 +145,13 @@ task copyHeadersToAARRelease(type: Zip) {
     }
 }
 task removeOldAARRelease(type: Delete) {
-    delete file('build/outputs/aar/LiquidCore-release.aar.in')
+    delete file('build/outputs/aar/liquidcore-Nodejs-release.aar.in')
 }
 task renameAARRelease (type: Copy) {
     from ('build/outputs/aar/')
-    include 'LiquidCore-release.aar.in'
+    include 'liquidcore-Nodejs-release.aar.in'
     destinationDir file('build/outputs/aar/')
-    rename "LiquidCore-release.aar.in", "LiquidCore-release.aar"
+    rename "liquidcore-Nodejs-release.aar.in", "liquidcore-Nodejs-release.aar"
 }
 
 afterEvaluate {
@@ -191,5 +161,32 @@ afterEvaluate {
         renameAARRelease.finalizedBy removeOldAARRelease
     }
 }
+/*
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
 
-group='com.github.liquidplayer'
+def getArtifactId = { ->
+    return "liquidcore-Nodejs"
+}
+publishing {
+    publications {
+        bar(MavenPublication) {
+            groupId 'org.liquidplayer'
+            artifactId getArtifactId()
+            version '0.7.0-rc0' //getVersionFromNpm()
+            artifact("$buildDir/outputs/aar/${getArtifactId()}-release.aar")
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/LiquidPlayer/LiquidCore")
+            credentials {
+                username = githubProperties['gpr.user'] ?: System.getenv("GPR_USER")
+                password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+            }
+        }
+    }
+}
+*/

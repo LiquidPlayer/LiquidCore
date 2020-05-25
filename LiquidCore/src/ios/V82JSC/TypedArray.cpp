@@ -10,6 +10,7 @@ using namespace V82JSC;
 
 size_t v8::TypedArray::Length()
 {
+    HandleScope scope(ToIsolate(this));
     Local<Context> context = ToCurrentContext(this);
     JSContextRef ctx = ToContextRef(context);
     JSObjectRef obj = (JSObjectRef) ToJSValueRef(this, context);
@@ -23,6 +24,7 @@ size_t v8::TypedArray::Length()
 template <typename T>
 v8::Local<T> NewTypedArray(JSTypedArrayType arrayType, v8::Local<v8::ArrayBuffer> array_buffer, size_t byte_offset, size_t byte_length)
 {
+    v8::EscapableHandleScope scope(ToIsolate(*array_buffer));
     v8::Local<v8::Context> context = ToCurrentContext(*array_buffer);
     JSContextRef ctx = ToContextRef(context);
 
@@ -31,14 +33,13 @@ v8::Local<T> NewTypedArray(JSTypedArrayType arrayType, v8::Local<v8::ArrayBuffer
     JSObjectRef typed_array = JSObjectMakeTypedArrayWithArrayBufferAndOffset(ctx, arrayType, (JSObjectRef) impl->m_value, byte_offset, byte_length, &excp);
     assert(excp==0);
     v8::Local<T> array = Value::New(ToContextImpl(context), typed_array).As<T>();
-    return array;
+    return scope.Escape(array);
 }
 template <typename T>
 v8::Local<T> NewSharedTypedArray(JSTypedArrayType arrayType, v8::Local<v8::SharedArrayBuffer> shared_array_buffer,
                 size_t byte_offset, size_t byte_length)
 {
-    assert(0);
-    return v8::Local<T>();
+    NOT_IMPLEMENTED;
 }
 
 #define TYPEDARRAY_CONSTRUCTORS(T,type) \

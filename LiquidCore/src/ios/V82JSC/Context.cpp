@@ -11,7 +11,6 @@
 #include "Extension.h"
 #include "JSCPrivate.h"
 
-extern "C" unsigned char promise_polyfill_js[];
 extern "C" unsigned char typedarray_js[];
 extern "C" unsigned char error_polyfill_js[];
 extern "C" unsigned char jsbi_js[];
@@ -129,6 +128,7 @@ void GlobalContext::RemoveContextFromIsolate(IsolateImpl *iso, JSGlobalContextRe
 
 static Local<v8::Value> GetPrototypeSkipHidden(Local<v8::Context> context, Local<Object> thiz)
 {
+    EscapableHandleScope scope(ToIsolate(ToContextImpl(context)));
     JSValueRef obj = ToJSValueRef<v8::Value>(thiz, context);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef our_proto = GetRealPrototype(context, (JSObjectRef)obj);
@@ -141,11 +141,12 @@ static Local<v8::Value> GetPrototypeSkipHidden(Local<v8::Context> context, Local
         }
     }
     // Our prototype is not hidden
-    return V82JSC::Value::New(ToContextImpl(context), our_proto);
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), our_proto));
 }
 
 static bool SetPrototypeSkipHidden(Local<v8::Context> context, Local<Object> thiz, Local<v8::Value> prototype)
 {
+    HandleScope scope(ToIsolate(ToContextImpl(context)));
     JSValueRef obj = ToJSValueRef<v8::Value>(thiz, context);
     JSContextRef ctx = ToContextRef(context);
     JSValueRef new_proto = ToJSValueRef(prototype, context);
@@ -363,10 +364,11 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
         
         proxyArrayBuffer(context);
         
-        // Proxy Object.getPrototypeOf and Object.setPrototypeOf
+        // Proxy Object.getPrototypeOf, Object.setPrototypeOf and Object.getOwnDescriptor
         Local<FunctionTemplate> setPrototypeOf = FunctionTemplate::New(
             isolate,
             [](const FunctionCallbackInfo<Value>& info) {
+                HandleScope scope(info.GetIsolate());
                 Local<Object> obj = info[0].As<Object>();
                 Local<Value> proto = info[1];
                 JSContextRef ctx = ToContextRef(info.GetIsolate());
@@ -412,14 +414,15 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
                 }
 
                 if (SetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj, proto)) {
-                    info.GetReturnValue().Set(True(info.GetIsolate()));
+                    info.GetReturnValue().Set(proto);
                 } else {
-                    info.GetReturnValue().Set(False(info.GetIsolate()));
+                    info.GetReturnValue().Set(Null(info.GetIsolate()));
                 }
             });
         Local<FunctionTemplate> getPrototypeOf = FunctionTemplate::New(
             isolate,
             [](const FunctionCallbackInfo<Value>& info) {
+                HandleScope scope(info.GetIsolate());
                 JSContextRef ctx = ToContextRef(info.GetIsolate());
                 Local<Context> context = info.GetIsolate()->GetCurrentContext();
                 JSValueRef o = ToJSValueRef(info[0], context);
@@ -446,6 +449,49 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
                 Local<Object> obj = info[0].As<Object>();
                 info.GetReturnValue().Set(GetPrototypeSkipHidden(info.GetIsolate()->GetCurrentContext(), obj));
             });
+        Local<FunctionTemplate> getOwnDescriptor = FunctionTemplate::New(
+            isolate,
+            [](const FunctionCallbackInfo<Value>& info) {
+                HandleScope scope(info.GetIsolate());
+                JSContextRef ctx = ToContextRef(info.GetIsolate());
+                Local<Context> context = info.GetIsolate()->GetCurrentContext();
+                Local<Value> object = info[0];
+                Local<Value> prop = info[1];
+                auto iso = ToIsolateImpl(info.GetIsolate());
+                Local<Context> global_context = iso->m_global_contexts[JSContextGetGlobalContext(ctx)].Get(info.GetIsolate());
+                auto globalContext = ToImpl<V82JSC::GlobalContext>(global_context);
+                
+                if (object->IsObject() && prop->IsName()) {
+                    JSValueRef o = ToJSValueRef(object, context);
+                    auto wrap = V82JSC::TrackedObject::getPrivateInstance(ctx, JSValueToObject(ctx,o,0));
+                    if (wrap && wrap->m_accessors) {
+                        JSValueRef args[] = {
+                            o,
+                            ToJSValueRef(prop, context),
+                            wrap->m_accessors,
+                            ToJSValueRef(globalContext->ObjectGetOwnDescriptor.Get(info.GetIsolate()), context)
+                        };
+                        JSValueRef descriptor = exec(
+                            ctx,
+                            "let desc = Reflect.get(_3,_2); "
+                            "if (typeof desc !== 'object') return _4(_1,_2); "
+                            "desc.value = Reflect.get(_1,_2); "
+                            "Reflect.deleteProperty(desc,'get'); "
+                            "Reflect.deleteProperty(desc,'set'); "
+                            "Reflect.set(desc,'configurable',true); "
+                            "return desc; ",
+                            4, args
+                        );
+                        info.GetReturnValue().Set(V82JSC::Value::New(ToContextImpl(context), descriptor));
+                        return;
+                    }
+                }
+                Local<Value> v_args[] = { info[0], info[1] };
+                int length = info.Length() > 2 ? 2 : info.Length();
+                info.GetReturnValue().Set(globalContext->ObjectGetOwnDescriptor.Get(info.GetIsolate())
+                                      ->Call(v8::Null(info.GetIsolate()),length,v_args));
+                
+        });
         // Don't use ctx->Global() here because it may return a proxy, which we can't use in setting up the global object
         Local<Object> global = V82JSC::Value::New(reinterpret_cast<V82JSC::Context*>(context),
                                               JSContextGetGlobalObject(context->m_ctxRef)).As<Object>();
@@ -453,16 +499,22 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
             String::NewFromUtf8(isolate, "Object", NewStringType::kNormal).ToLocalChecked()).ToLocalChecked().As<Object>();
         Local<String> SsetPrototypeOf = String::NewFromUtf8(isolate, "setPrototypeOf", NewStringType::kNormal).ToLocalChecked();
         Local<String> SgetPrototypeOf = String::NewFromUtf8(isolate, "getPrototypeOf", NewStringType::kNormal).ToLocalChecked();
+        Local<String> SgetOwnPropertyDescriptor = String::NewFromUtf8(isolate, "getOwnPropertyDescriptor",
+                                                                      NewStringType::kNormal).ToLocalChecked();
 
         context->ObjectSetPrototypeOf.Reset(isolate, object->Get(ctx, SsetPrototypeOf).ToLocalChecked().As<Function>());
         context->ObjectGetPrototypeOf.Reset(isolate, object->Get(ctx, SgetPrototypeOf).ToLocalChecked().As<Function>());
+        context->ObjectGetOwnDescriptor.Reset(isolate, object->Get(ctx, SgetOwnPropertyDescriptor).ToLocalChecked().As<Function>());
         CHECK(object->Set(ctx,
                           SsetPrototypeOf,
                           setPrototypeOf->GetFunction(ctx).ToLocalChecked()).ToChecked());
         CHECK(object->Set(ctx,
                           SgetPrototypeOf,
                           getPrototypeOf->GetFunction(ctx).ToLocalChecked()).ToChecked());
-        
+        CHECK(object->Set(ctx,
+                          SgetOwnPropertyDescriptor,
+                          getOwnDescriptor->GetFunction(ctx).ToLocalChecked()).ToChecked());
+
         // ... and capture all attempts to set the prototype through __proto__
         exec(context->m_ctxRef,
                      "Object.defineProperty( Object.prototype, '__proto__',"
@@ -562,8 +614,6 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
         
         JSStringRef zGlobal = JSStringCreateWithUTF8CString("global");
         JSStringRef zSetTimeout = JSStringCreateWithUTF8CString("setTimeout");
-        JSStringRef zPromise = JSStringCreateWithUTF8CString("Promise");
-        JSStringRef zPromisePolyfill = JSStringCreateWithUTF8CString((const char*)promise_polyfill_js);
 
         JSObjectRef setTimeout = JSObjectMakeFunctionWithCallback
         (context->m_ctxRef, zSetTimeout,
@@ -583,12 +633,6 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
         assert(excp == 0);
         JSObjectSetProperty(context->m_ctxRef, global_o, zGlobal, global_o, 0, &excp);
         assert(excp == 0);
-/*
-        JSObjectDeleteProperty(context->m_ctxRef, global_o, zPromise, &excp);
-        assert(excp == 0);
-        JSEvaluateScript(context->m_ctxRef, zPromisePolyfill, global_o, 0, 0, &excp);
-        assert(excp == 0);
-*/
 
         JSStringRef zTypedArrayPolyfill = JSStringCreateWithUTF8CString((const char*)typedarray_js);
         JSEvaluateScript(context->m_ctxRef, zTypedArrayPolyfill, global_o, 0, 0, &excp);
@@ -605,8 +649,6 @@ Local<v8::Context> v8::Context::New(Isolate* isolate, ExtensionConfiguration* ex
         JSObjectDeleteProperty(context->m_ctxRef, global_o, zSetTimeout, &excp);
         assert(excp == 0);
 
-        JSStringRelease(zPromise);
-        JSStringRelease(zPromisePolyfill);
         JSStringRelease(zTypedArrayPolyfill);
         JSStringRelease(zBigIntPolyfill);
         JSStringRelease(zErrorPolyfill);
@@ -658,8 +700,9 @@ MaybeLocal<v8::Context> v8::Context::FromSnapshot(
                                                   MaybeLocal<v8::Value> global_object)
 {
     // Snashots are ignored
+    EscapableHandleScope scope(isolate);
     Local<Context> ctx = New(isolate, extensions, MaybeLocal<ObjectTemplate>(), global_object);
-    return MaybeLocal<Context>(ctx);
+    return scope.Escape(ctx);
 }
 
 /**
@@ -683,8 +726,7 @@ MaybeLocal<Object> v8::Context::NewRemoteContext(
                                            Isolate* isolate, Local<ObjectTemplate> global_template,
                                            MaybeLocal<Value> global_object)
 {
-    assert(0);
-    return MaybeLocal<Object>();
+    NOT_IMPLEMENTED;
 }
 
 /**
@@ -708,7 +750,7 @@ void v8::Context::SetSecurityToken(Local<Value> token)
 /** Restores the security token to the default value. */
 void v8::Context::UseDefaultSecurityToken()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 /** Returns the security token of this context.*/
@@ -785,6 +827,7 @@ Local<Object> v8::Context::GetExtrasBindingObject()
 void v8::Context::SetEmbedderData(int index, Local<Value> value)
 {
     Isolate *isolate = ToIsolate(this);
+    HandleScope scope(isolate);
     IsolateImpl *i = ToIsolateImpl(isolate);
     auto ctximpl = ToContextImpl(this);
 
@@ -828,6 +871,7 @@ void v8::Context::SetEmbedderData(int index, Local<Value> value)
 uint32_t v8::Context::GetNumberOfEmbedderDataFields()
 {
     Isolate *isolate = ToIsolate(this);
+    HandleScope scope(isolate);
     IsolateImpl *i = ToIsolateImpl(isolate);
     auto ctximpl = ToContextImpl(this);
 
@@ -864,12 +908,14 @@ Local<PrimitiveArray> PrimitiveArray::New(Isolate* isolate, int length)
 
 int PrimitiveArray::Length() const
 {
+    HandleScope scope(ToIsolate(this));
     auto impl = ToImpl<V82JSC::FixedArray>(this);
     return impl->m_size;
 }
 
 void PrimitiveArray::Set(Isolate* isolate, int index, Local<Primitive> item)
 {
+    HandleScope scope(isolate);
     auto impl = ToImpl<V82JSC::FixedArray>(this);
 
     v8::internal::Object * val = *reinterpret_cast<v8::internal::Object* const*>(*item);

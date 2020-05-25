@@ -20,6 +20,7 @@ using v8::JSON;
  */
 MaybeLocal<v8::Value> JSON::Parse(Local<Context> context, Local<String> json_string)
 {
+    EscapableHandleScope scope(ToIsolate(ToContextImpl(context)));
     JSContextRef ctx = ToContextRef(context);
     JSValueRef string = ToJSValueRef(json_string, context);
     
@@ -28,7 +29,7 @@ MaybeLocal<v8::Value> JSON::Parse(Local<Context> context, Local<String> json_str
     if (exception.ShouldThrow()) {
         return MaybeLocal<Value>();
     }
-    return V82JSC::Value::New(ToContextImpl(context), value);
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), value));
 }
 
 /**
@@ -41,6 +42,7 @@ MaybeLocal<v8::Value> JSON::Parse(Local<Context> context, Local<String> json_str
 MaybeLocal<v8::String> JSON::Stringify(Local<Context> context, Local<Value> json_object,
                                        Local<String> gap)
 {
+    EscapableHandleScope scope(ToIsolate(ToContextImpl(context)));
     JSContextRef ctx = ToContextRef(context);
     
     JSValueRef args[] = {
@@ -53,6 +55,6 @@ MaybeLocal<v8::String> JSON::Stringify(Local<Context> context, Local<Value> json
     if (exception.ShouldThrow()) {
         return MaybeLocal<String>();
     }
-    return V82JSC::Value::New(ToContextImpl(context), value).As<String>();
+    return scope.Escape(V82JSC::Value::New(ToContextImpl(context), value).As<String>());
 }
 

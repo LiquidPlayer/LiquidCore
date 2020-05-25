@@ -39,6 +39,8 @@
 #include "test/cctest/print-extension.h"
 #include "test/cctest/trace-extension.h"
 
+#include "V82JSC.h"
+
 using namespace v8::internal;
 
 void* Malloced::New(size_t size)
@@ -53,22 +55,22 @@ void Malloced::Delete(void* p)
 
 Heap::Heap() : external_string_table_(nullptr), parallel_scavenge_semaphore_(1)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 StackGuard::StackGuard()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 Builtins::Builtins()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 Builtins::~Builtins()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 ThreadLocalTop::ThreadLocalTop()
@@ -79,36 +81,35 @@ ThreadLocalTop::ThreadLocalTop()
 
 AccountingAllocator::AccountingAllocator()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 AccountingAllocator::~AccountingAllocator()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 // Gets an empty segment from the pool or creates a new one.
 Segment* AccountingAllocator::GetSegment(size_t bytes)
 {
-    assert(0);
-    return nullptr;
+    NOT_IMPLEMENTED;
 }
 // Return unneeded segments to either insert them into the pool or release
 // them if the pool is already full or memory pressure is high.
 void AccountingAllocator::ReturnSegment(Segment* memory)
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 CancelableTaskManager::CancelableTaskManager()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 void StackGuard::ThreadLocal::Clear()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
 
 double v8::Platform::SystemClockTimeMillis()
 {
-    assert(0);
+    NOT_IMPLEMENTED;
 }
