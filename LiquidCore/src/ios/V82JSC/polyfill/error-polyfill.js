@@ -317,14 +317,14 @@ class Frame {
   getTypeName() { abstractMethod() }
   getFunction() { return this.functionValue; }
   getFunctionName() { return this.functionName; }
-  getMethodName() { abstractMethod() }
+  getMethodName() { return this.functionName; }
   getFileName() { return this.fileName; }
   getLineNumber() { return this.lineNumber; }
   getColumnNumber() { return this.columnNumber; }
-  getEvalOrigin() { abstractMethod() }
+  getEvalOrigin() { return false; }
   isTopLevel() { abstractMethod() }
-  isEval() { abstractMethod() }
-  isNative() { abstractMethod() }
+  isEval() { return false; }
+  isNative() { return false; }
   isConstructor() { abstractMethod() }
 };
 

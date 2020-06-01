@@ -34,7 +34,7 @@
  @param process The node.js `LCProcess` object
  @param context The JavaScript `JSContext` for this process
  */
-- (void) onProcessStart:(LCProcess*)process context:(JSContext*)context;
+- (void) onProcessStart:(LCProcess* _Nonnull)process context:(JSContext* _Nonnull)context;
 
 /**
  Called when a node.js process has completed all of its callbacks and has nothing left
@@ -50,7 +50,7 @@
  @param exitCode The node.js exit code
  */
 
-- (void) onProcessAboutToExit:(LCProcess*)process exitCode:(int)code;
+- (void) onProcessAboutToExit:(LCProcess* _Nonnull)process exitCode:(int)code;
 
 /**
  Called after a process has exited.  The process is no longer active and cannot be used.
@@ -61,7 +61,7 @@
  @param process The defunct node.js `LCProcess` object
  @param exitCode The node.js exit code
  */
-- (void) onProcessExit:(LCProcess*)process exitCode:(int)code;
+- (void) onProcessExit:(LCProcess* _Nonnull)process exitCode:(int)code;
 
 /**
  Called in the event of an `LCProcess` failure
@@ -69,14 +69,14 @@
  @param process  The node.js `LCProcess` object
  @param exception The thrown exception
  */
-- (void) onProcessFailed:(LCProcess*)process exception:(NSException*)exception;
+- (void) onProcessFailed:(LCProcess* _Nonnull)process exception:(NSException* _Nullable)exception;
 @end
 
 /**
  A callback block to execute synchronous or asynchronous JavaScript on a node
  process thread.
  */
-typedef void (^ProcessThreadBlock)(JSContext*);
+typedef void (^ProcessThreadBlock)(JSContext* _Nonnull);
 
 /**
  Determines the scope of an uninstallation.  A Local uninstallation will only clear
@@ -134,17 +134,17 @@ MediaAccessMask;
 /**
  The real path of the `/home/module` alias for this process.
  */
-@property (nonatomic, readonly, copy) NSString* modulePath;
+@property (nonatomic, readonly, copy) NSString* _Nonnull modulePath;
 
 /**
  The real path of the `/home/node_modules` path for this process.
  */
-@property (nonatomic, readonly, copy) NSString* node_modulesPath;
+@property (nonatomic, readonly, copy) NSString* _Nonnull node_modulesPath;
 
 /**
  The JavaScript context in which this process runs
  */
-@property (atomic, readonly) JSContext* context;
+@property (atomic, readonly) JSContext* _Nullable context;
 
 /**
  Creates a node.js process and attaches a delegate
@@ -155,20 +155,20 @@ MediaAccessMask;
  @param mediaAccessMask Permission mask for read/write access to external media.
  */
 - (id) initWithDelegate:(id<LCProcessDelegate>)delegate
-                     id:(NSString*)uniqueID
+                     id:(NSString* _Nonnull)uniqueID
         mediaAccessMask:(MediaAccessMask)mediaAccessMask;
 
 /**
  Adds an `LCProcessDelegate` to this process
  @param delegate the new delegate
  */
-- (void) addDelegate:(id<LCProcessDelegate>)delegate;
+- (void) addDelegate:(id<LCProcessDelegate> _Nonnull)delegate;
 
 /**
  Removes a delegate from this process
  @param delegate the delegate to remove
  */
-- (void) removeDelegate:(id<LCProcessDelegate>)delegate;
+- (void) removeDelegate:(id<LCProcessDelegate> _Nonnull)delegate;
 
 /**
  Determines if the process is currently active.  If it is inactive, either it hasn't
@@ -225,6 +225,6 @@ MediaAccessMask;
  @param uniqueID The id of the process class
  @param scope scope in which to uninstall the process class
  */
-+ (void) uninstall:(NSString*)uniqueID scope:(UninstallScope)scope;
++ (void) uninstall:(NSString* _Nonnull)uniqueID scope:(UninstallScope)scope;
 
 @end
