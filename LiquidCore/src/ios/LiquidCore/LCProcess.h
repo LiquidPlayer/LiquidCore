@@ -154,8 +154,8 @@ MediaAccessMask;
                 be preserved and reused for all processes using the same ID.
  @param mediaAccessMask Permission mask for read/write access to external media.
  */
-- (id) initWithDelegate:(id<LCProcessDelegate>)delegate
-                     id:(NSString* _Nonnull)uniqueID
+- (instancetype _Nonnull) initWithDelegate:(id<LCProcessDelegate> _Nonnull)delegate
+                        id:(NSString* _Nonnull)uniqueID
         mediaAccessMask:(MediaAccessMask)mediaAccessMask;
 
 /**
@@ -184,14 +184,14 @@ MediaAccessMask;
  
  @param block the callback to execute on the Node process theead.
  */
-- (void) sync:(ProcessThreadBlock)block;
+- (void) sync:(ProcessThreadBlock _Nonnull)block;
 
 /**
  Schedules a callback to be called on the process thread asynchronously.
 
  @param block the callback to execute on the Node process theead.
  */
-- (void) async:(ProcessThreadBlock)block;
+- (void) async:(ProcessThreadBlock _Nonnull)block;
 
 /**
  Instructs the VM to halt execution as quickly as possible
@@ -207,7 +207,7 @@ MediaAccessMask;
  
  @return A preserver object
  */
-- (id<LoopPreserver>) keepAlive;
+- (id<LoopPreserver> _Nonnull) keepAlive;
 
 /**
  Can be used by an embedder to expose a directory in the underlying iOS  filesystem
