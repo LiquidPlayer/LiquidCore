@@ -40,11 +40,14 @@ static NSMapTable* _serviceMap = nil;
 + (void) uninstall:(NSURL *)serviceURI
 {
     NSString *serviceId;
-    NSRange comp = [[serviceURI absoluteString] rangeOfString:@"/" options:NSBackwardsSearch];
+    NSString *serviceString = [serviceURI absoluteString];
+    NSString *bundleString = NSBundle.mainBundle.bundleURL.absoluteString;
+    serviceString = [serviceString stringByReplacingOccurrencesOfString:bundleString withString:@""];
+    NSRange comp = [serviceString rangeOfString:@"/" options:NSBackwardsSearch];
     if (comp.location != NSNotFound) {
-        serviceId = [[serviceURI absoluteString] substringToIndex:comp.location];
+        serviceId = [serviceString substringToIndex:comp.location];
     } else {
-        serviceId = [serviceURI absoluteString];
+        serviceId = serviceString;
     }
     serviceId = [serviceId stringByAddingPercentEncodingWithAllowedCharacters:
                   [NSCharacterSet URLHostAllowedCharacterSet]];
@@ -146,12 +149,15 @@ static NSMapTable* _serviceMap = nil;
     self = [super init];
     if (self) {
         _serviceURI = serviceURI;
-        NSRange comp = [[serviceURI absoluteString] rangeOfString:@"/" options:NSBackwardsSearch];
+        NSString *serviceString = [serviceURI absoluteString];
+        NSString *bundleString = NSBundle.mainBundle.bundleURL.absoluteString;
+        serviceString = [serviceString stringByReplacingOccurrencesOfString:bundleString withString:@""];
+        NSRange comp = [serviceString rangeOfString:@"/" options:NSBackwardsSearch];
         if (comp.location != NSNotFound) {
-            serviceId_ = [[serviceURI absoluteString] substringToIndex:comp.location];
-            module_ = [[serviceURI absoluteString] substringFromIndex:comp.location+1];
+            serviceId_ = [serviceString substringToIndex:comp.location];
+            module_ = [serviceString substringFromIndex:comp.location+1];
         } else {
-            serviceId_ = [serviceURI absoluteString];
+            serviceId_ = serviceString;
             module_ = serviceId_;
         }
         comp = [module_ rangeOfString:@"?"];
@@ -187,12 +193,8 @@ static NSMapTable* _serviceMap = nil;
     
     if ([self.serviceURI isFileURL]) {
         // Symlink file for speed
-        if ([fileManager fileExistsAtPath:localPath]) {
-            [fileManager removeItemAtPath:localPath error:&error];
-        }
-        if (error == nil) {
-            [fileManager createSymbolicLinkAtURL:[NSURL fileURLWithPath:localPath] withDestinationURL:self.serviceURI error:&error];
-        }
+        [fileManager removeItemAtPath:localPath error:nil];
+        [fileManager createSymbolicLinkAtURL:[NSURL fileURLWithPath:localPath] withDestinationURL:self.serviceURI error:&error];
         self.fetched = true;
     } else {
         NSDate* lastModified = nil;
@@ -231,9 +233,7 @@ static NSMapTable* _serviceMap = nil;
             NSHTTPURLResponse *http = (NSHTTPURLResponse*)response;
             error = e;
             if (error == nil && http.statusCode == 200) {
-                if ([[NSFileManager defaultManager] fileExistsAtPath:localPath]) {
-                    [[NSFileManager defaultManager] removeItemAtPath:localPath error:nil];
-                }
+                [[NSFileManager defaultManager] removeItemAtPath:localPath error:nil];
                 [[NSFileManager defaultManager] moveItemAtURL:location
                                                         toURL:[NSURL fileURLWithPath:localPath]
                                                         error:nil];
@@ -247,14 +247,10 @@ static NSMapTable* _serviceMap = nil;
                     NSBundle *bundle = [NSBundle mainBundle];
                     NSURL *bundleURL = [[bundle resourceURL] URLByAppendingPathComponent:@"LiquidCore.bundle"];
                     NSURL *fileURL = [NSBundle URLForResource:bundleName withExtension:@"js" subdirectory:nil inBundleWithURL:bundleURL];
-                    if ([[NSFileManager defaultManager] fileExistsAtPath:localPath]) {
-                        [[NSFileManager defaultManager] removeItemAtPath:localPath error:&error];
-                    }
-                    if (error == nil) {
-                        [[NSFileManager defaultManager] copyItemAtURL:fileURL
-                                                                toURL:[NSURL fileURLWithPath:localPath]
-                                                                error:&error];
-                    }
+                    [[NSFileManager defaultManager] removeItemAtPath:localPath error:nil];
+                    [[NSFileManager defaultManager] copyItemAtURL:fileURL
+                                                            toURL:[NSURL fileURLWithPath:localPath]
+                                                            error:&error];
                     if (error == nil) {
                         self.fetched = true;
                         return;
