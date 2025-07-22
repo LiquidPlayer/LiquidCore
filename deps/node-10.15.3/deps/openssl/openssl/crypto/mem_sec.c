@@ -42,7 +42,7 @@
 
 #define CLEAR(p, s) OPENSSL_cleanse(p, s)
 #ifndef PAGE_SIZE
-# define PAGE_SIZE    4096
+# define PAGE_SIZE    sysconf(_SC_PAGESIZE)
 #endif
 #if !defined(MAP_ANON) && defined(MAP_ANONYMOUS)
 # define MAP_ANON MAP_ANONYMOUS
@@ -432,12 +432,12 @@ static int sh_init(size_t size, int minsize)
         long tmppgsize = sysconf(_SC_PAGESIZE);
 # endif
         if (tmppgsize < 1)
-            pgsize = PAGE_SIZE;
+            pgsize = getpagesize();
         else
             pgsize = (size_t)tmppgsize;
     }
 #else
-    pgsize = PAGE_SIZE;
+    pgsize = getpagesize();
 #endif
     sh.map_size = pgsize + sh.arena_size + pgsize;
     if (1) {

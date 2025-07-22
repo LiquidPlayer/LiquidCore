@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
 import groovy.json.JsonSlurper
+import org.gradle.api.attributes.Usage
 
 def getVersionFromNpm() {
     def inputFile = file("../package.json")
@@ -21,12 +22,13 @@ static def getVersionCode(vn) {
 }
 
 android {
-    compileSdkVersion 28
-
+    namespace 'org.liquidplayer.javascript'
+    compileSdkVersion 35
+    ndkVersion "21.4.7075529"
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 28
+        minSdkVersion 21
+        targetSdkVersion 35
         versionName getVersionFromNpm()
         versionCode = getVersionCode(versionName)
 
@@ -73,10 +75,14 @@ dependencies {
 }
 
 task copyHeadersToAARRelease(type: Zip) {
-    baseName = 'liquidcore-V8-release'
-    extension = 'aar.in'
-    destinationDir = file('build/outputs/aar')
+    archiveBaseName = 'liquidcore-V8-release'
+    archiveExtension = 'aar.in'
+    destinationDirectory = file('build/outputs/aar')
     def aarNameO = "build/outputs/aar/liquidcore-V8-release.aar"
+
+    // Store the AAR without compression to align it later
+    entryCompression = ZipEntryCompression.STORED
+    zip64 = true
 
     from zipTree(aarNameO)
     from("../deps/node-10.15.3/deps/v8/include") {
@@ -102,11 +108,28 @@ task renameAARRelease (type: Copy) {
     rename "liquidcore-V8-release.aar.in", "liquidcore-V8-release.aar"
 }
 
+task zipAlignAARRelease(type: Exec) {
+    dependsOn renameAARRelease
+    
+    def zipalign = "${android.sdkDirectory}/build-tools/${android.buildToolsVersion}/zipalign"
+    def inputAar = "$buildDir/outputs/aar/liquidcore-V8-release.aar"
+    def outputAar = "$buildDir/outputs/aar/liquidcore-V8-release-aligned.aar"
+
+    // Use zipalign to align to 16KB (16384 bytes)
+    commandLine zipalign, '-f', '-p', '16384', inputAar, outputAar
+
+    doLast {
+        file(inputAar).delete()
+        file(outputAar).renameTo(file(inputAar))
+    }
+}
+
 afterEvaluate {
     if (project.hasProperty("bundleReleaseAar")) {
         bundleReleaseAar.finalizedBy copyHeadersToAARRelease
         copyHeadersToAARRelease.finalizedBy renameAARRelease
         renameAARRelease.finalizedBy removeOldAARRelease
+        removeOldAARRelease.finalizedBy zipAlignAARRelease
     }
 }
 /*

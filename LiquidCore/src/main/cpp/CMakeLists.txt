@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.22.1)
+project(LiquidCore)
 
 set( SOURCES
 	# cares
@@ -823,6 +824,9 @@ if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 endif()
 
 add_library( liquidnode SHARED ${SOURCES} )
+
+target_link_options(liquidnode PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(liquidnode PRIVATE "-Wl,-z,common-page-size=16384")
 
 if(${ANDROID_ABI} STREQUAL armeabi-v7a)
 	SET( SSL_ARCH "linux-armv4" )

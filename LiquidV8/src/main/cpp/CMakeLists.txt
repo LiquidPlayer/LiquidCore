@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.22.1)
+project(LiquidV8)
 
 set( SOURCES
   # Common V8 objects for JNI/JSC
@@ -499,6 +500,9 @@ if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
 endif()
 
 add_library( liquidjs SHARED ${SOURCES} )
+
+target_link_options(liquidjs PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(liquidjs PRIVATE "-Wl,-z,common-page-size=16384")
 
 add_library(v8_base STATIC IMPORTED)
 set_target_properties(
