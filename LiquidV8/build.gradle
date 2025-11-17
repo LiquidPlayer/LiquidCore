@@ -23,10 +23,10 @@ static def getVersionCode(vn) {
 android {
     compileSdkVersion 34
     namespace 'org.liquidplayer.javascript'
-    ndkVersion "21.4.7075529"
+    ndkVersion "28.2.13676358"
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 24  // Required for NDK 28 ftello/fseeko support on 32-bit
         targetSdkVersion 34
         versionName getVersionFromNpm()
         versionCode = getVersionCode(versionName)
@@ -39,19 +39,6 @@ android {
                 arguments "-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
             }
         }
-    }
-
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging true
-        }
-        doNotStrip '**/*/lib*.so'
-        pickFirst '**/libc++_shared.so'
-        pickFirst '**/libjsc.so'
-    }
-    
-    aaptOptions {
-        noCompress 'so'
     }
 
     buildTypes {
@@ -129,14 +116,17 @@ task renameAARRelease (type: Copy) {
 
 task alignAARRelease(type: Exec) {
     dependsOn renameAARRelease
-    
+
     def sdkDir = android.sdkDirectory
-    def zipalign = "${sdkDir}/build-tools/${android.buildToolsVersion}/zipalign"
+    // Use build-tools 35.0.0+ which supports the -P flag for 16KB alignment
+    def zipalign = "${sdkDir}/build-tools/35.0.0/zipalign"
     def inputAar = "build/outputs/aar/liquidcore-V8-release.aar"
     def outputAar = "build/outputs/aar/liquidcore-V8-release-aligned.aar"
-    
+
     // Use zipalign to align to 16KB (16384 bytes)
-    commandLine zipalign, '-f', '-p', '16384', inputAar, outputAar
+    // The -P flag with page size in KB is used for 16KB page size support
+    // -P 16 means align to 16KB (16384 bytes) page boundaries
+    commandLine zipalign, '-f', '-P', '16', '4', inputAar, outputAar
     
     doLast {
         // Replace the original with aligned version

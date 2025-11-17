@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 set( SOURCES
+  # Polyfill for pthread_barrier removed from NDK headers
+  pthread_barrier_polyfill.c
+
   # Common V8 objects for JNI/JSC
   Common/ContextGroup.cpp
   Common/JSContext.cpp

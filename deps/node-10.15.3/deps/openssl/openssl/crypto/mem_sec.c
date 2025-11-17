@@ -41,9 +41,9 @@
 #endif
 
 #define CLEAR(p, s) OPENSSL_cleanse(p, s)
-#ifndef PAGE_SIZE
-# define PAGE_SIZE    sysconf(_SC_PAGESIZE)
-#endif
+/* PAGE_SIZE macro removed for Android 16KB page size support.
+ * Android NDK r27+ leaves PAGE_SIZE undefined to prevent hardcoded assumptions.
+ * This code uses runtime page size detection via sysconf() or getpagesize(). */
 #if !defined(MAP_ANON) && defined(MAP_ANONYMOUS)
 # define MAP_ANON MAP_ANONYMOUS
 #endif

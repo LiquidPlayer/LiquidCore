@@ -24,20 +24,20 @@ static def getVersionCode(vn) {
 android {
     compileSdkVersion 34
     namespace 'org.liquidplayer.node'
-    ndkVersion "21.4.7075529"
+    ndkVersion "28.2.13676358"
     
     buildFeatures {
         buildConfig true
     }
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 24  // Required for NDK 28 ftello/fseeko support on 32-bit
         targetSdkVersion 34
         versionName getVersionFromNpm()
         versionCode = getVersionCode(versionName)
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        
+
         buildConfigField "String", "VERSION_NAME", "\"${versionName}\""
 
         externalNativeBuild {
@@ -50,19 +50,6 @@ android {
             androidTest.java.srcDirs += '../LiquidV8/src/androidTest/java'
         }
 
-    }
-
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging true
-        }
-        doNotStrip '**/*/lib*.so'
-        pickFirst '**/libc++_shared.so'
-        pickFirst '**/libjsc.so'
-    }
-    
-    aaptOptions {
-        noCompress 'so'
     }
 
     buildTypes {
@@ -112,7 +99,17 @@ dependencies {
 }
 
 task extractLiquidjsLibsAndHeaders(type: Sync) {
-    dependsOn configurations.liquidjs
+    // Ensure V8 AAR is fully built before we try to extract from it
+    // We depend on assembleRelease which ensures the full build chain completes
+    dependsOn ':liquidcore-V8:assembleRelease'
+
+    // Also declare explicit dependency on the task that produces the final AAR
+    // This satisfies Gradle's task dependency validation
+    dependsOn ':liquidcore-V8:alignAARRelease'
+
+    // Explicitly declare the AAR as input for up-to-date checks
+    inputs.file('../LiquidV8/build/outputs/aar/liquidcore-V8-release.aar')
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 
     from {
         configurations.liquidjs.collect {zipTree(it)}
@@ -122,14 +119,10 @@ task extractLiquidjsLibsAndHeaders(type: Sync) {
 }
 
 afterEvaluate {
-    def addon = file('build/liquidjs_lib')
-    if (!addon.exists()) {
-        if (project.hasProperty("externalNativeBuildDebug")) {
-            externalNativeBuildDebug.dependsOn extractLiquidjsLibsAndHeaders
-        }
-        if (project.hasProperty("externalNativeBuildRelease")) {
-            externalNativeBuildRelease.dependsOn extractLiquidjsLibsAndHeaders
-        }
+    // Always ensure extraction happens before CMake configuration
+    // The task will be up-to-date if files haven't changed (no unnecessary rebuilds)
+    tasks.matching { it.name.startsWith('configureCMake') }.all {
+        it.dependsOn extractLiquidjsLibsAndHeaders
     }
 }
 
@@ -189,14 +182,17 @@ task renameAARRelease (type: Copy) {
 
 task alignAARRelease(type: Exec) {
     dependsOn renameAARRelease
-    
+
     def sdkDir = android.sdkDirectory
-    def zipalign = "${sdkDir}/build-tools/${android.buildToolsVersion}/zipalign"
+    // Use build-tools 35.0.0+ which supports the -P flag for 16KB alignment
+    def zipalign = "${sdkDir}/build-tools/35.0.0/zipalign"
     def inputAar = "build/outputs/aar/liquidcore-Nodejs-release.aar"
     def outputAar = "build/outputs/aar/liquidcore-Nodejs-release-aligned.aar"
-    
+
     // Use zipalign to align to 16KB (16384 bytes)
-    commandLine zipalign, '-f', '-p', '16384', inputAar, outputAar
+    // The -P flag with page size in KB is used for 16KB page size support
+    // -P 16 means align to 16KB (16384 bytes) page boundaries
+    commandLine zipalign, '-f', '-P', '16', '4', inputAar, outputAar
     
     doLast {
         // Replace the original with aligned version

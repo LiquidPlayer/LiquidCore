@@ -24,11 +24,8 @@
 #include <vector>
 #include <utility>
 
-#if defined(__ANDROID__)
-# ifndef PAGE_SIZE
-#  define PAGE_SIZE 4096
-# endif
-#endif
+// PAGE_SIZE removed for Android 16KB page size support
+// The code below uses getpagesize() or sysconf(_SC_PAGESIZE) dynamically
 
 #include <pthread.h>
 #include <unistd.h>
