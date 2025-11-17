@@ -6,9 +6,7 @@
  */
 package org.liquidplayer.javascript;
 
-import androidx.collection.LongSparseArray;
-
-import java.lang.ref.WeakReference;
+import java.util.WeakHashMap;
 
 class JNIJSValue extends JNIObject {
     protected JNIJSValue(long ref) { super(ref); }
@@ -103,12 +101,12 @@ class JNIJSValue extends JNIObject {
         if (!isReferenceJNI(valueRef)) {
             return (valueRef == ODDBALL_FALSE || valueRef == ODDBALL_TRUE) ? new JNIJSBoolean(valueRef) :
                     (valueRef == ODDBALL_NULL) ? new JNIJSNull(valueRef) :
-                    (valueRef == ODDBALL_UNDEFINED) ? new JNIJSUndefined(valueRef) :
-                        new JNIJSNumber(valueRef);
+                            (valueRef == ODDBALL_UNDEFINED) ? new JNIJSUndefined(valueRef) :
+                                    new JNIJSNumber(valueRef);
         }
-        WeakReference<JNIJSValue> wr = objectsHash.get(valueRef);
-        if (wr != null) {
-            JNIJSValue v = wr.get();
+        JNIJSValue cachedValue = objectsHash.get(valueRef);
+        if (cachedValue != null) {
+            JNIJSValue v = cachedValue;
             if (v != null) {
                 return v;
             }
@@ -120,10 +118,14 @@ class JNIJSValue extends JNIObject {
         } else {
             v = new JNIJSValue(valueRef);
         }
-        objectsHash.put(valueRef, new WeakReference<>(v));
+
+        objectsHash.put(valueRef, v);
         return v;
     }
-    static private LongSparseArray<WeakReference<JNIJSValue>> objectsHash = new LongSparseArray<>();
+
+    // Superhuman: This was a sparse array in the library version with weak reference JNIJSValues.
+    // We changed this object to a WeakHashMap to make it eligible to be garbage collected.
+    static private WeakHashMap<Long, JNIJSValue> objectsHash = new WeakHashMap<>();
 
     long canonicalReference()
     {

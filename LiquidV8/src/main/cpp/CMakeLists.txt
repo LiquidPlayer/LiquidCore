@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 set( SOURCES
+  # Polyfill for pthread_barrier removed from NDK headers
+  pthread_barrier_polyfill.c
+
   # Common V8 objects for JNI/JSC
   Common/ContextGroup.cpp
   Common/JSContext.cpp
@@ -597,5 +600,8 @@ SET( CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${C_FLAGS_STR}" )
 
 string (REPLACE ";" " " CPP_FLAGS_STR "${CFLAGS_RELEASE} ${CPPFLAGS_RELEASE} ${DEFS_RELEASE}")
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CPP_FLAGS_STR}" )
+
+# Add 16KB page size alignment for Android
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
 
 target_link_libraries( liquidjs v8_libplatform v8_base v8_libbase v8_snapshot v8_libsampler icudata ${log-lib} )

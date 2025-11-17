@@ -44,13 +44,14 @@ except NameError:
 
 
 def ToCArray(elements, step=10):
-  slices = (elements[i:i+step] for i in xrange(0, len(elements), step))
-  slices = map(lambda s: ','.join(str(x) for x in s), slices)
+  elements = list(elements)
+  slices = (elements[i:i+step] for i in range(0, len(elements), step))
+  slices = list(map(lambda s: ','.join(str(x) for x in s), slices))
   return ',\n'.join(slices)
 
 
 def ToCString(contents):
-  return ToCArray(map(ord, contents), step=20)
+  return ToCArray(list(map(ord, contents)), step=20)
 
 
 def ReadFile(filename):
@@ -154,7 +155,7 @@ def ReadMacros(lines):
     hash = line.find('#')
     if hash != -1: line = line[:hash]
     line = line.strip()
-    if len(line) is 0: continue
+    if len(line) == 0: continue
     const_match = CONST_PATTERN.match(line)
     if const_match:
       name = const_match.group(1)
@@ -164,14 +165,14 @@ def ReadMacros(lines):
       macro_match = MACRO_PATTERN.match(line)
       if macro_match:
         name = macro_match.group(1)
-        args = map(string.strip, macro_match.group(2).split(','))
+        args = list(map(str.strip, macro_match.group(2).split(',')))
         body = macro_match.group(3).strip()
         macros[name] = TextMacro(args, body)
       else:
         python_match = PYTHON_MACRO_PATTERN.match(line)
         if python_match:
           name = python_match.group(1)
-          args = map(string.strip, python_match.group(2).split(','))
+          args = list(map(str.strip, python_match.group(2).split(',')))
           body = python_match.group(3).strip()
           fun = eval("lambda " + ",".join(args) + ': ' + body)
           macros[name] = PythonMacro(args, fun)
@@ -269,8 +270,10 @@ def Render(var, data):
   # Treat non-ASCII as UTF-8 and convert it to UTF-16.
   if any(ord(c) > 127 for c in data):
     template = TWO_BYTE_STRING
-    data = map(ord, data.decode('utf-8').encode('utf-16be'))
-    data = [data[i] * 256 + data[i+1] for i in xrange(0, len(data), 2)]
+    # In Python 3, strings are already unicode, so just encode to UTF-16BE
+    data_bytes = data.encode('utf-16be')
+    data = list(map(ord, data_bytes.decode('latin-1')))
+    data = [data[i] * 256 + data[i+1] for i in range(0, len(data), 2)]
     data = ToCArray(data)
   else:
     template = ONE_BYTE_STRING
@@ -326,7 +329,7 @@ def JS2C(source, target):
     var = name.replace('-', '_').replace('/', '_')
     key = '%s_key' % var
     value = '%s_value' % var
-    hash_value = hashlib.sha256(lines).hexdigest()
+    hash_value = hashlib.sha256(lines.encode('utf-8')).hexdigest()
 
     definitions.append(Render(key, name))
     definitions.append(Render(value, lines))
